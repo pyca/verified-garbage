@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # A candidate on x86-64: one window of Miller–Rabin's exponentiation

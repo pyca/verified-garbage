@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

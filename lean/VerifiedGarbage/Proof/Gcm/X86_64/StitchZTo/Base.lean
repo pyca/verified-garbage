@@ -1,8 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The out-of-place AVX-512 loop: the setting, and the data

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native primality operation starts with arbitrary scratch contents -/

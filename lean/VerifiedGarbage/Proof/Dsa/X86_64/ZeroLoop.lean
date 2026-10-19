@@ -1,8 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 
 /-! # Fixed-length bytewise zero tests for DSA acceptance masks -/
 

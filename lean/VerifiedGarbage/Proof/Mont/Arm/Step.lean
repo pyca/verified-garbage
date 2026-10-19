@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Words
+public import VerifiedGarbage.Impl.Mont.Arm
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: a multiply-accumulate step

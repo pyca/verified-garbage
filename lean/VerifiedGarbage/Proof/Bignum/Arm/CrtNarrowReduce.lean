@@ -2,10 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Reduce the input modulo a prepared factor at the modulus width
 

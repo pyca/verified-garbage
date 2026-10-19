@@ -2,10 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Curve448.AArch64.Pointwise
 import VerifiedGarbage.Proof.Curve448.AArch64.Square
-public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 public import VerifiedGarbage.Proof.X448.AArch64.Env
-public import VerifiedGarbage.Impl.X448.AArch64.Weak
+public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+public import VerifiedGarbage.Impl.Curve448.AArch64
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Impl.X448.AArch64.Weak
 
 /-!
 # X448 on AArch64: the working space as field-element slots

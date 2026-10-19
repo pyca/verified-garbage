@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeValue
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequence
 
 /-! # Exact public bytes produced by the complete p hash-and-shape stage -/
 

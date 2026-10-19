@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # `vg_rsa_public_checked` for its callers on x86-64

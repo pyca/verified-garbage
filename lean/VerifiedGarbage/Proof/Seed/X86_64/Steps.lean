@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The steps of a round, lane by lane

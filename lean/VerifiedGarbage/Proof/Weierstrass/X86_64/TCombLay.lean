@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.CombLay
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+import Mathlib.Util.CompileInductive
 
 /-!
 # The fixed-base comb from tables in memory on x86-64: where it keeps its numbers

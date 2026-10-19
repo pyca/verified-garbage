@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8Loop
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 @[expose] public section
 

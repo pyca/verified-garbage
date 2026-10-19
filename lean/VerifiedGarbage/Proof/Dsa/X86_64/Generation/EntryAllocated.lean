@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABIGeometry
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABIContext
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Input buffers and stack arguments survive the saved-register prologue -/
 

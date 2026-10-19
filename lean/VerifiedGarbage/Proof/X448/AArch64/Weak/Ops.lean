@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: sequences of field operations

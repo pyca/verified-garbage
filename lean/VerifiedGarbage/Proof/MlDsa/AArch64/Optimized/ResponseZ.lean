@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 
 @[expose] public section
 

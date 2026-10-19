@@ -1,11 +1,16 @@
 module
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.ScratchGather
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontCT
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: `Verified`

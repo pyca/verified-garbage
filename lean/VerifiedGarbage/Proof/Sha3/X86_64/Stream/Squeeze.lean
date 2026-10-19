@@ -1,17 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 public import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha3.Contract
-meta import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The SHA-3 sponge on x86-64: `squeeze`

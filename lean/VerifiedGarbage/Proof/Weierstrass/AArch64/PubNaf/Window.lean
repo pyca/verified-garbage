@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # The public NAF multiplication

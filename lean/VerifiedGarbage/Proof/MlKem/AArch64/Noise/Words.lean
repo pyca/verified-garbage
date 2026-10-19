@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Word
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Word
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Duplicate the shared 32-byte seed into the paired sponge -/
 

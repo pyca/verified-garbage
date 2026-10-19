@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
 import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! ## `WinFlags` -/
 

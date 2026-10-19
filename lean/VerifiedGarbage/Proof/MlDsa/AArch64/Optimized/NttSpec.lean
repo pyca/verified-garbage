@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

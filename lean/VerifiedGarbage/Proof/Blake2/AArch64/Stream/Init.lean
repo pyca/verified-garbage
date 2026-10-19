@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Common
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming BLAKE2 on AArch64: `init`

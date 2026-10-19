@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs
 
 /-! Relational constant-time composition with a public stack pointer.

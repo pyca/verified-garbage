@@ -1,18 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverSign
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 
 /-! Merged from `Proof.Ed25519.X86.DecodeY`. -/
 

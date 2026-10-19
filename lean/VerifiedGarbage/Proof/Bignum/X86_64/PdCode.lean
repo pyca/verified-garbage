@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: correctness

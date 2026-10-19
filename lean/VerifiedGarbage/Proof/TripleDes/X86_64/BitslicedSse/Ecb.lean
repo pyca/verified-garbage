@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Wide
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The SSE2 function

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Term
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

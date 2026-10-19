@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.X448.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.X448.Field
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.X25519.Bytes
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86-64: the working space and words

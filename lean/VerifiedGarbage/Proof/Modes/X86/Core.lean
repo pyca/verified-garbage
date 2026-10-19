@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86.Ops
-public import VerifiedGarbage.Proof.Modes.Steps
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.X86.Syms
-public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Cbc
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import Mathlib.Tactic.SplitIfs
 
 /-!

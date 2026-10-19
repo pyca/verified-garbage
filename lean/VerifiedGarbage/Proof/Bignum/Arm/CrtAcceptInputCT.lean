@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The CRT ciphertext range check and saved acceptance remain secret -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncVerified
-public import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
+import VerifiedGarbage.Proof.RsaOaep.Arm.EncSat
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha224
 public import VerifiedGarbage.Proof.Framework.Registration
 

@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceWitness
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceWitness
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
+import VerifiedGarbage.Proof.Bignum.ExternalWords
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! Force a stored witness while retaining every prepared modulus word. -/
 @[expose] public section

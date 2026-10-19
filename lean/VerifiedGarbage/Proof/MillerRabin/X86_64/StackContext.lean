@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 

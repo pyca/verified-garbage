@@ -1,17 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 public import Mathlib.Tactic.IntervalCases
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Data
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.X86_64.Alloc
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
 /-! ## Schedule -/
 

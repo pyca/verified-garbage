@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 @[expose] public section
 

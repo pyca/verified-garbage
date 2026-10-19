@@ -4,7 +4,8 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # FFDH: the domain buffer

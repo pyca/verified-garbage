@@ -1,6 +1,14 @@
 module
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
 
 /-! # The whole inlined callable has only its declared public inputs -/

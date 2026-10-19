@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastSpecPost
 
 /-! # Memory and caller invariants for two matrix entries at a time -/
 @[expose] public section

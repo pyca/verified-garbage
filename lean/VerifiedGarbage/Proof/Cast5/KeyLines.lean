@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Cast5
 public import VerifiedGarbage.Impl.Cast5.Lines
-public import VerifiedGarbage.Proof.Cast5.Memory
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Cast5.Memory
 
 /-!
 # CAST5 key schedule: the lines as the implementations compute them

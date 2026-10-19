@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import Batteries.Logic
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # Public geometry determines the main CRT initialization trace -/
 

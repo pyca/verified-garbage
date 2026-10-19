@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+import VerifiedGarbage.Proof.Ed25519.Arm.PackField
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-public import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Ed25519.Arm.PointTable`. -/
 

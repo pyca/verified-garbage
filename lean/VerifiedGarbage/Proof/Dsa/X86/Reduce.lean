@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Reduce
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-public import VerifiedGarbage.Proof.Mont.X86.PowerLoop
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
 
 /-! # The residue invariant for streaming big-endian input -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.SelectRow
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The operations on the arrays of the working space: subtraction and selection -/
 

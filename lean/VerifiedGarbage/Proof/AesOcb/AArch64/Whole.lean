@@ -1,6 +1,36 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Resident
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
+import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+import VerifiedGarbage.Proof.AesOcb.AArch64.HashFill
+import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.AArch64.Offset0
+import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+import VerifiedGarbage.Proof.AesOcb.AArch64.Vector
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Spec.Ocb.Contract
 
 /-!
 # AES-OCB on AArch64: the whole blocks (`whole`)

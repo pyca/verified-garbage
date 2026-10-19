@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Row
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
 
 /-! # The inversion's rows' results
 

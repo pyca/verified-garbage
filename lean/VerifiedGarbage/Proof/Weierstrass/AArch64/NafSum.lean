@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntry
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

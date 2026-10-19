@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdOddRead
-public import VerifiedGarbage.Proof.Bignum.Arm.PdOddFinish
-public import VerifiedGarbage.Proof.Bignum.Arm.PdParity
+import VerifiedGarbage.Proof.Bignum.Arm.PdOddRead
+import VerifiedGarbage.Proof.Bignum.Arm.PdOddFinish
+import VerifiedGarbage.Proof.Bignum.Arm.PdParity
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The public precomputation checks include exact odd-modulus validation -/
 

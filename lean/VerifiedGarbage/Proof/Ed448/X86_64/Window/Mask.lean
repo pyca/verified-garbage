@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 public import VerifiedGarbage.Proof.Ed448.SignedWindow
-public import VerifiedGarbage.Impl.Ed448.X86_64.Window
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 
 /-! Expanded scalar bits preserved by verification's point operations. -/
 

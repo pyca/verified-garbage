@@ -1,9 +1,30 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-CMAC on AArch64: `vg_cmac_aes_update` is constant time

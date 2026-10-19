@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
-import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # H′: initializing an unkeyed BLAKE2b computation -/
 

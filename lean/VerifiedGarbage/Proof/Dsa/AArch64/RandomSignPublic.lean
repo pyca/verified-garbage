@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInputs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
-public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicSlices
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Public argument and key-prefix agreement for randomized signing. -/
 @[expose] public section

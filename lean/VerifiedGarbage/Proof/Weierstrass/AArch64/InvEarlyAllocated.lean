@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarly
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.InvAllocated
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

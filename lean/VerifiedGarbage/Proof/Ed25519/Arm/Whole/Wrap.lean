@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Entry
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.Whole.WrapSaved`. -/
 

@@ -1,11 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 
 /-! ## From `MemoryOuter.lean` -/
 

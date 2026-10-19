@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntryTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedSumTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedSumTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

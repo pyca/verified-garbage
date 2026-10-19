@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Byte reversal implements RSA's OS2IP -/
 

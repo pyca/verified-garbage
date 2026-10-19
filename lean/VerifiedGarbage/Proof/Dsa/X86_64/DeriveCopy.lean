@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
-public import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
-import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
+import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Base
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 
 /-! # Copying the derived y past the signer's layout
 

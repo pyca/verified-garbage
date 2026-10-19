@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Env
 import VerifiedGarbage.Proof.X448.Arm.Fill
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on ARMv7: initial field values

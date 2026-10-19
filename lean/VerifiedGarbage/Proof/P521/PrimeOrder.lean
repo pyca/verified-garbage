@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.P521.Curve
+import VerifiedGarbage.Proof.P521.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Order
-public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.P521
+import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.P521.Point
 
 /-!
 # P-521 has prime order

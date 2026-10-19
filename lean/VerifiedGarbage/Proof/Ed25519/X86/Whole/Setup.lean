@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

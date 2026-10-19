@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCorrect
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: `Verified`

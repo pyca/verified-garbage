@@ -1,12 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## From `CanonicalizeWord.lean` -/
 

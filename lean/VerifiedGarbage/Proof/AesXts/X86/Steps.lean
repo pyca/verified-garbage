@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.AesCbc.X86.Body
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesXts.Alpha
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Impl.AesXts.X86
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Spec.Xts
+import VerifiedGarbage.Proof.CmacAes.X86.Save
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # XTS-AES on x86: multiplication by `α`

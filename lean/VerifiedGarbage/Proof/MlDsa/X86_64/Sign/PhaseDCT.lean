@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseD
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
 
 /-!
 # ML-DSA signing on x86-64: decoding leaks only the pointers

@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillSlicesBody
 public import VerifiedGarbage.Proof.Argon2.Slices
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Termination and correctness of the four-slice filling pass. -/
 

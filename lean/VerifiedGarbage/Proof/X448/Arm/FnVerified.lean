@@ -4,14 +4,45 @@ public import VerifiedGarbage.Proof.X448.Arm.FnContract
 meta import VerifiedGarbage.Proof.X448.Arm.FnContract
 public import VerifiedGarbage.Proof.X448.Arm.FnLit
 meta import VerifiedGarbage.Proof.X448.Arm.FnLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X448.Arm.AddSub
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Columns
+import VerifiedGarbage.Proof.X448.Arm.Normalize
+import VerifiedGarbage.Proof.X448.Arm.Step
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.Arm.Pass
+meta import VerifiedGarbage.Proof.X25519.Field
+meta import VerifiedGarbage.Proof.X448.Arm.AddSub
+meta import VerifiedGarbage.Proof.X448.Arm.Carry
+meta import VerifiedGarbage.Proof.X448.Arm.Columns
+meta import VerifiedGarbage.Proof.X448.Arm.Normalize
+meta import VerifiedGarbage.Proof.X448.Arm.Step
 
 /-!
 # X448 on ARMv7: the field functions, verified

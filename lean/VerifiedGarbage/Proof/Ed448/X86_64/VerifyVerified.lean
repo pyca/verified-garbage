@@ -3,19 +3,112 @@ module
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Load
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.Main
+import VerifiedGarbage.Proof.X448.X86_64.Pow223
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+meta import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+meta import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Load
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.BitByte
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.X448.Bytes
+meta import VerifiedGarbage.Proof.X448.X86_64.AddSub
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+meta import VerifiedGarbage.Proof.X448.X86_64.Bits
+meta import VerifiedGarbage.Proof.X448.X86_64.Freeze
+meta import VerifiedGarbage.Proof.X448.X86_64.Main
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-!
 # Ed448 verification's equation on x86-64: `Verified`

@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.HalveOctets
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: one byte of q -/
 

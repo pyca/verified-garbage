@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
-import VerifiedGarbage.Spec.Ed25519.Point64
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed25519's point functions on x86-64: what they compute

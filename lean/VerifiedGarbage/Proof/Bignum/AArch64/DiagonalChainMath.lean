@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Carry conservation for a doubled word stream and a two-word addend. -/

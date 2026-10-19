@@ -5,6 +5,11 @@ public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Add
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
 import VerifiedGarbage.Proof.Mont.Arm.Csub
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Digit
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.Arm.Ops
 
 /-!
 # DSA on 32-bit ARM: the masks of the checks

@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.AArch64.Steps
+import VerifiedGarbage.Proof.AesCtr.AArch64.Steps
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Impl.AesCtr.AArch64
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-CTR on AArch64: the code before the call

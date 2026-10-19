@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.TCB.Artifact
 
-public import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia with its subkeys prepared once, in a working space

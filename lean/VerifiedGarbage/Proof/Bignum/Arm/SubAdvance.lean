@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
 
 /-! # Public pointer and counter updates of a subtraction row -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourScalarLoad.lean` -/
 

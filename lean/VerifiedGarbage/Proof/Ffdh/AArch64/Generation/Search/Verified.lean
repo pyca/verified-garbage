@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CTCode
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Implies
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CTCode
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Implies
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
+public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Contract
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Correct
 
 /-! # The verified parameter search (AArch64)
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashCallers
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 
 /-! # ML-KEM encapsulation hashing `ek` inside the paired matrix sampling
 

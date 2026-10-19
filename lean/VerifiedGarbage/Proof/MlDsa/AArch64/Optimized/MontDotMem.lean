@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotLoad
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-! ## From `MontDotTerms.lean` -/
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Spec.Ed25519.Point64
 

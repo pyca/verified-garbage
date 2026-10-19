@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 
 /-! # Derive exact wide-product inputs from the live CRT workspace layouts -/
 

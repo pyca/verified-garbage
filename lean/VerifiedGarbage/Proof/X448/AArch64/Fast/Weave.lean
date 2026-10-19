@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Interleave
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: interleaved code

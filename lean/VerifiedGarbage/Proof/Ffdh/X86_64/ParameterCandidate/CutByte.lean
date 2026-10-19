@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.CutOctets
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 
 /-! # FFDH parameter candidates on x86-64: the witness's high-byte mask -/
 

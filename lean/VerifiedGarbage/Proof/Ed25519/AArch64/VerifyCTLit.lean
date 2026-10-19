@@ -1,9 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Checked literals for the verifier's fixed control-flow pieces. -/
 

@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.X448.AArch64
 public import VerifiedGarbage.Proof.X448.Limbs
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.X448.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on AArch64: the working space

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntry
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.Window5
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

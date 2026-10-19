@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.Core
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The transposes, and sixteen blocks of bitsliced SM4 on AArch64

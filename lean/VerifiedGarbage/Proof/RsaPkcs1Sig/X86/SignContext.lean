@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 public import VerifiedGarbage.Proof.Rsa.X86.PrivBytes
 public import VerifiedGarbage.Proof.Rsa.X86.PrivWorkspace
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignGeometry
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rsa.X86.PrivContext
+import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
 
 /-! # Immutable sources and incoming arguments survive calls and local frame writes -/
 

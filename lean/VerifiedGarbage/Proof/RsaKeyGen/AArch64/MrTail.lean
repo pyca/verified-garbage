@@ -1,9 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A candidate on AArch64: the end of a round of Miller–Rabin

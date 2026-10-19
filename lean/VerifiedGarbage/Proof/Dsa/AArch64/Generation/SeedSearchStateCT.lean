@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSearchPlanCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchInitCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Instantiate the public prime-search state from actual persistent-frame words -/

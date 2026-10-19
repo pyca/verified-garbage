@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CopyByteStep
+import VerifiedGarbage.Proof.Bignum.X86.CopyByteStep
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Impl.Bignum.X86.CopyBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Runtime byte copying, with byte-exact output and memory preservation -/
 

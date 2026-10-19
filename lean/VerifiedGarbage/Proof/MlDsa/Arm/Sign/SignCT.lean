@@ -1,15 +1,62 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseLCT
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
-meta import VerifiedGarbage.Proof.MlKem.Arm.Prf
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+meta import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.Loops
+meta import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # ML-DSA signing on ARMv7: constant time

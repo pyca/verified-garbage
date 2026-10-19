@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Accumulating all paired noise outputs -/
 @[expose] public section

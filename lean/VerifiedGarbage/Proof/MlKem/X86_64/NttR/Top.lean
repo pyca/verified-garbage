@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
-public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: the NTT on registers

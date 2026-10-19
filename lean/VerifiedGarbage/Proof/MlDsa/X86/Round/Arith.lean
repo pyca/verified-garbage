@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import VerifiedGarbage.Proof.MlDsa.Round.Mem
+public import VerifiedGarbage.Proof.MlKem.X86.Common
 import Mathlib.Tactic.SplitIfs
 
 /-!

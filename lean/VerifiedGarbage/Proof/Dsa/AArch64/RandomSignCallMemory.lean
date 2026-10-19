@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallPre
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallGeometry
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Memory retained across calls to the supplied-nonce signer. -/
 @[expose] public section

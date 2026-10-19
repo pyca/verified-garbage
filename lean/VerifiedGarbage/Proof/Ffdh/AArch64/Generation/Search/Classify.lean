@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Call
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Writes
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # After a candidate: p, the next candidate, or an exit (AArch64) -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # X25519 on x86 (32-bit): the full reduction

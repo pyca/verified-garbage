@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePacked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
 
 /-! ## From `PairedPacked.lean` -/
 

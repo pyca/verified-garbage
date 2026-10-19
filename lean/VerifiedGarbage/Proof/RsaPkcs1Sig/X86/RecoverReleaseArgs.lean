@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStatus
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Preserve the acceptance bit and prepare a masked trailing-digest copy -/
 

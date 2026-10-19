@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafState
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideLoop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNafWide
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass.AArch64.PubNaf

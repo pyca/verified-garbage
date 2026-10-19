@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailMul
 public import VerifiedGarbage.Proof.X448.Wide.Representation
-public import VerifiedGarbage.Impl.Curve448.AArch64
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.Mul
 
 @[expose] public section
 

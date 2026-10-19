@@ -16,6 +16,11 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
 public import VerifiedGarbage.Proof.X448.X86_64.Iter
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Ed448 verification on x86-64: correctness

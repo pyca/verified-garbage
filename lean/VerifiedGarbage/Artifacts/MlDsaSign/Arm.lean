@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 
 /-! # ML-DSA (FIPS 204) signing on 32-bit ARM -/
 

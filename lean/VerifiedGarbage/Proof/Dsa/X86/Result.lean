@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Returning the accumulated acceptance mask as a Boolean status -/
 

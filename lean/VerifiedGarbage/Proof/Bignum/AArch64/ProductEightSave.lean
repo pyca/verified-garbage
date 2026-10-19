@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightColumns
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

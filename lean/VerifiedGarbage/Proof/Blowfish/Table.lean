@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Blowfish.Table
-public import VerifiedGarbage.Proof.Blowfish.Blocks
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.Blocks
 
 /-!
 # The table of the initial schedule

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvU
+public import VerifiedGarbage.Proof.Rsa.Arm.InvHalf
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 
 /-! # `inverse` on ARMv7: one step is `invStep` -/
 

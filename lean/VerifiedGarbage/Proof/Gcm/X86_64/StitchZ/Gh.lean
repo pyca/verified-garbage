@@ -1,9 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the GHASH of a group

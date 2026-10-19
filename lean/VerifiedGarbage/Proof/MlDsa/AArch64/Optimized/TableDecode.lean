@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 
 @[expose] public section
 

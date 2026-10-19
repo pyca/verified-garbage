@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomBorrow
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomBorrow
 public import VerifiedGarbage.Proof.Dsa.RandomRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Correctness of the sampler's right-to-left range check. -/
 @[expose] public section

@@ -8,7 +8,8 @@ public import VerifiedGarbage.Proof.Ed448.X86.Callee
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Impl.Ed448.X86.PublicKey
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): correctness

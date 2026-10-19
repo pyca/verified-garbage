@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Bignum.X86.PublicABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBodyTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicCorrect
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentsEq
+import VerifiedGarbage.Proof.Bignum.X86.PublicBodyTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentsEq
+import VerifiedGarbage.Proof.Bignum.X86.PublicOperation
+import VerifiedGarbage.Proof.Bignum.X86.PublicInstalled
+import VerifiedGarbage.Proof.Bignum.X86.PublicResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # The cdecl checked-public operation leaks only its public key and geometry -/
 

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyState
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's domain check, on its frame state -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A 64-bit word read as two 32-bit halves

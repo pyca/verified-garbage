@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.P256.VerifyTable.Field
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Runs of field-slot copies: each copy `(o, a)` updates the environment at
 `o` with its value at `a`. -/

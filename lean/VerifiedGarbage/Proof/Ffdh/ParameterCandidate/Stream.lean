@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Ffdh
 
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Witness
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Witness
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: executable witness-stream equations -/

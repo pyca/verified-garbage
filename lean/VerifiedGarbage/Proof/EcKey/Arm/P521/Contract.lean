@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.P521
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # P-521 public keys on 32-bit ARM: the contract the proof is written against

@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.Arm.Callee
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: `Verified`

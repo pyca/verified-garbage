@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
-public import VerifiedGarbage.Proof.Rsa.X86.KeyEq
-public import VerifiedGarbage.Proof.Rsa.X86.KeyWord
-public import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.KeyEq
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
 
 /-! # CRT checks and initialization of binary inversion -/
 

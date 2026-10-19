@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerDepth
 
 /-! # Stack bound for the final domain validator -/
 

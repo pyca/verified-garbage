@@ -1,11 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackBody
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `KeygenPackSetup.lean` -/
 

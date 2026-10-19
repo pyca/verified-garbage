@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
-import VerifiedGarbage.Proof.MlKem.Arm.HashTop
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 
 /-!

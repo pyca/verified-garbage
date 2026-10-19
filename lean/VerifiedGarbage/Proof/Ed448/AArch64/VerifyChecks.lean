@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChunks
-public import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!

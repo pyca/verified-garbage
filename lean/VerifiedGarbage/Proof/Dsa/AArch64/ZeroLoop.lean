@@ -1,9 +1,13 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Significant
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.Significant
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Fixed-length bytewise zero tests for DSA acceptance masks -/
 

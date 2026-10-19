@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # FFDH private-key validation on x86-64: scalar upper bounds -/
 

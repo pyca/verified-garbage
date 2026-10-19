@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.CoZ
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-public import VerifiedGarbage.Proof.Weierstrass.Env
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 /-!
 # A table of odd multiples by co-Z arithmetic

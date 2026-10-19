@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Precomputed
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
 
 @[expose] public section
 

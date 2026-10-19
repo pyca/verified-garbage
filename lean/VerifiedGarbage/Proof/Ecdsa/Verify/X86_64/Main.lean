@@ -1,11 +1,14 @@
 module
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+public import VerifiedGarbage.Spec.Ecdsa.Verify
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-public import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
+import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
 
 /-!
 # ECDSA verification on x86-64: the whole function

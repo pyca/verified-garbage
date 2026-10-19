@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarLoop`. -/
 

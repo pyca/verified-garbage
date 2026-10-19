@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
+public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Rsa.KeyViews
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the operations on a stage
 

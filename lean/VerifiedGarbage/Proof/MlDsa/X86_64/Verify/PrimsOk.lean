@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

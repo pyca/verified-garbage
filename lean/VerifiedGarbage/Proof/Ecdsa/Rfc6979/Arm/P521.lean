@@ -3,7 +3,37 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Row
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Rc2.Select
+import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
+import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: P-521

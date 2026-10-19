@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Spec.Dsa.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.X86.Sized
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
-public import VerifiedGarbage.Proof.Dsa.X86.SignBodySpec
-public import VerifiedGarbage.Proof.Dsa.Accepted
-public import VerifiedGarbage.Proof.Dsa.X86.Failure
+import VerifiedGarbage.Proof.Dsa.X86.Sized
+import VerifiedGarbage.Proof.Dsa.X86.ShapeSavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.SignBodySpec
+import VerifiedGarbage.Proof.Dsa.X86.Failure
+import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
 
 /-! # The complete public-size signer, including invalid-domain output clearing -/
 

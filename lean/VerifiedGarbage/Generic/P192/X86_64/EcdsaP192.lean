@@ -6,11 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 
 /-! # p192 on x86-64, generic over its proven group law and inversions -/
 

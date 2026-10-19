@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 
 @[expose] public section
 

@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

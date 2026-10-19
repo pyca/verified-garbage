@@ -1,15 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinLay
 
 /-! # Scratch layout and preservation for the x86 P-256 window -/
 

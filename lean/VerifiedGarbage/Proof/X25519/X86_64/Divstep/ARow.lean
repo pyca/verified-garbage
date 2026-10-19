@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.FRow
 public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the rows of `a` and `b`

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 
 /-!
 # ML-DSA on AArch64: calls of the arithmetic primitives

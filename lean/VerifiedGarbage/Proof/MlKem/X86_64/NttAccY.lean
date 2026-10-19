@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
+public import VerifiedGarbage.Spec.MlKem.Kpke16
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunAccR101
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
 
 /-!
 # ML-KEM on x86-64: `NTT` to an accumulator, with AVX2

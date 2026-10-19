@@ -1,11 +1,7 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Tactic.SplitIfs
 
 /-!

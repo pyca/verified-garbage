@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Camellia.Arm.Ecb
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Keys
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.Arm.Core
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying blocks on ARMv7, and small steps

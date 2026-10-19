@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Blowfish.Contract
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Spec.Blowfish
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Blowfish-CBC: the contracts, on every target

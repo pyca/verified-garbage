@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, after stack arguments, wiped after use (x86-64)

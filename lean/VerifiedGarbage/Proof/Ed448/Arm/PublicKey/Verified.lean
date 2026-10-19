@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Ed448 public-key derivation on ARMv7: constant time, and `Verified`

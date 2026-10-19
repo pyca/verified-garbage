@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Translate a byte-region frame back to a workspace offset range -/
 

@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Top2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # A candidate on ARMv7: the entry (`entry_ok`, `in_c`)
 

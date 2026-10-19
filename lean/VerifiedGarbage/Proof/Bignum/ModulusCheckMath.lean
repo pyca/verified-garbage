@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Bounded comparisons used by the RSA modulus validator -/
 

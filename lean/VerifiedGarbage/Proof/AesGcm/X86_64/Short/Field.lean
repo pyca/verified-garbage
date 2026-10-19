@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
 import VerifiedGarbage.Proof.Gcm.Stream
-public import VerifiedGarbage.Proof.Gcm.Split
+import VerifiedGarbage.Proof.Gcm.Split
 public import Mathlib.Tactic.LinearCombination
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 
 /-!

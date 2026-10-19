@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!

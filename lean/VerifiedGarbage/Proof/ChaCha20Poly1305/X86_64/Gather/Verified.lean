@@ -1,6 +1,13 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`

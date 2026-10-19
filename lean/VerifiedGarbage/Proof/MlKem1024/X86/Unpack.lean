@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem1024.X86.Pack
+import VerifiedGarbage.Proof.MlKem1024.X86.Pack
 public import VerifiedGarbage.Proof.MlKem.X86.Unpack
+public import VerifiedGarbage.Impl.MlKem1024.X86.Compress
+public import VerifiedGarbage.Proof.MlKem.X86.Pack
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 import Mathlib.Tactic.SplitIfs
 
 /-!

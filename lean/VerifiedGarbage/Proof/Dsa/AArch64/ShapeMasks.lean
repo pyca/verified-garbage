@@ -1,8 +1,16 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.TopMask
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.TopMask
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.Masks
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Saving actual DSA widths and accumulating their top-bit checks -/
 

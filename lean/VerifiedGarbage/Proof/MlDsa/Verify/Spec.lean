@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Spec.MlDsa
 
-public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

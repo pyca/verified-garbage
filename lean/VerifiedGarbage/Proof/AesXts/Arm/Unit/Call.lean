@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Verified
-public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
 public import VerifiedGarbage.Proof.Argon2.Arm.Push
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
+public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Impl.AesXts.ArmUnit
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesXts.Arm.Body
+import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
 
 /-!
 # XTS-AES of data units on ARMv7: a call of a whole-block function

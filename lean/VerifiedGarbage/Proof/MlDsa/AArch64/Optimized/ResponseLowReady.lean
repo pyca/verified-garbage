@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 
 /-! ## From `ResponseLowGroup.lean` -/
 

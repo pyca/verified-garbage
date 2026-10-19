@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `tail3O`'s straight-line code

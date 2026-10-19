@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointLoop
 
 /-! Public loops generating exact powers of two of a point. -/
 

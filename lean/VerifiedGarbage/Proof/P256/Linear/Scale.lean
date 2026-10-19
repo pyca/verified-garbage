@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.P256.Linear.Words
-public import VerifiedGarbage.Impl.P256.Linear
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.P256.Linear.Words
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Step
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Call
+import VerifiedGarbage.Proof.X25519.X86.Field32.Call
 public import VerifiedGarbage.Impl.X25519.X86.Fn
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 on x86 (32-bit): the inversion

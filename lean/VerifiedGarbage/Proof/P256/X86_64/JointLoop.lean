@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
+import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.P256.X86_64.Joint
+public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! P-256's in-place doubler is a doubler of the shared two-scalar loop. -/
 

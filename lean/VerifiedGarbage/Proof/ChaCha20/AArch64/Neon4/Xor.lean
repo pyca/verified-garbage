@@ -8,6 +8,28 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Chunk
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

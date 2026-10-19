@@ -2,14 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSat
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifySat
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.MlKem.Mem
 
 @[expose] public section
 

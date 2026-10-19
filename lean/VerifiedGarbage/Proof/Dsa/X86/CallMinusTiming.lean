@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.MinusTiming
-public import VerifiedGarbage.Proof.Dsa.X86.StageMinus
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+import VerifiedGarbage.Proof.Dsa.X86.MinusTiming
+import VerifiedGarbage.Proof.Dsa.X86.StageMinus
 
 /-! # Public modulus decrements retain the call layout -/
 

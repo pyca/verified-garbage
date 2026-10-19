@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ReverseEncoding
+import VerifiedGarbage.Proof.Bignum.ReverseEncoding
+import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The same byte reversal implements RSA's I2OSP -/
 

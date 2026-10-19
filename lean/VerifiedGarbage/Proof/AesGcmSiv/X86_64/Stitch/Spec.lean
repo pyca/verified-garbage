@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Isa
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Spec.GcmSiv
 public import VerifiedGarbage.Spec.Cmac
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-GCM-SIV's interleaved loop: what it needs and does

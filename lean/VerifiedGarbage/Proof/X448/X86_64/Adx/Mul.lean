@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.X448.X86_64.Adx
-public import VerifiedGarbage.Proof.X448.X86_64.Env
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X448.X86_64.Field
+public import VerifiedGarbage.Proof.X448.X86_64.Swap
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X448 on x86-64: multiplication with BMI2 and ADX

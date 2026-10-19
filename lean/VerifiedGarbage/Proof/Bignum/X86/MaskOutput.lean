@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.MaskOutput
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Rejected RSA representatives produce zero without a secret branch -/
 

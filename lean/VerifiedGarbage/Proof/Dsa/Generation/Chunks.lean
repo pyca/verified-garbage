@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Generate
-public import VerifiedGarbage.Proof.Dsa.Generation.Search
+import VerifiedGarbage.Proof.Dsa.Generation.Search
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Complete-chunk tape traversal matches parameter-generation inputs -/

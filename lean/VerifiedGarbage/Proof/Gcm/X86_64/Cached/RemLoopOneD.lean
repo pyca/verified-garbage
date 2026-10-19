@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBodyD
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Spec.Gcm.Precomputed
 
 /-!
 # The loop over the blocks after the last group, one at a time, decrypted

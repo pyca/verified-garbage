@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Rc2.Memory32
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2 block memory as pairs of 32-bit words -/

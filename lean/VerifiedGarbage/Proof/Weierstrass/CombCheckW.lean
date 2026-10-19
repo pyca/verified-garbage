@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.CombW
 
 /-!

@@ -1,7 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Argon2 on x86-64 with AVX-512: 64-byte loads and stores

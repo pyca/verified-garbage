@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValid
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValid
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Complete packed-key public RSA body including exponent rejection -/
 

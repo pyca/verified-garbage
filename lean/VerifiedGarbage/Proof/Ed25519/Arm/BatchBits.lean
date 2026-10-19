@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.BatchBits
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-import VerifiedGarbage.Proof.Ed25519.Arm.Packed
 public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Ed25519.Arm.BatchDigit`. -/
 

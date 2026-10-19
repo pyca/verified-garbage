@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Wrap
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecEnd
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # RSAES-OAEP decryption on ARMv7: verified

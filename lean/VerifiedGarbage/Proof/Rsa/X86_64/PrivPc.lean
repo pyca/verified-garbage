@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precompute`

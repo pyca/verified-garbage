@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Read a complete draw's first byte and apply its public bit mask. -/

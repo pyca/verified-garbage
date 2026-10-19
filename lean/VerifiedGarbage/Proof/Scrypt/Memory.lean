@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scrypt: memory lemmas

@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+public import VerifiedGarbage.Proof.Gcm.Poly
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the field

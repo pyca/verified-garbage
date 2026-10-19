@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # Relate packed RSA limbs to whole little-endian reads -/
 

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.BrainpoolP384r1
 import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
-public import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # brainpoolP384r1 is a curve the proofs apply to

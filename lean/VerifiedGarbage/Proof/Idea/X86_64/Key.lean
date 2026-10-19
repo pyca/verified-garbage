@@ -1,9 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.Verified
 import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
+public import VerifiedGarbage.Spec.Idea.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Idea.KeyLit
+import VerifiedGarbage.Proof.Idea.X86_64.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.X86_64.Verified
 
 /-!
 # IDEA key expansion on x86-64

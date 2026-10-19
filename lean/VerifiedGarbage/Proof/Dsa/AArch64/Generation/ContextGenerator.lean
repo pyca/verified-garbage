@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryGenerator
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchMemory
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Saved p and exponent bytes supply the complete generator search -/

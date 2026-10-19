@@ -1,13 +1,15 @@
 module
 
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Scrypt.X86.Common
+import VerifiedGarbage.Proof.Scrypt.X86.Common
 public import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.X86.RoMix
 import all Init.Data.Nat.Power2.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

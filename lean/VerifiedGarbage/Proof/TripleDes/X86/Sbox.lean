@@ -4,20 +4,20 @@ public import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.RoundLit
 public import VerifiedGarbage.Proof.TripleDes.X86.Linear
 meta import VerifiedGarbage.Proof.TripleDes.X86.Linear
-import VerifiedGarbage.Impl.TripleDes.X86.Sbox
-meta import VerifiedGarbage.Impl.TripleDes.X86.Sbox
 public import VerifiedGarbage.Impl.TripleDes.X86.Permutation
 meta import VerifiedGarbage.Impl.TripleDes.X86.Permutation
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 meta import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.Framework.X86.Straight
-meta import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! ## `RoundCheck` -/
 

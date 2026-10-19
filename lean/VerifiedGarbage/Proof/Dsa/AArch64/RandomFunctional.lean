@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRemaining
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Functional equivalence of the bounded sampling loop. -/

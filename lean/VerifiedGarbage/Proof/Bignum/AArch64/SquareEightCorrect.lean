@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Ed25519.Word64
 
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSave
 
 @[expose] public section
 

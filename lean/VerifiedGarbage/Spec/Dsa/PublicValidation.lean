@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.Spec.Dsa.ModPow
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
 # The algebraic public-key checks shared by DSA signing and verification

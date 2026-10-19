@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMath
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

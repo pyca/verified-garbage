@@ -2,29 +2,73 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Store
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Tail
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Word
-public import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Word
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.Words
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Copy
+import VerifiedGarbage.Proof.Modes.AArch64.Counter
+import VerifiedGarbage.Proof.Modes.AArch64.Unchain
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Xor
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
+import VerifiedGarbage.Proof.Rc2.AArch64.Cipher
+import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
+import VerifiedGarbage.Proof.Rc2.Select
+import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.TripleDes.AArch64.Box
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
+import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
+import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
+import VerifiedGarbage.Proof.TripleDes.AArch64.Store
+import VerifiedGarbage.Proof.TripleDes.AArch64.Tail
+import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+import VerifiedGarbage.Proof.TripleDes.AArch64.Word
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Triple DES's core for the modes on AArch64: the registers across the call

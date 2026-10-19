@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Context
 
-public import VerifiedGarbage.Impl.Dsa.X86.Stream
 
 /-! # Ordinary-residue arithmetic using the runtime Montgomery context -/
 

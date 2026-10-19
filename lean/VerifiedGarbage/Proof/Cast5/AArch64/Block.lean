@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Cast5.AArch64.Round
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 on AArch64: a block

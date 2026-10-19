@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.Addr
 import VerifiedGarbage.Proof.Modes.Ctr
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Words stored one at a time, in memory

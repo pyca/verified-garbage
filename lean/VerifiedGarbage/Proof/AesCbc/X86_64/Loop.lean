@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.AesCbc.X86_64
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-CBC on x86-64: the loop, for any mode on whole blocks

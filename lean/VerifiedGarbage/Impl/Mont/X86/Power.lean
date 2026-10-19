@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Words
 
-public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 
 /-! # Runtime-modulus exponentiation building blocks on x86 -/
 

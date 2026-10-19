@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Set
 
 /-! # Validation preserves every operand outside the arithmetic prefix -/
 

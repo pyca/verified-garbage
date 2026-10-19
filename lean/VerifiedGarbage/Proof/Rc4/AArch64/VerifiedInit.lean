@@ -2,11 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 import VerifiedGarbage.Proof.Rc4.AArch64.Init
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Rc4.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
+import VerifiedGarbage.Proof.Rc4.AArch64.KsaStep
+import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Table
 
 @[expose] public section
 

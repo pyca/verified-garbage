@@ -1,12 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Weierstrass.X86.Rcb3
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
 
 /-! Direct-product Jacobian doubling for the public verification loops. -/
 

@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
-public import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.Proof.Secp256k1.Curve
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import Mathlib.Data.BitVec
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 
 /-!

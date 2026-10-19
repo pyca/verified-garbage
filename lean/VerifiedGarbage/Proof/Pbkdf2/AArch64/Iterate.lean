@@ -8,7 +8,12 @@ import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Impl.Pbkdf2.AArch64
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on AArch64

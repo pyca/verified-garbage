@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
 
 /-! ## From `PairedPackedBoth.lean` -/
 

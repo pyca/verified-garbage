@@ -1,9 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
 public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.ParametersLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupCT
+public import VerifiedGarbage.Proof.Blake2.X86_64.Lit
 
 /-!
 # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G

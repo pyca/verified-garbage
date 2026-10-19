@@ -1,16 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
-public import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.MlKem.Arm.Poly
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Omega
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_compress_encode`

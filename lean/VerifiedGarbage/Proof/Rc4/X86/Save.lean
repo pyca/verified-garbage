@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # RC4 on x86 (32-bit): our caller's registers, saved in `scratch` -/
 

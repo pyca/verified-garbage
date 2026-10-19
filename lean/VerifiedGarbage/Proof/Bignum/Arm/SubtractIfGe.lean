@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubtractIfGe
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
+public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasState
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact conditional subtraction and the borrow used by RSA division -/
 

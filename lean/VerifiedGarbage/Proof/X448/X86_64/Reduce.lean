@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
 
-public import VerifiedGarbage.Proof.X448.X86_64.Comba
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86-64: the reduction of a product

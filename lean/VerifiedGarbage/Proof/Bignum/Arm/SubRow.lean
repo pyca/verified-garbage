@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubBody
+import VerifiedGarbage.Proof.Bignum.Arm.SubBody
 
 /-! # Termination and exact value of a runtime-length subtraction -/
 

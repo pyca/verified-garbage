@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the call of `vg_rsa_public_checked`

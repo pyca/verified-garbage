@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfTiming
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 @[expose] public section
 

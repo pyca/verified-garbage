@@ -1,9 +1,14 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-!
 # RSA with the CRT on x86-64: the contract on the registers

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
-public import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! # Initializing the GCD computation for the recovered factor -/
 

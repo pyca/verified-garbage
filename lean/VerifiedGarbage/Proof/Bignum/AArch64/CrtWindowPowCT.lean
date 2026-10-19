@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTQ
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowExpCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQ
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHeadCT
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 
 /-! Constant time for conversion followed by five-bit exponentiation. -/
 

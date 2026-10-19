@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
 
-public import VerifiedGarbage.Proof.Divstep.Batch
 
 @[expose] public section
 

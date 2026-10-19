@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleH`, the runs of the loop on three seeds

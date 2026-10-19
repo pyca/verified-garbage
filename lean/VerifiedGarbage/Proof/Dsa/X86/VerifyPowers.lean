@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyScalars
+import VerifiedGarbage.Proof.Dsa.X86.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
 
 /-! # The two powers and final reductions of x86 DSA verification -/
 

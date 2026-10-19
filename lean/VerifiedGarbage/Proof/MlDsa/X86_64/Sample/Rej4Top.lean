@@ -2,11 +2,13 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Parse
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, correctness

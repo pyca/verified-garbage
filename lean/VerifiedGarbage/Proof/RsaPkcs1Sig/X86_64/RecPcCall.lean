@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the call

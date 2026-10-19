@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP decryption on x86-64: the masks and the decoding

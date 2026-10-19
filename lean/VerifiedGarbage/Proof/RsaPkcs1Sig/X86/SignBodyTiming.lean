@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStages
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEraseTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEraseTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignCallPublic
+import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
 /-! # Signing traces agree for independent secret digests and CRT components -/
 

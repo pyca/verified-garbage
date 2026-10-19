@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Scan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
 
 /-! # FFDH domain validation on x86-64: q's reduction workspace -/
 

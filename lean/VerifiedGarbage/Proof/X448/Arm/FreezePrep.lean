@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Field
 
-public import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Copy
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on ARMv7: preparing canonical reduction

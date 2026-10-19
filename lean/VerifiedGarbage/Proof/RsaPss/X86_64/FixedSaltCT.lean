@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-! The fixed-salt tail leaks only the requested, public salt length. -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInvalidCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInvalidCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBodyCT
 
 /-! Whole-entry leakage equality against the merged randomized-signing contract. -/
 @[expose] public section

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 
-public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 
 /-! The measured full-scan SIMD selector: four vector accumulators select
 64 bytes per pass. Widths without a complete block use the scalar selector. -/

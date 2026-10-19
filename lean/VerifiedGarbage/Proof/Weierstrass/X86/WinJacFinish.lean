@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! One final conversion from Jacobian to homogeneous coordinates. -/
 

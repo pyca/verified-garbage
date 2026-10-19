@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
 
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusRead
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusBounds
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusFinish
+import VerifiedGarbage.Proof.Bignum.X86.ModulusRead
+import VerifiedGarbage.Proof.Bignum.X86.ModulusBounds
+import VerifiedGarbage.Proof.Bignum.X86.ModulusFinish
+import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # i686 modulus validation agrees with the shared RSA specification -/
 

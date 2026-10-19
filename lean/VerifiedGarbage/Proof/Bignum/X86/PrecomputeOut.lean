@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeOut
-public import VerifiedGarbage.Proof.Bignum.X86.ExportArray
-public import VerifiedGarbage.Proof.Bignum.PackedRead
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.ExportArray
+import VerifiedGarbage.Proof.Bignum.PackedRead
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Export both precomputation arrays in the shared RSA word format -/
 

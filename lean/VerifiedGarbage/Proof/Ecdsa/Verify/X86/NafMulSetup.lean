@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 
 /-! # The x86 P-256 variable-base product -/
 

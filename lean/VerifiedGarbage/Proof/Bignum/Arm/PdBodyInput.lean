@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicData
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
-public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+import VerifiedGarbage.Proof.Bignum.Arm.PublicStackFrame
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Public buffers and packed precomputation for the callable RSA body -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
-public import VerifiedGarbage.Proof.X25519.X86_64.Env
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Field constants and copies, with the surrounding memory preserved. -/
 

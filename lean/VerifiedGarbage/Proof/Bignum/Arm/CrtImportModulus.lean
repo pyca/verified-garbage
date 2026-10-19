@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Import the public modulus without disturbing either CRT factor workspace -/
 

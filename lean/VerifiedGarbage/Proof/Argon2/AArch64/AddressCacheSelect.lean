@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheMeta
-import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
+public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.AddressGeneration`. -/
 

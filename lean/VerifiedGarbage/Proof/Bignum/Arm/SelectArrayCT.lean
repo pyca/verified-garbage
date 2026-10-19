@@ -1,11 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import Batteries.Logic
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectCT
-public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.SelectCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Workspace selection reveals only the public word count and addresses -/
 

@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DES S-box machine-code correctness

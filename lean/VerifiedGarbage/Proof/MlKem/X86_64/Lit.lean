@@ -1,12 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
 meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
-public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # ML-KEM's polynomial arithmetic on x86-64: the code as literals

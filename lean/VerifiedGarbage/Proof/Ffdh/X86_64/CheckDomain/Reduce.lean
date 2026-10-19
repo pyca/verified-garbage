@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QSetup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.Domain
 
 /-! # FFDH domain validation on x86-64: shared RSA reduction -/
 

@@ -4,10 +4,40 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkLoop
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkLoop
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`, constant time

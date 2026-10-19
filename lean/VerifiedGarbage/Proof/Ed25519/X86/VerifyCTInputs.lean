@@ -1,25 +1,73 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
+import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
+public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Tactic.Set
+meta import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+meta import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import VerifiedGarbage.Proof.Ed25519.X86.Power
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.Bytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+meta import VerifiedGarbage.Proof.Ed25519.X86.Power
+meta import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.X25519.X86.Fold
+meta import VerifiedGarbage.Proof.X25519.X86.Freeze
+meta import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.RecoverCTRoot`. -/
 

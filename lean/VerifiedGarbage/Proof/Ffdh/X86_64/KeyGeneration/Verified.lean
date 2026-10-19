@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CT
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Safety
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Implies
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Implies
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Correct
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The verified key search, for every arithmetic backend -/
 

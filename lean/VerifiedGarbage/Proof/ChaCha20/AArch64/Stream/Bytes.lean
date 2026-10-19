@@ -1,8 +1,14 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming ChaCha20 on AArch64: XORing bytes

@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
-public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Public stack-relative arguments for the masked release loop -/
 

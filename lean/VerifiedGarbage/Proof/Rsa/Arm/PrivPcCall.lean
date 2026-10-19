@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Call the verified public precomputation without changing the private intermediate -/
 

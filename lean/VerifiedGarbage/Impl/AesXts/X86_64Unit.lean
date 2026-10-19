@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 public import VerifiedGarbage.Impl.AesXts.X86_64
-public import VerifiedGarbage.Impl.AesCbc.X86_64
 
 /-!
 # XTS-AES of whole data units: x86-64 implementation

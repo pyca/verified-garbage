@@ -3,11 +3,67 @@ module
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.Encode1024
+meta import VerifiedGarbage.Proof.MlKem.PolyW
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 
 /-!
 # ML-KEM-1024 on x86-64: `ByteEncode_d ∘ Compress_d` with AVX2, which the K-PKE functions inline

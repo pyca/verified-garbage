@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.WindowConstants
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 
 /-!
 # The comb's tables represent `[k 1024^j]B`, `combG` represents `[G]B`, and `combStart` `[G']B`

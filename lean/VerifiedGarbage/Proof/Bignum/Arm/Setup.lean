@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Impl.Bignum.Arm.Setup
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SetBases
+import VerifiedGarbage.Proof.Bignum.Arm.SetupArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SetBases
+import VerifiedGarbage.Proof.Bignum.Arm.Store64
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Establish the shared RSA workspace contract on ARMv7 -/
 

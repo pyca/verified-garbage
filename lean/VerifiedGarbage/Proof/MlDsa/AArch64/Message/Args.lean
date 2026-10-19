@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: the moves of a call's arguments

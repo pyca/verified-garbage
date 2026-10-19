@@ -4,6 +4,14 @@ public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # An RSA key on ARMv7: the shared pieces the taint analysis checks
 

@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-KEM on x86-64: coefficients in the lanes of AVX2 registers

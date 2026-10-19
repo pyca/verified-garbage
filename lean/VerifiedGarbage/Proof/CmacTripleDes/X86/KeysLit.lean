@@ -1,13 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Impl.CmacTripleDes.X86.Round
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! # The key schedule's code as a literal, for kernel-evaluated checks
 

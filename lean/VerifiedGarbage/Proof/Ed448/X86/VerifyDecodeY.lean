@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
 
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyS
-import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.Ed448.X86.VerifyS
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Copy
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the `y` of a point

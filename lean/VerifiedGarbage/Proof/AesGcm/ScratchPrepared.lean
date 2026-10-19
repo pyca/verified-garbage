@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.Prepared
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Scratch
 import all Init.Data.Nat.Bitwise.Basic
 

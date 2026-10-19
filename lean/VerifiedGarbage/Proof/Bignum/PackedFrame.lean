@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # External packed integers remain unchanged by scratch writes -/
 

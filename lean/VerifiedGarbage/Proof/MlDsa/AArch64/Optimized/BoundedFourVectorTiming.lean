@@ -1,16 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSelect
-import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTaint
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourState
+public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintSumGeneric
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourLeak.lean` -/
 

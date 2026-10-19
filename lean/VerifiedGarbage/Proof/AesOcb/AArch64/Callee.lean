@@ -1,9 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
-public import VerifiedGarbage.Proof.Ocb.State
+public import VerifiedGarbage.Spec.Ocb
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
 
 /-!
 # AES-OCB on AArch64: the functions called

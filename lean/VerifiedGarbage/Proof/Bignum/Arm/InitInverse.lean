@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
-public import VerifiedGarbage.Proof.Bignum.Arm.Minv64
-public import VerifiedGarbage.Proof.Bignum.Arm.Store64
+public import VerifiedGarbage.Proof.Bignum.Arm.Newton64
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.Minv64
+import VerifiedGarbage.Proof.Bignum.Arm.Store64
+import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Full-width inverse initialization on ARMv7 -/
 

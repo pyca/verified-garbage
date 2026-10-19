@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSlotFrame
+public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtSlotFrame
 
 /-! # Load one factor, base and exponent while preserving all original components -/
 

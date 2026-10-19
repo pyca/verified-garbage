@@ -6,6 +6,13 @@ import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-SIV on x86-64: finishing S2V with a string of a block or more

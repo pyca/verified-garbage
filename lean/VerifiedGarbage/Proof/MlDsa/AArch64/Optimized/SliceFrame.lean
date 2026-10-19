@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
 public import VerifiedGarbage.Proof.Framework.Mem
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

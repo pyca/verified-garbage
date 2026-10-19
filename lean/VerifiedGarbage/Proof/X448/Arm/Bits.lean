@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.BitBody
 public import VerifiedGarbage.Proof.X448.Arm.Clamp
 public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.Proof.X448.Ladder
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.X448.Arm.Carry
 
 /-!
 # X448 on ARMv7: the scalar's decoded bits

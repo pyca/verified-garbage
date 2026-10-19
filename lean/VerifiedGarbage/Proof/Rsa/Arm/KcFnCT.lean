@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KcCT
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Rsa.Arm.KcTaint
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # The checks of an RSA key on ARMv7: a function is constant time
 

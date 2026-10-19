@@ -1,9 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Sha3
-import VerifiedGarbage.Impl.Sha3.Tables
-public import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.Impl.Sha3.X86_64
 public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
 
 /-!

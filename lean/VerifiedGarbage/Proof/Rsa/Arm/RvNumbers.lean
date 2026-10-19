@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.RvMM
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the loads (`loads_vp`) -/
 

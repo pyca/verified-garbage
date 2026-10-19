@@ -3,9 +3,27 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Load
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentControl
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentSelect
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 

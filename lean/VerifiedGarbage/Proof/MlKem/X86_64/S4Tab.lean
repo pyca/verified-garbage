@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the table

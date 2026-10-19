@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+public import VerifiedGarbage.Proof.MlDsa.Pack.Written
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
 
 /-! ## From `KeygenPackStream.lean` -/
 

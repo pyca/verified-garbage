@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Proof.CmacAes.X86.Save
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Impl.AesCbc.X86
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CBC on x86: the contracts, and a call of a block function

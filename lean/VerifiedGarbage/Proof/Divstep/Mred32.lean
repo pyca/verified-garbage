@@ -1,7 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Divstep.Tc32Words
 public import VerifiedGarbage.Proof.Divstep.Alg32Def
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-! # One-word signed Montgomery reduction -/
 

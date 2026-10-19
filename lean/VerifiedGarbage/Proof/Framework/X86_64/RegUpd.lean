@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Gpr
+import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: reading a state after a write, for symbolic execution

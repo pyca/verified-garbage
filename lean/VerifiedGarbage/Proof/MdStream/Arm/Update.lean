@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: `update`

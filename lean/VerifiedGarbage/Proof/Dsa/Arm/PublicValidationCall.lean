@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 
 /-! # Calls of the shared public-key validator -/
 

@@ -1,16 +1,19 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P384.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.P384.Comb7
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over P-384 (FIPS 186-5) on AArch64

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # Combine RSA modulus rejection bits into the branch condition -/
 

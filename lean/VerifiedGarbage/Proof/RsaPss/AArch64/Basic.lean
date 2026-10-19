@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.AArch64
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: the working space and masks

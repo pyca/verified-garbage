@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
-public import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import VerifiedGarbage.Proof.Rsa.Checked
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.RsaPkcs1Enc
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with RSADP checked against `e`

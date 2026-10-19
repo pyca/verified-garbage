@@ -1,8 +1,16 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorEvaluate
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Shared memory plan for native generator filtering and exponentiation -/

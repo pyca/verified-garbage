@@ -2,16 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
 import VerifiedGarbage.Proof.CmacAes.X86.Finalize
-public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Framework.X86.Straight
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacAes.X86.Subkeys
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
 
 /-!
 # Streaming AES-CMAC on x86: arithmetic, copies and saved registers

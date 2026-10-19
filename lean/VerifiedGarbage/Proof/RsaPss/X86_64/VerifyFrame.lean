@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtx
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame

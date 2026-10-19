@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCount
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import Mathlib.Tactic.Set
 
 /-! # Creating a linked arithmetic child from its public operand length -/
 

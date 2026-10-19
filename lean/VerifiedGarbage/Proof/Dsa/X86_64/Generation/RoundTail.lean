@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.RoundTail
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 

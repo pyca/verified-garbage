@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 
 /-!
 # The x86-64 RSA functions' contracts, with 8 bytes of stack

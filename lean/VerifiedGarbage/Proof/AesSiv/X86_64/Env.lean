@@ -1,10 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 public import VerifiedGarbage.Impl.AesSiv.X86_64
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 public import VerifiedGarbage.Spec.Siv
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-SIV on x86-64: the regions of `s2v_ad`, `seal` and `open`

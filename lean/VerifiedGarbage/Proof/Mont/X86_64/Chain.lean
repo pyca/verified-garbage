@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Montgomery arithmetic on x86-64: loads, stores and carry chains

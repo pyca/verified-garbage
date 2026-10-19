@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # X448 on AArch64: the result, and restoring the callee-saved registers

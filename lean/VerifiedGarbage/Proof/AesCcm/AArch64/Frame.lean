@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Verified
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # AES-CCM on AArch64, with its working space on the stack

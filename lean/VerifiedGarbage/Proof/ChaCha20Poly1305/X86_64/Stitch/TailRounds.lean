@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the tail's rounds

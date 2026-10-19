@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignificantCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Constant-time public width scans through the saved field bindings -/
 

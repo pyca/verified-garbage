@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecLay
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: two runs

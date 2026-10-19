@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!

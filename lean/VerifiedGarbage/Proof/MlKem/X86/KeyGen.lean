@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
-public import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlKem.Bits
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_keygen`

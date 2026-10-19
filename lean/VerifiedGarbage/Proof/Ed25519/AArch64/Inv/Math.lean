@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Tc
-public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.Ed25519.Word64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import Mathlib.Data.BitVec
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Spec.X25519
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The inversion modulo `p` on AArch64: the numbers

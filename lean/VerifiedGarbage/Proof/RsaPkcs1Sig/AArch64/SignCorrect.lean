@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCall
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_sign` on AArch64: correctness

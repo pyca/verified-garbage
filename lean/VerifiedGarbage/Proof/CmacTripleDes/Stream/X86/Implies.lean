@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratchW
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
 
 /-!
 # Streaming TDEA-CMAC on x86: the shared contracts imply ours

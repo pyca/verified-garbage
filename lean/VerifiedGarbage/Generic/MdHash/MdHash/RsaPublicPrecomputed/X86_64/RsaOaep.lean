@@ -1,16 +1,16 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
+import VerifiedGarbage.Proof.RsaOaep.X86_64.PcSp
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
+public import VerifiedGarbage.Spec.RsaOaep.Precomputed
+import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCT
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64

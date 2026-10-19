@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!

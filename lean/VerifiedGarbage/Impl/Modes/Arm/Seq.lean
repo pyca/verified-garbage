@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.Modes.Arm.Counter
 
 /-!

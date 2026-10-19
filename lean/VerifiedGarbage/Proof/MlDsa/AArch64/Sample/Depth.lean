@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

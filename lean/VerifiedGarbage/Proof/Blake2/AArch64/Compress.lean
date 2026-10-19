@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -20,14 +20,20 @@ public import VerifiedGarbage.Impl.Blake2.AArch64
 meta import VerifiedGarbage.Impl.Blake2.AArch64
 public import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Spec.Blake2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Blake2.AArch64.Contract
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Contract
 import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 meta import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # BLAKE2 compression function on AArch64

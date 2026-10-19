@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Pre
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Entry
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `sign_message`: the call of the signing function on `μ`

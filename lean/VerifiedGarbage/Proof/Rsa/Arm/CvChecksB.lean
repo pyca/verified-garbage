@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Proof.Rsa.Arm.CvChecksA
+import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # `vg_rsa_crt_values` on ARMv7: the inverse, the mask, and the division of `d` set up -/
 

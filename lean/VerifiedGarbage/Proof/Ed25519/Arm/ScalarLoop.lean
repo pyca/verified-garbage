@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarByte`. -/
 

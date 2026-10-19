@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Reloading public pointer and length pairs from the caller's stack -/
 

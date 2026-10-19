@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Poly1305 in nine registers (AArch64): one block

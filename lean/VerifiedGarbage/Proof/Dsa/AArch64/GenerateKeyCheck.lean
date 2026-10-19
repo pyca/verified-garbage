@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyEntry
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallGeometry
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 
 /-! # Key generation's call of the domain check -/
 

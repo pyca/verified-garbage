@@ -2,22 +2,22 @@ module
 
 public import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Poly1305.Arm
 public import VerifiedGarbage.Proof.Poly1305.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.Arm.Common`.
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

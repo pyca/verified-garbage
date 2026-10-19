@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Interleaved counter mode and GHASH: what the loops need and do

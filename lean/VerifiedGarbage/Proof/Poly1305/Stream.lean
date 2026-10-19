@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Poly1305: the streaming state, for every target

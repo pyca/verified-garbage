@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoopGeneral
-public import VerifiedGarbage.Proof.Bignum.MontRepresentation
+import VerifiedGarbage.Proof.Bignum.X86.PublicLoopGeneral
+import VerifiedGarbage.Proof.Bignum.MontRepresentation
+import VerifiedGarbage.Proof.Bignum.X86.PublicMath
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
 /-! # Precomputed exponentiation remains memory-safe for any reduced stored power -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCallPre
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # The signer's arguments (x86)

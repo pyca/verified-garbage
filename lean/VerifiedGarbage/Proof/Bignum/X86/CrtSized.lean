@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImport
-public import VerifiedGarbage.Proof.Bignum.X86.CrtExport
+import VerifiedGarbage.Proof.Bignum.X86.CrtImport
+import VerifiedGarbage.Proof.Bignum.X86.CrtExport
 public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
 public import VerifiedGarbage.Proof.Bignum.X86.CrtBodyFrame
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowResult
+import VerifiedGarbage.Proof.Bignum.WordsPrefix
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Complete private CRT operation for the selected public modulus width -/
 

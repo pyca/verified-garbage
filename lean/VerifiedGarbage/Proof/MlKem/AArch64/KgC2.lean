@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

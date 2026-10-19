@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Seed.X86_64.Round
 public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # A round of the key schedule on x86-64

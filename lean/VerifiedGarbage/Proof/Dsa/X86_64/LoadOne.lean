@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.OneScan
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
 
 /-! # Testing a byte-encoded DSA subgroup result against one -/
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Complete active-cell update from a random word and the matrix allocation. -/
 

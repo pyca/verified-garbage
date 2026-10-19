@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.Joint
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-! The joint scalar loop with an explicit internal register and byte frame.
 

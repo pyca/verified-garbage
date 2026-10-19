@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM `seal_split` on x86-64 with a prepared key context: `Verified`

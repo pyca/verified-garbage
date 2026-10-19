@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rc2.X86.Stream.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

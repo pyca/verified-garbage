@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepareCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.NatPairs
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! Stores for the Jacobian window's table construction. -/
 

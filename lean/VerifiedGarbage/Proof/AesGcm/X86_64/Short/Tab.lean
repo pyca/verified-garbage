@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Spec.Gcm.Precomputed
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM's short path on x86-64: the table of powers, without the field

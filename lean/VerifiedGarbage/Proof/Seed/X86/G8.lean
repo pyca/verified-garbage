@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86.G8
 public import VerifiedGarbage.Proof.Seed.G8
-public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Framework.X86.Straight
 import VerifiedGarbage.Proof.Aes.X86.Sbox
 
 /-!

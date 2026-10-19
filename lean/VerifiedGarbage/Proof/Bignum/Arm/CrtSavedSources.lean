@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 
 /-! # Instantiate private operand imports from immutable call arguments -/
 

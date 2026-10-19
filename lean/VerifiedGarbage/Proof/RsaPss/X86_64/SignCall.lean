@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 /-!
 # RSASSA-PSS signing on x86-64: the call of `vg_rsa_private_checked`

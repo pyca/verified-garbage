@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Tbl.AArch64
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
-public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

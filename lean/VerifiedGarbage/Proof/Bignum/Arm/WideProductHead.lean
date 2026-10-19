@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The scalar source address comes from a public product control -/
 

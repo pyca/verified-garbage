@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
-public import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Dsa.Frame
 
 /-! # Montgomery arithmetic within the prime-recovery workspace
 

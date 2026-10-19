@@ -1,6 +1,13 @@
 module
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Spec.Xts
 
-public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # XTS: all the blocks in one call

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.AArch64Weave
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 import Mathlib.Tactic.SplitIfs
 
 /-!

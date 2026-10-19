@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedChecks
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Merge the two range checks and the public modulus parity -/
 

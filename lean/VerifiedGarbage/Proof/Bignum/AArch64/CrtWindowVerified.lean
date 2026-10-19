@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowDispatch
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCode
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCodeCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtImplies
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 
 /-! Wider-window RSA CRT against the unchanged shared contract. -/
 

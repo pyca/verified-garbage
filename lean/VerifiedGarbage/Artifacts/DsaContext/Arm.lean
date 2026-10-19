@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ContextVerified
+import VerifiedGarbage.Proof.Dsa.Arm.ContextVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.Dsa.Arm.Context
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # One Montgomery context setup helper per DSA modulus width on ARMv7 -/
 

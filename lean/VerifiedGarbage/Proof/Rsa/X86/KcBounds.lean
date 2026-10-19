@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcInstalled
-public import VerifiedGarbage.Proof.Rsa.KeyByteBounds
+import VerifiedGarbage.Proof.Rsa.KeyByteBounds
+import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
+import VerifiedGarbage.Proof.Rsa.X86.KcResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The signature's byte-length bounds imply the arithmetic factor bounds -/
 

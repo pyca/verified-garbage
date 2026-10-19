@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs of the hashing

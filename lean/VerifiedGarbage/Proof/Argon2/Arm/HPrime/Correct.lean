@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Body
 
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
+import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 H′ on ARMv7: correctness

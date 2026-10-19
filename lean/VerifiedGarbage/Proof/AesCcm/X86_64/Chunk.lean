@@ -1,6 +1,16 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.X86_64
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+import VerifiedGarbage.Proof.AesCcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
 
 /-!
 # AES-CCM on x86-64: a chunk of counter mode (`ctrChunk`)

@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+public import VerifiedGarbage.TCB.X86.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Verified RC2 key expansion -/
 

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackVerified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackVerified
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.MlDsa.UseHintPack
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

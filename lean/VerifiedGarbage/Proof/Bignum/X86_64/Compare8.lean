@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 @[expose] public section
 

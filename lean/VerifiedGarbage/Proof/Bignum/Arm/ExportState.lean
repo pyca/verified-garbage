@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayCT
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
+import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Workspace invariants preserved by exporting an array -/
 

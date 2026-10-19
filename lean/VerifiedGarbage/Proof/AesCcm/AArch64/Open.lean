@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesCcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesCcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
+import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-CCM on AArch64: `vg_aes_ccm_open`

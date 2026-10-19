@@ -1,14 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

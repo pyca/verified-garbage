@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Parse
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 
 @[expose] public section
 

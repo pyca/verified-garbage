@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
-import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.GcmSiv.Words
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on AArch64: POLYVAL and the tag input (`polyval`)

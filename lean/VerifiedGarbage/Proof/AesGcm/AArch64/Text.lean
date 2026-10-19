@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64: the additional data padded before the first text

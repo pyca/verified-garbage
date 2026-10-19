@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Round
+import VerifiedGarbage.Proof.Seed.AArch64.Round
 public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A round of the key schedule on AArch64

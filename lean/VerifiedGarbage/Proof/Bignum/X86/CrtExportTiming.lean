@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Proof.Bignum.X86.CrtMask
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValidationTiming
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+import VerifiedGarbage.Proof.Bignum.X86.CrtMask
+import VerifiedGarbage.Proof.Bignum.X86.CrtValidationTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Releasing the masked result has no input-dependent branches -/
 

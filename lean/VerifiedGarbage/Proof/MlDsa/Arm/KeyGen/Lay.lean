@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallSample
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.KeyGen
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA key generation on 32-bit ARM: its parameters, precondition and buffers

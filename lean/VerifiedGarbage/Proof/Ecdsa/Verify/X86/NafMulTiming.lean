@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulReady
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

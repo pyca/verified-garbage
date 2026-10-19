@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCorrect
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the contract

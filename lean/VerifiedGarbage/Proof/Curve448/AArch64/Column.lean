@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Bounds
 public import VerifiedGarbage.Proof.X448.Wide.Memory
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
+public import VerifiedGarbage.Proof.X448.Wide.Product
+public import VerifiedGarbage.Proof.X448.Wide.Representation
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.Term
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: a diagonal of an eight-by-eight product, accumulated in registers. -/
 

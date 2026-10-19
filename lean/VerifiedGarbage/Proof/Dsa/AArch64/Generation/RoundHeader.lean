@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The shared round preserves the caller's entropy and policy header words. -/

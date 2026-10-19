@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-KEM on x86 (32-bit): what a call leaves unchanged

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Save
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Instr
 
 /-!
 # X448 on x86 (32-bit): restoring the callee-saved registers

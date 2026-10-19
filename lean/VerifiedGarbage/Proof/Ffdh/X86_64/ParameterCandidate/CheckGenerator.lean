@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Residue
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 
 /-! # FFDH parameter generation on x86-64: generator policy at the p phase -/
 

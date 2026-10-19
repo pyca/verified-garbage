@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeOperands
+public import VerifiedGarbage.Proof.Dsa.Accepted
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
-public import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 
 /-! # Public shape rejection before the arithmetic body -/
 

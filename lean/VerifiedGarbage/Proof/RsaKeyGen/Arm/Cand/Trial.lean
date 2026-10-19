@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Tab
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.TrialP
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 
 /-! # A candidate on ARMv7: trial division by the table (`trialLoop_ok`)
 

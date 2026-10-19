@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckRegions
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Every check-stage write stays within the body footprint -/
 

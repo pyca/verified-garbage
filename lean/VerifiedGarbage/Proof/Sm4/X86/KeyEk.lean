@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sm4.X86.Prologue
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
+import VerifiedGarbage.Proof.Sm4.X86.KeyLoop
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Planes
+import VerifiedGarbage.Proof.Sm4.X86.KeyInit
+import VerifiedGarbage.Proof.Sm4.X86.Ecb
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The SM4 key schedule on x86 (32-bit): the whole function

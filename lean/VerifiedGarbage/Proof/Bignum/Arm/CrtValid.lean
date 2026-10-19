@@ -1,7 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeResult
+import VerifiedGarbage.Proof.Bignum.Arm.CrtBegin
+import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeResult
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The complete private RSA path for a valid public modulus -/
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Argon2.X86_64.FillWritePrefix
 import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
 
 /-! Merged from `Proof.Argon2.X86_64.FillWrite`. -/

@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 /-!
 # Jacobian addition with the second point's cached `Z²` and `Z³`

@@ -1,12 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Observed
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

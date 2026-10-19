@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-public import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the contract the proof is written against

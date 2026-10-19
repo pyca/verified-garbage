@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

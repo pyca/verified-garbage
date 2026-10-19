@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # RSA encryption on AArch64: bytes, one at a time

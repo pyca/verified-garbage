@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: addresses and registers

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Setup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Feed the original input into the six row-oriented round results. -/
 

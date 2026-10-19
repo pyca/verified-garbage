@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
-public import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
+import VerifiedGarbage.Proof.Rsa.X86.CvFrames
+import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Masked CRT output preserves the workspace header and other arrays -/
 

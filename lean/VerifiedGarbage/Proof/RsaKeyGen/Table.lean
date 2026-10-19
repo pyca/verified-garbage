@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Primes
+import VerifiedGarbage.Proof.RsaKeyGen.Primes
 meta import VerifiedGarbage.Proof.RsaKeyGen.Primes
 public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Spec.RsaKeyGen
 meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-!

@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
+import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
 
 /-! # Prepared tables and the cached-key loop setup -/
 

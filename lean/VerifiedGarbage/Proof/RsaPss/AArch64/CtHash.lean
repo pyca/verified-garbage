@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtPadEq
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # RSASSA-PSS on AArch64: hashing a message of secret length

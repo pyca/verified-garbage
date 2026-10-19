@@ -1,11 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.DomainShape
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.MdStream.Spec
+import Mathlib.Tactic.Set
 
 /-! # Scanning modulus buffers through the saved DSA fields -/
 

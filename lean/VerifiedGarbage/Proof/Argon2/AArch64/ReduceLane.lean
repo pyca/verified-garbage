@@ -4,13 +4,12 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLane
 import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
 import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
-import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
 public import VerifiedGarbage.Proof.Argon2.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.ReductionState`. -/
 

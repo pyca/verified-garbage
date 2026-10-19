@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.R2
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH public-key validation on x86-64: subgroup membership -/
 

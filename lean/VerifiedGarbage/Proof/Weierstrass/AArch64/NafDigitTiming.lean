@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.Naf5
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

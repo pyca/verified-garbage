@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ArithVerified
+import VerifiedGarbage.Proof.Dsa.Arm.ArithVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.Arm.Arith
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Impl.Dsa.Arm.Core
 
 /-! # DSA's reductions and products on ARMv7
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.HmacFin
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # HMAC's `finalize` over a Merkle–Damgård hash function on ARMv7: constant time

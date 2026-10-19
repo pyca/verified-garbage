@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
 
-public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm.Base
-public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+import VerifiedGarbage.Proof.Variants.MillerRabin.Arm.Base
+import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 
 /-!
 # The shared round on ARMv7 with `umaal`: the variant's code and proofs

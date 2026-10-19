@@ -1,10 +1,13 @@
 module
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
+import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square
 open VG VG.AArch64 VG.Impl.Mont.AArch64.P521Square

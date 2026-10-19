@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Load
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Load
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Load
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 

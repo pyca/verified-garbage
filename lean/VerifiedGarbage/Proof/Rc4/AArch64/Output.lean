@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Step
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.AArch64.Lookup
 
 /-!
 # A keystream byte

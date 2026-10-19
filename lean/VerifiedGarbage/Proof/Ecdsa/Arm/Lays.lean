@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 
 /-!
 # ECDSA on 32-bit ARM: where the ladder's and the powers' slots are

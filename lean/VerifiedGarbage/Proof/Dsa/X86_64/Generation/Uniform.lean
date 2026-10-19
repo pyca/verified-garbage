@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Uniform
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 

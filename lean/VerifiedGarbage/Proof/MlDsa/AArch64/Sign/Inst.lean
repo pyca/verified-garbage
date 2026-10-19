@@ -1,31 +1,40 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Prims
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls

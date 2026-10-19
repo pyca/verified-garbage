@@ -6,6 +6,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

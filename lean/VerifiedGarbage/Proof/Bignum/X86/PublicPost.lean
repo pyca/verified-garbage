@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Match the checked-RSA contract on both acceptance and failure paths -/
 

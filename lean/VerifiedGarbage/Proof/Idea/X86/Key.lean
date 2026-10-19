@@ -18,6 +18,26 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Idea.KeyLit32
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Idea.KeyBits
+meta import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Memory
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Idea.Arith
+meta import VerifiedGarbage.Proof.Idea.Arith32
+meta import VerifiedGarbage.Proof.Idea.Memory
 
 /-!
 # IDEA key expansion on x86 (32-bit)

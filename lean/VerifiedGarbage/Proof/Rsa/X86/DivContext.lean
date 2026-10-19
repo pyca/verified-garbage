@@ -1,7 +1,9 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivReduce
-public import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Rsa.WordRanges
 
 /-! # Public geometry for fixed-width native RSA division -/
 

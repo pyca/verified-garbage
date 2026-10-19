@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.EntryFields
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
 
 /-! # Saved arguments and the memory footprint of DSA entry stores -/
 

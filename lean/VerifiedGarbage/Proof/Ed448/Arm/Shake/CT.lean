@@ -7,6 +7,9 @@ import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Verified
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions in constant time

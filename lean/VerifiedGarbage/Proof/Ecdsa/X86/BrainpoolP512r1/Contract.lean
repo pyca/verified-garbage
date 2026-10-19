@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP512r1
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.BrainpoolP512r1
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # ECDSA over brainpoolP512r1 on x86 (32-bit): the contract the proof is written against

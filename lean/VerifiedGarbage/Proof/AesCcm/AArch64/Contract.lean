@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Spec.Ccm.Contract
 
 /-!
 # AES-CCM on AArch64: the contracts the proofs are written against

@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+public import VerifiedGarbage.Proof.Bignum.CrtResult
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # RSA with the CRT on AArch64: the computation for a valid modulus

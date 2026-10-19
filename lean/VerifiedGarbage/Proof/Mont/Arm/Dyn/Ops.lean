@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Mul
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the modular addition

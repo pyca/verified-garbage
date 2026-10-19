@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 public import VerifiedGarbage.Impl.Modes.Arm.CbcChained
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 
 /-!
 # CBC on ARMv7 that updates the chaining value

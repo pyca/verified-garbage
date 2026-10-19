@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Argon2 on ARMv7: the derivation's locals

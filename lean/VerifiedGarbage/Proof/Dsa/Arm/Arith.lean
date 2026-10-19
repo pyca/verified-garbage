@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.Impl.Dsa.Arm.Arith
 public import VerifiedGarbage.Proof.Dsa.Arm.Pow
 public import VerifiedGarbage.Proof.Dsa.Arm.Stream
-public import VerifiedGarbage.Proof.Dsa.SameTrace
-public import VerifiedGarbage.Proof.Dsa.Frame
-public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
+public import VerifiedGarbage.Proof.Dsa.Arm.ContextCall
+import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # DSA's reductions and products as functions on 32-bit ARM: their code

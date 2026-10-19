@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
 /-! ## From `ProductFive.lean` -/
 

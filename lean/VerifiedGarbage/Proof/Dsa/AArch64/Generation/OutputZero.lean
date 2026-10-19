@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ZeroBytes
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputArgs
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ZeroBytes
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecOut
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Output
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 /-! Every failed search clears the complete output and returns zero. -/
 @[expose] public section

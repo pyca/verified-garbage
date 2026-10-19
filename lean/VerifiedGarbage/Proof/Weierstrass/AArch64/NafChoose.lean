@@ -1,12 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

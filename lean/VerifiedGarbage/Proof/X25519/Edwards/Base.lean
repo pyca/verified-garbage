@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
-public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 
 /-! Scalar clamping and the Edwards-to-Montgomery map, shared by fixed-base implementations. -/
 

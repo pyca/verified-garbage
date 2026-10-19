@@ -1,6 +1,17 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.X86_64
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
+public import VerifiedGarbage.Spec.Ccm
 
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Ctrs
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-CCM on x86-64: counter blocks and chaining a block

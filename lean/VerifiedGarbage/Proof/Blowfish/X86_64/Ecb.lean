@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Round
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import VerifiedGarbage.Proof.Blowfish.X86_64.Block
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Blowfish.Blocks
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The ECB functions

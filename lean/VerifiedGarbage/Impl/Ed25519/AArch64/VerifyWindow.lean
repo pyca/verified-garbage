@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
 public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
 
 /-!
 # Verification's equation with 4-bit windows

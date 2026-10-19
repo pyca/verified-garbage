@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
-public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-!
 # Ed448's point functions on x86-64: their `Verified`

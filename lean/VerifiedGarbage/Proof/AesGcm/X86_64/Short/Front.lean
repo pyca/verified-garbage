@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM's short path on x86-64: the powers, `G` and the keystream

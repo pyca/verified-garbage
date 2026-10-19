@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 import VerifiedGarbage.Proof.MlKem.X86.Sample
 import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-KEM on x86 (32-bit): calls of `vg_mlkem_sample_ntt`, `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`

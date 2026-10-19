@@ -1,11 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Seed.X86.Key
 meta import VerifiedGarbage.Proof.Seed.X86.Key
 public import VerifiedGarbage.Proof.Seed.X86.Verified
 meta import VerifiedGarbage.Proof.Seed.X86.Verified
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Aes.X86.Sbox
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Linear
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Seed.G16
+import VerifiedGarbage.Proof.Seed.KeyRot
+import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Seed.X86.KeyRound
+meta import VerifiedGarbage.Proof.Aes.X86.Sbox
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Linear
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Seed.G16
+meta import VerifiedGarbage.Proof.Seed.KeyRot
+meta import VerifiedGarbage.Proof.Seed.Memory
+meta import VerifiedGarbage.Proof.Seed.X86.Crypt8
+meta import VerifiedGarbage.Proof.Seed.X86.KeyRound
 
 /-!
 # The SEED key schedule on x86 (32-bit) meets its contracts

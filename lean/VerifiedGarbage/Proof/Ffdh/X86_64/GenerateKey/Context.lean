@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # FFDH key-generation attempts on x86-64: inputs and disjoint outputs -/
 

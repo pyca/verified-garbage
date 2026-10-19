@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.P192
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # P-192 public keys on 32-bit ARM: the contract the proof is written against

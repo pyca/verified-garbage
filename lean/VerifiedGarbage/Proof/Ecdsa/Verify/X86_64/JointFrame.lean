@@ -1,12 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointInput
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The joint multiplication preserves the fixed inputs of the final comparison. -/
 

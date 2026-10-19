@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvHalfBit
-public import VerifiedGarbage.Proof.Rsa.RecoverHalving
+import VerifiedGarbage.Proof.Rsa.X86.RvHalfBit
+import VerifiedGarbage.Proof.Rsa.RecoverHalving
+import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # One fixed-schedule halving iteration -/
 

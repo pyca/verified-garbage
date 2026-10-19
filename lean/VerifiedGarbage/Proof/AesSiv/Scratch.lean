@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.Framework.Scratch
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV with its working space as an argument

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Import the secret RSA input while retaining precomputed public-key arithmetic -/
 

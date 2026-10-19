@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.SplitIfs
 
 /-!

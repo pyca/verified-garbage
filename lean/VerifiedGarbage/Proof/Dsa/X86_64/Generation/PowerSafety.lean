@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 
 /-! # Public generator exponentiation preserves stack and MXCSR control state -/
 

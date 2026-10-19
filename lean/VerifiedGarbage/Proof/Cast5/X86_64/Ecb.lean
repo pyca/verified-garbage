@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.Block
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!

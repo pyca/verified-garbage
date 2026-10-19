@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The signing frames preserve their stack pointers -/
 

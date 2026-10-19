@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
+import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.MontFinish
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Canonical Montgomery output using the workspace temporary -/
 

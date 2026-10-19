@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvU
+public import VerifiedGarbage.Proof.Rsa.X86.InvHalf
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # `inverse` on i686: one step is `invStep` -/
 

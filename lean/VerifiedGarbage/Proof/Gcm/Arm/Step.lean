@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.Gcm.Arm
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Straight
+import VerifiedGarbage.Proof.Framework.Arm.Straight
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.MdStream.Arm.Common

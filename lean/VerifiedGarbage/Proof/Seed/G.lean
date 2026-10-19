@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Seed.SboxLit
 
-public import VerifiedGarbage.Proof.Seed.Sbox
 
 /-!
 # G, bit by bit

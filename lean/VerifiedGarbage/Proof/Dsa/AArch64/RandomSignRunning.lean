@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEnv
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInputs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInit
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The persistent state of the bounded randomized-signing loop. -/

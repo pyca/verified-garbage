@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Round
-public import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.TripleDes.Round
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

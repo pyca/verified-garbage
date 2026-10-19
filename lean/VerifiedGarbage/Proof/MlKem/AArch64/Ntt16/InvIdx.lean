@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Last
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Rows
+import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: lanes by index

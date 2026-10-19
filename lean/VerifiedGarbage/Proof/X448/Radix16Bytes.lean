@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Radix16
-public import VerifiedGarbage.Proof.X448.Bytes
-public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.X448.Contract
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448: byte encoding of 16-bit limbs

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 public import VerifiedGarbage.Proof.MlKem.Ntt
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

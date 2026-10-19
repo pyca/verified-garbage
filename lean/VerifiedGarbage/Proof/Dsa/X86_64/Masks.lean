@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
 
 /-! # DSA rejection-mask arithmetic and accumulation -/
 

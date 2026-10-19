@@ -1,8 +1,23 @@
 module
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.RingTheory.AdjoinRoot
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPowCT
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 
 /-! Constant time for the q phase with the wider window. -/
 

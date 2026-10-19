@@ -1,26 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Top
+public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers

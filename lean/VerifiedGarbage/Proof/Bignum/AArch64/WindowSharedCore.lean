@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCore
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowOperations
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

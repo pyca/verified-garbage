@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on AArch64: rounding and hints -/

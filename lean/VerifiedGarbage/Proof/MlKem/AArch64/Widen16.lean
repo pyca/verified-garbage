@@ -2,10 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass2
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
-public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
-public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Store
-public import VerifiedGarbage.Proof.MlKem.PolyW
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Spec.MlKem.Kpke16
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 /-!
 # ML-KEM on AArch64: a polynomial from 16-bit to 32-bit coefficients

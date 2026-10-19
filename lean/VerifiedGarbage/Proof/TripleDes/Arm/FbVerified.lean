@@ -4,28 +4,79 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.Arm.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.Modes.Arm.Cfb8
+import VerifiedGarbage.Proof.Modes.Arm.Cfb8
 meta import VerifiedGarbage.Proof.Modes.Arm.Cfb8
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.TripleDes.Arm.Fb
 meta import VerifiedGarbage.Impl.TripleDes.Arm.Fb
-public import VerifiedGarbage.Spec.TripleDes.Ofb
-meta import VerifiedGarbage.Spec.TripleDes.Ofb
 public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 meta import VerifiedGarbage.Spec.TripleDes.Cfb
-public import VerifiedGarbage.Spec.TripleDes.Cfb8
-meta import VerifiedGarbage.Spec.TripleDes.Cfb8
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.Arm.Counter
+import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.Aes.SboxSpec
+meta import VerifiedGarbage.Proof.AesCtr.Ctr32
+meta import VerifiedGarbage.Proof.AesCtr.Spec
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Linear
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Syms
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Modes.Addr
+meta import VerifiedGarbage.Proof.Modes.Arm.Counter
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+meta import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
+meta import VerifiedGarbage.Proof.TripleDes.Bytes
+meta import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+meta import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on ARMv7 meet their contracts

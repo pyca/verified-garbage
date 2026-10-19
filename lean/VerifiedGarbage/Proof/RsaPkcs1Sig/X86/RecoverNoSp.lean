@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # Verification uses its two stack frames without changing their pointers -/
 

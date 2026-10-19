@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Width
-public import VerifiedGarbage.Proof.MlKem.Compress1024
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Width
+import VerifiedGarbage.Proof.MlKem.Compress1024
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM-1024 on AArch64: bits streaming through a register

@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Row
+public import VerifiedGarbage.Proof.Bignum.Arm.RowState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.RowBody2
+import VerifiedGarbage.Proof.Bignum.Arm.RowBody2
+import VerifiedGarbage.Proof.Bignum.Arm.RowBody
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # Termination, memory safety and correctness of a runtime-length ARMv7 row -/
 

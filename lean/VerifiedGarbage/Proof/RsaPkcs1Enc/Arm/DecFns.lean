@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Decrypt
-public import VerifiedGarbage.Proof.Sha256.Arm.Shared
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
+import VerifiedGarbage.Proof.Sha256.Arm.Shared
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
+public import VerifiedGarbage.Spec.Sha256.Contract
+import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the SHA-256 and HMAC-SHA-256 functions it calls

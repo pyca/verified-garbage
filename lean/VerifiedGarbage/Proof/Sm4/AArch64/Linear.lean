@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The linear layers of bitsliced SM4 on AArch64, by evaluation

@@ -3,9 +3,19 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.BrainpoolP512r1.Lit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA verification over brainpoolP512r1 on x86 (32-bit): summaries of the field functions modulo `n`

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchArguments
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.OutgoingPre
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.OutgoingPre
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.CandidatePre
 
 /-! # The verified candidate contract holds for every internal invocation -/
 

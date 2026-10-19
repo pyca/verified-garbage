@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFromFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 
 /-! # Reduce the shaped candidate from an uninitialized arithmetic workspace -/
 

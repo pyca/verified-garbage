@@ -1,19 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-public import VerifiedGarbage.Spec.MlDsa.Poly
-meta import VerifiedGarbage.Spec.MlDsa.Poly
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_add` and `vg_mldsa_sub`

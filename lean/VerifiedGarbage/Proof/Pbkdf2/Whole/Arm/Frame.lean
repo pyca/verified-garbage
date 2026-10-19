@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Entry
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Loop
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Loop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 
 /-! # The parameter search's correctness (AArch64)
 

@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

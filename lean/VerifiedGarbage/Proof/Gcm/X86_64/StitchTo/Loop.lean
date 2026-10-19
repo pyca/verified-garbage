@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # The out-of-place VAES loop: the loop of one group, and the stores

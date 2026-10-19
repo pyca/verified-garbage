@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLane
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 
 /-! ## `PairedLowHf2` -/
 

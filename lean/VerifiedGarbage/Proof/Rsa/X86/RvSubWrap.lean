@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
 /-! # Recovery subtraction, including its modular result and borrow -/
 

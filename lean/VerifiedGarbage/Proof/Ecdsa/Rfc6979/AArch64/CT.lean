@@ -2,16 +2,58 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Correct
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Spec.Ecdsa.P256
+import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Words
+meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Mont.AArch64.Csub
+meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+meta import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Common
+meta import VerifiedGarbage.Proof.Weierstrass.Words
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # Deterministic ECDSA on AArch64: constant time, up to the number of candidates

@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 scalar reduction on x86-64: the whole function

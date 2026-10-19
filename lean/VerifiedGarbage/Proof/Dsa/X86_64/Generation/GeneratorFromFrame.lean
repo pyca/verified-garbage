@@ -1,10 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorCheck
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 
 /-! # Complete generator range checks from the persistent frame -/
 

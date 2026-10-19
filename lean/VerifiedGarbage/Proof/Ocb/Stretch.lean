@@ -1,6 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Ocb.Spec
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # OCB: `Offset_0` in 64-bit words

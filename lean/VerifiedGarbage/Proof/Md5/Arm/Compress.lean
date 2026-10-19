@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -18,12 +18,16 @@ public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Md5
-meta import VerifiedGarbage.Spec.Md5
 public import VerifiedGarbage.TCB.Arm.Target
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # MD5 compression function on ARMv7: the 64 operations

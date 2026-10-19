@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.Divide
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Compute the rounded lane length from the normalized memory cost and lane count. -/
 

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivStages
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
-public import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivCallsTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivTailContext
+import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming
 
 /-! # The complete private body has equal traces for independent private components -/
 

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Poly1305 on x86-64 with AVX-512: straight-line code, quadword by quadword

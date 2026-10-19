@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 

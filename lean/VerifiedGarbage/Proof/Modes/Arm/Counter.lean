@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Inc
+import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.Modes.Arm.Counter
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CTR on ARMv7: the increment

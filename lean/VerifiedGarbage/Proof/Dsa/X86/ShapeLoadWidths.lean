@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeThreeWidths
+import VerifiedGarbage.Proof.Dsa.X86.ShapeThreeWidths
 public import VerifiedGarbage.Proof.Dsa.X86.CoreLoad
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Dsa.X86.ShapeFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Actual-width masks directly from an encoded DSA modulus -/
 

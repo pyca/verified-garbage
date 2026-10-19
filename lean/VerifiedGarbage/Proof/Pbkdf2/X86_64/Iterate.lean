@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Impl.Pbkdf2.X86_64
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86-64

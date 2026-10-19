@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoadsTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvProductTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoadsTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvProductTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoads
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Product computation and its refusal test have a public trace -/
 

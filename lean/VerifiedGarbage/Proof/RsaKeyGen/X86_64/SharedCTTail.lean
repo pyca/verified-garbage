@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTResult
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTResult
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTCode
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 
 /-! # Constant time of setup and the callable RSA witness loop -/
 

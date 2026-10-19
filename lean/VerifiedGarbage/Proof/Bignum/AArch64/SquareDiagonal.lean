@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareMac
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Arithmetic identities for doubling cross products and adding a diagonal. -/
 

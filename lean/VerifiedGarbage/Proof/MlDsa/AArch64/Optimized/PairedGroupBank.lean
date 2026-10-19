@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBatch
 
 @[expose] public section
 

@@ -1,12 +1,26 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Contract
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
+import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
 import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section

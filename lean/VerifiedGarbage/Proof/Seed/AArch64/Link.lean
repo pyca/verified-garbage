@@ -1,18 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.ReadHalves
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Seed.Memory
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Seed.AArch64.Modes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.AArch64.Lit
+public import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # SEED's core for the modes on AArch64: the return address across the call

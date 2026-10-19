@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalField
-public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

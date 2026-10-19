@@ -2,10 +2,14 @@ module
 
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # A candidate on x86-64: the candidate

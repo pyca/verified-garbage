@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointTableAddr
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Constructing bounded tables of exact point doublings. -/
 

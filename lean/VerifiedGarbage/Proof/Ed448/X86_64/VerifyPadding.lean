@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyBits
 public import VerifiedGarbage.Proof.Ed448.SignedWindow
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.Ed448.Scalar
 
 /-! Zero padding for signed windows, within the existing scratch allocation. -/
 

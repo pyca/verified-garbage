@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
 
 /-! # Keep pointer postconditions together with the exact subtraction comparison -/
 

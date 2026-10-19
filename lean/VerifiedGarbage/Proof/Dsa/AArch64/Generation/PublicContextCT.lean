@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBodyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterCTState
 
 /-! # Equal public ABI inputs determine the same complete generation plan -/
 

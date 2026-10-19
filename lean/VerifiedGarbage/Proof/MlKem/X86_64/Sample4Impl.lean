@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 
 /-!
 # Implementations of `vg_mlkem_sample_ntt4` on x86-64

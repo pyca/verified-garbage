@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: the encapsulation key check, for every target

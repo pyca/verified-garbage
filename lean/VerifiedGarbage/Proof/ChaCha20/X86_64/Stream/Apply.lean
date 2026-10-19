@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, correctness

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
-public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-! # Vector coefficient packing and byte selection -/
 

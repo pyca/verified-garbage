@@ -2,9 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Block
 public import VerifiedGarbage.Impl.Rc2.AArch64.Cbc
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
+import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
 
 /-! # Calling the verified block primitive from CBC -/
 

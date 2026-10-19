@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Spec.Dsa.Random
 
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
-public import VerifiedGarbage.Proof.Dsa.RandomRange
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

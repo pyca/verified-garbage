@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
-public import VerifiedGarbage.Proof.Dsa.X86.SignFinish
+import VerifiedGarbage.Proof.Dsa.X86.SignFinish
+import VerifiedGarbage.Proof.Dsa.X86.SignStart
 
 /-! # Complete arithmetic schedule of an x86 DSA signing attempt -/
 

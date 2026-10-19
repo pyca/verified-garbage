@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.X86_64.Gpr
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
 

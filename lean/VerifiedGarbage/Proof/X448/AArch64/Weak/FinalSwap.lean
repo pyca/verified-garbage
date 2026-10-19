@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X448 on AArch64: the swap after the ladder

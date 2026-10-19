@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Dsa.Arm.Shape
 public import VerifiedGarbage.Proof.Zeroize.Common
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # DSA on 32-bit ARM: choosing the widths, and rejecting a domain

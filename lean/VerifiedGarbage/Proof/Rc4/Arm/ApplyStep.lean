@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Replace
+import VerifiedGarbage.Proof.Rc4.Arm.Replace
 import Mathlib.Tactic.SplitIfs
 
 /-! # RC4 on ARMv7: one PRGA step -/

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Load a modulus and a candidate into the range-check workspace -/

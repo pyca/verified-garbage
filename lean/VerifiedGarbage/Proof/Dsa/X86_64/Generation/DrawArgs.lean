@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Address and tape accounting for a complete witness draw -/

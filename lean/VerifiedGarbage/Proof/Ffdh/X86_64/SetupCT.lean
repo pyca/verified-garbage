@@ -1,19 +1,19 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
 
 /-!
 # FFDH on X86_64: the front in constant time

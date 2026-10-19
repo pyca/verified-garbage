@@ -2,8 +2,11 @@ module
 
 import VerifiedGarbage.Proof.X448.Wide.TailRegs
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: narrow carry steps whose input coefficient already fits in one word. -/
 

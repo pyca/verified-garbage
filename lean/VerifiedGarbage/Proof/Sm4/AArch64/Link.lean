@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+public import VerifiedGarbage.Proof.Sm4.SboxTable
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
 
 /-!
 # SM4's core for the modes on AArch64: the return address across the calls

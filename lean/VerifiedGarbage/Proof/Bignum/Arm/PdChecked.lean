@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
-public import VerifiedGarbage.Proof.Bignum.Arm.PdApply
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFail
+import VerifiedGarbage.Proof.Bignum.Arm.PdInverse
+import VerifiedGarbage.Proof.Bignum.Arm.PdApply
+import VerifiedGarbage.Proof.Bignum.Arm.PdFail
+import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Public packed-key validation guards the precomputed arithmetic path -/
 

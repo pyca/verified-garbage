@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hmac
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-public import VerifiedGarbage.Proof.Mont.AArch64.Csub
-import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Ed25519.Word64
+public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on AArch64: `h = bits2octets(digest)`

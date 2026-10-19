@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.StackBookkeeping
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackBookkeeping
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Saved words agree with the workspace after entering the round -/

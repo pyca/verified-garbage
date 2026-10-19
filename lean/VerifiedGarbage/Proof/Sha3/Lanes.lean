@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Keccak-f[1600]: states in memory, for every target

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+public import VerifiedGarbage.Spec.Mgf1
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # RSAES-OAEP on AArch64: the label's hash

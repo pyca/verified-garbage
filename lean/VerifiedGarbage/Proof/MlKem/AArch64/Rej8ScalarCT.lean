@@ -1,8 +1,44 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BatchCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Decode
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Loop
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Steps
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Scalar tails branch only on candidates derived from the public seed -/
 

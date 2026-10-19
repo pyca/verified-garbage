@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateEqual
-public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Excluding zero and one from public generator and key values -/
 

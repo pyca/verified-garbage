@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.WordLoop
-public import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # The word loops of the runtime-modulus arithmetic (x86, 32-bit)

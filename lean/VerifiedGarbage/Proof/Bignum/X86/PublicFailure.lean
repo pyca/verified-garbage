@@ -1,7 +1,18 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Invalid public RSA keys return zero and clear the complete output -/
 

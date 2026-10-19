@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_aad`

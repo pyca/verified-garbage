@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
 
 /-! Decoding writes the saved sign and field workspace only. -/
 

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.Div
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivShift
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Insert one division bit into an even native-word array -/
 

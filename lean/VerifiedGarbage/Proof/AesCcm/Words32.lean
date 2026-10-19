@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Words
-public import VerifiedGarbage.Proof.AesCcm.Bytes
-import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.AesCcm.Words
+import VerifiedGarbage.Proof.AesCcm.Bytes
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM: blocks built of 32-bit words

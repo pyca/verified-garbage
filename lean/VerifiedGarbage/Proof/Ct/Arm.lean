@@ -2,16 +2,28 @@ module
 
 public import VerifiedGarbage.Impl.Ct.Arm
 meta import VerifiedGarbage.Impl.Ct.Arm
-public import VerifiedGarbage.Proof.Ct.Common32
+import VerifiedGarbage.Proof.Ct.Common32
 meta import VerifiedGarbage.Proof.Ct.Common32
 public import VerifiedGarbage.Proof.Zeroize.Arm
 meta import VerifiedGarbage.Proof.Zeroize.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 meta import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Spec.Ct.Contract
+public import VerifiedGarbage.Proof.Ct.Common
 meta import VerifiedGarbage.Spec.Ct.Contract
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ct.Common
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

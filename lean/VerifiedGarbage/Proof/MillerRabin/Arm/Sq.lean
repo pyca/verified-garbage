@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces
 
-public import VerifiedGarbage.Proof.MillerRabin.Arm.Scan
+import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
+import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 
 /-! # The Miller–Rabin round on ARMv7: a run of squarings
 

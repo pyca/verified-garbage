@@ -1,10 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.CrtKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 
 /-!
 # RSA with the CRT on x86-64: up to the checks

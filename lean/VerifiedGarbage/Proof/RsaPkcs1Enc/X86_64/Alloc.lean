@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!

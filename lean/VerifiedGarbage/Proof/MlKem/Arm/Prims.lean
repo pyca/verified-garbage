@@ -1,23 +1,38 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-meta import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 public import VerifiedGarbage.Proof.MlKem.Arm.Mul
+public import VerifiedGarbage.Proof.MlKem.Arm.Add
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 meta import VerifiedGarbage.Proof.MlKem.Arm.Mul
-import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
-meta import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
-import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-meta import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-meta import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MlKem.Arm.CallF
+import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallF
+meta import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+meta import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+meta import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+meta import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+meta import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-KEM on 32-bit ARM: calling the primitives

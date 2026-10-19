@@ -1,8 +1,15 @@
 module
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.TCB.Arm.Isa
 
-public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
-public import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The table of powers of the windowed ARMv7 exponentiation
 

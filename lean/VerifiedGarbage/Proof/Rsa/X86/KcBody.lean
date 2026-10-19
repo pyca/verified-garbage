@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcChecks
+import VerifiedGarbage.Proof.Rsa.X86.KcDiv
+import VerifiedGarbage.Proof.Rsa.X86.KcOps
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # The checks of an RSA key on i686: `crtBody` and `keyBody`
 

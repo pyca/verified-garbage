@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicControls
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
 
 /-! # Exponent-control initialization is independent of secret input and acceptance -/
 

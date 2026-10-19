@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputePair
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeSized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Fixed-width precomputation has data-independent arithmetic and copy traces -/
 

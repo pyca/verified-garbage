@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sm4.AArch64.Round
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Copy
 import VerifiedGarbage.Proof.Sm4.AArch64.Imm
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.AArch64.Core
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SM4's prologue and epilogue on AArch64

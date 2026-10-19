@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.Secp256k1
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Primality of secp256k1’s field and group order
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Camellia.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia with its working space as an argument

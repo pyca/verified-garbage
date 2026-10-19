@@ -1,8 +1,13 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
-public import VerifiedGarbage.Proof.Rsa.X86.PrivFn
-public import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
+import VerifiedGarbage.Proof.Rsa.X86.PrivFn
+import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivContractInput
 
 /-! # Checked private RSA implements the shared contract and permitted leakage -/
 

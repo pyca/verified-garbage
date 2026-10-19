@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 
 /-! # Updating multiplication controls preserves all public CRT buffer links -/
 

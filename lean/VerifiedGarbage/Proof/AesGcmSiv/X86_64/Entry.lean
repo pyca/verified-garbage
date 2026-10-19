@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Env
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # AES-GCM-SIV on x86-64: the entry, the exit and the arguments

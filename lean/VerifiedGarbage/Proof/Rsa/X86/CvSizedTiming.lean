@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvLoadsTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvLoadsTiming
 public import VerifiedGarbage.Proof.Rsa.X86.CvStoresTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvCoreTiming
+public import VerifiedGarbage.Proof.Rsa.X86.CvLoads
+import VerifiedGarbage.Proof.Rsa.X86.CvCoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86.CvCore
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Complete fixed-width CRT calculation has a secret-independent trace -/
 

@@ -1,6 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 
 /-! # `vg_rsa_recover_primes` on ARMv7: copies, selections, subtractions, halvings and bits on a stage -/
 

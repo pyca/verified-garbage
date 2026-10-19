@@ -6,12 +6,24 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 public import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
-public import VerifiedGarbage.Spec.MlKem.Contract
-meta import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
 meta import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM on x86-64: the key check (`vg_mlkem768_check_ek`, `vg_mlkem1024_check_ek`)

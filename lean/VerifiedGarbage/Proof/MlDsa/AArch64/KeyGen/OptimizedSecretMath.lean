@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSpec
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Spec.MlDsa.BoundedFour
 
 @[expose] public section
 

@@ -6,14 +6,12 @@ public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Constant time of ML-KEM's calls of the sponge, for any Keccak backend

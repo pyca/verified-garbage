@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! An eight-word addition with its exact final carry. -/
 

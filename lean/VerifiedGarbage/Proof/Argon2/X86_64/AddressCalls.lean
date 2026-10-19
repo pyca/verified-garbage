@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
 public import VerifiedGarbage.Proof.Argon2.AddressInput
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Both compression calls produce exactly the reviewed independent-address block. -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentScanState
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # A public byte sequence fixes the complete exponent-scan trace -/
 

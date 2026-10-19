@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Rounds
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, the last bytes: the input states and the output

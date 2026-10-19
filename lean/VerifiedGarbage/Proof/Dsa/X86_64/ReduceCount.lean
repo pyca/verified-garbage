@@ -1,8 +1,9 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceRead
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 
 /-! # Counting bytes in the DSA streaming reduction loop -/
 

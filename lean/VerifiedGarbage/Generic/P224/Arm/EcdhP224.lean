@@ -3,8 +3,14 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P224.Arm
-public import VerifiedGarbage.Proof.Ecdh.Arm.P224.Verified
+import VerifiedGarbage.Proof.Ecdh.Arm.P224.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdh.Arm.P224.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.Ecdh.P224
 
 /-!
 # ECDH over P-224 (SP 800-56A) on 32-bit ARM

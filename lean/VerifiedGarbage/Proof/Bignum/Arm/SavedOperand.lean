@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact import of private-key bytes using the saved call arguments -/
 

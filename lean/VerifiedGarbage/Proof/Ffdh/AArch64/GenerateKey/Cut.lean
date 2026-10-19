@@ -1,12 +1,18 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Ffdh.KeyScalar
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the scalar's octets

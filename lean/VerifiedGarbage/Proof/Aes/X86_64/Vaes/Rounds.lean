@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 public import VerifiedGarbage.Impl.Aes.X86_64.Vaes
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # VAES: encrypting the lanes of the block registers

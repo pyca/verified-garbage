@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
-public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CT
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `Verified`

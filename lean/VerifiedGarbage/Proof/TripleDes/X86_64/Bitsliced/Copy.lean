@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Copying words

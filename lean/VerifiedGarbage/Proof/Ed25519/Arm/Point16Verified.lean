@@ -1,17 +1,49 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
 meta import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
 public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
+public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+meta import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
+meta import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified

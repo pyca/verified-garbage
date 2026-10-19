@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
-import VerifiedGarbage.Proof.Framework.X86_64.YFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # One of the blocks after the last group, decrypted

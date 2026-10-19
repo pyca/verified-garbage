@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvRun
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.InvModel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
+import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` on registers

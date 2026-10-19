@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvValid
-public import VerifiedGarbage.Proof.Rsa.X86.RvFailure
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Rsa.X86.RvValid
+import VerifiedGarbage.Proof.Rsa.X86.RvFailure
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Rsa.X86.RvSized
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Both recovery modulus-validation branches satisfy the shared result definition -/
 

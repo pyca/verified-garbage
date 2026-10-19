@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.KemB
 
 /-!
 # ML-KEM on AArch64: K-PKE.Encrypt after the matrix

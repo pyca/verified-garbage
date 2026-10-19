@@ -1,8 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPartCT
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Component packing preserves the native generation context -/
 

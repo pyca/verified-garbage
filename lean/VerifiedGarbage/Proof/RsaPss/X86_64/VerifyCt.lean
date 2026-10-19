@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBack
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 /-!
 # RSASSA-PSS verification on x86-64: constant time, and `Verified`

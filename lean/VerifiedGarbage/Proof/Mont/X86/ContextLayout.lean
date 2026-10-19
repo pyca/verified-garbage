@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Context
-public import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+public import VerifiedGarbage.Proof.Mont.X86.Ops
 
 /-! # Workspace bounds for runtime modular arithmetic -/
 

@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-import VerifiedGarbage.Proof.MlKem.KPke
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt`, correctness

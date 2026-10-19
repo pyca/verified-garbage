@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Hash
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
+import VerifiedGarbage.Proof.Ed448.AArch64.SignCached.Correct
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Ed448.Signing
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 signing with a cached public key on AArch64: the body's run

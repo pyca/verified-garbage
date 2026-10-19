@@ -3,7 +3,17 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Callee
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Gathered
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function

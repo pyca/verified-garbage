@@ -1,6 +1,25 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesOcb.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-OCB on x86-64: the rest of the data XORed with `Pad` (`xorPad`)

@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

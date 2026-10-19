@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.RsaKeyGen.MillerRabin
 
-public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-!

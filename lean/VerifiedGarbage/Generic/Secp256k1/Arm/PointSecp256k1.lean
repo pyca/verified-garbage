@@ -4,12 +4,15 @@ public import VerifiedGarbage.Impl.Secp256k1.Point
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointSecp256k1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 
 /-!
 # secp256k1's point addition and doubling on 32-bit ARM

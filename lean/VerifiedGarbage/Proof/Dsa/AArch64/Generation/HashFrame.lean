@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
-public import VerifiedGarbage.Proof.Dsa.Generation.WordFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Generation.WordFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Hash output bytes and preservation of the persistent generation frame -/
 

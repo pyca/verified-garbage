@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB with its working space as an argument

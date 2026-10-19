@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFields
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
+import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
+import VerifiedGarbage.Proof.Dsa.X86_64.Save
 
 /-! # System V entry of the domain check and key derivation
 

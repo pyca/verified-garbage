@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawSample
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawSample
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 
 /-! # FFDH parameter generation on x86-64: checked draw or tape exhaustion -/
 

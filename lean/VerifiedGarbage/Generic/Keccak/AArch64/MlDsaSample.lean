@@ -1,16 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # ML-DSA (FIPS 204) on AArch64: the sampling primitives -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # Ed25519 field programs on the wide scratch, with bounds

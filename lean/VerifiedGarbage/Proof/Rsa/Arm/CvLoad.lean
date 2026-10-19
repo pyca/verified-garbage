@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.CvEntry
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Rsa.Arm.CvFin
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
-public import VerifiedGarbage.Proof.Bignum.Arm.Zero
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
+import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # `vg_rsa_crt_values` on ARMv7: reading the numbers into arrays -/
 

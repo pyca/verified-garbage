@@ -3,13 +3,10 @@ module
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Impl.Cast5.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # CAST5 on ARMv7: running blocks

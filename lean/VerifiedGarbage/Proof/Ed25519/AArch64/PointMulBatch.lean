@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulCounter
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 import Mathlib.Tactic.SplitIfs
 
 /-! Frames for the batches of the scalar multiplications. -/

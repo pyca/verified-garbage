@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

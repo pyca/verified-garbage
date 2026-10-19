@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the contract the proof is written against

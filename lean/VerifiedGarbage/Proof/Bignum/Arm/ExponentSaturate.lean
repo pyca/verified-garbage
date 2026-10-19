@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentWords
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
+import VerifiedGarbage.Proof.Bignum.ExponentWords
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Saturate only the public exponent's upper word -/
 

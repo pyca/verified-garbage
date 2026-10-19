@@ -1,13 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
+public import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

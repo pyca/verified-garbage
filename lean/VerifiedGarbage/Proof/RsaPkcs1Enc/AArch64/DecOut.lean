@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecScan
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecSel
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: writing the output

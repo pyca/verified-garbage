@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Mont.X86_64.Round
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the table into affine coordinates

@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Tests
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 
 /-!
 # An FFDH parameter candidate on AArch64: the results of the tests

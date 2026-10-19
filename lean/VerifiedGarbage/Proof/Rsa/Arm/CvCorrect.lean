@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
 
-public import VerifiedGarbage.Proof.Rsa.Arm.CvValid
-public import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
+import VerifiedGarbage.Proof.Rsa.Arm.CvValid
+import VerifiedGarbage.Proof.Rsa.Arm.CvSpec
 
 /-! # `vg_rsa_crt_values` on ARMv7: correctness
 

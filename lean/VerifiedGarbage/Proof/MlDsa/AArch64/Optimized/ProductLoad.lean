@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Product
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

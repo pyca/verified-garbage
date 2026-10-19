@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometrySearch
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The accepted subgroup supplies the bounded p-search preconditions -/
 

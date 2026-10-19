@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeDepth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeDepth
 
 /-! # Stack bounds for subgroup candidates and prime search -/
 

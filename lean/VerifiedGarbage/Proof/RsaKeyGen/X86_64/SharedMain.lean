@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRound
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # RSA's witness loop with an actual callable prepared round -/
 

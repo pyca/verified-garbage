@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Aes.X86_64.Blocks
 public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.InvBitsliced
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Decrypting four blocks, bitsliced, on x86-64

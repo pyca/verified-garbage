@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
 /-! # Composing stage frames while retaining immutable caller operands -/
 

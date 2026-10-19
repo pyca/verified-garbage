@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.X25519.X86_64.Mem
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Scalar reduction: the complete function

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith
 public import VerifiedGarbage.Impl.Idea.X86_64
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!

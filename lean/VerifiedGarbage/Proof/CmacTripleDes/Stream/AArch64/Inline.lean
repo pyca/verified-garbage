@@ -1,9 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # Streaming TDEA-CMAC on AArch64: the code of `init`, `update` and `finalize`, inline

@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.Rsa.Ranges
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Reduce
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Reduce
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! # Complete native p-candidate reduction, retaining the quotient -/
 

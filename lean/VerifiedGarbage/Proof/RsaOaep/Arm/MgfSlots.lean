@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 
 /-!
 # RSAES-OAEP on ARMv7: `mgfXor`'s slots

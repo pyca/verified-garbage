@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
 
 @[expose] public section
 

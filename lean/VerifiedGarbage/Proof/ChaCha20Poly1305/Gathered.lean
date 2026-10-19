@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20-Poly1305 out of place: the slices

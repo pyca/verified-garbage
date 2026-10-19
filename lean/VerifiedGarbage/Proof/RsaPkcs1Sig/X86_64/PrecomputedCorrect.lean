@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
+public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCtx
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 @[expose] public section
 

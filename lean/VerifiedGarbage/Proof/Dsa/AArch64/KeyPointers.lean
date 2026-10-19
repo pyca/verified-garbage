@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
-public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Resolving the packed DSA key into component pointers -/
 

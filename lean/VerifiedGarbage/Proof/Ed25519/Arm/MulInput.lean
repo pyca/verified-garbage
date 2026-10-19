@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! The scalar input remains unchanged throughout table construction
 and descending accumulation. -/

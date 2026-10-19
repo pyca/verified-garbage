@@ -1,10 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExpControls
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import Batteries.Logic
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExpControls
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Exponent control slots are written at fixed offsets from the public workspace -/
 

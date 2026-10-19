@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Run
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Pre
+public import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesXts.Arm.Unit.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # XTS-AES of data units on ARMv7: encryption

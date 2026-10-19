@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86_64.Double4
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-! Register-only four-limb doubling and its canonical memory result. -/
 

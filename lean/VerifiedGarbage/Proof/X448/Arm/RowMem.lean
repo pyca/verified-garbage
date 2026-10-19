@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import VerifiedGarbage.Proof.X448.Arm.Field
 
-public import VerifiedGarbage.Proof.X448.Arm.RowPass
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on ARMv7: the multiplication-row working space

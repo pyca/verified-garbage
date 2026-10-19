@@ -1,10 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
-public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidate
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Packing and final validation implement the last seed-acceptance decision -/
 

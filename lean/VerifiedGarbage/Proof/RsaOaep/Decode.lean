@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.RsaOaep.Mask
 public import VerifiedGarbage.Proof.RsaOaep.Scan
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Spec.RsaOaep
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # RSAES-OAEP: the decoding, on any target

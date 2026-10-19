@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
 public import VerifiedGarbage.Spec.Hmac.Generic
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

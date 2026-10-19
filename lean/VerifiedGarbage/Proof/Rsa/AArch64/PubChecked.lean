@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubCode
+public import VerifiedGarbage.Proof.Rsa.AArch64.Guarded
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+import VerifiedGarbage.Proof.Bignum.AArch64.PubCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
 
 /-!
 # `vg_rsa_public_checked` on AArch64

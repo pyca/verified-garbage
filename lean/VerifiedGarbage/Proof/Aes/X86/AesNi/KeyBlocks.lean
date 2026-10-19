@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyContext
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
 
 @[expose] public section
 

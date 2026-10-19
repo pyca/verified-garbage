@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Kpke16
-public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: polynomials stored with 16-bit coefficients, byte by byte

@@ -1,10 +1,14 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Weierstrass.Arm
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Arm.Words
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: tables of bits, and masks of bits

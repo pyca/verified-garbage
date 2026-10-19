@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 
 /-! ## From `HighPackGroup.lean` -/
 

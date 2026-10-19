@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
 public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 
 /-! Field environments after multi-coordinate public table transfers. -/
 

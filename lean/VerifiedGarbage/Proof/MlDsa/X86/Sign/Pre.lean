@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Base
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Final
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 
 /-!
 # ML-DSA signing on x86 (32-bit): the contract

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGenerator
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FinishDomain
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGenerator
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FinishDomain
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedOutcome
+public import VerifiedGarbage.Proof.Dsa.Generation.SeedResult
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 
 /-! # Generator selection and final validation produce one complete seed result -/
 

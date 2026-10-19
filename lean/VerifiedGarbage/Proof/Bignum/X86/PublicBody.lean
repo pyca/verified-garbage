@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicProduct
-public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+import VerifiedGarbage.Proof.Bignum.X86.PublicMath
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # One fixed-schedule RSA exponentiation iteration -/
 

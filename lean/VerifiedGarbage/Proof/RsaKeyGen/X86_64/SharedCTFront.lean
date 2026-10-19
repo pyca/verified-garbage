@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTTail
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTFront
 import VerifiedGarbage.Proof.Framework.Omega
 

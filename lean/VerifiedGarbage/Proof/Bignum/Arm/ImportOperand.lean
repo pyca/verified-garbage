@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Operand import preserves the modulus, inverse, and all other arithmetic arrays -/
 

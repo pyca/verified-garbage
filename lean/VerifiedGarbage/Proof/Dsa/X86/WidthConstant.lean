@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Width
-public import VerifiedGarbage.Proof.Dsa.X86.Checks
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Mont.X86.WordConst
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Dsa.X86.Checks
+import VerifiedGarbage.Proof.Mont.X86.WordConst
 
 /-! # Comparing a loaded DSA component with a fixed threshold -/
 

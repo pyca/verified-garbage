@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-public import VerifiedGarbage.Proof.Aes.X86_64.Variant
+public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
 
 /-!
 # AES-CCM on x86-64: the functions called

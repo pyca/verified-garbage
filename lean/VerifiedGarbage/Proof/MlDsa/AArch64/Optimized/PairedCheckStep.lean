@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPartition
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 

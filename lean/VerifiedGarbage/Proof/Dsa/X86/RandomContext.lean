@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomScan
-public import VerifiedGarbage.Proof.Dsa.X86.RandomMask
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignABI
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
+public import VerifiedGarbage.Proof.Dsa.X86.RandomFrame
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The randomized signer's context (x86)

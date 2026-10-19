@@ -1,7 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
 public import VerifiedGarbage.Proof.Ocb.Nonce
+public import VerifiedGarbage.Impl.AesOcb.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-OCB on x86-64: the block `Nonce` (`nonceBlock`)

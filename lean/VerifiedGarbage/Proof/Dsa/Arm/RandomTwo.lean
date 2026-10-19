@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomCopy
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # Relating two runs of the randomized signer by their public data (32-bit ARM)

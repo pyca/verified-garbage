@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Shared-width inverse arithmetic for ARMv7 register pairs -/
 

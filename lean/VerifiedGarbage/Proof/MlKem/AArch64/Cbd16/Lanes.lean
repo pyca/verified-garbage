@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Byte
 public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 
 /-! # CBD2 lane arithmetic and widening -/
 

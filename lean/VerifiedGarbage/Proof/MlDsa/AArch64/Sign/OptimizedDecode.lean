@@ -2,15 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedDecode
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseD
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

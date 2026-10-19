@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+public import VerifiedGarbage.Impl.Bignum.Arm.EqualBuffers
 
-public import VerifiedGarbage.Proof.Bignum.Arm.EqualControls
-public import VerifiedGarbage.Proof.Bignum.Arm.EqualReverse
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompareRow
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.EqualControls
+import VerifiedGarbage.Proof.Bignum.Arm.EqualReverse
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompareRow
+import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Both unsigned comparisons yield exact equality without secret-dependent branches -/
 

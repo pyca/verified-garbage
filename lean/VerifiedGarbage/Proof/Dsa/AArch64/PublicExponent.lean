@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindow
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicWindow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Exponentiation by public windows
 

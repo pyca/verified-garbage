@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.Word
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Ed25519.Canonical64
 import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
-import VerifiedGarbage.Proof.X25519.Ladder
 import Mathlib.Tactic.SplitIfs
 
 /-! The four-word field backend in X25519's existing 4 KiB workspace. -/

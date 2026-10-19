@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # brainpoolP384r1 public keys on 32-bit ARM: the contract the proof is written against

@@ -4,6 +4,28 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Stream
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Compress
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # BLAKE2b on x86-64 with AVX-512: the variant's code and proofs

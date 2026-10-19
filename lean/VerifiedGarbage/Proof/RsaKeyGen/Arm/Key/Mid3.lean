@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid1
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Div
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `d` for an odd `e ≥ 3` (`dOdd_vp`) -/
 

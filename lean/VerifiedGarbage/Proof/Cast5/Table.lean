@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Cast5.Tables
 import VerifiedGarbage.Proof.Framework.ReadHalves
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5: the tables' entries

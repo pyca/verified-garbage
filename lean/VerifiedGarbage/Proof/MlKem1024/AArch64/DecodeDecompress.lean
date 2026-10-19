@@ -1,13 +1,42 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Width
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Width
+import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decode_decompress`

@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # Output clearing from the generation controller's sixteen-word header -/
 

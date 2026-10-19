@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Spec.Ocb
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Aes.Blocks
 
 /-!
 # OCB: the algorithm as the implementations compute it

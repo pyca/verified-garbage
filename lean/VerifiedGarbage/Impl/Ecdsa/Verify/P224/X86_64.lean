@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64.Joint
 public import VerifiedGarbage.Impl.P224.X86_64.Joint
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
 
 /-! # ECDSA verification over P-224 on x86-64: four-word field elements and scalars
 

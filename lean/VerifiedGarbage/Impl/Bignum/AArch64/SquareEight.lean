@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
 
 /-! Scheduled triangular products within an eight-limb square tile.
 Each off-diagonal product is formed once; two product pairs are issued

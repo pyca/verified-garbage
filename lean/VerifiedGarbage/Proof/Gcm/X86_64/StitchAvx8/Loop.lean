@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Blocks
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.X86_64.Alloc
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
 /-! ## FinalCommon -/
 

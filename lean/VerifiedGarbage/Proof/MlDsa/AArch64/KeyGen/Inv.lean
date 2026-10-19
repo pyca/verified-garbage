@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA key generation on AArch64: what holds throughout, and pieces

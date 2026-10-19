@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
-import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_update`

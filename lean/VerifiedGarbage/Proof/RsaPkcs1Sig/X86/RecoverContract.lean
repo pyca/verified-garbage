@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverObservations
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFn
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverObservations
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFn
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractInput
 
 /-! # Precomputed recovery satisfies the shared correctness and timing contract -/
 

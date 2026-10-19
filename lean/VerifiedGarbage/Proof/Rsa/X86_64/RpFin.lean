@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpCst
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpIn
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpLt
+import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpHalf
+import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the factors

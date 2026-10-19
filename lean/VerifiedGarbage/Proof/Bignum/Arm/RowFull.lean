@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.RowFull
-public import VerifiedGarbage.Proof.Bignum.Arm.Row
-public import VerifiedGarbage.Proof.Bignum.Arm.RowCarryMemory
+public import VerifiedGarbage.Proof.Bignum.Arm.RowState
+import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Bignum.Arm.RowCarryMemory
+import VerifiedGarbage.Proof.Bignum.Arm.RowCarry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A complete scalar multiply-add in an extended accumulator -/
 

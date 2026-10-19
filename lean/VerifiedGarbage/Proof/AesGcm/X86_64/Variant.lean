@@ -1,15 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the variants

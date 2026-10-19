@@ -2,30 +2,44 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.CompressLit
 meta import VerifiedGarbage.Proof.Argon2.X86.CompressLit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Argon2.X86.Compress
 meta import VerifiedGarbage.Proof.Argon2.X86.Compress
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
-meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Sha256.Stream
-meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 @[expose] public section
 

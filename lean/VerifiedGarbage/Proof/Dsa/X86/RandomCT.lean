@@ -1,9 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
-public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Impl.Dsa.X86.Random
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
+import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The sampler's secret-byte loops leak nothing (x86)

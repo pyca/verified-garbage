@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
+import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
+public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

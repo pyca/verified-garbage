@@ -16,6 +16,20 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_decode_decompress`

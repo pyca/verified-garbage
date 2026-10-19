@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Cast5.KeyLines
 import VerifiedGarbage.Proof.Cast5.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 key expansion: the working space and the subkeys

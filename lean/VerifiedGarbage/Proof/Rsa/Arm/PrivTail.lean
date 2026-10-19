@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCompareArgs
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseTail
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Compare the public re-exponentiation before releasing any private bytes -/
 

@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Zero the signature output on all randomized-signing failure paths. -/
 @[expose] public section

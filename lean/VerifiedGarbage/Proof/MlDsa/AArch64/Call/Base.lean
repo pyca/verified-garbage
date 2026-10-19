@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Spec.MlDsa.Poly
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-DSA on AArch64: moves, layouts and what code leaves

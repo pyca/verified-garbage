@@ -1,9 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Vals
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp7
-public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A candidate on ARMv7: Montgomery multiplication's working space
 

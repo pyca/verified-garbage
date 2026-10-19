@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
 public import VerifiedGarbage.Proof.Modes.Fb
 public import VerifiedGarbage.Impl.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Proof.Modes.AArch64.Group
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # OFB and CFB on AArch64, for any core: the data loop

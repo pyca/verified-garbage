@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreReduceTiming
-public import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
-public import VerifiedGarbage.Proof.Dsa.X86.StageValues
+public import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
+public import VerifiedGarbage.Proof.Dsa.X86.CoreReduce
+import VerifiedGarbage.Proof.Dsa.X86.CoreReduceTiming
+import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.StageValues
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Streaming reduction stages retain the public call layout -/
 

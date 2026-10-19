@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorFinish
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
 
 /-! The blocked selector's exact instruction shape and selected byte sequence. -/
 

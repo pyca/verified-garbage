@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # FFDH parameter generation on x86-64: the callable contract -/

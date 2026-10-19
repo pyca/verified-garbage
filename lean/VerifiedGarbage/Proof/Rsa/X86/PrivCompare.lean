@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.ZeroTest32
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCompareStep
+import VerifiedGarbage.Proof.Rsa.ZeroTest32
+import VerifiedGarbage.Proof.Rsa.X86.PrivCompareStep
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # A full byte comparison terminates without disclosing the first mismatch -/
 

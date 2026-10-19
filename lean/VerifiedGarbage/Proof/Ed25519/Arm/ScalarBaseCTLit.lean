@@ -1,15 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Impl.Ed25519.Arm.Field
-meta import VerifiedGarbage.Impl.Ed25519.Arm.Field
 public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointAccumulate
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
+public import VerifiedGarbage.Impl.Ed25519.Arm.PointEncode
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! The calls of the point arithmetic and the inversion chain as literals
 (`materialize_value`, `materialize_code`), which the literals of the code

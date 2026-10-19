@@ -2,26 +2,48 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
-import VerifiedGarbage.Impl.MlKem.X86.Cbd
-import VerifiedGarbage.Impl.MlKem.X86.Compress
-import VerifiedGarbage.Impl.MlKem.X86.Encode
-import VerifiedGarbage.Impl.MlKem.X86.Ntt
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Impl.MlKem.X86.Cbd
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
-meta import VerifiedGarbage.Impl.MlKem.X86.Encode
-meta import VerifiedGarbage.Impl.MlKem.X86.Ntt
 meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.Sha3.Stream
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Top
 meta import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.X86.CallRet
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: correct and constant time

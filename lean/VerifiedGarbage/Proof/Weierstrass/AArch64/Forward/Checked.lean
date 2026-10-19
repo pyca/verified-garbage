@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Build
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 The scheduler is untrusted. A certificate runs both instruction lists through

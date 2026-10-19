@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.Blake2.Contract
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize

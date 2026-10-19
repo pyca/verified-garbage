@@ -1,8 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
+import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Code
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Md5.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 
 /-!
 # SHA-256's streaming functions on x86 (32-bit), for every backend

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
 import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration

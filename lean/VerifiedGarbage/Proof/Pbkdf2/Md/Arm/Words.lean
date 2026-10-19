@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.Arm
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
-public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.OmegaLit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # HMAC and PBKDF2-HMAC over a Merkle–Damgård hash function on ARMv7: words

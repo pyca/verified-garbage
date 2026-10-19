@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86.Core
 import VerifiedGarbage.Proof.Sm4.Layout
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on x86 (32-bit)

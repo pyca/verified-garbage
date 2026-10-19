@@ -2,19 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 
 /-!
 # ML-DSA on x86-64: what the callers of the polynomial arithmetic need of it

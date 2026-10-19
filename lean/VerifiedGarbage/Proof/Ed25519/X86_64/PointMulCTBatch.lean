@@ -1,15 +1,60 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.X25519.Invert
+meta import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 
 /-! Scratch counters are public by correctness, including after table stores. -/
 

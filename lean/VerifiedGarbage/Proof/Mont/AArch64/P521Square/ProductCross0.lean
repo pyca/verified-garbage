@@ -1,8 +1,9 @@
 module
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square
 open VG VG.AArch64 VG.Impl.Mont.AArch64.P521Square

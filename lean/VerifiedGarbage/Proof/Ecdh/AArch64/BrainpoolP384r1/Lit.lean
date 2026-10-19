@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ECDH over brainpoolP384r1 on AArch64: the code as a literal

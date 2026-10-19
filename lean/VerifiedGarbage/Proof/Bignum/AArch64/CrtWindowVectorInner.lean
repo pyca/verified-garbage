@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorRow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorRow
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Advance the full-scan row pointer and public SIMD row index. -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
-public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
+import VerifiedGarbage.Proof.Bignum.Arm.StackPair
 
 /-! # Restore each public RSA phase's arguments from the outer frame -/
 

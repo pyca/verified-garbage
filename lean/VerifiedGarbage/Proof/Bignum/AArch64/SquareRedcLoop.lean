@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Layout
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcRow
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcRow
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Fixed-count REDC keeps its frame for every inverse and its arithmetic for valid ones. -/
 

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtImportFrame
-public import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowResult
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Caller byte lengths bound the imported modulus and factors -/
 

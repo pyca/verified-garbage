@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdh.Exchange
 public import VerifiedGarbage.Spec.Ecdsa.Verify
+import VerifiedGarbage.Proof.EcKey.PublicKey
 
 /-!
 # ECDSA signature verification from the values an implementation computes

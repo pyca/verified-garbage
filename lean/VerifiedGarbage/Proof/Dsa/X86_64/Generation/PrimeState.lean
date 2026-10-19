@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRoundHeader
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
-public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # State of DSA's shared Miller–Rabin witness loop -/

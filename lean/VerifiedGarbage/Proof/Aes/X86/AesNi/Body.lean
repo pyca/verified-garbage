@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

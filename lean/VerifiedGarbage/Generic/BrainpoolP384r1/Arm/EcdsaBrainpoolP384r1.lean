@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP384r1
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over brainpoolP384r1 (FIPS 186-5) on 32-bit ARM

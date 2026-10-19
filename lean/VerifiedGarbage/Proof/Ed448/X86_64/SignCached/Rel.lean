@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # Ed448 signing with a cached public key on x86-64: relating two runs

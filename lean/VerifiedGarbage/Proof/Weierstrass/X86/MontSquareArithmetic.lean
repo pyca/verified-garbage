@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.Mont.X86.Sparse
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
 
 /-! # Bounds and accumulated multiples for full-product P-256 REDC -/
 

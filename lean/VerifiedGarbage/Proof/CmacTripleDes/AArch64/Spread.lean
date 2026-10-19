@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
+public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-!
 # DES on AArch64: spreading the round keys

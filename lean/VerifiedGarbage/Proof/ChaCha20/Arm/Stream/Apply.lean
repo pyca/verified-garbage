@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Calls
+public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Bytes
+import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming ChaCha20 on ARMv7: `apply`, correctness

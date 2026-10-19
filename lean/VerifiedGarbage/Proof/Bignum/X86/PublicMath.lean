@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Arithmetic facts for the compact public RSA context -/

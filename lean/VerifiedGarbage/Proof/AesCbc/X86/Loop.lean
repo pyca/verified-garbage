@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.X86.Call
-import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CBC on x86: the loop, for any mode on whole blocks

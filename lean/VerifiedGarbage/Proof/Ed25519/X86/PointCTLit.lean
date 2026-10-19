@@ -2,22 +2,26 @@ module
 
 import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
-meta import VerifiedGarbage.Impl.Ed25519.X86.PointMul
 public import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
 meta import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
-public import VerifiedGarbage.Impl.Ed25519.X86.Field
-meta import VerifiedGarbage.Impl.Ed25519.X86.Field
-import VerifiedGarbage.Impl.Ed25519.X86.Power
-meta import VerifiedGarbage.Impl.Ed25519.X86.Power
 public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
+public import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! The point arithmetic and the inversion chain as literals
 (`materialize_value`, `materialize_code`), which the literals of the code

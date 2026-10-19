@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH private-key validation on x86-64: scalar workspace -/

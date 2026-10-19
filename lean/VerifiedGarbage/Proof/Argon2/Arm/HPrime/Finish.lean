@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.Select
 public import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Argon2.HPrime
 
 /-!
 # Argon2 H′ on ARMv7: the output from the first digest

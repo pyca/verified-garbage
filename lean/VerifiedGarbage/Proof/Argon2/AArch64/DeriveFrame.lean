@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Derive
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.SplitIfs
 
 /-! Compose the saved-register frames and the 272-byte local allocation. -/

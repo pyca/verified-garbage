@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtMid
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-!
 # RSASSA-PSS verification on x86-64: `M'` and its hash in two runs

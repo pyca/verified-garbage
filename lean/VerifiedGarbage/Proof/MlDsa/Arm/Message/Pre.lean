@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: the preconditions and the layouts

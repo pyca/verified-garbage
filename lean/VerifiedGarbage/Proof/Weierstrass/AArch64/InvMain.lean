@@ -1,10 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
 import VerifiedGarbage.Proof.Divstep.Iter
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # Inversion by divsteps on AArch64: the whole inversion

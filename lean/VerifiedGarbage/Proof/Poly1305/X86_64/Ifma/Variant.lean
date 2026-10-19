@@ -1,8 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 
 /-!
 # `vg_poly1305_blocks_ifma` as an implementation of `vg_poly1305_blocks`

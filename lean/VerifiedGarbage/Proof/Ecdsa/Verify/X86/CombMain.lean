@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
 import VerifiedGarbage.Proof.Ecdh.X86.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify
 
 @[expose] public section
 

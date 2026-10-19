@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the blocks between the calls

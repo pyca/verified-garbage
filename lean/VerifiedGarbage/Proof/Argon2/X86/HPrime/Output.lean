@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Next
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Sha512.X86.Rounds
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 @[expose] public section
 

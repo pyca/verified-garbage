@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # The AArch64 taint analyses are monotone

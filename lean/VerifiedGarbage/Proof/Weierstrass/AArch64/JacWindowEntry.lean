@@ -23,6 +23,8 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Weierstrass.Window5
 
 /-! A signed public lookup into the Jacobian window table. -/
 

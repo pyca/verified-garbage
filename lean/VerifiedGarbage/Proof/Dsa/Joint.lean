@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Arithmetic identities for joint fixed-window exponentiation -/

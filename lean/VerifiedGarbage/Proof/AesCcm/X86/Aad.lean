@@ -1,10 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
-import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesCcm.Words32
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.Words
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on x86: the associated data (`header`, `aadHead y`, `aad y`)

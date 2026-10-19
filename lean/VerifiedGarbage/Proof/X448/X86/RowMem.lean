@@ -1,8 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.X448.X86.RowPass
 public import VerifiedGarbage.Proof.X448.X86.Field
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86 (32-bit): multiplication-row memory

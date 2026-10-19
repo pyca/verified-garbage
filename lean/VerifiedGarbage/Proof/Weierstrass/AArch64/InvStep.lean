@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-public import VerifiedGarbage.Proof.Divstep.Word
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import Mathlib.Data.BitVec
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Divstep.WordDef
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Divstep.Word
 import VerifiedGarbage.Proof.Divstep.WordBasic
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-!
 # Inversion by divsteps on AArch64: the word divstep

@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseBuffer
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseBuffer
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseArgs
-public import VerifiedGarbage.Proof.Rsa.X86.PrivMasks
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.X86.PrivMasks
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Fault status, branchless release, and temporary erasure as one verified stage -/
 

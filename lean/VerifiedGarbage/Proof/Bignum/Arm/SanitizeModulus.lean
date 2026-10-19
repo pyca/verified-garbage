@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SanitizeModulus
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArray
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # A rejected factor is replaced by three before Montgomery arithmetic -/
 

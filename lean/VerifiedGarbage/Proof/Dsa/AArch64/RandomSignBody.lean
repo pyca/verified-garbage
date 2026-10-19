@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.RandomSign
 
 /-! Compose initialization, bounded retries, and publication for admissible q. -/
 @[expose] public section

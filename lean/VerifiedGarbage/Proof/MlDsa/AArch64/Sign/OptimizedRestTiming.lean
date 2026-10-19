@@ -1,16 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 
 @[expose] public section
 

@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Montgomery
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
-meta import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
-meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask4
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Spec.MlKem
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # ML-DSA on x86-64: the AVX2 arithmetic as literals

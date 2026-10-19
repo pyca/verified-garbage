@@ -3,13 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ML-KEM-768 on x86-64: the calls of the polynomial primitives

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! # PRF/CBD composition with a replaceable verified 33-byte SHAKE256 -/
 @[expose] public section

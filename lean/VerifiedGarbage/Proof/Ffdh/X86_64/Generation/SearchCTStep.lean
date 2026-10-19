@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
 
 /-! # Public successor states for the native parameter-search timing proof -/
 

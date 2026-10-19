@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
-public import VerifiedGarbage.Proof.Bignum.X86_64.Template
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
 
 /-!
 # The round's body over a Montgomery multiplication with calls

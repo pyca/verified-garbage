@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Bignum.Arm.Sub
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact value, memory safety and frame of one subtraction step -/
 

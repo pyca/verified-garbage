@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCall
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestSmall
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # A full-width p candidate enters the complete shared primality routine -/
 

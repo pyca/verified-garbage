@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # Buffer geometry and immutable input bytes of checked public RSA -/
 

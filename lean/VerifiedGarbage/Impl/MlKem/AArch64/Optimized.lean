@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
 public import VerifiedGarbage.Impl.MlKem.AArch64.ReadonlyDecrypt
 public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
-public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 
 /-! # Paired sampling and fused polynomial products for AArch64 ML-KEM
 

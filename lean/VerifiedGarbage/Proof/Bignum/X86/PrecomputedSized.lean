@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKey
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecked
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKey
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecked
+import VerifiedGarbage.Proof.Bignum.PackedFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Complete fixed-width public RSA from a stored precomputation -/
 

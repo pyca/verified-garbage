@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Invalid RSA moduli return zero and clear every precomputation word -/
 

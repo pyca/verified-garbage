@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-DSA on x86-64: the loops of `vg_mldsa_sample_in_ball`

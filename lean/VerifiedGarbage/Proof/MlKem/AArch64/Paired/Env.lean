@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Rejection-loop coverage within the paired sampler scratch
 

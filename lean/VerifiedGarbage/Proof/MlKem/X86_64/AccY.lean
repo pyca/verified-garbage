@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
 public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: sums of products in words, with AVX2

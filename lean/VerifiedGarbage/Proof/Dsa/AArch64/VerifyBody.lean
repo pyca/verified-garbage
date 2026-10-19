@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBytesSpec
-public import VerifiedGarbage.Proof.Dsa.AArch64.Result
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.Result
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Verification computation, result return and ABI register restoration -/
 

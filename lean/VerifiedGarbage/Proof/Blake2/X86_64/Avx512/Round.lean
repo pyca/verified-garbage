@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Round
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # BLAKE2b on x86-64 with AVX-512: a round

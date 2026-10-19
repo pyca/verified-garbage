@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # DSA multiword arithmetic on x86-64

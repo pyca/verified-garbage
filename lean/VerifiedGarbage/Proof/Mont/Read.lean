@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Numbers in memory as `Mem.read` reads them

@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Rc2.CbcMemory
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Load
+import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # One group of eight blocks

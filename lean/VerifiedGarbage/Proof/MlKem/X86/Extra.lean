@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: lemmas the x86 (32-bit) proofs use that do not depend on the target

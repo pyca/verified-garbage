@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Search workspaces cannot overwrite the saved calling-convention registers -/
 

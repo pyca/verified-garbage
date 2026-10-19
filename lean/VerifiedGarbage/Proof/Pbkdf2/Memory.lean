@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Hmac
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Pbkdf2
 import VerifiedGarbage.Proof.Hmac.Common
 
 /-!

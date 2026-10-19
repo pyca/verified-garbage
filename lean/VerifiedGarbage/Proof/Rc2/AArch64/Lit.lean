@@ -1,13 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Rc2.PiLit
 meta import VerifiedGarbage.Proof.Rc2.PiLit
 public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 meta import VerifiedGarbage.Impl.Rc2.AArch64.Block
 public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
 meta import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Literal RC2 programs for kernel-evaluated checks -/
 

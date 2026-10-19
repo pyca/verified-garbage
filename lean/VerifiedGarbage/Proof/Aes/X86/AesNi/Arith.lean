@@ -1,14 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.Impl.Aes.X86.AesNi
-public import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Gcm.X86.Rev
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.TCB.Code
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_update` is correct

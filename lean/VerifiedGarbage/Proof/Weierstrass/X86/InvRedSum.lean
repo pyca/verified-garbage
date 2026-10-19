@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
+import VerifiedGarbage.Proof.Weierstrass.X86.InvRedWord
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShift
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # The signed numerator of a divstep coefficient reduction -/
 

@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Copy one generated domain component while retaining the search frame -/
 

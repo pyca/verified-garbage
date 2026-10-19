@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Core
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Main
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH on x86-64: the attempt's outputs satisfy the shared key-generation specification -/
 

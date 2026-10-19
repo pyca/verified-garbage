@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 
 /-!
 # Ed448 signing with a cached public key on AArch64

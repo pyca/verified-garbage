@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: between the calls

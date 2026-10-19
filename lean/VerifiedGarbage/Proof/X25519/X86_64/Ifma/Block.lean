@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: what a block leaves in memory

@@ -1,7 +1,13 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Implies
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Verified
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Verified
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 /-!
 # Streaming TDEA-CMAC on AArch64, with its working space on the stack

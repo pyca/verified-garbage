@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimalityCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 
 /-! # The native frame supplies every argument of the verified primality call -/
 

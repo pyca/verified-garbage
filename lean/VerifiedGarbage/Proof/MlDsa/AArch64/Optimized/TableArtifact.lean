@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
 
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableDecode
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableDecode
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 
 @[expose] public section
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS signing on AArch64: the checks and the encoding

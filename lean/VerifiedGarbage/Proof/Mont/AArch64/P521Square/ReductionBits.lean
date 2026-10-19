@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionWords
 
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square

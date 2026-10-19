@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # Stack-only call preparation has no secret-dependent memory addresses -/
 

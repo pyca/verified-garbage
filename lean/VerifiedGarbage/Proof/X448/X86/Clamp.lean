@@ -1,15 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86.Mem
 
-public import VerifiedGarbage.Proof.X448.X86.BitWrite
 import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X448.X86.Ops
-import VerifiedGarbage.Spec.X25519
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on x86 (32-bit): clamping the scalar bits

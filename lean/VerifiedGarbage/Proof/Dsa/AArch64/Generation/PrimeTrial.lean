@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
-public import VerifiedGarbage.Proof.Dsa.Generation.Trial
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+import VerifiedGarbage.Proof.Dsa.Generation.Trial
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! RSA's complete trial division preserves the generation inputs and tape cursor. -/

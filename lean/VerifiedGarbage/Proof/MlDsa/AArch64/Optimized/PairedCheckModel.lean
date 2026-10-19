@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPartition
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

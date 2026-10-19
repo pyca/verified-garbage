@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+import VerifiedGarbage.Proof.Bignum.WordsFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Scratch work preserves the original packed-key output obligation -/
 

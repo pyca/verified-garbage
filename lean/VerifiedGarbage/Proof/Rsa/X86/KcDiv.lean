@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KcBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcOps
+import VerifiedGarbage.Proof.Rsa.X86.KcOps
+import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # Division stages for i686 key validation
 

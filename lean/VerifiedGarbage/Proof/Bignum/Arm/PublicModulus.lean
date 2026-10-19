@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicValid
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.PublicValid
+import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Validate the public modulus and implement both outcomes of the checked RSA contract -/
 

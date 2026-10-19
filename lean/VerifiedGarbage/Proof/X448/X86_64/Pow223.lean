@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Inv
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86-64: the addition chain as a function

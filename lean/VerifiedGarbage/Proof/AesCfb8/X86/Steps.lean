@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.AesCfb8.X86
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Proof.AesCfb8.Mem
 
-public import VerifiedGarbage.Proof.AesCfb8.X86.Loop
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.CmacAes.X86.Save
 
 /-!
 # AES-CFB8 on x86: the code after the call

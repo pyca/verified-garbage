@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingStep
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.ArithmeticTable
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

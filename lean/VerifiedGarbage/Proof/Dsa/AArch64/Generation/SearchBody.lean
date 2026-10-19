@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchEntry
-public import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PAttempt
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! # The complete p body returns the persistent state needed by its next iteration -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Term
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Arithmetic
+import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64: the terms and the finish

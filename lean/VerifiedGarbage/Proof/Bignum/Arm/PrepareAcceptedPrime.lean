@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PrepareAcceptedPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
+public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact Montgomery preparation for accepted and rejected CRT factors -/
 

@@ -1,12 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
+import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalStep
 
 /-! Accumulate the full diagonal with its high carry accounted for. -/
 

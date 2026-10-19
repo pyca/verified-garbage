@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptance
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Exact conjunction of independent secret validation bits -/
 

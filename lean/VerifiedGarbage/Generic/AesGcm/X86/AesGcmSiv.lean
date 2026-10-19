@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Frame
 public import VerifiedGarbage.Proof.GcmSiv.Polyval
-public import VerifiedGarbage.Generic.AesGcm.X86.AesGcm
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
+public import VerifiedGarbage.Proof.AesGcm.X86.Verified
+import VerifiedGarbage.Proof.AesGcm.X86.Frame
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86

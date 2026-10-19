@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 public import VerifiedGarbage.Proof.Rc4.Schedule
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.AArch64.Consts
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The key schedule's lanes

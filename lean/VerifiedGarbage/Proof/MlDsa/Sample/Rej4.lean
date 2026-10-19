@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.MlKem.Mem
 
 @[expose] public section

@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-CCM on ARMv7: checking a received tag (`recv`, `cmp o`)

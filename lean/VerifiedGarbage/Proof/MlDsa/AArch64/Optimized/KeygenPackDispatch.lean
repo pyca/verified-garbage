@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackTail
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
 
 /-! ## From `KeygenPackWidthContracts.lean` -/
 

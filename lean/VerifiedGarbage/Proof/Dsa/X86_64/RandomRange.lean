@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomBorrow
 public import VerifiedGarbage.Proof.Dsa.RandomRange
-public import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Correctness of the sampler's right-to-left range check. -/
 @[expose] public section

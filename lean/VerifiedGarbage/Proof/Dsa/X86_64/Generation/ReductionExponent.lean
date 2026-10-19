@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
-import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 
 /-! # Candidate reduction also produces the generator exponent -/
 

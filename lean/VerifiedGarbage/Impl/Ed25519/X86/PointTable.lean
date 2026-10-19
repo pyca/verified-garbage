@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.X25519.X86
 
-public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Point tables use eight little-endian words per coordinate. -/
 

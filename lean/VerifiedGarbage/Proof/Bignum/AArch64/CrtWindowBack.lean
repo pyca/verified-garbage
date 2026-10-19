@@ -2,10 +2,15 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBack
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFront
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowPhases
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
+import VerifiedGarbage.Proof.Bignum.CrtWindowPRanges
 
 /-!
 # RSA with the CRT on AArch64: from the checks to the result

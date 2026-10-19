@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 
-public import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
+import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS on ARMv7: hashing a message of secret length

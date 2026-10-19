@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Env
-public import VerifiedGarbage.Proof.X448.X86.Fill
+import VerifiedGarbage.Proof.X448.X86.Fill
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # X448 on x86 (32-bit): initial field values

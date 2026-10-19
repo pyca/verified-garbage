@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Interleaved counter mode and GHASH: encryption

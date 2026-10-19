@@ -1,24 +1,20 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
+import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLitAdx
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointLit
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86-64

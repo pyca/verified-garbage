@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Finish
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Finish
 
 /-! # FFDH parameter generation on x86-64: functional correctness of the callable -/
 

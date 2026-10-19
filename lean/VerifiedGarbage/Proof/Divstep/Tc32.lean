@@ -1,9 +1,12 @@
 module
+public import Mathlib.Data.BitVec
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
-public import VerifiedGarbage.Proof.Divstep.Alg32
-import VerifiedGarbage.Proof.Divstep.Tc32Red
-public import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Divstep.Alg32
 import Mathlib.Algebra.Order.Ring.Abs
+import VerifiedGarbage.Proof.Divstep.Tc32Red
 
 /-!
 # Inversion by batches of divsteps: words in two's complement

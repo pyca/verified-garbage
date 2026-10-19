@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 
 /-!
 # ML-DSA: hints in memory, for every target

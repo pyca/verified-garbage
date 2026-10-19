@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Spec.Mgf1
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subgroup
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeSearch
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Hash implementations shared by the complete parameter-generation phases -/

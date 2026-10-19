@@ -1,7 +1,16 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Spec.Mgf1
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subgroup
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeSearch
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Hash implementations shared by the complete parameter-generation phases -/

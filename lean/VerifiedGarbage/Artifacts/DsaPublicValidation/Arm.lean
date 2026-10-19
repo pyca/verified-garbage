@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCT
 
 /-! # Public-key checks shared by ARMv7 DSA signing and verification -/
 

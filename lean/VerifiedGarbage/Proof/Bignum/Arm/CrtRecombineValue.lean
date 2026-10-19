@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # The padded CRT residue fits the addition loop's input width -/
 

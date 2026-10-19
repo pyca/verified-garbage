@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseStep
 public import VerifiedGarbage.Proof.X448.Arm.Square
 public import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
-import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed448 verification's equation on ARMv7: field programs

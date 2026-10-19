@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdImported
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
+public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
+import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
+import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Intermediate public states used to compose the packed-key leakage proof -/
 

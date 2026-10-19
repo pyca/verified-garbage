@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
 import VerifiedGarbage.Proof.Mont.X86_64.Ops
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Field programs on x86-64

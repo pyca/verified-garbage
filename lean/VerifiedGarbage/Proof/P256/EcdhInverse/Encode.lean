@@ -1,13 +1,17 @@
 module
 
 public import Mathlib.Tactic.NormNum
-public import VerifiedGarbage.Proof.P256.EcdhInverse.Rounds
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Divstep.WordDef
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

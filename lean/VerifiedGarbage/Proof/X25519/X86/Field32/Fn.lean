@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
+import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
 public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+public import VerifiedGarbage.Proof.X25519.Invert
+public import VerifiedGarbage.Proof.X25519.X86.Ops
 import Mathlib.Tactic.SplitIfs
 
 /-!

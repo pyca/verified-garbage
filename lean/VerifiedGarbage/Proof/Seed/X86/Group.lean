@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.Prologue
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A group of blocks of SEED ECB on x86 (32-bit)

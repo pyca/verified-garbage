@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncoding
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBody
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCmpArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
 
 /-! # Intermediate verifier states used to compose independent executions -/
 

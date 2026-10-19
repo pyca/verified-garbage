@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Ed448 verification's equation on AArch64: its comparisons, erased

@@ -1,6 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Scalar loads and stores preserve the recovery stage -/
 

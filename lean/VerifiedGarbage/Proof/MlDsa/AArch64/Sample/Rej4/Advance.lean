@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqBlock
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPair
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

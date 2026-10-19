@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Math
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # Multiword arithmetic: the mathematics of RSA with the CRT

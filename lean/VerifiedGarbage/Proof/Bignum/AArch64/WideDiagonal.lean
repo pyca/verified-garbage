@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
-public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChain
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChain
 
 @[expose] public section
 

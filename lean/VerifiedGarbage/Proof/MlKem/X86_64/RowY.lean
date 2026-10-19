@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
-public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AccY
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FinY
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
-public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
+import VerifiedGarbage.Proof.Framework.CallLay
 meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: a row of `keygen_mul` in registers (`rowY`)

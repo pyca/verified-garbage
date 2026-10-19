@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # brainpoolP256r1 public keys on x86 (32-bit): the contract the proof is written against

@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedState
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCalls
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

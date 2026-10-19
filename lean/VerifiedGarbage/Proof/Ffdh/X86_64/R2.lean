@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Pow
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH on x86-64: public Montgomery precomputation -/
 

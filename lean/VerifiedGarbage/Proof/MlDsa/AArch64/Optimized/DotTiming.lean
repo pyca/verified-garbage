@@ -4,6 +4,12 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

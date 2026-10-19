@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-! Fused ML-KEM polynomial dot product. All terms are consumed for each
 32-byte output block before that block is stored. -/

@@ -4,7 +4,12 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Round
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
 
 /-!
 # An AdvSIMD DES pass on the machine

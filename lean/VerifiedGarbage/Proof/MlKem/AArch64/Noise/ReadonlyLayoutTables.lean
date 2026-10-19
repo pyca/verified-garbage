@@ -1,6 +1,10 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutAll
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutAll
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

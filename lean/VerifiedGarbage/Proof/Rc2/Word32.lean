@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Mem
 
-public import VerifiedGarbage.Proof.Rc2.Select32
 
 /-! # RC2 word arithmetic in 32-bit registers -/
 

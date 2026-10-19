@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # ECDSA over brainpoolP512r1 on x86 (32-bit): the code as a literal

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Round
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import Mathlib.Tactic.SplitIfs
 
 /-!

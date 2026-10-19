@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.CarrySelect
-public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+public import VerifiedGarbage.Impl.Rsa.AArch64
 
 /-!
 # RSA private keys on AArch64: the shared routines and `vg_rsa_crt_values`

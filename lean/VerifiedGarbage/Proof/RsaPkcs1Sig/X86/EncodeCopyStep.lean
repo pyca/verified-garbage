@@ -1,9 +1,13 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodePadding
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.ByteMath
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Exact memory and register effects of one byte-copy step -/
 

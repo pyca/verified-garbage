@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInputs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInputs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The public ABI establishes the complete native generator entry invariant -/

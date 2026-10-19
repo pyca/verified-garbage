@@ -1,6 +1,9 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
 import Mathlib.Data.Int.ModEq
 
 /-! The wider table leaves the modulus and prime workspace headers unchanged. -/

@@ -1,21 +1,44 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
+import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Correct`. -/
 

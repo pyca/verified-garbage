@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 
 /-! Merged from `Proof.Ed25519.AArch64.Whole.Entry`. -/
 

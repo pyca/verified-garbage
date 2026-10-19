@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Public argument binding for complete arithmetic calls -/
 

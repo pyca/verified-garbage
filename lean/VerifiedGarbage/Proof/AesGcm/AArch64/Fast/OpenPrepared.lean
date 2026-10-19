@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared8
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open_prepared`

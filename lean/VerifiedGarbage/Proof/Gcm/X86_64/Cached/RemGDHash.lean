@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGHash
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Decryption: the blocks after the last group, hashed between the rounds

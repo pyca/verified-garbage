@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-! # The ChaCha20 block function (RFC 8439) on x86-64 -/
 

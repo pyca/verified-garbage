@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 @[expose] public section
 

@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferArray
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArray
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Copy the final q residue into the main reconstruction workspace -/
 

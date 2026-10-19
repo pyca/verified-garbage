@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
+import VerifiedGarbage.Proof.Bignum.Arm.PublicFail
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # Invalid public keys produce an all-zero output and failure status -/
 

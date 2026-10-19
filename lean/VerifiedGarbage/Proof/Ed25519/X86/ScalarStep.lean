@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 import VerifiedGarbage.Proof.Ed25519.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+public import VerifiedGarbage.Proof.X25519.X86.Ops
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 
 @[expose] public section
 

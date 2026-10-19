@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Refuse an incomplete draw without advancing the random tape -/
 

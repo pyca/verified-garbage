@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedAbi
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Restore every AAPCS64 preserved register from its protected slot. -/
 @[expose] public section

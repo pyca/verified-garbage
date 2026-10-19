@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Verified P-256 signature verification using the x86 comb -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 
 /-!

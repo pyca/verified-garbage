@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeArguments
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A complete native candidate test using retained generation arguments -/

@@ -1,9 +1,26 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
 
 /-!
 # One S-box of an AdvSIMD round, and the exchange of the halves

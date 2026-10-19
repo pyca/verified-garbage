@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 /-! # FFDH on x86-64: workspace switches and Boolean branches -/
 

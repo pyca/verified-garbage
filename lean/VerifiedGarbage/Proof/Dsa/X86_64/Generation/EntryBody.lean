@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputPlan
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryReady
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Dispatch
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Generate
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryReady
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Dispatch
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Generate
 
 /-! # The initialized and size-dispatched ABI body implements parameter generation -/
 

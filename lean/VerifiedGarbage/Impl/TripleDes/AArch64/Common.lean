@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section

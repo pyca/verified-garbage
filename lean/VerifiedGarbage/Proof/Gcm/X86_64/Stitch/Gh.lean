@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
 /-!
 # Interleaved counter mode and GHASH: the GHASH loads

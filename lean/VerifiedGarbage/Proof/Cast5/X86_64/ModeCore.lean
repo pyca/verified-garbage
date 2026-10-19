@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
+import VerifiedGarbage.Proof.Cast5.X86_64.Ecb
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.Cast5.X86_64.Modes
+public import VerifiedGarbage.Proof.Cast5.X86_64.Block
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5's core for the modes on x86-64

@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
-import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.AesXts.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # One-pass XTS-AES on x86-64: the tweaks XORed in, before and after

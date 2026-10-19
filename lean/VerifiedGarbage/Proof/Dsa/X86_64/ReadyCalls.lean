@@ -6,9 +6,7 @@ import VerifiedGarbage.Proof.Dsa.X86_64.CoreCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreReduce
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import Mathlib.Tactic.Set
 
 /-! # Arithmetic calls preserving the complete DSA execution context -/
 

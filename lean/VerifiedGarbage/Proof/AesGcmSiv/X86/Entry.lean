@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Contract
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on x86: the arguments and the entry

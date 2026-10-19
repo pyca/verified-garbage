@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Mgf1.Basic
-public import VerifiedGarbage.Proof.RsaPss.CtPad
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.RsaPss.CtPad
 
 /-!
 # MGF1, a byte at a time

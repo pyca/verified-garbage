@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipeArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
-public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
-public import VerifiedGarbage.Proof.Bignum.FrameOutside
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipeArgs
+import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Erase the complete temporary encoding while preserving the result status -/
 

@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
-public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Zeroing the signature and restoring registers on public domain rejection -/
 

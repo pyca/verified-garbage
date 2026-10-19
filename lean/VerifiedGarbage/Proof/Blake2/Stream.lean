@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Blake2
 
 /-!
 # Streaming BLAKE2: target-independent lemmas

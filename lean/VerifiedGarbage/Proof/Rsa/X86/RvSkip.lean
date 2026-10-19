@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import Mathlib.Data.Int.ModEq
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The initial recovery validity test -/
 

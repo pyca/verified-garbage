@@ -1,18 +1,43 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+import VerifiedGarbage.Proof.P256.Comb7
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Data.BitVec
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.LinearCombination
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
+public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.InvAllocated
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
+public import VerifiedGarbage.Proof.Framework.Contract
+import Mathlib.Data.Finset.Card
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on AArch64

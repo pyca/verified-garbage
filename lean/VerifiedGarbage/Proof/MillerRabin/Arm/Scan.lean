@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Pieces2
 
-public import VerifiedGarbage.Proof.MillerRabin.Arm.Words
+import VerifiedGarbage.Proof.MillerRabin.Arm.Ops
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
 /-! # The Miller–Rabin round on ARMv7: the scan and the table's shift
 

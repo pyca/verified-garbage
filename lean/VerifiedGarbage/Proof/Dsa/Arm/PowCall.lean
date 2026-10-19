@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Pow
-public import VerifiedGarbage.Proof.Dsa.SameTrace
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

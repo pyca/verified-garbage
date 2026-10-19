@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootTable
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

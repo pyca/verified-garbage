@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.RsaPss.Params
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The bytewise zero predicate agrees with DSA's integer decoder -/
 

@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseStep
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseStep
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! # Runtime byte copying, with byte-exact output and memory preservation -/
 

@@ -4,8 +4,10 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the candidates

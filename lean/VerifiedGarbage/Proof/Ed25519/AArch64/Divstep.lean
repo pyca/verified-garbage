@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.X25519.Invert

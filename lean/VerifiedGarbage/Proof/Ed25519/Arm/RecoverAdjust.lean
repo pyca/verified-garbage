@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
 public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverParity`. -/
 

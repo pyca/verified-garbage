@@ -2,15 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Base
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 
 /-!
 # `vg_rsa_private_crt` on x86-64: the baseline: the variant's code and proofs

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+public import VerifiedGarbage.Proof.Sm4.SboxTable
 
-public import VerifiedGarbage.Proof.Sm4.Arm.Copy
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.Arm.Core
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Slots, and saving and restoring registers, on ARMv7

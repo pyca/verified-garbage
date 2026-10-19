@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCT8
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: verified against the shared contract

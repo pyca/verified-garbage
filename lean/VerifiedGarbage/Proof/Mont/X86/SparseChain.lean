@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Carry and borrow chains for sparse x86 reduction -/
 

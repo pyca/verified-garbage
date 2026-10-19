@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MdStream.X86_64
 
-public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-! Word-sized operations on PSS's small buffers. -/
 

@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveArithmetic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFlags
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFlags
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
+import VerifiedGarbage.Proof.Ecdsa.Projective
 
 @[expose] public section
 

@@ -1,7 +1,9 @@
 module
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Cfb8
 
-public import VerifiedGarbage.Spec.Cfb8.Contract
-public import VerifiedGarbage.Proof.AesCbc.Spec
 
 /-!
 # CFB8: the mode one byte at a time

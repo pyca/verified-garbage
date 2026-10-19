@@ -1,8 +1,38 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Implies
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.StackScratch.X86
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Verified
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Finish
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming TDEA-CMAC on x86, with its working space on the stack

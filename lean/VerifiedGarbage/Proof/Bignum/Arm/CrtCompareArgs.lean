@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCompareProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Public pointers and word count for the full CRT product comparison -/
 

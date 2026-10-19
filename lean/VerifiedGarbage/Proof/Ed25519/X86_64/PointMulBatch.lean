@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 
 /-! One checkpoint batch advances the exact scalar-multiplication invariant. -/
 

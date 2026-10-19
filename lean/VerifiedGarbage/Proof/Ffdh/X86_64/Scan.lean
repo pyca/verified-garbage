@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Ffdh.Lead
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH on x86-64: scan the public subgroup order -/
 

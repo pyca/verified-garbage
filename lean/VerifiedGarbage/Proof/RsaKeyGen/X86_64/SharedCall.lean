@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedWitness
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
-public import VerifiedGarbage.Proof.Bignum.X86_64.Template
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

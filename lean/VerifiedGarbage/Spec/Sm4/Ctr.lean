@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Spec.Ctr
+public import VerifiedGarbage.Spec.Sm4
 
-public import VerifiedGarbage.Spec.Sm4.Contract
-public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # SM4-CTR: the contract, on every target

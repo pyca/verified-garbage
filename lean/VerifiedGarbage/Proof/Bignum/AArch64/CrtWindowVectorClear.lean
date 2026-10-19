@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBlock
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Clear the four selection accumulators without disturbing scalar state. -/
 

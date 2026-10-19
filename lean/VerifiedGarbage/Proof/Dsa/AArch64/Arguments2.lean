@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Arguments
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Input and output bindings for streaming reduction -/
 

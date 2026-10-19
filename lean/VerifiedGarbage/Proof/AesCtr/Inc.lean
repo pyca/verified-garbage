@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CTR: the increment, in words

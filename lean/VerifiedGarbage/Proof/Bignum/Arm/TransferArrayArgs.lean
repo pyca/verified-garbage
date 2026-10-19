@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Select public source and destination arrays across workspaces -/
 

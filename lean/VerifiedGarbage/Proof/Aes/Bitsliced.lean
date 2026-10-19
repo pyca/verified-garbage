@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-!

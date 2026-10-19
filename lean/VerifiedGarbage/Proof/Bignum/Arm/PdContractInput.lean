@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Bignum.Arm.PdInput
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Impl.Bignum.Arm.CrtAcceptance
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # Checked public RSA satisfies its shared contract under AAPCS -/
 

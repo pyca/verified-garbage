@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Arguments
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
 
 /-! # Complete DSA arithmetic calls, from operand binding through return -/
 

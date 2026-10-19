@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.InputCompare
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Range checking does not require a prevalidated modulus -/
 

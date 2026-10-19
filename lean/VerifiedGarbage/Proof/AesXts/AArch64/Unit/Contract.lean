@@ -1,6 +1,14 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesXts.AArch64Unit
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Xts.Contract
 
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Call
+import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # XTS-AES of data units on AArch64: the contract the proofs are written against

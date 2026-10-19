@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The comb from tables in memory on x86 (32-bit): digits

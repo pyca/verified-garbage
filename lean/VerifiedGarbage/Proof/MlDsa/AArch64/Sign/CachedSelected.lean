@@ -1,17 +1,20 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.CachedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.CachedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedVerified
 
 @[expose] public section
 

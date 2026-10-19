@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SeedSpec
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Invariant
 
 /-! # Relate bounded continuation blocks to the 840-byte SHAKE stream -/
 @[expose] public section

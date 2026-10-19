@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesCcm.X86.Frame
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Cmac.Contract
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86

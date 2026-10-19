@@ -4,19 +4,43 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Rel
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Spec.X25519
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 meta import VerifiedGarbage.Spec.X25519
 
 /-!

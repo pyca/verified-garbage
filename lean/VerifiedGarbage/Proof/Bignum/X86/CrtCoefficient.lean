@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCoefficient
-public import VerifiedGarbage.Proof.Bignum.X86.ReduceOperand
-public import VerifiedGarbage.Proof.Bignum.X86.ContextSub
-public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Bignum.X86.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.X86.ContextSub
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 
 /-! # Correct reduced CRT coefficient after full-width residue reduction -/
 

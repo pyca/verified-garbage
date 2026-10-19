@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 public import VerifiedGarbage.Proof.Ffdh.Lead
-public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH domain validation on x86-64: retained public data -/

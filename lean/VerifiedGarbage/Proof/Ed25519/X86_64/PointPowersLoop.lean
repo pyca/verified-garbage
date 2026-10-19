@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Termination and table contents for the checkpoint loop. -/
 

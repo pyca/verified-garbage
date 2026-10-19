@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 /-! A proof-only taint domain for public values saved in either 64-bit SIMD lane. -/
 @[expose] public section
 namespace VG.AArch64.LaneTaint

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
 
-public import VerifiedGarbage.Proof.MlKem.Arm.PrfCT
+import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂` in constant time

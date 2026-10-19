@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
+import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
+import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
 
 /-! # The framed body restores the caller's saved registers -/
 

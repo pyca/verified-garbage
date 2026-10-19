@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
 public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Argon2.Permutation
-import VerifiedGarbage.Proof.Argon2.X86_64.Words
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Argon2.Permutation
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-! Merged from `Proof.Argon2.X86_64.Round`. -/
 

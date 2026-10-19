@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+public import VerifiedGarbage.Proof.Gcm.Stream
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on ARMv7: GHASH absorbing a piece (`absorb`)

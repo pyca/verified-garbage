@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
 public import Mathlib.Tactic.Module
 

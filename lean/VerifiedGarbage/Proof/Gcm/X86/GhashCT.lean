@@ -8,6 +8,14 @@ public import VerifiedGarbage.Proof.Aes.X86.Common
 meta import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Wp
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-!
 # GHASH on x86 (32-bit): the contract, and constant time

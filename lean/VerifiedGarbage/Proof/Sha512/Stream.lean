@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming SHA-512: facts about the specification

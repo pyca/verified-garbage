@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Status and public-length branches of the encoder -/
 

@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.ColEnd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # The four columns of a product

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! The outer loop accumulates the exact product, one eight-word row at a time. -/
 

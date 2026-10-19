@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryDepth
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
 import VerifiedGarbage.Proof.Framework.Omega
 

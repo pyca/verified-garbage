@@ -1,16 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.EntryBranch
-public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86
-public import VerifiedGarbage.Spec.Hmac.Generic
+import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 
 /-!
 # HMAC's `init` for a key of any length on x86 (32-bit), choosing on entry

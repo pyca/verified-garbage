@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CckCorrect
-public import VerifiedGarbage.Proof.Rsa.Arm.CckTaint
+import VerifiedGarbage.Proof.Rsa.Arm.CckTaint
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
 
 /-! # `vg_rsa_check_crt_key` on ARMv7 is verified against the shared RSA contract -/
 

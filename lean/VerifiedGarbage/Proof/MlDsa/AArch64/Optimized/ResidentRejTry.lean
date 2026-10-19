@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentRejVec.lean` -/
 

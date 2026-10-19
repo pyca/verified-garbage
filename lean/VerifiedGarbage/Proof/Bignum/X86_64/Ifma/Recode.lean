@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Exp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the exponent's digits

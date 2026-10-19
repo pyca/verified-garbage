@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PcComputed
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcPrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcComputed
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Successful public precomputation has no secret-dependent trace -/
 

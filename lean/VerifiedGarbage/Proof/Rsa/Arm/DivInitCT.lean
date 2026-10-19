@@ -1,12 +1,55 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import Batteries.Logic
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivInit
-public import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Rsa.Arm.Div
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
+import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+import VerifiedGarbage.Proof.Bignum.Arm.RowStep
+import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasBody
+import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasRow
+import VerifiedGarbage.Proof.Bignum.Arm.SelectPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.SelectStep
+import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
+import VerifiedGarbage.Proof.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
+import VerifiedGarbage.Proof.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.SubBody
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.SubStep
+import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGe
+import VerifiedGarbage.Proof.Bignum.Arm.WideMath
+import VerifiedGarbage.Proof.Bignum.Arm.WideValue
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Division initialization uses only public lengths and pointers -/
 

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBank
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

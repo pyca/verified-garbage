@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA verification on x86-64: the contract, the layout and the invariant

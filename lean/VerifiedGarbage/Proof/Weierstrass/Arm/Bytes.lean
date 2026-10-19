@@ -1,7 +1,24 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-public import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Row
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words32
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
 

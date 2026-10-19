@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Arm.Words
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-public import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Mont.Arm.Step
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

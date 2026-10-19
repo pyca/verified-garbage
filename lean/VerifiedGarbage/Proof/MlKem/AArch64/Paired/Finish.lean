@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 
 /-! # Complete paired samples and restore the enclosing matrix loop -/
 @[expose] public section

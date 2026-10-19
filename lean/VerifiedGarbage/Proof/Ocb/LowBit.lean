@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # `ntz` as the lowest set bit

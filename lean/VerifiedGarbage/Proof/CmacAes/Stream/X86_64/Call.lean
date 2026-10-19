@@ -3,7 +3,8 @@ module
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

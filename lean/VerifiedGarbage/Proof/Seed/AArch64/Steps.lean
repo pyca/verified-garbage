@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The steps of a round, lane by lane

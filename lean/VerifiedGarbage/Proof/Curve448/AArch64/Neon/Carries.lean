@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import Mathlib.Tactic.LinearCombination
+public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The coefficients' carries

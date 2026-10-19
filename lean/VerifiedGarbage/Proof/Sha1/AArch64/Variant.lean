@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha1.AArch64.Stream.Md
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # SHA-1 compression backends on AArch64

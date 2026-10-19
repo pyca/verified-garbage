@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import VerifiedGarbage.Proof.Framework.Semantics
+import Batteries.Tactic.Init
+import Batteries.Tactic.PermuteGoals
+import Batteries.Tactic.SeqFocus
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! A kernel-checkable lookup tree for untrusted forwarding certificates.
 Lookup soundness only needs every stored entry to satisfy the predicate;

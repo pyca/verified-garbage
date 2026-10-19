@@ -1,8 +1,9 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Context
-public import VerifiedGarbage.Proof.Ffdh.X86_64.R2
-public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH exchange on x86-64: data retained across arithmetic -/

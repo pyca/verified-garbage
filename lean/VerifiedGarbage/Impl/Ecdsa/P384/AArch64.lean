@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
-public import VerifiedGarbage.Spec.P384
 public import VerifiedGarbage.Impl.P384.CombTable7
 
 /-! # ECDSA over P-384 on AArch64: six-word field elements and scalars -/

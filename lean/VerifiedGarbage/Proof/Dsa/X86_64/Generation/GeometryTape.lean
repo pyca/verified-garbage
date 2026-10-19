@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Geometry
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 /-! # Immutable entropy tapes are disjoint from every mutable generation area -/
 

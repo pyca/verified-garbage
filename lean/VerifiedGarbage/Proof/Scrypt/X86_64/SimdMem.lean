@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Unaligned SSE2 copy and XOR, preserving every general-purpose register. -/
 

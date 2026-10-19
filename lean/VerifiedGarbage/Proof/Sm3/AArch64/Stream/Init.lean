@@ -1,17 +1,41 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Sm3.AArch64.Compress
-meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 import VerifiedGarbage.Impl.Sm3.AArch64.Stream
 meta import VerifiedGarbage.Impl.Sm3.AArch64.Stream
 import VerifiedGarbage.Proof.Sm3.Stream
 meta import VerifiedGarbage.Proof.Sm3.Stream
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+public import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+public import VerifiedGarbage.TCB.AArch64.Target
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm3.StateMem
+meta import VerifiedGarbage.Proof.Sm3.StateMem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sm3.AArch64.Compress
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 
 /-!
 # Streaming SM3 on AArch64: `init`

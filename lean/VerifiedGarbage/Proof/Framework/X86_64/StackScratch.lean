@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # A scratch buffer on the stack (x86-64)

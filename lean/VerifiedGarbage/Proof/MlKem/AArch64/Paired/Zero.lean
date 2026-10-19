@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
 
 /-! # Clear the suffix of a failed continued matrix sample -/
 

@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeSetup
-public import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 
 /-! Prepare R² and the inverse without a nonzero-top-limb assumption. -/
 @[expose] public section

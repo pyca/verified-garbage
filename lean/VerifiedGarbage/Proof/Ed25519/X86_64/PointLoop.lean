@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointLoop
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+public import VerifiedGarbage.Proof.Ed25519.ScalarMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Sixteen exact doublings, preserving the saved accumulator. -/
 

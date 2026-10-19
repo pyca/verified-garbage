@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The three blocks of a four-word squaring (`sqrCross`,
 `sqrDouble`, `sqrDiag`), each run once on its registers. -/

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 
 /-!
 # ML-KEM on AArch64: an iteration of `dd10Body`

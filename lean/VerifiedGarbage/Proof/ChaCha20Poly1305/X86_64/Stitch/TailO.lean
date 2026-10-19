@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last bytes of `open`

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): one HMAC

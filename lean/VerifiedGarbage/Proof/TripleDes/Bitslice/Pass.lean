@@ -6,6 +6,12 @@ public import VerifiedGarbage.Proof.TripleDes.Core
 meta import VerifiedGarbage.Proof.TripleDes.Core
 import VerifiedGarbage.Proof.TripleDes.Word
 meta import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
+meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+meta import VerifiedGarbage.Proof.TripleDes.Permutation
+meta import VerifiedGarbage.Proof.TripleDes.Round
 
 /-!
 # A bitsliced DES pass, lane by lane

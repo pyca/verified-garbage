@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Full reduction of four limbs to the canonical residue. -/
 

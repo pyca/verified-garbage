@@ -1,16 +1,13 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdh.P224.X86_64
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.P224.Lit
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P224
 
 /-!
 # ECDH over P-224 (SP 800-56A) on x86-64

@@ -2,6 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-! The complete compression/update sequence from allocation and frame invariants. -/
 

@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 
 /-!

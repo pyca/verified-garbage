@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Pre
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Ntt16.Readonly

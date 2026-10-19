@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # The low boundary of DSA scalar and group-element ranges -/
 

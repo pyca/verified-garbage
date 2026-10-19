@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.Impl.Camellia.AArch64.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
 public import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced Camellia S-box on AArch64

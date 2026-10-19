@@ -1,16 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OutCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ## From `MemoryOut.lean` -/
 

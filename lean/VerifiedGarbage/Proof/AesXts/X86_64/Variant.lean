@@ -4,6 +4,38 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
 public import VerifiedGarbage.Impl.AesXts.X86_64Unit
+import VerifiedGarbage.Proof.AesXts.X86_64.CT
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesXts.Alpha
+import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
+import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
+import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-!
 # Recovering the prime factors: exponentiation in Montgomery form, and masks

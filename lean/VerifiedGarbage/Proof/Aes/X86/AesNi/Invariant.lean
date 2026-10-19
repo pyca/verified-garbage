@@ -1,8 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Setup
 import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

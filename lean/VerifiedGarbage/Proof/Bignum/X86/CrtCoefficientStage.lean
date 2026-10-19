@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.X86.CheckedPrimePower
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLoadCoefficient
-public import VerifiedGarbage.Proof.Bignum.X86.CheckedPreparePrime
+import VerifiedGarbage.Proof.Bignum.X86.CrtLoadCoefficient
+import VerifiedGarbage.Proof.Bignum.X86.CheckedPreparePrime
+import VerifiedGarbage.Proof.Bignum.X86.PrimeSetupFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # The coefficient stage uses the preserved factor residues and inverse -/
 

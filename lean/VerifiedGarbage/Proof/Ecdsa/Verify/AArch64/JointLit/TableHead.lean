@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit.Program
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! The head of the forwarded additions of P-256 verification's window table, as a
 literal (`Proof/Framework/Lit.lean`): `Forward.ArithmeticTableHead`'s. -/

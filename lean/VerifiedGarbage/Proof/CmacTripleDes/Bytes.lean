@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # TDEA-CMAC: blocks as bytes and as 64-bit integers

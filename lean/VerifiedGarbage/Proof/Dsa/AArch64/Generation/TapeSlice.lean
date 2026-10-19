@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
-public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The next significant witness bytes are a disjoint slice of the random tape -/
 

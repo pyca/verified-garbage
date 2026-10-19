@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCode
 
 /-!
 # Precomputed RSA public operation: with AVX512_IFMA: the variant's code and proofs

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont1
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont
 
 /-! # A candidate on ARMv7: steps that keep Montgomery multiplication ready
 

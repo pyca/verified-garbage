@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Entry
-public import VerifiedGarbage.Proof.Dsa.Arm.Shape
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: saving the registers and the arguments

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.WordState
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

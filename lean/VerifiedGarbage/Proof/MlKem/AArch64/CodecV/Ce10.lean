@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 
 /-!
 # ML-KEM on AArch64: `ce10Math`

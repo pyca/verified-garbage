@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the calls without stack arguments

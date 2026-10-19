@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Ctr
+public import VerifiedGarbage.Proof.AesSiv.AArch64.FinishShort
+public import VerifiedGarbage.Proof.AesSiv.Words
 import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on AArch64: the counter, and the end of `vg_aes_siv_encrypt`

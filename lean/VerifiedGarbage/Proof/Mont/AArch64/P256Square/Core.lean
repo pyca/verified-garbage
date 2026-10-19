@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Reduce
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

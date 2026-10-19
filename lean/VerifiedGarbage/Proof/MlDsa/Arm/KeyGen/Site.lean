@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Base
-public import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.MlKem.Arm.Calls
+import VerifiedGarbage.Proof.MlKem.Arm.Prf
 
 /-!
 # ML-DSA on 32-bit ARM: the buffers of the top-level functions

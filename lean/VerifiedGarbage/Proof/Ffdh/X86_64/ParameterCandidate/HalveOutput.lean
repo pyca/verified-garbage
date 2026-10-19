@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Halve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH parameter generation on x86-64: derive q in the output buffer -/
 

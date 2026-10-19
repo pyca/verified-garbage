@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Spec.MlKem.KpkeMul
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_decrypt_mul`

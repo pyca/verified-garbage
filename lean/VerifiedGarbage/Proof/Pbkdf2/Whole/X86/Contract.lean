@@ -1,11 +1,13 @@
 module
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Spill
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the contract

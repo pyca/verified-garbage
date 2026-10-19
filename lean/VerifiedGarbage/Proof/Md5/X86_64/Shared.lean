@@ -1,14 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Md5.X86_64.Compress
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
 public import VerifiedGarbage.Proof.Md5.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # MD5 on x86-64: the shared contracts

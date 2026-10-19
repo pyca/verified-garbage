@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingInstalled
-public import VerifiedGarbage.Proof.Dsa.X86.WidthDispatch
-public import VerifiedGarbage.Proof.Dsa.X86.ReturnFrame
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingInstalled
+import VerifiedGarbage.Proof.Dsa.X86.WidthDispatch
+import VerifiedGarbage.Proof.Dsa.X86.ReturnFrame
+import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 
 /-! # Complete functional and cdecl verification of the x86 verifier -/
 

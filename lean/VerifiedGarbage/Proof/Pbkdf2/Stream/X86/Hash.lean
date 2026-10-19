@@ -1,17 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Contract
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
-public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.OmegaLit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the functions we call

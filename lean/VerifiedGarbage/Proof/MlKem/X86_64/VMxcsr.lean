@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
 /-!

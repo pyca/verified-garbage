@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Invert
 public import VerifiedGarbage.Proof.X25519.AArch64.Codec
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Recover validation inputs from the selected workspace -/
 

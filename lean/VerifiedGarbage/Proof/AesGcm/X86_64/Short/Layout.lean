@@ -1,6 +1,16 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM's short path on x86-64: what `G` holds

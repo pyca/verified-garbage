@@ -5,6 +5,54 @@ meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotContract
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+meta import VerifiedGarbage.Proof.MlDsa.Round.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 @[expose] public section
 

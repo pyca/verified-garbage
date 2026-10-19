@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
+import VerifiedGarbage.Proof.Dsa.Arm.PowVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.Dsa.Arm.Pow
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # DSA's exponentiations on ARMv7
 

@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin

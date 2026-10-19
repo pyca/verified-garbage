@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Ball
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 
 /-!
 # ML-DSA on 32-bit ARM: the loops of `vg_mldsa_sample_in_ball`

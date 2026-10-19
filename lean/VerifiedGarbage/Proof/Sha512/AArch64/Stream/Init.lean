@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Streaming SHA-512 on AArch64: `init`

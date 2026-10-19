@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+public import VerifiedGarbage.Impl.Bignum.Arm.R2
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.R2
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-! # Constant-time initialization of an RSA workspace array -/
 

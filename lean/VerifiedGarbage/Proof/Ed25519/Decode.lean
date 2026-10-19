@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.X25519.Field
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! The length and canonical-coordinate branches of point decoding. -/
 

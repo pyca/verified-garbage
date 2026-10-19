@@ -1,7 +1,13 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Phase
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X25519.X86_64.Env
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: before the loop

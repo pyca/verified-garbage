@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 
 /-! # The 16-bit encryption noise
 

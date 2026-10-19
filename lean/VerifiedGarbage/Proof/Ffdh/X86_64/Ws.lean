@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: the nested workspaces -/

@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, with 16-bit polynomials, constant time

@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Steps
-public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # What the modes need of a block cipher's core, on AArch64

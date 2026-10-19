@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.Arm.MemoryInit
 public import VerifiedGarbage.Impl.Argon2.Arm.Compress
 public import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.Impl.Argon2.Arm.Initial
 
 /-!
 # Argon2 on ARMv7: filling the memory

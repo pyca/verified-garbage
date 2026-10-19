@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderIncrement
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderDecrement
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderIncrement
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderDecrement
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # Advance both product pointers and the public row count -/
 

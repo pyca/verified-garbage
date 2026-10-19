@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 

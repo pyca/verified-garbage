@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidInput
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeStageCT
 
 /-! # The full private RSA path reveals no key, ciphertext, or rejection bit -/
 

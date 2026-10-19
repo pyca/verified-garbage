@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `ldp` and `stp` of the workspace
 

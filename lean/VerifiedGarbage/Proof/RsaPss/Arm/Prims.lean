@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.Step
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBytes
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on ARMv7: the byte loops of `Impl/Bignum/Arm/`

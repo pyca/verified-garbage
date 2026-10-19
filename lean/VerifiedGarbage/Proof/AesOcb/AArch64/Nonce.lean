@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Offset0
+import VerifiedGarbage.Proof.AesOcb.AArch64.Offset0
+import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-OCB on AArch64: `Offset_0` from the nonce (`nonce`)

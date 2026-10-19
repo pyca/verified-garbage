@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Spec.ChaCha20.Contract
 
-public import VerifiedGarbage.Spec.ChaCha20.Contract
 
 /-!
 # ChaCha20 out of place

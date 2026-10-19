@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import VerifiedGarbage.Proof.Mont.Words
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Save private RSA output and scratch pointers in the call frame -/
 

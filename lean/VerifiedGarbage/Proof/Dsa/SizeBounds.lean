@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.DomainWidths
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Arithmetic bounds implied by DSA's supported actual bit lengths -/
 

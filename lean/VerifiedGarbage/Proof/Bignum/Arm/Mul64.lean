@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Mul64
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
-public import VerifiedGarbage.Proof.Bignum.Arm.Mul64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Mul64Math
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Instruction-level register-pair multiplication -/
 

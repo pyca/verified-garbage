@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Adjacent-word shifts by one, five or seven bits retain every scalar bit. -/
 

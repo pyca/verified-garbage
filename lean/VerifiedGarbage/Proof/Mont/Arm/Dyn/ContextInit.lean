@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Mem
+import VerifiedGarbage.Proof.AesCfb8.Mem
 public import VerifiedGarbage.Proof.AesCbc.Arm.Loop
-public import VerifiedGarbage.Impl.AesCfb8.Arm
+public import VerifiedGarbage.Proof.AesCfb8.Spec
+import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CFB8 on ARMv7: the contracts, and the loop

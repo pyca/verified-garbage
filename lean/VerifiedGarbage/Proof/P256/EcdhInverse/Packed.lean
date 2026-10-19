@@ -4,11 +4,10 @@ public import VerifiedGarbage.Impl.P256.EcdhInverse
 public import VerifiedGarbage.Proof.P256.EcdhInverse.First40
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk19
 import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Divstep.WordBasic
-import VerifiedGarbage.Proof.Divstep.WordDef
 import VerifiedGarbage.Proof.P256.EcdhInverse.Compose
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

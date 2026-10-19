@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Spec.MlDsa.ResponseHint
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `ResponseHintCorrect.lean` -/
 

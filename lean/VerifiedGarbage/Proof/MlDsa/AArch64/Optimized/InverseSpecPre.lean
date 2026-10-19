@@ -1,14 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableMemory
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Spec.MlDsa.Montgomery
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 
 /-! ## From `InverseSat.lean` -/
 

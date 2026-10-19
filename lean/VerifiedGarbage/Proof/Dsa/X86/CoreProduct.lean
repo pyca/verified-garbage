@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
+import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Complete ordinary modular product call, including byte I/O -/
 

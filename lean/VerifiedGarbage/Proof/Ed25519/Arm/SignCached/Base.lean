@@ -2,6 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 @[expose] public section
 

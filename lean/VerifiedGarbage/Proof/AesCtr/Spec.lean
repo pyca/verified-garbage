@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Spec.Ctr.Contract
+public import VerifiedGarbage.Spec.Ctr
 
 /-!
 # CTR: the mode one block at a time

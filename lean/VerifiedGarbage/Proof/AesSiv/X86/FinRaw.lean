@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Call
-public import VerifiedGarbage.Proof.AesSiv.X86.Contract
 public import VerifiedGarbage.Proof.CmacAes.X86.Finalize
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
-import VerifiedGarbage.Proof.Framework.X86.Straight
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Siv
 
 /-!
 # AES-SIV on x86: calling `vg_cmac_aes_finalize` with any subkeys

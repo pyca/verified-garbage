@@ -1,6 +1,14 @@
 module
-
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+
 
 /-! # Shared bounded comparisons for ARMv7 RSA modulus validation -/
 

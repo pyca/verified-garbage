@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTimingState
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateBodyTiming
+import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Equal declared attempt counts give equal search traces -/
 

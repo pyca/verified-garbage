@@ -11,6 +11,13 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Ladder
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.Ed448.Formulas
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # Ed448 base-point multiplication on AArch64: the encoding

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
-public import VerifiedGarbage.Proof.Argon2.Initial
+import VerifiedGarbage.Proof.Argon2.Initial
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+public import VerifiedGarbage.Proof.Argon2.HPrime
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

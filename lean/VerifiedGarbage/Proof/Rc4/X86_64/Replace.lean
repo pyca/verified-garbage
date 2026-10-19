@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
+import VerifiedGarbage.Proof.Rc4.Memory
 
 /-! # RC4 on x86-64: replacing a secret-indexed byte of the table -/
 

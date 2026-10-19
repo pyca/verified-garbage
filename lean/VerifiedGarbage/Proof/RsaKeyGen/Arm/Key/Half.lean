@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 
 /-! # An RSA key on ARMv7: halvings under a mask, words of constants, a flag cleared -/
 

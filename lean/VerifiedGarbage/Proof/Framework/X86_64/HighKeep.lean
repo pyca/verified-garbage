@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Preservation of cached high registers by GCM's loop instructions -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.Arm.Call
 public import VerifiedGarbage.Spec.X448.Field16
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # X448 on ARMv7: the field functions' contracts

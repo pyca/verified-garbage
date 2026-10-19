@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferPadded
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+import VerifiedGarbage.Proof.Bignum.Arm.TransferPadded
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Return the narrow power to the factor's full-width workspace -/
 

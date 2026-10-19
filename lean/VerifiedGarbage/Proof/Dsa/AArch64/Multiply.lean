@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 
 /-! # Complete ordinary modular multiplication for DSA -/
 

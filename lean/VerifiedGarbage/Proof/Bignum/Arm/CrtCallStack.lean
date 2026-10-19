@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Immutable AAPCS arguments across private RSA workspace switches
 

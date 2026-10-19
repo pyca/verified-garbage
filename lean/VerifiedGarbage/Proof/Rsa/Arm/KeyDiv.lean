@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
-public import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
-public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
+public import VerifiedGarbage.Proof.Framework.Lit
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
+import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
 
 /-! # The division of `Impl/Rsa/Arm/Div.lean` on arrays of the key working space
 

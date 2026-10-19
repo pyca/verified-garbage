@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecMath
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecSpec
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 /-! # The decoder reads exactly twelve bytes -/
 

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.CombStagesCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 
 /-! # Constant time of the public-key body with a fixed-base comb -/
 

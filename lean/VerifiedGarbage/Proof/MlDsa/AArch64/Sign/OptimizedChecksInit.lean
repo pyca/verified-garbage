@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

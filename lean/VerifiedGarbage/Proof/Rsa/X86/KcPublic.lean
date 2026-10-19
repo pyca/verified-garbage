@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcValid
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Public modulus and exponent validation for both key-check APIs -/
 

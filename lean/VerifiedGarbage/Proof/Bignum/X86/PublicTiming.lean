@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
 
 /-! # Constant-time arithmetic in the compact public RSA workspace -/
 

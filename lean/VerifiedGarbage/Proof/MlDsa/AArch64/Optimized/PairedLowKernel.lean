@@ -2,15 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowPair
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## `PairedLowKernel` -/
 

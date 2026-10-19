@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointBrainpoolP384r1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Weierstrass.Arm.Point
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 
 /-!
 # brainpoolP384r1's point addition and doubling on 32-bit ARM

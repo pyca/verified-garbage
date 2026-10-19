@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.P384.Curve
+import VerifiedGarbage.Proof.P384.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Order
-public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.P384
+import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Point
 
 /-!
 # P-384 has prime order

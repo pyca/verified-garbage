@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.X86.Instr
 public import VerifiedGarbage.TCB.X86.Target
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86 (32-bit): the field functions' arguments

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.Affine
 public import VerifiedGarbage.Proof.Weierstrass.Field
 public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 
 /-!
 # The complete formulas compute the specification's group law

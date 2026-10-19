@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import VerifiedGarbage.Spec.BrainpoolP256r1
 
 /-! # ECDSA over brainpoolP256r1 on 32-bit ARM: four-word field elements and scalars -/
 

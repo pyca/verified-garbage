@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Common
-public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Impl.MlKem.X86.Compress
 import Mathlib.Tactic.SplitIfs
 

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmall
 public import VerifiedGarbage.Proof.Bignum.Arm.Zero
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The initialized array is exactly the chosen native-word integer -/
 

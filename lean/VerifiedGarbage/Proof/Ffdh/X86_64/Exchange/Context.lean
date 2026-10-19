@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # FFDH exchange on x86-64: memory and lengths -/
 

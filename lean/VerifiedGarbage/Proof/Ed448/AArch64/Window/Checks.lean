@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
-public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
+import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.X448.AArch64.Freeze
+import VerifiedGarbage.Proof.Curve448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic

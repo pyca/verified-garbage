@@ -1,8 +1,16 @@
 module
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Load
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Bounded byte output for public signed digits. -/
 

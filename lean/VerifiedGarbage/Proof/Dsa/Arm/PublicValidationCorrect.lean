@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
 
 /-! # Functional correctness against the public validation contract -/
 

@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P192.Arm
-public import VerifiedGarbage.Proof.EcKey.Arm.P192.Verified
+import VerifiedGarbage.Proof.EcKey.Arm.P192.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P192
 
 /-!
 # P-192 public keys (FIPS 186-5 §A.2) on 32-bit ARM

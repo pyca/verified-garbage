@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.RuntimeSub
+import VerifiedGarbage.Proof.Bignum.X86.RuntimeSub
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Reduced subtraction inside a runtime RSA factor workspace -/
 

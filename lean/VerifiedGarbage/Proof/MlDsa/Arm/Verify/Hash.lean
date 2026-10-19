@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Row
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = H(μ ‖ w1Encode(w′₁), λ/4)`

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Emit
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect
 
 /-! # Parameter generation with every supported SHA-1, SHA-256, and Miller–Rabin backend -/
 

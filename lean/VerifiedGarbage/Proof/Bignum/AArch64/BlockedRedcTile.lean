@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcWord
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancel
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRow
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 

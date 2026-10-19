@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BufferSeparate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Concrete q-phase layout inside the shared generation arena -/
 

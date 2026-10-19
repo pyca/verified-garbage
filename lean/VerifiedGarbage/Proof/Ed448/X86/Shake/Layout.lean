@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 public import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 on x86 (32-bit): what a complete operation's calls need of its layout

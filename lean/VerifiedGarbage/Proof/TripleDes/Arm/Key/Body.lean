@@ -9,11 +9,15 @@ import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
 import VerifiedGarbage.Proof.TripleDes.Arm.Word
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Rotation
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## `Load` -/
 

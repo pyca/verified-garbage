@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StreamStep
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Input and header preservation during streaming reduction -/
 

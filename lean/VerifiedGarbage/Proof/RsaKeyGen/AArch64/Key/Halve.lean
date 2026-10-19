@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # An RSA key from its primes on AArch64: `φ` and the halving

@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
-public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 /-! # Exact values and memory effects of native argument transfers -/
 

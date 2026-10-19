@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.WideWindow
 
 /-! # Schoolbook partial products fit the row accumulator -/
 

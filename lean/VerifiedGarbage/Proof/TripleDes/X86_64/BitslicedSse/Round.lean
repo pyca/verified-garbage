@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Step
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # An SSE2 round on the machine

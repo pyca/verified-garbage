@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvHead
+public import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpLt
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: the arguments

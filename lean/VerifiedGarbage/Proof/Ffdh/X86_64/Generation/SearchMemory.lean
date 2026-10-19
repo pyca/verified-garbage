@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Output permissions relative to the persistent generation controller -/
 

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSeedHash
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Copy each p hash contribution with a public address trace -/
 

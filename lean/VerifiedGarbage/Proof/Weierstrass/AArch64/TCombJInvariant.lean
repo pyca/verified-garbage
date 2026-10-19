@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-public import VerifiedGarbage.Proof.Weierstrass.JacMadd
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 

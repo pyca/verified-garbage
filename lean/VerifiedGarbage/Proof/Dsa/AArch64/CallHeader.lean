@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Return
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Frames for DSA arithmetic call arguments -/

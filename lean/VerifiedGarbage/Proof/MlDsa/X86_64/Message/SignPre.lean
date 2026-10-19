@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Layout
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the precondition and the layout

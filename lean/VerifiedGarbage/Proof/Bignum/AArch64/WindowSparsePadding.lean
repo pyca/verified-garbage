@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseRows
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

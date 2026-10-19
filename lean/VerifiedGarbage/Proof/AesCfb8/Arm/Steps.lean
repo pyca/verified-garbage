@@ -1,8 +1,15 @@
 module
+public import Batteries.Logic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesCfb8.Arm
+public import VerifiedGarbage.Proof.AesCfb8.Mem
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # AES-CFB8 on ARMv7: the code after the call

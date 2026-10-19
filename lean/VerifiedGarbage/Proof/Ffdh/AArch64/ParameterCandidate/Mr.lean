@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # An FFDH parameter candidate on AArch64: Miller–Rabin

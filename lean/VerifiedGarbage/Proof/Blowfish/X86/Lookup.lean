@@ -1,8 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Blowfish.X86.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
+public import VerifiedGarbage.Impl.Blowfish.X86
+public import VerifiedGarbage.Proof.Blowfish.F
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Rc4.Table
 
 /-!
 # Blowfish on x86 (32-bit): an S-box lookup

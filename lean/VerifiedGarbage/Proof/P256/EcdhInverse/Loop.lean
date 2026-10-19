@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Batch
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import Mathlib.Tactic.FieldSimp
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
 
 @[expose] public section
 

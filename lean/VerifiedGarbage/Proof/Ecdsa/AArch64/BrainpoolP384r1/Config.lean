@@ -4,9 +4,58 @@ public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.BrainpoolP384r1.Point
 import VerifiedGarbage.Proof.BrainpoolP384r1.Prime
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
+import VerifiedGarbage.Proof.Weierstrass.Pow
 
 /-! # brainpoolP384r1 parameters for the AArch64 arithmetic -/
 

@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
-public import VerifiedGarbage.Proof.Mont.X86.ContextMul
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
-public import VerifiedGarbage.Proof.Mont.X86.ExponentMask
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentMask
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # The masked multiply in right-to-left exponentiation -/
 

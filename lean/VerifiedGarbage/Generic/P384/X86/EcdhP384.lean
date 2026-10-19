@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P384.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.P384.Verified
 import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.P384
 
 /-!
 # ECDH over P-384 (SP 800-56A) on x86 (32-bit)

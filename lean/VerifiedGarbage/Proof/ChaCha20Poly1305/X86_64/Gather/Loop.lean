@@ -1,15 +1,22 @@
 module
+public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-public import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.Gcm.SealGather
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering the slices

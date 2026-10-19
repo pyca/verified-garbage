@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Native-word effects of the public-exponent accumulation step -/
 

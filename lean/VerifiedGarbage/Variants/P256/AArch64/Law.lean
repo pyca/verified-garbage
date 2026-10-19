@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.Curve
 public import VerifiedGarbage.Proof.P256.PrimeOrder
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
+public import Mathlib.Data.BitVec
+public import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # P-256's group law, on AArch64

@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryHash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Concrete p-candidate construction plan for each accepted subgroup candidate -/
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ExponentScanState
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentLoopTiming
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.X86.ExponentLoopTiming
+import VerifiedGarbage.Proof.Bignum.X86.ExponentScan
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Exponent-validation timing depends only on the public exponent bytes -/
 

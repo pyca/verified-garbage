@@ -4,20 +4,55 @@ public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Md5.X86.Lit
 meta import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions

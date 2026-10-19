@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Batch
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
-public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
 
 /-! # The inversion's start and end on AArch64
 

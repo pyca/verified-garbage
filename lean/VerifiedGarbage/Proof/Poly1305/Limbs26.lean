@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Poly1305
 
 /-!
 # Poly1305 in 26-bit limbs

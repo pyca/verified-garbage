@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Message
-public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
+public import Batteries.Logic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Lit
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Impl.MlDsa.Arm.Message
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: where everything is

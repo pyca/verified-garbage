@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.CT
+import VerifiedGarbage.Proof.X448.X86.CT
 public import VerifiedGarbage.Proof.X448.X86.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.X448.X86.Contract
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86 (32-bit): `Verified`

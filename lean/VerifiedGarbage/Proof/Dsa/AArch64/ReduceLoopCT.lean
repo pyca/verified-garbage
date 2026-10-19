@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceByteCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Constant time of nonempty streaming reduction -/
 

@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
+public import VerifiedGarbage.Proof.Cmac.Block32
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.AesGcm.Arm.Tag
 
 /-!
 # AES-GCM-SIV on ARMv7: a block encrypted with the encryption key (`tag`)

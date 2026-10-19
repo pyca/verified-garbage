@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquare
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateNext
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquare
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateNext
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # One complete recovery candidate -/
 

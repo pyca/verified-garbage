@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA key generation: the keys from the sampled polynomials

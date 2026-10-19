@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvABI
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvBodyTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvEntryTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvArgumentsEq
-public import VerifiedGarbage.Proof.Rsa.X86.RvObservations
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvBodyTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvArgumentsEq
+import VerifiedGarbage.Proof.Rsa.X86.RvObservations
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvReturn
+import VerifiedGarbage.Proof.Rsa.X86.RvInstalled
+import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.RvResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # The complete recovery operation leaks only the contract's declared public inputs -/
 

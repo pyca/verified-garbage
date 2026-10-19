@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Ctr
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CBC decryption's result, for any block cipher and target

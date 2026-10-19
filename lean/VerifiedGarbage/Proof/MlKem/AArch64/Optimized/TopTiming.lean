@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Taints
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Compositional timing endpoints for optimized public operations -/
 @[expose] public section

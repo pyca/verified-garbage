@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
 public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # An RSA key from its primes on x86-64: `φ` and the halving

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Lay
-import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Impl.MlKem.Arm.Top
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Arm.Prims
+import VerifiedGarbage.Proof.MlKem.Arm.Sample
 
 /-!
 # ML-KEM-768 on 32-bit ARM: the hash routine

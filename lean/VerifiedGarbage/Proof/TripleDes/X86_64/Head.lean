@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Body
 import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Ready
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Bytes
 
 @[expose] public section

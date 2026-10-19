@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CoreLoad
-public import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
 public import VerifiedGarbage.Proof.Dsa.X86.Arithmetic
-public import VerifiedGarbage.Proof.Mont.X86.Exponentiate
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mont.X86.ExponentProduct
 
 /-! # Persistent operands across arithmetic-context updates -/
 

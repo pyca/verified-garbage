@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.AesXts.Unit
 public import VerifiedGarbage.Impl.AesXts.ArmUnit
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Xts.Contract
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # XTS-AES of data units on ARMv7: the contract the proofs are written against

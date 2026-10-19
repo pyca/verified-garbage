@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportModulus
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutExternal
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutExternal
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Reuse the imported modulus pointer's stack slot for the main workspace -/
 

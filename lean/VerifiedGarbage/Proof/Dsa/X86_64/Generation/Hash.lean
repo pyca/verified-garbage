@@ -2,10 +2,17 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha1
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The streaming seed hash equals DSA's selected SHA-1 or SHA-256 -/
 

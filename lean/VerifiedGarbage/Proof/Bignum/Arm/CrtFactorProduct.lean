@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
+import VerifiedGarbage.Proof.Bignum.Arm.WideProduct
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact factor multiplication, including buffer initialization -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCopy
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCopy
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 @[expose] public section
 

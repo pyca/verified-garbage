@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightStep
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

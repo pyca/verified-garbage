@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeySteps
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.KeyCompose
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -3,7 +3,19 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Gcm.Split
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the blocks left

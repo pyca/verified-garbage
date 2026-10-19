@@ -1,11 +1,13 @@
 module
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.Sign.Iter
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `PairedZCall.lean` -/
 

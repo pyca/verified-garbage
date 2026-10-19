@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Proof.Ocb.Spec
+public import VerifiedGarbage.Impl.AesOcb.Arm
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
 import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on ARMv7: filling the buffer of `HASH` (`hashFill`)

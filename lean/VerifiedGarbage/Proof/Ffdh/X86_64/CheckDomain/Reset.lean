@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Reduce
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: restore the p workspace -/
 

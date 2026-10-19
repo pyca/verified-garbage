@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
+import VerifiedGarbage.Proof.TripleDes.X86_64.Pre
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.TripleDes.X86_64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Block
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Triple DES's core for the modes on x86-64

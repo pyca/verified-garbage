@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Calls
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 
 /-!
 # ML-KEM-768 on 32-bit ARM: copying bytes and zeroing a polynomial

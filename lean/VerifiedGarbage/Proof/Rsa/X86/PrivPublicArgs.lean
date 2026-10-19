@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivArguments
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeArgs
+import VerifiedGarbage.Proof.Rsa.X86.PrivSaveStatus
+import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeLength
+import VerifiedGarbage.Proof.Rsa.X86.PrivLocalArgument
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preparing public re-exponentiation while retaining both prior call results -/
 

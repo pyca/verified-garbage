@@ -1,17 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeCallTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseO
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPack
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## From `OptimizedCanonicalize.lean` -/
 

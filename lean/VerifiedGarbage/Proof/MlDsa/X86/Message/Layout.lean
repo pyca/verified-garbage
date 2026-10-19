@@ -1,15 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.X86.Message
-public import VerifiedGarbage.Proof.MlKem.X86.Keccak
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Impl.MlDsa.X86.Message
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.MlKem.X86.Keccak
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: where everything is

@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64: `J₀` and the additional data of `seal` and `open`

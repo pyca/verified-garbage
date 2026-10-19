@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.Entry
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.Restore
+import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
+import VerifiedGarbage.Proof.Bignum.Arm.Restore
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Callable Montgomery multiplication preserves the ARM procedure-call ABI -/
 

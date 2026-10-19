@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.BrainpoolP384r1.Curve
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import Mathlib.Data.BitVec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # brainpoolP384r1's group law and inversions, on AArch64

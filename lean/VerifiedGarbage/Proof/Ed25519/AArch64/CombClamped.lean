@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombEntry
 
 /-!
 # The comb of a scalar whose bits 0–2 are clear

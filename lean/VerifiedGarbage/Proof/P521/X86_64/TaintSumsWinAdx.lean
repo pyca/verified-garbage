@@ -4,6 +4,18 @@ public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 public import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # P-521 on x86-64 with BMI2 and ADX: summaries of ECDH's window method

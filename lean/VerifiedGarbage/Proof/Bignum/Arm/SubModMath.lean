@@ -1,6 +1,8 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 
 /-! # A borrow-masked addition implements modular subtraction -/
 

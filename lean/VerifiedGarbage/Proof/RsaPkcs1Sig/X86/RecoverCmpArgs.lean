@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Compare
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Compare the public RSA result against the separately encoded digest -/
 

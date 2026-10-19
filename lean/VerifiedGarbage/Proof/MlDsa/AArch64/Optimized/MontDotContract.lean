@@ -1,13 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotMem
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
 public import VerifiedGarbage.Spec.MlDsa.MontDot
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotLoad
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLanes
 
 /-! ## From `MontDotState.lean` -/
 

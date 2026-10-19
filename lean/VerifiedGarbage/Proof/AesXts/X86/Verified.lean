@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.AesXts.X86
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Spec.Xts.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
-public import VerifiedGarbage.Proof.AesXts.X86.CT
+import VerifiedGarbage.Proof.AesXts.X86.CT
 
 /-!
 # XTS-AES on x86: `Verified`

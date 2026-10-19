@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
-public import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
-public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Impl.Camellia.X86_64.Prepared
-public import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia's batches under prepared subkeys on x86-64: the code

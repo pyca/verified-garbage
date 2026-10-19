@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the frame and the call's arguments

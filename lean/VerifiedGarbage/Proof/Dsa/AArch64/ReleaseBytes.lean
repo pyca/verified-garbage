@@ -1,8 +1,9 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalar
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Byte-string postconditions for masked DSA signature release -/
 

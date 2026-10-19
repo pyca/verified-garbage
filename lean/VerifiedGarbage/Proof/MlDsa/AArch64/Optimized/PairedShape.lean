@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

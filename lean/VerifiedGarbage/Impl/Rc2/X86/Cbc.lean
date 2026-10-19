@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86.Block
+import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 
 /-! # RC2-CBC on baseline x86
 

@@ -6,15 +6,9 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Quad
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Quad
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Framework.X86.Spill
-meta import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-meta import VerifiedGarbage.Proof.ChaCha20.Keystream
 public import VerifiedGarbage.Proof.Framework.X86.Call
 meta import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
-meta import VerifiedGarbage.Impl.ChaCha20.X86.Xor
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.X86.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Lit
@@ -26,6 +20,24 @@ import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseDword
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 /-!
 # ChaCha20 keystream XOR on x86 (32-bit)

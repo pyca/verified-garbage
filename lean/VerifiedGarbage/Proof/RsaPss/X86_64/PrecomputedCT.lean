@@ -2,8 +2,10 @@ module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtCall
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedContract
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 @[expose] public section
 

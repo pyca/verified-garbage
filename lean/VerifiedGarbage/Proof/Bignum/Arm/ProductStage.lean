@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The first multiply-add of a Montgomery round -/
 

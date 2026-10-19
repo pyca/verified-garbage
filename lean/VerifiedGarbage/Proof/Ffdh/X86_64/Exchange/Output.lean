@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 import VerifiedGarbage.Proof.Framework.Omega
 

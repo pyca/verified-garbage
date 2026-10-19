@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Spec.Sha256
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
-public import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Regs
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: copying words

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
 /-! # Constant-time key generation under the emitted read-only table contract -/
 @[expose] public section

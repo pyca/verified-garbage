@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Comb
 public import VerifiedGarbage.Proof.Ed25519.CombDigits
-import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The comb's digits and signs

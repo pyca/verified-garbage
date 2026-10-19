@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+import VerifiedGarbage.Impl.MlKem.AArch64.Dot
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
 
 /-! # Optimized composition with independently verified fixed hash helpers -/
 @[expose] public section

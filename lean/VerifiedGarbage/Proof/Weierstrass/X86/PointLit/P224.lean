@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Weierstrass.X86.Point
 meta import VerifiedGarbage.Impl.Weierstrass.X86.Point
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Literals of P-224's x86 point addition and doubling

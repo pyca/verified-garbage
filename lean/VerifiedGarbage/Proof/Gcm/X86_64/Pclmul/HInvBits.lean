@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # GHASH with PCLMULQDQ: the bits of `H · x⁻¹`

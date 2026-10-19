@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
 public import VerifiedGarbage.Proof.X448.X86_64.Finish
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 scalar arithmetic on x86-64: entry and exit

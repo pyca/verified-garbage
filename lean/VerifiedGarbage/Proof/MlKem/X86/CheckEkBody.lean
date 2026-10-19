@@ -1,21 +1,56 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
 meta import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
+meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-KEM on x86 (32-bit): the encapsulation key check

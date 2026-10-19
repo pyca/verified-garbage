@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.CT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal_store_powers`

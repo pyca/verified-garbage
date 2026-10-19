@@ -11,11 +11,25 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.Spec
 
 @[expose] public section
 

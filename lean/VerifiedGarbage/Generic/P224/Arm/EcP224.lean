@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P224.Arm
-public import VerifiedGarbage.Proof.EcKey.Arm.P224.Verified
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.EcKey.Arm.P224.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P224
 
 /-!
 # P-224 public keys (FIPS 186-5 §A.2) on 32-bit ARM

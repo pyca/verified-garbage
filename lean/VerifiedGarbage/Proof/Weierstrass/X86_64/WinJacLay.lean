@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
-public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Mont.Words
-public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-!
 # The Jacobian window method: where it keeps its numbers

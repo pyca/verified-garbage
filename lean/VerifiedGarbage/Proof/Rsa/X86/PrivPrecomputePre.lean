@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeArgs
-public import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Public precomputation's cdecl arguments and disjoint buffer contract -/
 

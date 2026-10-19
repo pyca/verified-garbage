@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
 
 @[expose] public section
 

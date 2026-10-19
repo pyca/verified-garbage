@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
 
 /-! # Stack bound for the complete parameter-generation entry point -/
 

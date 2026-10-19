@@ -1,11 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinQuad
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the slots

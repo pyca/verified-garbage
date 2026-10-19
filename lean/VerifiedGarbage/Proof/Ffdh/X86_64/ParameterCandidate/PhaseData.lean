@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 
 /-! # FFDH parameter generation on x86-64: p and q phase widths and values -/
 

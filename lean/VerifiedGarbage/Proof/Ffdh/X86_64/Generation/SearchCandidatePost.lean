@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchArguments
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Translate a candidate invocation to the complete search's byte stream -/

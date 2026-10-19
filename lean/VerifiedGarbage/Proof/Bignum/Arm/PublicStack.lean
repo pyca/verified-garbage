@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Saved arguments of the ten-argument ARMv7 public RSA entry point
 

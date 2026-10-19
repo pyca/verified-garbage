@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.AesXts.X86.Unit.Pre
 public import VerifiedGarbage.Proof.AesXts.X86.Steps
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.MdStream.X86.Common
-public import VerifiedGarbage.Proof.CmacAes.X86.Save
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.CmacAes.X86.Save
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # XTS-AES of data units on x86: the code between the calls

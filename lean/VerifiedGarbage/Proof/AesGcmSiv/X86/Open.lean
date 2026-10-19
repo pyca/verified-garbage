@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Seal
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86.TagIO
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesGcm.X86.Contract
 
 /-!
 # AES-GCM-SIV on x86: `vg_aes_gcm_siv_open` (correctness)

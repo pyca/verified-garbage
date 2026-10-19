@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.WindowJ
 public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!

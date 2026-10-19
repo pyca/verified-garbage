@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! Relational trace helpers for public workspace counters. -/
 

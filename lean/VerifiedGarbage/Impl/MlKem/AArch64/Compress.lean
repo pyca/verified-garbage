@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-KEM on AArch64: compression with encoding, and decoding with decompression

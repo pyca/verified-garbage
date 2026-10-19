@@ -1,7 +1,12 @@
 module
+public import Mathlib.Data.Int.GCD
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorTile
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Join adjacent selected blocks without losing previously copied bytes. -/
 

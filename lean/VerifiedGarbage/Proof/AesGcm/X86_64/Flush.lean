@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
-public import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: padding the buffer (`flush`) and the lengths block (`lens`)

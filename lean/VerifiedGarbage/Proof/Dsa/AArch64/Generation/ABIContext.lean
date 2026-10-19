@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIGeometry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Canonical persistent arguments obtained from the public ABI -/
 

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Layout
 
-public import VerifiedGarbage.Proof.Bignum.CrtFrame
 
 /-! Persistent frame words survive writes within a separate arithmetic workspace. -/
 @[expose] public section

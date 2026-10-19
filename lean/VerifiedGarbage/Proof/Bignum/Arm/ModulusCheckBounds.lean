@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # Sign-bit comparisons for the leading byte and minimum RSA modulus -/
 

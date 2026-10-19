@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Zeroing the Argon2 matrix, independently of its initial contents -/
 

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
-import VerifiedGarbage.Proof.Dsa.DomainShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # First-nonzero selection in the public modulus-width scan -/
 

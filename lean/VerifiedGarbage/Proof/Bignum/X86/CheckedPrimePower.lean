@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CheckedPrimePower
-public import VerifiedGarbage.Proof.Bignum.X86.PrimeMask
-public import VerifiedGarbage.Proof.Bignum.X86.PrimePower
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Bignum.X86.PreparePrime
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+import VerifiedGarbage.Proof.Bignum.X86.PrimeMask
+import VerifiedGarbage.Proof.Bignum.X86.PrimePower
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # A total factor exponentiation for arbitrary imported secret factors -/
 

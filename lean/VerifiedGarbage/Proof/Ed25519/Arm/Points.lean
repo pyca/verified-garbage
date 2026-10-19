@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
-public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 import Mathlib.Tactic.SplitIfs
 
 /-! Exact extended-coordinate operations, by calls of the functions of point

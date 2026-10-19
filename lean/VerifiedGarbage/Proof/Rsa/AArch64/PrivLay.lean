@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCtx
 public import VerifiedGarbage.Impl.Rsa.AArch64.PrivChecked
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `vg_rsa_private_checked` on AArch64: where everything is

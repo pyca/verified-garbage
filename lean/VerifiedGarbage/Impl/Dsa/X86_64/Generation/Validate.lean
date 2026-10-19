@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 

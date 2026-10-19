@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+import VerifiedGarbage.Proof.Framework.X86_64.Lane0
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Folding the three GHASH product words directly

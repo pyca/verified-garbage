@@ -2,8 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 
 /-! Public table transfers preserve the selected Jacobian point. -/
 

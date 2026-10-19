@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.X448.X86.Ops
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public import VerifiedGarbage.Proof.X448.X86.FnContract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.FnVerified
 
 /-!
 # X448 on x86 (32-bit): constant time of the field-function calls

@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.X25519.Arm
 public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: carrying sums into limbs

@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerBoundaryCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerPre
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerContext
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerKept
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
 
 /-! # Contexts at the three boundaries of a shared-round call -/
 

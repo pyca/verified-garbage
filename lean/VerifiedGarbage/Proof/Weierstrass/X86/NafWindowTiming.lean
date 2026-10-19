@@ -3,10 +3,8 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.X86.PointFieldTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

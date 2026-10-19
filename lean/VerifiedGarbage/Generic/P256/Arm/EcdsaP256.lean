@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Impl.Ecdsa.P256.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on 32-bit ARM

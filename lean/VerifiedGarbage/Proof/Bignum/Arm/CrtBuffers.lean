@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
 
 /-! # Public geometry and immutable source buffers of a private CRT call
 

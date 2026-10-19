@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

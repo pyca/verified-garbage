@@ -1,7 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.Arm.Target
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
-public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
+import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 
 /-! # `vg_rsa_private_crt_umaal`: the private-key operation with `umaal` rows -/
 

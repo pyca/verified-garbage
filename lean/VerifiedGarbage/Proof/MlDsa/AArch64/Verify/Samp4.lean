@@ -5,10 +5,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 
 /-! Four-way matrix expansion during verification: preserve decoded hints and z, and mask failed batches without a branch. -/
 

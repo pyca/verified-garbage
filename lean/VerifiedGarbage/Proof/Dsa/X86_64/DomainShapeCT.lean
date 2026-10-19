@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizes
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTail
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ShapeTailCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
 
 /-! # Constant time of the entire public DSA domain-shape check -/
 

@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoad
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 @[expose] public section

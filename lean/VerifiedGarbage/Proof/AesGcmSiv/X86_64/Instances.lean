@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.OpenCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealCT
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.RingTheory.AdjoinRoot
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!

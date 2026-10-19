@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Tactic.Set
 
 /-!
 # `vg_rsa_check_key` on x86-64: the shared contract

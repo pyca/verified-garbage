@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Relate CRT calls with equal public pointers, lengths, and stack position -/
 

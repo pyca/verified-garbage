@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 
 /-! Full raw multiplication from eight-word rectangular rows. -/
 

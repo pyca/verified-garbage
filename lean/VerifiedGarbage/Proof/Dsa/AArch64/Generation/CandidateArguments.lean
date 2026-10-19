@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Arguments
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Arguments
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native setup for candidate reduction and the saved generator exponent -/

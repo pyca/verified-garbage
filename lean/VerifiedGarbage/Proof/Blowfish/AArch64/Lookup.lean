@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
+import VerifiedGarbage.Proof.Blowfish.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+public import VerifiedGarbage.Impl.Blowfish.AArch64
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # S-box lookups

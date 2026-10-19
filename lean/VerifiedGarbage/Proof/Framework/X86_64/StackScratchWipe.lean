@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, wiped after use (x86-64)

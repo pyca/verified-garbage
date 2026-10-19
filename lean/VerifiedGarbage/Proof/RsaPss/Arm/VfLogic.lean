@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfAny
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfFixed
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the result

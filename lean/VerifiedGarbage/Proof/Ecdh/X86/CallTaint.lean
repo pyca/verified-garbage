@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
-public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDH on x86 (32-bit): what the field functions' summaries start from

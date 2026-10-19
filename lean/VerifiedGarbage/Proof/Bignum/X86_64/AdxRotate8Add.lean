@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 
 /-! Adding input blocks and their separately retained overflow. -/
 

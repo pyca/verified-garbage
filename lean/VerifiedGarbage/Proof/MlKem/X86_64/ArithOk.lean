@@ -1,23 +1,43 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 
 /-!
 # The polynomial arithmetic a top-level function of ML-KEM calls on x86-64

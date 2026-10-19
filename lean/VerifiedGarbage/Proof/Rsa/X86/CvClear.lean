@@ -1,7 +1,18 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvStores
-public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # Invalid public RSA keys return zero and clear the complete output -/
 

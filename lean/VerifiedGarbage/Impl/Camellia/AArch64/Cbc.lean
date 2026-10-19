@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.AArch64.Fb
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
-public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
 
 /-!
 # Camellia-CBC, bitsliced, on AArch64

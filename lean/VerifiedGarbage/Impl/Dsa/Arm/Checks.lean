@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.Arm.Dynamic
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Bytes
 
 /-! # Branch-free integer checks for DSA components on 32-bit ARM
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
 
 /-! # Three input bytes expanded into a word -/
 

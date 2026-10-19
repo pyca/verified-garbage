@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvSkip
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # `vg_rsa_recover_primes` on ARMv7: header words on a stage
 

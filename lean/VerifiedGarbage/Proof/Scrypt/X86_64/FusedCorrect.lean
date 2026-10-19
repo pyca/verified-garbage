@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
 
 @[expose] public section
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 
 /-!
 # ML-DSA signing on ARMv7: SHAKE256 through the sponge functions

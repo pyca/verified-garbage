@@ -1,10 +1,18 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Weierstrass.Comb
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.TCombLay
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
+import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # The comb from tables in memory on AArch64: the tables

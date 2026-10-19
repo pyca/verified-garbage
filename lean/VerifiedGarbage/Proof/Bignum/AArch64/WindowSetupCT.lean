@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WideLoops
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCT
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSetup
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcSquare
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSetup

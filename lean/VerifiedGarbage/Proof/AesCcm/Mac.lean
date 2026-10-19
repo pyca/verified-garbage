@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Ccm
-public import VerifiedGarbage.Proof.Cmac.Spec
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!

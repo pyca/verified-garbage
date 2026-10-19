@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesCtr.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.Variant
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-public import VerifiedGarbage.Proof.AesCtr.X86_64.CT
+import VerifiedGarbage.Proof.AesCtr.X86_64.CT
+import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-CTR on x86-64: `Verified`

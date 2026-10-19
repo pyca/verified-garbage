@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Output
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Output
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH exchange on x86-64: compose the arithmetic and output -/
 

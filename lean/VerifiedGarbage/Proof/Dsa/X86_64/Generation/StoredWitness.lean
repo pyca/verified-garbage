@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceWitness
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceWitness
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
+import VerifiedGarbage.Proof.Bignum.ExternalWords
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! # A forced witness preserves all prepared modulus data -/
 

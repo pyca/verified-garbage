@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 
-public import VerifiedGarbage.Proof.Bignum.ExponentWords
+import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 
 /-! # Word tests equivalent to the shared RSA public-exponent predicate -/
 

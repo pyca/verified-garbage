@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
+public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mem
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
 
 /-! # The `_alt` field operations on slots, in `GF(p)`
 

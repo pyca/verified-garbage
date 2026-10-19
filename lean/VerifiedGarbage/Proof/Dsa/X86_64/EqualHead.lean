@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
 
 /-! # Resolving both operands of a DSA equality check -/
 

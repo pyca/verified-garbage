@@ -1,11 +1,15 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86.Mem
 
-public import VerifiedGarbage.Proof.X448.X86.Iter
-import VerifiedGarbage.Proof.X448.Bytes
-public import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on x86 (32-bit): expanding scalar bytes

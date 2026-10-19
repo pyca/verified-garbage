@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Stack-addressed argument blocks have public traces -/
 

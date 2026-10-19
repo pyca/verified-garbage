@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashValue
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashValue
 public import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The stored hash suffix determines exactly the specified p candidate -/
 

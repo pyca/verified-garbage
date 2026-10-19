@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBody
-import VerifiedGarbage.Impl.Ed25519.X86.BitsExpand
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 public import VerifiedGarbage.Impl.Ed25519.X86.InputBits
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.BitsExpand`. -/
 

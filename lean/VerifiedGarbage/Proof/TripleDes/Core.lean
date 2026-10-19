@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.TripleDes
 
-public import VerifiedGarbage.Proof.TripleDes.Permutation
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import VerifiedGarbage.Proof.TripleDes.Permutation
 
 @[expose] public section
 

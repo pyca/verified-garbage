@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 public import VerifiedGarbage.Spec.MlDsa.RejNTT2
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
 
 @[expose] public section
 

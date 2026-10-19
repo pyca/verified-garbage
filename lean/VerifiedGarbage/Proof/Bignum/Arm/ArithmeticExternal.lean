@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Writes outside the arithmetic workspace and saved base preserve readiness -/
 

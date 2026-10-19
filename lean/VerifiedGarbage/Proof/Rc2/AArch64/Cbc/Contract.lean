@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Rc2.Contract
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
+public import VerifiedGarbage.Proof.Rc2.AArch64.ConstantTime
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

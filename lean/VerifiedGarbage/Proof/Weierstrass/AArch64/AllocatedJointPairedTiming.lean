@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
 
 @[expose] public section
 

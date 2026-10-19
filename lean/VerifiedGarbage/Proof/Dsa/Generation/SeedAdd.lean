@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Bytewise wrapped addition for DSA's hashed seeds -/
 

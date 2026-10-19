@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
 
 /-! # Complete native generator attempt: input filter, power, output filter -/
 

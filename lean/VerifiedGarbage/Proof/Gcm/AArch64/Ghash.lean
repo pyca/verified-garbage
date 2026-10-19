@@ -18,22 +18,24 @@ public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Spec.Gcm.Prepared8
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
 meta import VerifiedGarbage.Spec.Gcm.Prepared8
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.AArch64.Step`.
 

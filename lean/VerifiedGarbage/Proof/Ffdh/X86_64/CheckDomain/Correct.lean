@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Body
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Body
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: full correctness and ABI -/
 

@@ -8,6 +8,16 @@ public import VerifiedGarbage.Proof.Sha3.Compl
 meta import VerifiedGarbage.Proof.Sha3.Compl
 public import VerifiedGarbage.Impl.Sha3.X86_64
 meta import VerifiedGarbage.Impl.Sha3.X86_64
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Keccak-f[1600] on x86-64: a round, by evaluation

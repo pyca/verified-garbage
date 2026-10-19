@@ -1,6 +1,10 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # Lemmas for x86-64 registration files

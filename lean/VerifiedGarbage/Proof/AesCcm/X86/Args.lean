@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Entry
 public import VerifiedGarbage.Proof.AesCcm.X86.Contract
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on x86: the arguments

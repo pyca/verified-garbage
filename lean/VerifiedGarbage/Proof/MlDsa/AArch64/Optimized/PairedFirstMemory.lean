@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## From `PairedStoreMemory.lean` -/
 

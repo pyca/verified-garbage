@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.Arm
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Lay
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS on ARMv7: where everything is, for the pieces both functions share

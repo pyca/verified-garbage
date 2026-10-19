@@ -4,7 +4,7 @@ public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Bound
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
-import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the product

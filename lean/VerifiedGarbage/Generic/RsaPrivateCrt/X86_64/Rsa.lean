@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 
 /-!
 # The checked RSA private-key operation on x86-64

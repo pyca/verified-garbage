@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldStage
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalSlice
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 
 @[expose] public section
 

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Body
-public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Argon2.Initial
+import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 H′ on ARMv7: the first digest

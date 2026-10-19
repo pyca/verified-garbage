@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Ctr
-import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Gcm.Stream
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Spec.TripleDes
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # GCM: the streaming state, the tag and the pre-counter block

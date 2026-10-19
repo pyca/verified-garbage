@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.Env
 
-public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
+import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: verification is correct

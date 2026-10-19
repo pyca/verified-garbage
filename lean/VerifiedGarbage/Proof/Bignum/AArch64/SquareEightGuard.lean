@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
-public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect

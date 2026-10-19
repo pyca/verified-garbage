@@ -1,8 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Dsa.Arm.Entry
+public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa.RandomSign
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSignCorrect
 
 /-! # The 32-bit ARM randomized signer meets its contract -/
 

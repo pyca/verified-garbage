@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
 
 /-! Share the arithmetic window while its square helper uses a different link lane. -/
 

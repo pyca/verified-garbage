@@ -1,8 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_recover_primes` on ARMv7: Montgomery multiplication's working space
 

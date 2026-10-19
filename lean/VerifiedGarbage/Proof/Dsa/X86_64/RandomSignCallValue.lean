@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallGeometry
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! The call instruction's return-address write does not change signing inputs. -/
 @[expose] public section

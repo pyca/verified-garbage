@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxCarry8Loop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! Complete a rectangular row by propagating its pending carry to the end. -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # FFDH parameter candidates on x86-64: prepare a witness for the shared round -/
 

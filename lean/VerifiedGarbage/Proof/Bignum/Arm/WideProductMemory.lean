@@ -1,6 +1,8 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductNext
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-! # Product-loop controls change only their dedicated header slots -/
 

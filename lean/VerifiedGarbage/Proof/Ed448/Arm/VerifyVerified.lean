@@ -6,16 +6,73 @@ public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
+import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Counters
+import VerifiedGarbage.Proof.X448.Arm.Decode
+import VerifiedGarbage.Proof.X448.Arm.DecodeAll
+import VerifiedGarbage.Proof.X448.Arm.Fill
+import VerifiedGarbage.Proof.X448.Arm.Finish
+import VerifiedGarbage.Proof.X448.Arm.Initial
+import VerifiedGarbage.Proof.X448.Arm.Normalize
+import VerifiedGarbage.Proof.X448.Arm.Restore
+import VerifiedGarbage.Proof.X448.Arm.Setup
+import VerifiedGarbage.Proof.X448.Arm.Step
+import VerifiedGarbage.Proof.X448.Bytes
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+meta import VerifiedGarbage.Proof.Ed448.Arm.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecode
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyFinish
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyS
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+meta import VerifiedGarbage.Proof.Ed448.Scalar
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.Arm.Pass
+meta import VerifiedGarbage.Proof.X448.Arm.Carry
+meta import VerifiedGarbage.Proof.X448.Arm.Copy
+meta import VerifiedGarbage.Proof.X448.Arm.Counters
+meta import VerifiedGarbage.Proof.X448.Arm.Decode
+meta import VerifiedGarbage.Proof.X448.Arm.DecodeAll
+meta import VerifiedGarbage.Proof.X448.Arm.Fill
+meta import VerifiedGarbage.Proof.X448.Arm.Finish
+meta import VerifiedGarbage.Proof.X448.Arm.Initial
+meta import VerifiedGarbage.Proof.X448.Arm.Normalize
+meta import VerifiedGarbage.Proof.X448.Arm.Restore
+meta import VerifiedGarbage.Proof.X448.Arm.Setup
+meta import VerifiedGarbage.Proof.X448.Arm.Step
+meta import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # Ed448 verification's equation on ARMv7: `Verified`

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Proof.Bignum.X86.CheckedPrimePower
+public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLoadPower
-public import VerifiedGarbage.Proof.Bignum.X86.CopyPadded
+import VerifiedGarbage.Proof.Bignum.X86.CrtLoadPower
+import VerifiedGarbage.Proof.Bignum.X86.CopyPadded
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # A factor phase computes and saves its residue without losing the imported key -/
 

@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFunction
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
-import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-! # Shared verification contract for the x86 fixed-base comb -/
 

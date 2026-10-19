@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyPublic
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyGenerate
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
+import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
 
 /-! # Key generation's calls, by their callees' leakage contracts -/
 

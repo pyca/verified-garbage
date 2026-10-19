@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCtx
-import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncLoops
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `D = I2OSP(d, k)`

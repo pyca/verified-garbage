@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemG
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGTo
@@ -13,8 +12,19 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 /-!
 # The AVX-512 loops with the powers in the key context: both meet their contracts

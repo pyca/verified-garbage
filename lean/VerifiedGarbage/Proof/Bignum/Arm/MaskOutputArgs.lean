@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskOutput
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Form an all-zero or all-one mask without branching on acceptance -/
 

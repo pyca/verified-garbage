@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM's short path on x86-64: what each piece keeps

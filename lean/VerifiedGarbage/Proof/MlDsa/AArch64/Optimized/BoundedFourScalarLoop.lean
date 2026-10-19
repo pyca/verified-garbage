@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarPai
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTraversal
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourScalarBody.lean` -/
 

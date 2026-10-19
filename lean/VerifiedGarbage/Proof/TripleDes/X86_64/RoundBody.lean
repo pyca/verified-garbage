@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Round
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Spills
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+import VerifiedGarbage.Proof.TripleDes.X86_64.Box
 import VerifiedGarbage.Proof.TripleDes.X86_64.RoundFunction
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 @[expose] public section
 

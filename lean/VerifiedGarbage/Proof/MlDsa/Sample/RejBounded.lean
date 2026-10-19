@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
 
 /-!

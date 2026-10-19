@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # TDEA: the passes, and the key schedule in memory

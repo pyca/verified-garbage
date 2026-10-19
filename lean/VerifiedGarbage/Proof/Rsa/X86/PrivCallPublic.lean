@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtPre
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputePre
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
+import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
+import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
 
 /-! # Public nested-call observations agree for the same public RSA key -/
 

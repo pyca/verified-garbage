@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpIn
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Rsa.AArch64.RpOut
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
+import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
+import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: `rest`

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # A released byte is masked and its private temporary is immediately cleared -/
 

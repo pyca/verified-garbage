@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
+public import VerifiedGarbage.Proof.Rsa.Arm.KcLoads
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
-public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-! # The checks of an RSA key on ARMv7: the result is `checkCrtKey`, or `checkKey`
 

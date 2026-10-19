@@ -2,14 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointChecks
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 
 /-! Baseline and ADX joint verification over P-521 satisfy the functional specification. -/
 

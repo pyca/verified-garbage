@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Stack loads have public addresses even when the saved registers are secret -/
 

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeInput
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Trial
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrame
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 
 /-! # Trial division preserves the candidate and random-tape cursor -/
 

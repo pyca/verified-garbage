@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0
-import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM `open`'s path for TLS records: the tag

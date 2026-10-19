@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorEvaluateCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorWorkspaceCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Instantiate range timing with the exact generator inputs and computed output -/
 

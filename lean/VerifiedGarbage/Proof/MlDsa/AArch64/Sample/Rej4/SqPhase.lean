@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqBlock
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 
 @[expose] public section
 

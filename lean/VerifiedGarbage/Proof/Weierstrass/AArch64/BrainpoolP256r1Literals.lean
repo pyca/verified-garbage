@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Ecdh.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
-public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Shared literals for code used by signing, verification, public-key
 derivation and ECDH over brainpoolP256r1 on AArch64. Each generator is checked once

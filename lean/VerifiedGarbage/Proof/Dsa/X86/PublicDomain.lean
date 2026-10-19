@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
 
-public import VerifiedGarbage.Proof.Dsa.X86.SharedPublic
+import VerifiedGarbage.Proof.Dsa.X86.SharedPublic
 
 /-! # Public packed-key leakage determines the two domain moduli -/
 

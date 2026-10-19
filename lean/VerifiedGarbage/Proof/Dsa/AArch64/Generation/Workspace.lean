@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Workspace
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The primality workspace needs no initialized caller memory. -/
 @[expose] public section

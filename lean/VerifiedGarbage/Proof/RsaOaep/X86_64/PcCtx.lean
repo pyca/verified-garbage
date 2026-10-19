@@ -1,14 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
-public import VerifiedGarbage.Impl.RsaOaep.X86_64.Precomputed
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 @[expose] public section
 

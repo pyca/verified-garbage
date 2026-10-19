@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckFirst
+import VerifiedGarbage.Proof.Bignum.Arm.PdCheckFirst
 public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete public validation of the arithmetic preconditions for packed RSA keys -/
 

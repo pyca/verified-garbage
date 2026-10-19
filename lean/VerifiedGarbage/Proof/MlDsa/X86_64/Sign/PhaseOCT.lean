@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Correct
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseLCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
 
 /-!
 # ML-DSA signing on x86-64: the signature leaks only the hint

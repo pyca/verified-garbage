@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Loop
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 
 /-!
 # One-pass XTS-AES on x86-64: the arguments and the first eight tweaks

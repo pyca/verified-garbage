@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 
 @[expose] public section
 

@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM on AArch64: what `vg_mlkem_compress_encode` writes

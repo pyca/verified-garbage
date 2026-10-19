@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Impl.Idea.Key32
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Idea
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # IDEA key expansion, bit by bit, on 32-bit words

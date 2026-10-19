@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
+public import VerifiedGarbage.Proof.Rsa.Arm.RvCand5
+import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # `vg_rsa_recover_primes` on ARMv7: from `m = 2^t r` to the factors (`rest_vp`)
 

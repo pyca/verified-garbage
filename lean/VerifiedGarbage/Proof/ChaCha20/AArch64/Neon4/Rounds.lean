@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.ChaCha20.Spec
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 

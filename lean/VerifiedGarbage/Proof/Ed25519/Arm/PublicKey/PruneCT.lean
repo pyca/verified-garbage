@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 
 @[expose] public section
 

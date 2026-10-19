@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+public import VerifiedGarbage.Spec.Ecdsa.Generic
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Short Weierstrass curves on x86-64: numbers of `len` bytes

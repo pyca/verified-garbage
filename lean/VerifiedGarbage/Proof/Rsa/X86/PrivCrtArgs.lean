@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivLocalArgument
+import VerifiedGarbage.Proof.Rsa.X86.PrivLocalArgument
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The private CRT call receives all eighteen cdecl arguments -/
 

@@ -1,9 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Seed.Memory
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Seed.Cbc
-public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SEED's blocks and schedule as the modes see them

@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 
 @[expose] public section
 

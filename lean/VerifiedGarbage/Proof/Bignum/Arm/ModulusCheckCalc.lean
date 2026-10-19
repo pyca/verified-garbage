@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckBounds
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckFinish
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckBounds
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckFinish
+import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Functional validity predicate computed by ARMv7 instructions -/
 

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.AesOcb.AArch64.Contract
 
 /-!
 # AES-OCB on AArch64: relating two runs

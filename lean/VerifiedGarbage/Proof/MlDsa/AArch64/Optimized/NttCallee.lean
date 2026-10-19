@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
+public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 @[expose] public section
 

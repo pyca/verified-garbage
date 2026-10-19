@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ECDSA on AArch64: what every phase keeps

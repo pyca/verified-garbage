@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 
 /-! # The invariant of the runtime-length Montgomery loop -/
 

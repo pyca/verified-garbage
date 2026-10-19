@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! The message length is 32 bits; the SHA-512 byte count is a 64-bit pair. -/
 

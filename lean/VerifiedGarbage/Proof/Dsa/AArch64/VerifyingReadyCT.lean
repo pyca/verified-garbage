@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingShapeCT
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+public import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 
 /-! # The public schedule after independent verifying-workspace initialization -/
 

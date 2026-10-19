@@ -1,8 +1,19 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Spec.Aes.Contract
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.Arm.Target
 
-public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Aes.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 
 /-!
 # The AES key expansion on ARMv7, with its working space on the stack

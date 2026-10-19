@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Scrypt.X86.RoMix
-public import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
+import VerifiedGarbage.Impl.Pbkdf2.Stream.X86
 
 /-!
 # scrypt: x86 (32-bit) implementation

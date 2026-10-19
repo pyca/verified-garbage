@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointAdvance
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointEntries
-public import VerifiedGarbage.Proof.Dsa.AArch64.Setup
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.AArch64.JointEntries
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 
 /-! # Preparing the joint table and Montgomery accumulator -/
 

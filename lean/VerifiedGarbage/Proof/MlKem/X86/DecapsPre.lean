@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.EncV
-public import VerifiedGarbage.Impl.MlKem.X86.Decaps
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.X86.EncRow
+import VerifiedGarbage.Impl.MlKem.X86.Decaps
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of decapsulation

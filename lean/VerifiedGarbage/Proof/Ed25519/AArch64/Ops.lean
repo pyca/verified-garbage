@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.Step
-public import VerifiedGarbage.Proof.Ed25519.Field64
+import VerifiedGarbage.Proof.Ed25519.Field64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Proof.X25519.Field
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.Carry`. -/
 

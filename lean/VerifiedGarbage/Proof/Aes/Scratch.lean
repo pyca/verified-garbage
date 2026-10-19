@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 

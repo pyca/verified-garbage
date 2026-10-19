@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Sha3.Lanes
 
 @[expose] public section
 

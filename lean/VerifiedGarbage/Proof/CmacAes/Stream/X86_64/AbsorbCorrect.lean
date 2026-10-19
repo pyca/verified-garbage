@@ -2,7 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.AbsorbBlocks
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 
 @[expose] public section
 

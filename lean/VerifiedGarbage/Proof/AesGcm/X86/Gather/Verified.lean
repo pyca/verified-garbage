@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.X86.Frame
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 
 /-! # Key generation after paired noise sampling -/
 

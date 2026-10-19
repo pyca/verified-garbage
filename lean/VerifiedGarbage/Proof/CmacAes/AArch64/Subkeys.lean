@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 public import VerifiedGarbage.Proof.Cmac.Dbl
-import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
 import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

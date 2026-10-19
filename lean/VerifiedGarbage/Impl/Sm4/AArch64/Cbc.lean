@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Fb
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 

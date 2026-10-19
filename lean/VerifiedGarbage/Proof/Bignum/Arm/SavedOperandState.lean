@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 
 /-! # Stable frame slots and source bytes for private-key imports -/
 

@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitMemory
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Zero
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitMemory
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Zero
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Words
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact instruction proof of paired noise state initialization -/
 

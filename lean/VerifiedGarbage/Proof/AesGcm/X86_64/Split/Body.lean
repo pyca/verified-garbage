@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixOk
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Fin
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
 
 /-!
 # AES-GCM `seal_split` on x86-64: the whole blocks at `dst` and the end

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
 
 /-! # Bounded seed, prime, and generator controllers inherit their bodies' safety -/
 

@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncEm
 public import VerifiedGarbage.Proof.RsaOaep.Arm.MgfSlots
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: `EM` masked

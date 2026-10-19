@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-! The direct-product doubling schedule permits its input and output to coincide. -/
 

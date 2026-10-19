@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # Sums and differences of polynomials stored with 16 bits, on AArch64

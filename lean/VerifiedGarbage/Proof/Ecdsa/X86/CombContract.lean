@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 public import VerifiedGarbage.Proof.Ecdsa.X86.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # The shared x86 signing contract with a 20-byte stack: the calls', which holds the
 four-byte static-address frame -/

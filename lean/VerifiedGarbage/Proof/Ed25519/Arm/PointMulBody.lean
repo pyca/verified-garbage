@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointMul
-import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
 import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.Arm.BatchFrame`. -/
 

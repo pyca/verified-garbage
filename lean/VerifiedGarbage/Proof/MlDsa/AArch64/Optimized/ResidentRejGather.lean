@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.AArch64.Simd
+public import VerifiedGarbage.TCB.Mem
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackGather
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `ResidentRejWord.lean` -/
 

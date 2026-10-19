@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Data
+public import Mathlib.Tactic.Set
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Start
-public import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: initialize p's workspace -/
 

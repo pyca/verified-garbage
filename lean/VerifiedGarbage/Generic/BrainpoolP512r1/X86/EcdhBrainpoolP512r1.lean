@@ -5,8 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP512r1
 
 /-!
 # ECDH over brainpoolP512r1 (SP 800-56A) on x86 (32-bit)

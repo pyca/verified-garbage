@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ContextCall
+import VerifiedGarbage.Proof.Dsa.Arm.ContextCall
 public import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Exponent
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+public import VerifiedGarbage.Proof.Dsa.SameTrace
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

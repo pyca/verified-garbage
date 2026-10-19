@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeLoop
-public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Both scalars' digits on x86-64

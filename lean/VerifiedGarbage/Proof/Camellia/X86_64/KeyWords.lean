@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.Keys
 public import VerifiedGarbage.Proof.Camellia.Common
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.TCB.X86_64.Gpr
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Camellia.X86_64.Core
 
 /-!
 # Halves as little-endian words

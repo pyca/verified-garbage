@@ -2,10 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha512.Arm.Word64
+import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
 # ML-DSA signing on ARMv7: the primitives it calls
