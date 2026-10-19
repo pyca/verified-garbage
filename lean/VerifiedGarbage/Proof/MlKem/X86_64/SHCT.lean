@@ -67,9 +67,9 @@ theorem hsave_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (hst σ 3) 0 3 s
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.1.env h₂.1.env) (by taint_decide))
 
-theorem tabY_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (hst σ 3) 0 3 s ∧ HS σ (hst σ 3) s.mem) (.block tabBuild)
+theorem tabY_ct : RelCT isa (S4.R4W w16 fun σ s => SqY w16 σ (hst σ 3) 0 3 s ∧ HS σ (hst σ 3) s.mem) (.block tabAddr)
     (S4.R4W w16 fun σ s => Q1 w16 σ (hst σ 3) (hst σ 3) 0 s) :=
-  relInv (fun σ s hp h => tabY_ok (preW_of hp) h.1 h.2)
+  relInv (fun σ s _ h => tabY_ok h.1 h.2)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.1.env h₂.1.env) (by taint_decide))
 
@@ -116,6 +116,9 @@ theorem more3_ct {fast : Bool} : RelCT isa (S4.R4W w16 fun σ s => Checked3 w16 
   refine RelCT.seq (relInv (fun σ s hp h => sqM3_ok (fast := fast) (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) csq)) ?_
+  refine RelCT.seq (relInv (fun σ s _ h => tabY2_ok h)
+    (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))) ?_
   refine RelCT.seq (run2Y_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2Y_ct (K := 1) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2Y_ct (K := 2) (by decide) (by taint_decide)) ?_

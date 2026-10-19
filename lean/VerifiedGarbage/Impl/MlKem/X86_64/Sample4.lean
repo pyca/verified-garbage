@@ -19,16 +19,18 @@ results in `r14`, and saves their caller's values and `rbp`'s in
 bytes), the table of the round constants (768 bytes), a buffer of 504
 bytes of the XOF output of each seed (from byte `2368 + 504 k`), the
 number `j` of coefficients of each seed sampled so far (from byte
-`4424 + 8 k`), and, from byte 4480, a table for the sampling (`tabQ`,
-2048 bytes) and the constants of the vector code (`consts`, 192 bytes).
+`4424 + 8 k`). The table for the sampling (`tabQ`, 2048 bytes), the
+constants of the vector code (`consts`, 192 bytes) and the number of set
+bits of each byte are a static (`tblWords`, `tblName`), whose address it
+keeps in `r11`.
 
 Each seed is at most 34 bytes, so the padded message is one block: the
 code zeroes the states, writes the seed's bytes, SHAKE's suffix `0x1f` (at
 byte 34) and the last bit of the padding (`0x80`, at byte 167) into each,
 and permutes them. It then copies the first 168 bytes of each state to its
 buffer, and permutes them again, three times in all, in a loop (`squeezes`)
-whose output pointer is `rbp` and whose count is `r10`. It then writes the
-table and the constants, which it loads into `ymm8` to `ymm13`.
+whose output pointer is `rbp` and whose count is `r10`. It then loads the
+static's address (`tabAddr`), and the constants into `ymm8` to `ymm13`.
 
 For each seed it runs 168 iterations of `SampleNTT`'s loop on its 504 bytes
 (`run1`), which samples 256 coefficients but for about one seed in 120, four at a time (`vgrp`): while
@@ -38,7 +40,7 @@ doublewords of `ymm0` and the mask `m` of those less than `q` in `eax`
 (bit `i` for candidate `i`, `vcand`), moves those to the bottom of `ymm0`
 with `vpermd`, whose indices are the nibbles of entry `m` of the table,
 stores the eight doublewords to `a[j..j+8)`, and adds to `j` the number
-of candidates less than `q`, the entry's high doubleword (`vput`);
+of candidates less than `q`, the static's count of `m` (`vput`);
 otherwise (`j ≥ 249`), with four iterations of the loop of
 `vg_mlkem_sample_ntt` (`snBody`), which stops at 256. A value stored but
 not counted lies past the coefficients sampled, and is overwritten by the
@@ -75,8 +77,6 @@ def oSave : Nat := 4384
 def oScalar : Nat := 6144
 /-- Where `j` of seed `k` is kept, at `scratch + oCnt + 8 k`. -/
 def oCnt : Nat := 4424
-/-- The table and the constants of the vector code. -/
-def oTab : Nat := 4480
 
 /-- The registers saved, at `scratch + oSave + 8 k`. -/
 def saved : List Reg := [.rbx, .rbp, .r12, .r13, .r14]
@@ -143,7 +143,7 @@ doubleword. -/
 def tabEntry (m : Nat) : Nat := (setBits m).foldr (fun p acc => p + 16 * acc) 0 + 2 ^ 32 * (setBits m).length
 
 /-- The constants of the vector code, four quadwords each, from byte
-`oTab + oCst` of `scratch` (in `ymm8` to `ymm13`): the `vpshufb` mask that puts
+`oCst` of the static (in `ymm8` to `ymm13`): the `vpshufb` mask that puts
 bytes `3i, 3i+1` and `3i+1, 3i+2` of the 12 in the low half of doublewords
 `2i` and `2i+1` (bytes 0 to 5 in the low lane, 6 to 11 in the high one);
 the shifts of the doublewords (`0, 4, …`); `0xfff`; `q`; the `vpshufb`
@@ -161,21 +161,34 @@ def consts : List (BitVec 64) :=
 /-- The offset of the constants in the table. -/
 def oCst : Nat := 2048
 
-/-- Quadword `i` of the table and the constants, from byte `oTab` of `scratch`. -/
+/-- Quadword `i` of the table and the constants. -/
 def tabQ (i : Nat) : BitVec 64 := if i < 256 then BitVec.ofNat 64 (tabEntry i) else consts.getD (i - 256) 0
 
-/-- The table and the constants, through `rax`. -/
-def tabBuild : List Instr :=
-  (List.range 280).flatMap fun i => [.movImm64 .rax (tabQ i), .store (at_ .rbx (oTab + 8 * i)) .rax]
+/-- The offset of the counts in the static, after the table and the constants. -/
+def oNum : Nat := 2240
 
-/-- The constants into `ymm8` to `ymm13`. -/
+/-- The static of the table, the constants and, from `oNum`, the number of
+set bits of each byte (`(setBits m).length`, a quadword each): the words
+the instructions that read it carry, and the emitter writes. -/
+def tblWords : List (BitVec 64) :=
+  (List.range 280).map tabQ ++ (List.range 256).map fun m => BitVec.ofNat 64 (setBits m).length
+
+/-- The static's name. -/
+def tblName : String := "VG_MLKEM_SAMPLE_TBL"
+
+/-- The static's address to `r11`. -/
+def tabAddr : List Instr := [.leaSym .r11 tblName]
+
+/-- The constants into `ymm8` to `ymm13`, from the static at `r11`. -/
 def cstLoad : List Instr :=
-  [.vmovdquLoad .l256 .xmm8 (at_ .rbx (oTab + oCst)), .vmovdquLoad .l256 .xmm9 (at_ .rbx (oTab + oCst + 32)),
-    .vmovdquLoad .l256 .xmm10 (at_ .rbx (oTab + oCst + 64)), .vmovdquLoad .l256 .xmm11 (at_ .rbx (oTab + oCst + 96)),
-    .vmovdquLoad .l256 .xmm12 (at_ .rbx (oTab + oCst + 128)), .vmovdquLoad .l256 .xmm13 (at_ .rbx (oTab + oCst + 160))]
+  [.vmovdquTbl .xmm8 (at_ .r11 oCst) tblName tblWords, .vmovdquTbl .xmm9 (at_ .r11 (oCst + 32)) tblName tblWords,
+    .vmovdquTbl .xmm10 (at_ .r11 (oCst + 64)) tblName tblWords,
+    .vmovdquTbl .xmm11 (at_ .r11 (oCst + 96)) tblName tblWords,
+    .vmovdquTbl .xmm12 (at_ .r11 (oCst + 128)) tblName tblWords,
+    .vmovdquTbl .xmm13 (at_ .r11 (oCst + 160)) tblName tblWords]
 
-/-- `[rbx + 8 rax + oTab]`: entry `rax` of the table. -/
-def tabE : MemOp := { base := .rbx, index := some .rax, scale := 8, disp := oTab }
+/-- `[r11 + 8 rax]`: entry `rax` of the table. -/
+def tabE : MemOp := { base := .r11, index := some .rax, scale := 8, disp := 0 }
 
 /-- `[rbp + 4 rdi]`: `a[j]`, or `[rbp + 2 rdi]` for 16-bit coefficients (`w16`). -/
 def aV (w16 : Bool := false) : MemOp := { base := .rbp, index := some .rdi, scale := if w16 then 2 else 4 }
@@ -201,9 +214,9 @@ def vstore (w16 : Bool) : List Instr :=
 
 /-- The candidates less than `q` to `a[j..]`, and `j` and `rsi` advanced. -/
 def vput (w16 : Bool := false) : List Instr :=
-  [.vmovdquLoad .l128 .xmm1 tabE, .vop (.vpbroadcastd .l256 .xmm1 .xmm1),
+  [.vmovdquTbl .xmm1 tabE tblName tblWords, .vop (.vpbroadcastd .l256 .xmm1 .xmm1),
     .vop (.vvar .vpsrlvd .l256 .xmm1 .xmm1 .xmm13), .vop (.vpermd .xmm0 .xmm1 .xmm0)] ++ vstore w16 ++
-    [.alu32 .add .rdi (.mem { tabE with disp := oTab + 4 }), .alu .add .rsi (.imm 12)]
+    [.aluTbl .add .rdi { tabE with disp := oNum } tblName tblWords, .alu .add .rsi (.imm 12)]
 
 /-- Four iterations of the loop: with AVX2 if `j < 249`, and otherwise with
 `snBody`. -/
@@ -249,8 +262,8 @@ def cntFlags : List Instr := .mov32 .r14 (.imm 1) :: (List.range 4).flatMap fun 
 
 /-- Two more blocks of each seed, and 112 more iterations on each. -/
 def more4 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
-  .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast)
-    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.seq (run2 3 w16) (.block cntFlags))))))
+  .seq (.block [.mov32 .r14 (.imm 1)]) (.seq (squeezes 0 2 fast) (.seq (.block tabAddr)
+    (.seq (run2 0 w16) (.seq (run2 1 w16) (.seq (run2 2 w16) (.seq (run2 3 w16) (.block cntFlags)))))))
 
 /-- If a seed has fewer than 256 coefficients, `more4`; then the return
 value. `vzeroupper` clears the upper halves of the vector registers, so that
@@ -262,7 +275,7 @@ def tail4 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
 /-- `vg_mlkem_sample_ntt4_avx2`. -/
 def sampleNTT4Avx2 (fast : Bool := false) (w16 : Bool := false) : Prog isa :=
   .seq (.block (pro ++ rcTable .rbx (oRc / 32) ++ absorb4))
-    (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
+    (.seq (squeezes 0 3 fast) (.seq (.block tabAddr)
       (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (.seq (run1 3 w16) (tail4 fast w16)))))))
 
 /-- `vg_mlkem_sample_ntt` on seed `k`, and `r14 ← r14 ∧ result`. -/

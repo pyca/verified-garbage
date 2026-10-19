@@ -14,10 +14,12 @@ import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, constant time but for the seeds
@@ -200,8 +202,8 @@ theorem cmpG_ok {σ s₀ : State} {K b t : Nat} {c : BitVec 64} {s : State} (h :
     WP isa (.block [.alu .cmp .rdi (.imm 249)]) s fun s' => (LVW w16 σ s₀ K b t s' ∧ s'.gpr .r10 = c) ∧
       s'.cf = some (decide ((Lt σ K (b + t)).length < 249)) := by
   have hlen : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
-  refine WP.mono (cmp249_ok s) fun s' ⟨hcf, hm, hg, hrd, hwr, hl⟩ => ?_
-  exact ⟨⟨⟨h.1.lat.same hg hm hrd hwr, fun h' => (h.1.vc h').same hl⟩, by rw [hg]; exact h.2⟩,
+  refine WP.mono_syms (cmp249_ok s) fun s' ⟨hcf, hm, hg, hrd, hwr, hl⟩ sy => ?_
+  exact ⟨⟨⟨h.1.lat.same hg hm hrd hwr sy, fun h' => (h.1.vc h').same hl⟩, by rw [hg]; exact h.2⟩,
     by rw [hcf, h.1.lat.rdi, ofNat64_toNat (by bdd_omega)]⟩
 
 /-- The taint analysis of `vput`, of either width. -/
@@ -255,9 +257,9 @@ theorem vgrp_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
           (LAtW w16 σ s₀ K b t s ∧ ¬ (Lt σ K (b + t)).length < 249 ∧ s.gpr .r10 = c) ∧ s.gpr .rcx = BitVec.ofNat 64 4)
           ?_ ?_) ?_
       · intro σ s₀ s _ _ h
-        refine WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 4)
-          (by xrun) (by decide)) fun s' ⟨⟨hm, hc⟩, k⟩ => ?_
-        exact ⟨⟨h.1.same' hm k, h.2.1, by rw [k.gpr (by decide)]; exact h.2.2⟩, hc⟩
+        refine WP.mono_syms (WP.keep [.rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 4)
+          (by xrun) (by decide)) fun s' ⟨⟨hm, hc⟩, k⟩ sy => ?_
+        exact ⟨⟨h.1.same' hm k sy, h.2.1, by rw [k.gpr (by decide)]; exact h.2.2⟩, hc⟩
       · exact taintRel [] (fun _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide)
       · refine RelCT.mono (iloop_ct (X := X) (c := c) hK ht hbt 4) ?_ ?_
         · rintro x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, ⟨l₁, v₁, d₁⟩, c₁⟩, ⟨s₀₂, x₂, ⟨l₂, v₂, d₂⟩, c₂⟩⟩
@@ -326,8 +328,8 @@ def LI (w16 : Bool) (X : State → State → Prop) (K b N n : Nat) (s₁ s₂ : 
 theorem sub10_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} :
     RelCT isa (RVW w16 X K b t c) (.block [.alu .sub .r10 (.imm 1)])
       (RXW w16 X fun σ s₀ s => LVW w16 σ s₀ K b t s ∧ s.gpr .r10 = c - 1 ∧ s.zf = some (c - 1 == 0)) :=
-  relInvX (fun σ s₀ s _ _ h => WP.mono (sub10_ok s) fun s' ⟨⟨hm, h10, hz, hl⟩, k⟩ =>
-      ⟨⟨h.1.lat.same' hm k, fun h' => (h.1.vc h').same hl⟩, by rw [h10, h.2], by rw [hz, h.2]⟩)
+  relInvX (fun σ s₀ s _ _ h => WP.mono_syms (sub10_ok s) fun s' ⟨⟨hm, h10, hz, hl⟩, k⟩ sy =>
+      ⟨⟨h.1.lat.same' hm k sy, fun h' => (h.1.vc h').same hl⟩, by rw [h10, h.2], by rw [hz, h.2]⟩)
     (taintRel [.r10] (fun x y ⟨σ₁, σ₂, _, _, _, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]) (by taint_decide))
 
@@ -412,8 +414,8 @@ theorem run2_ct {K : Nat} (hK : K < 4) {h₂ : VG.Taint.Hint X86_64.Taint.T}
       (by rw [h.j K hK, ite_eq_right (by omega)]) (by have := h.st K hK; rwa [ite_eq_right (by omega)] at this)⟩)
     (fun σ s₀ s hp h₀ hA => run2End_ok (preW_of hp) hK h₀ hA) c₁ c₂
 
-theorem tab_ct : RelCT isa (R4W w16 fun σ s => SqTW w16 σ 0 3 s) (.block tabBuild) (R4W w16 fun σ s => P1W w16 σ 0 s) :=
-  relInv (fun σ s hp h => p1_zero_ok (preW_of hp) h)
+theorem tab_ct : RelCT isa (R4W w16 fun σ s => SqTW w16 σ 0 3 s) (.block tabAddr) (R4W w16 fun σ s => P1W w16 σ 0 s) :=
+  relInv (fun σ s _ h => p1_zero_ok h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.env h₂.env) (by taint_decide))
 
@@ -443,6 +445,9 @@ theorem more4_ct {fast : Bool} : RelCT isa (R4W w16 (CheckedW w16)) (more4 fast 
   refine RelCT.seq (relInv (fun σ s hp h => sqM_ok (fast := fast) (preW_of hp) h)
     (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) csq)) ?_
+  refine RelCT.seq (relInv (fun σ s _ h => tab2_ok h)
+    (taintRel [.rbx] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact env_rbx hq h₁.sq.env h₂.sq.env) (by taint_decide))) ?_
   refine RelCT.seq (run2_ct (K := 0) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2_ct (K := 1) (by decide) (by taint_decide)) ?_
   refine RelCT.seq (run2_ct (K := 2) (by decide) (by taint_decide)) ?_
