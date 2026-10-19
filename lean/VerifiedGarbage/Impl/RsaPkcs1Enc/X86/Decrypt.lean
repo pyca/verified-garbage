@@ -174,9 +174,11 @@ def alInit : List Instr :=
     .mov .esi (.mem (incoming 21)), .alu .add .esi (.imm (BitVec.ofNat 32 sCL)),
     .mov .edi (.imm 0), .mov .ecx (.imm 128)]
 
-def alBody : List Instr :=
-  [.movzx8 .eax ⟨.esi, 0⟩, .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .movzx8 .edx ⟨.esi, 1⟩,
-    .alu .add .eax (.reg .edx), .alu .and .eax (.reg .ebx), .mov .edx (.reg .ebp),
+def alLoad : List Instr :=
+  [.movzx8 .eax ⟨.esi, 0⟩, .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .movzx8 .edx ⟨.esi, 1⟩]
+
+def alBody : List Instr := alLoad ++
+  [.alu .add .eax (.reg .edx), .alu .and .eax (.reg .ebx), .mov .edx (.reg .ebp),
     .alu .sub .edx (.reg .eax), .shift .shr .edx 31, .alu .sub .edx (.imm 1),
     .alu .xor .eax (.reg .edi), .alu .and .eax (.reg .edx), .alu .xor .edi (.reg .eax),
     .alu .add .esi (.imm 2), .alu .sub .ecx (.imm 1)]
