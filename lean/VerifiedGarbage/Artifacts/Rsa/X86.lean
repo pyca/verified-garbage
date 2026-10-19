@@ -47,7 +47,7 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86.Crt.code
     verified := Proof.Bignum.X86.Crt.verified
     spSafe := Proof.Bignum.X86.Crt.code_sp
-    stack := 20 },
+    stack := 40 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputedFn.code
     verified := Proof.Bignum.X86.precomputed_verified

@@ -22,9 +22,11 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   unfold Crt.code
   refine WP.seq (WP.mono (installed_ok A) fun u ⟨I, S, K, O⟩ => ?_)
   refine WP.seq (WP.mono (body_ok I) fun v ⟨⟨V, F⟩, Kv⟩ => ?_)
-  have Saved := frame_saved F I.outApart low high S
+  have Saved := frame_saved F I.outApart low high I.room.zone S
+  have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
+  rw [espu] at F
   have Whole : Frame [⟨argumentPointer s 16, (arg s 17).toNat * 8⟩,
-      ⟨argumentPointer s 0, (arg s 3).toNat⟩] s.mem v.mem := by
+      ⟨argumentPointer s 0, (arg s 3).toNat⟩, below (s.gpr .esp) 20] s.mem v.mem := by
     have Start := VG.Proof.Bignum.outside_frame O (by omega)
     simp only [BitVec.add_zero] at Start
     exact (Start.mono (by intro r hr; simp only [List.mem_singleton] at hr; subst r; simp)).trans
@@ -34,9 +36,10 @@ theorem operation_ok {s : State} (A : CrtABI s) :
     apply Whole.readW (Region.contains_self _ 4) ?_ (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact A.retScratch
     · rw [← A.outLength]; exact A.retOut
+    · exact ret_zone (by have := A.stackLow; omega)
   refine WP.mono (entryRestore_ok (I.scratch.of_keeps Kv (by decide) (by decide)) low Saved) fun t R => ?_
   refine ⟨?_, restored_abi R ((Kv.1 _ (by decide)).trans (K.1 _ (by decide))) Ret⟩
   rw [R.mem, R.other .eax (by decide)]
@@ -60,9 +63,9 @@ theorem operation_ok {s : State} (A : CrtABI s) :
   rw [Specs] at V
   exact V
 
-theorem correct (s : State) (h : (Spec.Rsa.privateCrtContract abi 20).pre s) :
+theorem correct (s : State) (h : (Spec.Rsa.privateCrtContract abi 40).pre s) :
     ∃ trace t, Exec isa Crt.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Rsa.privateCrtContract abi 20).post s t := by
+      (Spec.Rsa.privateCrtContract abi 40).post s t := by
   have A := crtABI_of h
   obtain ⟨trace, t, E, V, P⟩ := operation_ok A
   refine ⟨trace, t, E, P, ?_⟩

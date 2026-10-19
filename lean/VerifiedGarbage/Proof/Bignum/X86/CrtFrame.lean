@@ -32,6 +32,26 @@ theorem arithmetic_value {n i k : Nat} {base : Addr} {m m' : Mem}
     rcases hr with rfl | rfl <;> omega
   · unfold stride at bound; omega
 
+theorem arithmetic_valueZ {n i k bytes : Nat} {base : Addr} {sp : BitVec 32} {m m' : Mem}
+    (O : OutsZ base sp (arithmeticRanges n) m m') (R : CallRoom sp base bytes)
+    (nw : base.toNat + bytes ≤ 2 ^ 32) (hz : VG.Impl.Bignum.X86.Crt.size n ≤ bytes)
+    (hi : 9 ≤ i) (hi' : i < 20) (hk : k ≤ 2 * n) :
+    wordsVal m' base (slot n i) k = wordsVal m base (slot n i) k := by
+  have before : contextBytes n ≤ slot n i := by
+    unfold contextBytes slot
+    have := Nat.mul_le_mul_right (stride n) hi
+    omega
+  have bound := slot_bound (n := n) hi'
+  have head := slot_header n i
+  have sz := size_eq n
+  have b20 := slot_bound (n := n) (i := 19) (by decide)
+  have l20 := slot_le (n := n) (i := 19) (j := 28) (by decide)
+  refine O.wordsVal R nw (fun r hr => ?_) ?_
+  · simp only [arithmeticRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> dsimp only <;> unfold stride at bound <;> omega
+  · have := slot_le (n := n) (i := i) (j := 28) (by omega)
+    unfold VG.Impl.Bignum.X86.Crt.size at hz; unfold stride at this bound; omega
+
 theorem arithmetic_header {n d : Nat} {base : Addr} {m m' : Mem}
     (O : Outs base (arithmeticRanges n) m m') (lo : 8 ≤ d) (hi : d + 4 ≤ 64) :
     m'.readW (off base d) 32 = m.readW (off base d) 32 := by
@@ -57,14 +77,12 @@ theorem prime_arithmetic_frame {n : Nat} {base : Addr} {m m' : Mem}
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [slot, stride, contextBytes] at * <;> omega
 
-theorem coefficient_arithmetic_frame {n : Nat} {base : Addr} {m m' : Mem}
-    (O : Outs base (coefficientRanges n) m m') : Outs base (arithmeticRanges n) m m' := by
-  intro a ha
-  have high := ha (64, contextBytes n - 64) (by simp [arithmeticRanges])
-  apply O a
-  intro r hr
+theorem coefficient_arithmetic_frame {n : Nat} {base : Addr} {sp : BitVec 32} {m m' : Mem}
+    (O : OutsZ base sp (coefficientRanges n) m m') : OutsZ base sp (arithmeticRanges n) m m' := by
+  refine O.widen fun y hy r hr => ?_
+  have high := hy (64, contextBytes n - 64) (by simp [arithmeticRanges])
   simp only [coefficientRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;>
+  rcases hr with rfl | rfl | rfl | rfl <;>
     simp only [slot, stride, contextBytes] at * <;> omega
 
 end VG.Proof.Bignum.X86.Crt

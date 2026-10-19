@@ -10,9 +10,10 @@ public import VerifiedGarbage.TCB.X86.Target
 namespace VG.Proof.Bignum.X86.Crt
 open VG VG.X86 VG.X86.Spill VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Bignum.X86
 
-theorem frame_saved {base out : Addr} {bytes len : Nat} {m m' : Mem} {g : Reg → BitVec 32}
-    (F : Frame (bodyRegions base out bytes len) m m')
+theorem frame_saved {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem} {g : Reg → BitVec 32}
+    (F : Frame (bodyRegions base out bytes len sp) m m')
     (A : Region.Disjoint ⟨base, bytes⟩ ⟨out, len⟩) (low : 48 ≤ bytes) (high : bytes ≤ 2 ^ 64)
+    (Z : Region.Disjoint (VG.X86.below sp 20) ⟨base, bytes⟩)
     (S : Saved m (off base) g Crt.savedRegisters) : Saved m' (off base) g Crt.savedRegisters := by
   intro p hp
   have B : 32 ≤ p.2 ∧ p.2 + 4 ≤ 48 := by
@@ -22,21 +23,23 @@ theorem frame_saved {base out : Addr} {bytes len : Nat} {m m' : Mem} {g : Reg �
     (Offset.contains base B.1 (by omega) (by decide)) ?_ (by decide)).trans (S p hp)
   intro r hr
   simp only [bodyRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact Offset.disjoint_base base (by decide) (by decide)
   · exact Offset.disjoint base (.inl (by decide)) (by decide) (by omega)
   · exact A.sub_left (Offset.sub_base base (by omega))
+  · exact (Z.sub_right (Offset.sub_base base (by omega))).symm
 
-theorem frame_full {base out : Addr} {bytes len : Nat} {m m' : Mem}
-    (F : Frame (bodyRegions base out bytes len) m m') (low : 48 ≤ bytes) :
-    Frame [⟨base, bytes⟩, ⟨out, len⟩] m m' := by
+theorem frame_full {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
+    (F : Frame (bodyRegions base out bytes len sp) m m') (low : 48 ≤ bytes) :
+    Frame [⟨base, bytes⟩, ⟨out, len⟩, VG.X86.below sp 20] m m' := by
   apply F.sub
   intro r hr
   simp only [bodyRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨⟨base, bytes⟩, by simp, Region.sub_prefix (by omega)⟩
   · exact ⟨⟨base, bytes⟩, by simp, Offset.sub_base base (by omega)⟩
   · exact ⟨⟨out, len⟩, by simp, fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
 
 theorem restored_abi {s t u : State} (R : Restored t u s.gpr Crt.savedRegisters)
     (sp : t.gpr .esp = s.gpr .esp)

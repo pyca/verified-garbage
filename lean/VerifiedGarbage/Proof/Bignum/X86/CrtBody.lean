@@ -11,7 +11,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Bignum.X86
 
 theorem body_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : Inputs base bytes len args s) :
-    WP isa Crt.body s fun t => Post base bytes len args s.mem t ∧
+    WP isa Crt.body s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have nf := h.fits 2 (by decide)
   have nr := h.readable 2 (by decide)
@@ -37,12 +37,12 @@ theorem body_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   refine WP.ite (Spec.Rsa.modulusValid (componentValue s.mem args 2) len) Z ?_ ?_
   · intro valid
     refine WP.mono (valid_ok hv (by rw [Msv]; exact valid)) fun t ⟨R, T⟩ => ?_
-    exact ⟨by simpa only [Msv] using R, Ksv.trans T⟩
+    exact ⟨by simpa only [Msv, Ksv.1 .esp (by decide)] using R, Ksv.trans T⟩
   · intro invalid
     have failed : specResult v.mem args = none := by
       rw [specResult_eq, Msv, h.modulus_length, invalid]
       rfl
     refine WP.mono (failure_post hv failed) fun t ⟨R, T⟩ => ?_
-    exact ⟨by simpa only [Msv] using R, Ksv.trans T⟩
+    exact ⟨by simpa only [Msv, Ksv.1 .esp (by decide)] using R, Ksv.trans T⟩
 
 end VG.Proof.Bignum.X86.Crt

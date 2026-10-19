@@ -9,27 +9,32 @@ public import VerifiedGarbage.Proof.Bignum.OutsFrame
 namespace VG.Proof.Bignum.X86.Crt
 open VG VG.Proof.Mont
 
-def bodyRegions (base out : Addr) (bytes len : Nat) : List Region :=
-  [⟨base, 32⟩, ⟨off base 48, bytes - 48⟩, ⟨out, len⟩]
+/-- What the body writes: the bytes around its saved registers, the output and
+the zone below `sp` its calls write. -/
+def bodyRegions (base out : Addr) (bytes len : Nat) (sp : BitVec 32) : List Region :=
+  [⟨base, 32⟩, ⟨off base 48, bytes - 48⟩, ⟨out, len⟩, VG.X86.below sp 20]
 
-theorem body_frame {base out : Addr} {bytes len : Nat} {m m' : Mem}
-    (O : Outs base (bodyRanges bytes) m m') (fit : bytes ≤ 2 ^ 64) :
-    Frame (bodyRegions base out bytes len) m m' := by
-  have F := VG.Proof.Bignum.outs_frame O (by
-    intro r hr
+theorem body_frame {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
+    (O : VG.Proof.Mont.X86.OutsZ base sp (bodyRanges bytes) m m') (fit : bytes ≤ 2 ^ 64) :
+    Frame (bodyRegions base out bytes len sp) m m' := by
+  intro a ha
+  refine O a (fun r hr => ?_) (ha _ (by simp [bodyRegions]))
+  have H : ¬ (⟨off base r.1, r.2⟩ : Region).Contains a 1 := by
+    simp only [bodyRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · have := ha ⟨base, 32⟩ (by simp [bodyRegions])
+      simpa only [off, BitVec.add_zero] using this
+    · exact ha _ (by simp [bodyRegions])
+  have I := Offset.lt_iff a base (show r.1 + r.2 ≤ 2 ^ 64 by
     simp only [bodyRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> omega)
-  apply F.mono
-  simp only [bodyRanges, List.map_cons, List.map_nil, bodyRegions, List.mem_cons,
-    List.not_mem_nil, or_false, off, BitVec.add_zero]
-  intro r hr
-  rcases hr with h | h
-  · exact Or.inl h
-  · exact Or.inr (Or.inl h)
+  change ¬ ((a - off base r.1).toNat + 1 ≤ r.2) at H
+  change (a - off base r.1).toNat < r.2 ↔ r.1 ≤ ofs base a ∧ ofs base a < r.1 + r.2 at I
+  omega
 
-theorem high_frame {base out : Addr} {bytes len : Nat} {m m' : Mem}
+theorem high_frame {base out : Addr} {bytes len : Nat} {sp : BitVec 32} {m m' : Mem}
     (F : Frame [⟨off base 64, bytes - 64⟩, ⟨out, len⟩] m m') (low : 64 ≤ bytes)
-    (fit : bytes ≤ 2 ^ 64) : Frame (bodyRegions base out bytes len) m m' := by
+    (fit : bytes ≤ 2 ^ 64) : Frame (bodyRegions base out bytes len sp) m m' := by
   apply F.sub
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

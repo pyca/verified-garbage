@@ -46,7 +46,7 @@ theorem PrivContext.callBytes {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
   have F : Frame [g.calleeRegion] s.mem s.callEntry.mem := by
     rw [State.callEntry_mem, h.sp]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (VG.X86.below_top (by decide : 4 ≤ 24) h.valid.stackLow (by decide : 4 ≤ 4))
+      (VG.X86.below_top (by decide : 4 ≤ 44) h.valid.stackLow (by decide : 4 ≤ 4))
   have E := rsa_bytes_frame F (by have := (h.sources i).fits; omega : g.sourceLength i < 2 ^ 64)
     (by intro r hr; obtain rfl := List.mem_singleton.mp hr
         exact ((h.valid.stackSources i).sub_left h.valid.calleeSub).symm)

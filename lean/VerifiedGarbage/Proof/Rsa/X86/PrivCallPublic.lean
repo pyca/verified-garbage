@@ -11,7 +11,7 @@ open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Bignum.X86
 theorem crtCall_pub {g : PrivGeometry} {bs1 bs2 : Fin 8 → List Byte} {s t : State}
     (hs : PrivContext g bs1 s) (ht : PrivContext g bs2 t) (argsS : CrtArgs g s) (argsT : CrtArgs g t)
     (nb : bs1 0 = bs2 0) :
-    (Spec.Rsa.privateCrtContract abi 20).pub
+    (Spec.Rsa.privateCrtContract abi 40).pub
       (s.callEntry.withRegions (crtRd g) (crtWr g)) (t.callEntry.withRegions (crtRd g) (crtWr g)) := by
   sig_pub [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 18) => crtArgs_values hs argsS hj

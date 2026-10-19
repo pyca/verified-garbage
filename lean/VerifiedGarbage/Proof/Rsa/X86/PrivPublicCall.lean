@@ -38,7 +38,7 @@ theorem pd_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     WP isa (.call v.pdName v.pd) s fun t => PrivContext g bs t ∧
       Frame (pdWr g ++ [g.calleeRegion]) s.mem t.mem ∧ Keeps callClobbers s t ∧
       PdOut g bs s t := by
-  refine WP.mono (private_call_ok h v.pdVerified v.pdStack v.pdNoSp (pdCall_pre h args)
+  refine WP.mono (private_call_ok h v.pdVerified (Nat.le_trans v.pdStack (by decide)) v.pdNoSp (pdCall_pre h args)
     (pdCovers h).1 (pdCovers h).2 pdWrites_sub) ?_
   rintro t ⟨ht, frame, rest, u, M, G, post⟩
   refine ⟨ht, frame, rest, ?_⟩

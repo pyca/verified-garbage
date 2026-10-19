@@ -23,33 +23,36 @@ def resultValue (p q dp dq qi x : Nat) : Nat :=
 def computeRanges (n : Nat) : List (Nat × Nat) := powersRanges n ++ recombineRanges n
 
 theorem compute_ok {s : State} {base : Addr} {bytes n : Nat}
-    (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
-    (args : PowerArgs base bytes n s) :
+    (hs : Scr s base bytes) (hn : 2 ≤ n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
+    (R : CallRoom (s.gpr .esp) base bytes) (args : PowerArgs base bytes n s) :
     WP isa (compute n) s fun t =>
       wordsVal t.mem base (slot n resultSlot) (2 * n) =
         resultValue (wordsVal s.mem base (slot n pSlot) n) (wordsVal s.mem base (slot n qSlot) n)
           (wordsVal s.mem base (slot n dpSlot) n) (wordsVal s.mem base (slot n dqSlot) n)
           (wordsVal s.mem base (slot n inverseSlot) n) (wordsVal s.mem base (slot n inputSlot) n) % 2 ^ (128 * n) ∧
-      Outs base (computeRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+      OutsZ base (s.gpr .esp) (computeRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have fit : size n ≤ 2 ^ 64 := by have := hs.nowrap; omega
+  have nw := hs.nowrap
   unfold compute
-  refine WP.seq (WP.mono (powers_ok hs hn hn32 hz args) fun u ⟨P, _, Q, Qw, Pu, Qu, O, K⟩ => ?_)
+  refine WP.seq (WP.mono (powers_ok hs (by omega) hn32 hz args) fun u ⟨P, _, Q, Qw, Pu, Qu, O, K⟩ => ?_)
+  have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   have QIu := powers_value O (i := inverseSlot) (k := n) (by decide) (by omega) fit
   have reduced : wordsVal u.mem base (slot n mpSlot) n < safePrime (wordsVal u.mem base (slot n pSlot) n) := by
     rw [P, Pu]
     exact Nat.mod_lt _ (by have := safePrime_gt_one (wordsVal s.mem base (slot n pSlot) n); omega)
-  refine WP.seq (WP.mono (coefficient_ok (hs.of_keeps K (by decide)) hn hn32 hz reduced)
+  refine WP.seq (WP.mono (coefficient_ok (hs.of_keeps K (by decide)) hn hn32 hz (espu ▸ R) reduced)
     fun v ⟨H, Ov, Kv⟩ => ?_)
+  rw [espu] at Ov
   have Ksv := K.trans Kv
-  have Qv := arithmetic_value Ov (i := qSlot) (k := n) (by decide) (by decide) (by omega) fit
-  have MQv := arithmetic_value Ov (i := mqSlot) (k := 2 * n) (by decide) (by decide) (by omega) fit
-  refine WP.mono (recombine_ok (hs.of_keeps Ksv (by decide)) hn hz) fun t ⟨V, Ot, Kt⟩ => ?_
+  have Qv := arithmetic_valueZ Ov R nw hz (i := qSlot) (k := n) (by decide) (by decide) (by omega)
+  have MQv := arithmetic_valueZ Ov R nw hz (i := mqSlot) (k := 2 * n) (by decide) (by decide) (by omega)
+  refine WP.mono (recombine_ok (hs.of_keeps Ksv (by decide)) (by omega) hz) fun t ⟨V, Ot, Kt⟩ => ?_
   refine ⟨?_, ?_, Ksv.trans (Kt.mono (by decide))⟩
   · rw [V, H, Qv, MQv, Qw, P, Q, Pu, QIu, Qu]
     rfl
-  · have Ov' : Outs base (powersRanges n) u.mem v.mem := Ov.mono (by
+  · have Ov' : OutsZ base (s.gpr .esp) (powersRanges n) u.mem v.mem := Ov.mono (by
       intro r hr; exact List.mem_append_left _ hr)
-    exact ((O.trans Ov').mono (by intro r hr; exact List.mem_append_left _ hr)).trans
-      (Ot.mono (by intro r hr; exact List.mem_append_right _ hr))
+    exact (((OutsZ.of_outs O).trans Ov').mono (by intro r hr; exact List.mem_append_left _ hr)).trans
+      (OutsZ.of_outs (Ot.mono (by intro r hr; exact List.mem_append_right _ hr)))
 
 end VG.Proof.Bignum.X86.Crt

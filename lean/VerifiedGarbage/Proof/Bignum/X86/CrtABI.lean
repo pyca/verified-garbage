@@ -13,7 +13,7 @@ open VG VG.X86
 open VG.Proof.Dsa.X86 (argumentPointer)
 
 structure CrtABI (s : State) : Prop where
-  stackLow : 20 ≤ (s.gpr .esp).toNat
+  stackLow : 40 ≤ (s.gpr .esp).toNat
   stackBound : (s.gpr .esp).toNat + 76 ≤ 2 ^ 32
   rd : s.rd = [⟨argumentPointer s 2, (arg s 3).toNat⟩,
     ⟨argumentPointer s 4, (arg s 5).toNat⟩,
@@ -36,7 +36,7 @@ structure CrtABI (s : State) : Prop where
   qiScratch : (⟨argumentPointer s 14, (arg s 15).toNat⟩ : Region).Disjoint ⟨argumentPointer s 16, (arg s 17).toNat * 8⟩
   scratchArgs : (⟨argumentPointer s 16, (arg s 17).toNat * 8⟩ : Region).Disjoint ⟨argAddr s 0, 72⟩
   retScratch : (⟨(s.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨argumentPointer s 16, (arg s 17).toNat * 8⟩
-  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩ : Region).Disjoint ⟨argumentPointer s 16, (arg s 17).toNat * 8⟩
+  belowScratch : (⟨(s.gpr .esp).setWidth 64 - 40#64, 40⟩ : Region).Disjoint ⟨argumentPointer s 16, (arg s 17).toNat * 8⟩
   nBound : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   inBound : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
   pBound : (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32
@@ -57,7 +57,7 @@ structure CrtABI (s : State) : Prop where
   dqLength : (arg s 13).toNat = (arg s 9).toNat
   scratchLength : Spec.Rsa.scratchWords (arg s 3).toNat ≤ (arg s 17).toNat
 
-theorem crtABI_of {s : State} (h : (Spec.Rsa.privateCrtContract abi 20).pre s) : CrtABI s := by
+theorem crtABI_of {s : State} (h : (Spec.Rsa.privateCrtContract abi 40).pre s) : CrtABI s := by
   sig_pre [Spec.Rsa.privateCrtContract, Spec.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption

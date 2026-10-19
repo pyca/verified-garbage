@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtCoreTiming
+public import VerifiedGarbage.Proof.Bignum.X86.CrtCoefficientStageTiming
+public import VerifiedGarbage.Proof.Bignum.X86.SafePrime
 public import VerifiedGarbage.Proof.Bignum.X86.CrtArithmeticTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrimePowerTiming
 public import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowPower
@@ -183,11 +184,41 @@ theorem powers_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) 
     refine ⟨2 - (k + 1), by omega, k + 1, rfl, last, T.2, H.keep Ks Kt (by decide) (by decide)
       (powers_outside Os H.left.space) (powers_outside Ot H.left.space), Cs', Ct'⟩
 
-theorem compute_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) :
-    RelCT isa (fun s t => Public s t ∧ Pair base bytes len args s t)
+/-- What the coefficient stage needs, from correctness of the powers. -/
+theorem powers_stage {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s : State} {sp : BitVec 32}
+    (I : Inputs base bytes len args s) (A : PowerArgs base bytes (Spec.Rsa.modulusWords len) s)
+    (hsp : s.gpr .esp = sp) :
+    WP isa (powers (Spec.Rsa.modulusWords len)) s (StageReady (Spec.Rsa.modulusWords len) sp base) := by
+  have dims := I.dimensions
+  refine WP.mono (powers_ok I.scratch dims.1 dims.2.1 I.space A) fun u ⟨P, _, _, _, Pu, _, _, K⟩ => ?_
+  exact ⟨(K.1 _ (by decide)).trans hsp, bytes, I.scratch.of_keeps K (by decide) (by decide), I.space,
+    hsp ▸ I.room, by
+      rw [P, Pu]
+      exact Nat.mod_lt _ (by have := safePrime_gt_one (wordsVal s.mem base (slot (Spec.Rsa.modulusWords len) pSlot) (Spec.Rsa.modulusWords len)); omega)⟩
+
+theorem compute_relCT_at (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32)
+    (hn : 2 ≤ Spec.Rsa.modulusWords len) (hn32 : 128 * Spec.Rsa.modulusWords len < 2 ^ 32) :
+    RelCT isa (fun s t => (Public s t ∧ Pair base bytes len args s t ∧
+        PowerArgs base bytes (Spec.Rsa.modulusWords len) s ∧
+        PowerArgs base bytes (Spec.Rsa.modulusWords len) t) ∧ s.gpr .esp = sp)
       (compute (Spec.Rsa.modulusWords len)) Public := by
   unfold compute
-  exact RelCT.seq (powers_relCT base bytes len args)
-    (VG.RelCT.seq (coefficient_relCT _) (crtRecombine_relCT _ _ _ _ _ _ _))
+  refine VG.RelCT.seq ?_ (VG.RelCT.seq (coefficient_relCT hn hn32 sp base) (crtRecombine_relCT _ _ _ _ _ _ _))
+  exact ((powers_relCT base bytes len args).mono (P' := fun (s t : State) => (Public s t ∧ Pair base bytes len args s t ∧
+      PowerArgs base bytes (Spec.Rsa.modulusWords len) s ∧
+      PowerArgs base bytes (Spec.Rsa.modulusWords len) t) ∧ s.gpr .esp = sp)
+    (fun _ _ h => ⟨h.1.1, h.1.2.1⟩) fun _ _ h => h).wp
+    (F₁ := StageReady (Spec.Rsa.modulusWords len) sp base) (F₂ := StageReady (Spec.Rsa.modulusWords len) sp base)
+    fun _ _ ⟨⟨_, H, A, B⟩, e⟩ => ⟨powers_stage H.left A e, powers_stage H.right B (H.sp.symm.trans e)⟩
+
+theorem compute_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) :
+    RelCT isa (fun s t => Public s t ∧ Pair base bytes len args s t ∧
+        PowerArgs base bytes (Spec.Rsa.modulusWords len) s ∧ PowerArgs base bytes (Spec.Rsa.modulusWords len) t)
+      (compute (Spec.Rsa.modulusWords len)) Public := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  have dims := hp.2.1.left.dimensions
+  have hn : 2 ≤ Spec.Rsa.modulusWords len := by
+    have := hp.2.1.left.lower; unfold Spec.Rsa.modulusWords; omega
+  exact compute_relCT_at base bytes len args _ hn dims.2.1 _ _ _ _ _ _ ⟨hp, rfl⟩ e₁ e₂
 
 end VG.Proof.Bignum.X86.Crt

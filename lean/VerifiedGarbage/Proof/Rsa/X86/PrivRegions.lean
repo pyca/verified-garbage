@@ -11,28 +11,28 @@ open VG VG.X86 VG.Impl.Rsa.X86.PrivChecked VG.Proof.Bignum.X86
 namespace PrivGeometry
 
 theorem Valid.stackBase {g : PrivGeometry} (h : g.Valid) :
-    byteAddr g.stack = byteAddr (g.stack - BitVec.ofNat 32 24) + BitVec.ofNat 64 24 := by
-  change g.stack.setWidth 64 = (g.stack - BitVec.ofNat 32 24).setWidth 64 + BitVec.ofNat 64 24
+    byteAddr g.stack = byteAddr (g.stack - BitVec.ofNat 32 44) + BitVec.ofNat 64 44 := by
+  change g.stack.setWidth 64 = (g.stack - BitVec.ofNat 32 44).setWidth 64 + BitVec.ofNat 64 44
   rw [VG.X86.Taint.sub_setWidth h.stackLow]
   exact (BitVec.sub_add_cancel _ _).symm
 
 theorem Valid.innerSub {g : PrivGeometry} (h : g.Valid) : g.innerRegion.Sub g.wholeStack := by
   unfold innerRegion wholeStack
   rw [h.stackBase]
-  exact Offset.sub_base _ (by decide : 24 + VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ stackBytes)
+  exact Offset.sub_base _ (by decide : 44 + VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ stackBytes)
 
 theorem Valid.savedSub {g : PrivGeometry} (h : g.Valid) : g.savedRegion.Sub g.wholeStack := by
   unfold savedRegion wholeStack
   rw [h.stackBase, Offset.add_add]
-  exact Offset.sub_base _ (by decide : (24 + VG.Impl.Rsa.X86.PrivChecked.frameBytes) + 16 ≤ stackBytes)
+  exact Offset.sub_base _ (by decide : (44 + VG.Impl.Rsa.X86.PrivChecked.frameBytes) + 16 ≤ stackBytes)
 
 theorem Valid.calleeSub {g : PrivGeometry} (_h : g.Valid) : g.calleeRegion.Sub g.wholeStack :=
-  Region.sub_prefix (by decide : 24 ≤ stackBytes)
+  Region.sub_prefix (by decide : 44 ≤ stackBytes)
 
 theorem Valid.calleeInner {g : PrivGeometry} (h : g.Valid) : g.calleeRegion.Disjoint g.innerRegion := by
   unfold calleeRegion VG.X86.below innerRegion
   rw [h.stackBase]
-  exact (Offset.disjoint_base _ (by decide : 24 ≤ 24) (by decide : 24 + VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ 2 ^ 64)).symm
+  exact (Offset.disjoint_base _ (by decide : 44 ≤ 44) (by decide : 44 + VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ 2 ^ 64)).symm
 
 theorem Valid.innerSaved {g : PrivGeometry} (_h : g.Valid) : g.innerRegion.Disjoint g.savedRegion :=
   (Offset.disjoint_base _ (by decide : VG.Impl.Rsa.X86.PrivChecked.frameBytes ≤ VG.Impl.Rsa.X86.PrivChecked.frameBytes) (by decide : VG.Impl.Rsa.X86.PrivChecked.frameBytes + 16 ≤ 2 ^ 64)).symm

@@ -23,9 +23,9 @@ theorem validation_outside {n bytes : Nat} {base : Addr} {m m' : Mem}
   rcases hr with rfl | rfl | rfl <;> simp only [multiplierOffset, acceptanceOffset, size, slot, stride] at * <;> omega
 
 theorem checkedCompute_ok {s : State} {base : Addr} {bytes n : Nat}
-    (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
+    (hs : Scr s base bytes) (hn : 2 ≤ n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
     (modulus : wordsVal s.mem base (slot n modulusSlot) n = wordsVal s.mem base (slot n modulusSlot) (2 * n))
-    (args : PowerArgs base bytes n s) :
+    (R : CallRoom (s.gpr .esp) base bytes) (args : PowerArgs base bytes n s) :
     WP isa (.seq (validate n) (compute n)) s fun t =>
       t.mem.readW (off base acceptanceOffset) 32 = mask32
         ((wordsVal s.mem base (slot n pSlot) n * wordsVal s.mem base (slot n qSlot) n =
@@ -36,23 +36,29 @@ theorem checkedCompute_ok {s : State} {base : Addr} {bytes n : Nat}
         resultValue (wordsVal s.mem base (slot n pSlot) n) (wordsVal s.mem base (slot n qSlot) n)
           (wordsVal s.mem base (slot n dpSlot) n) (wordsVal s.mem base (slot n dqSlot) n)
           (wordsVal s.mem base (slot n inverseSlot) n) (wordsVal s.mem base (slot n inputSlot) n) % 2 ^ (128 * n) ∧
-      Outs base (checkedRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+      OutsZ base (s.gpr .esp) (checkedRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have fit : size n ≤ 2 ^ 64 := by have := hs.nowrap; omega
-  refine WP.seq (WP.mono (validate_ok hs hn hz modulus) fun u ⟨A, O, K⟩ => ?_)
+  have nw := hs.nowrap
+  have sz := size_eq n
+  refine WP.seq (WP.mono (validate_ok hs (by omega) hz modulus) fun u ⟨A, O, K⟩ => ?_)
+  have espu : u.gpr .esp = s.gpr .esp := K.1 _ (by decide)
   have args' := args.keep K (by decide) (validation_outside O hz)
     (validation_value O (i := pSlot) (by decide) (by omega) fit)
     (validation_value O (i := dpSlot) (by decide) (by omega) fit)
     (validation_value O (i := qSlot) (by decide) (by omega) fit)
     (validation_value O (i := dqSlot) (by decide) (by omega) fit)
-  refine WP.mono (compute_ok (hs.of_keeps K (by decide)) hn hn32 hz args') fun t ⟨V, Ot, Kt⟩ => ?_
-  refine ⟨(compute_header Ot (by decide) (by decide)).trans A, ?_, ?_, (K.mono (by decide)).trans Kt⟩
+  refine WP.mono (compute_ok (hs.of_keeps K (by decide)) hn hn32 hz (espu ▸ R) args')
+    fun t ⟨V, Ot, Kt⟩ => ?_
+  rw [espu] at Ot
+  refine ⟨(compute_header Ot R nw (by omega) (by decide) (by decide)).trans A, ?_, ?_,
+    (K.mono (by decide)).trans Kt⟩
   · rw [V, validation_value O (i := pSlot) (by decide) (by omega) fit,
       validation_value O (i := qSlot) (by decide) (by omega) fit,
       validation_value O (i := dpSlot) (by decide) (by omega) fit,
       validation_value O (i := dqSlot) (by decide) (by omega) fit,
       validation_value O (i := inverseSlot) (by decide) (by omega) fit,
       validation_value O (i := inputSlot) (by decide) (by omega) fit]
-  · exact (O.mono (by intro r hr; exact List.mem_append_left _ hr)).trans
+  · exact (OutsZ.of_outs (O.mono (by intro r hr; exact List.mem_append_left _ hr))).trans
       (Ot.mono (by intro r hr; exact List.mem_append_right _ hr))
 
 end VG.Proof.Bignum.X86.Crt

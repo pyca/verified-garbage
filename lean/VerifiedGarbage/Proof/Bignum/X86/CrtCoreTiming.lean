@@ -34,12 +34,6 @@ theorem loadCoefficient_relCT (n : Nat) :
   VG.RelCT.seq (copyArray_relCT _ _ _) (VG.RelCT.seq (copyArray_relCT _ _ _)
     (VG.RelCT.seq (copyArray_relCT _ _ _) (copyArray_relCT _ _ _)))
 
-theorem coefficient_relCT (n : Nat) :
-    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (coefficient n)
-      (VG.X86.Taint.Agree (workspaceTaint false)) :=
-  VG.RelCT.seq (loadCoefficient_relCT n)
-    (VG.RelCT.seq (VG.RelCT.seq (primeMask_relCT n) (preparePrime_relCT n)) (crtCoefficient_relCT n))
-
 theorem maskOutput_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (maskOutput n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by

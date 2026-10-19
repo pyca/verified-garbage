@@ -11,7 +11,8 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof
 open VG.Impl.Bignum.X86.Crt
 
 theorem coefficient_ok {s : State} {base : Addr} {bytes n : Nat}
-    (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
+    (hs : Scr s base bytes) (hn : 2 ≤ n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
+    (R : CallRoom (s.gpr .esp) base bytes)
     (mp : wordsVal s.mem base (slot n mpSlot) n < safePrime (wordsVal s.mem base (slot n pSlot) n)) :
     WP isa (coefficient n) s fun t =>
       wordsVal t.mem base (slot n 7) n =
@@ -19,19 +20,22 @@ theorem coefficient_ok {s : State} {base : Addr} {bytes n : Nat}
           wordsVal s.mem base (slot n mqSlot) n % safePrime (wordsVal s.mem base (slot n pSlot) n)) %
           safePrime (wordsVal s.mem base (slot n pSlot) n) * wordsVal s.mem base (slot n inverseSlot) n) %
           safePrime (wordsVal s.mem base (slot n pSlot) n) ∧
-      Outs base (arithmeticRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+      OutsZ base (s.gpr .esp) (arithmeticRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have fit : contextBytes n ≤ 2 ^ 64 := by have := hs.nowrap; have := context_fits n; omega
   unfold coefficient
-  refine WP.seq (WP.mono (loadCoefficient_ok hs hn hz) fun u ⟨P, Q, Mp, QI, O, K⟩ => ?_)
-  refine WP.seq (WP.mono (checkedPreparePrime_ok (hs.of_keeps K (by decide)) hn hn32
-    (Nat.le_trans (context_fits n) hz)) fun v ⟨C, One, R, Ov, Kv⟩ => ?_)
+  refine WP.seq (WP.mono (loadCoefficient_ok hs (by omega) hz) fun u ⟨P, Q, Mp, QI, O, K⟩ => ?_)
+  refine WP.seq (WP.mono (checkedPreparePrime_ok (hs.of_keeps K (by decide)) (by omega) hn32
+    (Nat.le_trans (context_fits n) hz)) fun v ⟨C, One, R₂, Ov, Kv⟩ => ?_)
   have preserve (i : Nat) (hi : i = 5 ∨ i = 6 ∨ i = 8) :
       wordsVal v.mem base (slot n i) n = wordsVal u.mem base (slot n i) n := by
     rw [wordsVal_eq_val32, wordsVal_eq_val32]
     exact primeSetup_value Ov hi (by omega) fit
-  refine WP.mono (crtCoefficient_ok C (by rw [preserve 6 (.inr (.inl rfl)), Mp, P]; exact mp) One R)
+  have espv : v.gpr .esp = s.gpr .esp := (Kv.1 _ (by decide)).trans (K.1 _ (by decide))
+  refine WP.mono (crtCoefficient_ok hn C (espv ▸ R) (by rw [preserve 6 (.inr (.inl rfl)), Mp, P]; exact mp) One R₂)
     fun t ⟨_, V, Ot, Kt⟩ => ?_
-  refine ⟨?_, (O.trans ?_).trans (coefficient_arithmetic_frame Ot),
+  have Ot' := coefficient_arithmetic_frame Ot
+  rw [espv] at Ot'
+  refine ⟨?_, (OutsZ.of_outs (O.trans ?_)).trans Ot',
     ((K.mono (by decide)).trans Kv).trans (Kt.mono (by decide))⟩
   · rw [V, preserve 6 (.inr (.inl rfl)), preserve 5 (.inl rfl), preserve 8 (.inr (.inr rfl)), Mp, Q, QI, P]
   · apply prime_arithmetic_frame

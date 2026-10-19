@@ -27,10 +27,10 @@ theorem sized_relCT (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) :
     have T₂ := validate_relCT (Spec.Rsa.modulusWords len) _ _ _ _ _ _
       (agree_regs (by intro r hr; obtain rfl := List.mem_singleton.mp hr; exact T₁.2.agree.rf.1 _ (by decide)))
       E₂ F₂
-    obtain ⟨Is, SPs⟩ := wp_result (validated_ok H.left) (.seq E₁ E₂)
-    obtain ⟨It, SPt⟩ := wp_result (validated_ok H.right) (.seq F₁ F₂)
+    obtain ⟨Is, SPs, As⟩ := wp_result (validated_ok H.left) (.seq E₁ E₂)
+    obtain ⟨It, SPt, At⟩ := wp_result (validated_ok H.right) (.seq F₁ F₂)
     have T₃ := compute_relCT base bytes len args _ _ _ _ _ _
-      ⟨T₂.2, Is, It, SPs.trans (H.sp.trans SPt.symm)⟩ E₃ F₃
+      ⟨T₂.2, ⟨Is, It, SPs.trans (H.sp.trans SPt.symm)⟩, As, At⟩ E₃ F₃
     rw [T₁.1, T₂.1, T₃.1]
     exact ⟨rfl, T₃.2⟩
   apply VG.RelCT.assoc

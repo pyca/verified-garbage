@@ -8,15 +8,15 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 
 The eight source buffers are n, e, digest, p, q, dp, dq, and qInv. Stack
 arguments lie above the wrapper's two frames and return address; each callee has a separate
-3372-byte region below the inner frame.
+3392-byte region below the inner frame.
 -/
 
 @[expose] public section
 namespace VG.Proof.RsaPkcs1Sig.X86.Sgn
 open VG VG.X86 VG.Impl.RsaPkcs1Sig.X86.Sign VG.Proof.Bignum.X86
 
-def sigStack : Nat := 4508
-def calleeBytes : Nat := 3372
+def sigStack : Nat := 4528
+def calleeBytes : Nat := 3392
 
 structure Geometry where
   stack : BitVec 32

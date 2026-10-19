@@ -25,13 +25,17 @@ theorem prepared_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → 
   have Narrow : wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot (Spec.Rsa.modulusWords len) 9) (Spec.Rsa.modulusWords len) =
       wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot (Spec.Rsa.modulusWords len) 9) (2 * Spec.Rsa.modulusWords len) := by
     rw [VG.Proof.Bignum.wordsVal_low_half, N, Nat.mod_eq_of_lt modulusBound]
-  refine WP.mono (checkedCompute_ok hu.scratch dims.1 dims.2.1 h.space Narrow
+  have hn : 2 ≤ Spec.Rsa.modulusWords len := by have := h.lower; unfold Spec.Rsa.modulusWords; omega
+  refine WP.mono (checkedCompute_ok hu.scratch hn dims.2.1 h.space Narrow hu.room
     (import_powerArgs h hu P Q DP DQ)) fun t ⟨A, _, Ot, Kt⟩ => ?_
   have Kst : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := K.trans (Kt.mono (by decide))
-  have Ost := (O.mono (by omega : 0 ≤ 64) (by omega : 64 + (bytes - 64) ≤ 0 + bytes)).trans
-    (body_scratch (checked_frame Ot h.space) (by omega))
+  have Ot' := checked_frame Ot h.space
+  rw [K.1 _ (by decide)] at Ot'
+  have Ost : OutsZ base (s.gpr .esp) [(0, bytes)] s.mem t.mem :=
+    (OutsZ.of_outside (O.mono (by omega : 0 ≤ 64) (by omega : 64 + (bytes - 64) ≤ 0 + bytes))
+      (List.mem_singleton_self _)).trans (body_scratch Ot' (by omega))
   let w (i : Nat) := wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot (Spec.Rsa.modulusWords len) i) (Spec.Rsa.modulusWords len)
-  refine ⟨h.keep Kst (by decide) (by decide) Ost, Kst.1 _ (by decide),
+  refine ⟨h.keepZ Kst (by decide) (by decide) Ost, Kst.1 _ (by decide),
     decide (w pSlot * w qSlot = w modulusSlot ∧ w inputSlot < w modulusSlot ∧ w inverseSlot < w pSlot), ?_⟩
   simpa only [mask32, decide_eq_true_eq, w, acceptanceOffset] using A
 

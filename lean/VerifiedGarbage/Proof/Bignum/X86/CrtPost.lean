@@ -38,14 +38,14 @@ theorem specResult_eq (m : Mem) (args : Nat → BitVec 32) :
     by_cases a : accepted m args <;>
     simp only [order, a, Bool.false_eq_true, ite_false, ite_true, Option.map_some, Option.map_none]
 
-def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (m : Mem) (t : State) : Prop :=
+def Post (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : BitVec 32) (m : Mem) (t : State) : Prop :=
   Spec.Rsa.written t.mem (byteAddr (args 0)) len (t.gpr .eax) (specResult m args) ∧
-    Frame (bodyRegions base (byteAddr (args 0)) bytes len) m t.mem
+    Frame (bodyRegions base (byteAddr (args 0)) bytes len sp) m t.mem
 
 theorem sized_post {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : Inputs base bytes len args s)
     (valid : Spec.Rsa.modulusValid (componentValue s.mem args 2) len = true) :
-    WP isa (Crt.sized (Spec.Rsa.modulusWords len)) s fun t => Post base bytes len args s.mem t ∧
+    WP isa (Crt.sized (Spec.Rsa.modulusWords len)) s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   refine WP.mono (sized_ok h valid) fun t ⟨Y, B, F, K⟩ => ⟨⟨?_, F⟩, K⟩
   rw [specResult_eq, h.modulus_length, valid]
@@ -58,7 +58,7 @@ theorem sized_post {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
 
 theorem failure_post {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : Inputs base bytes len args s) (failed : specResult s.mem args = none) :
-    WP isa PublicFn.failure s fun t => Post base bytes len args s.mem t ∧
+    WP isa PublicFn.failure s fun t => Post base bytes len args (s.gpr .esp) s.mem t ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have lo := h.lower
   have hi := h.upper

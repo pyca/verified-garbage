@@ -93,4 +93,12 @@ def mulWidths : List Nat := (List.range 125).map (· + 4)
 
 def mulAtName (n : Nat) : String := (Spec.Rsa.MontMulAt.mulApi (ctxLayout n)).name
 
+/-- `[o] = [a] [b] R⁻¹ mod m` in the context at `edi`, by a call of
+`vg_rsa_mont_mul_ctx_{n}`: the offsets `o`, `a` and `b` in `edx`, `ecx` and
+`eax`, pushed with `edi` as its arguments. -/
+def callMul (n o a b : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.imm (BitVec.ofNat 32 b)), .mov .ecx (.imm (BitVec.ofNat 32 a)),
+      .mov .edx (.imm (BitVec.ofNat 32 o))])
+    (.frame (.push [.eax, .ecx, .edx, .edi]) (.call (mulAtName n) (mulAtBody n)) (.pop .eax 4))
+
 end VG.Impl.Mont.X86.Dynamic
