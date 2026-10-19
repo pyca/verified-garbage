@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
 
 /-! The rows of the off-diagonal part of an ADX square. -/
 

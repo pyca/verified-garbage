@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM on AArch64: the widths of compression

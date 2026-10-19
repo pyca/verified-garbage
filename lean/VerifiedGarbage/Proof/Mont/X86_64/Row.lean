@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 public import Mathlib.Tactic.Tauto
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Montgomery arithmetic on x86-64: rows of multiply-accumulate steps

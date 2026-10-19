@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
 
 /-! ## AdxSquareCtRaw -/
 

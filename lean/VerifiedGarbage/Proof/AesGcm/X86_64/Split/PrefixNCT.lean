@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
@@ -10,6 +9,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 
 /-!
 # AES-GCM `seal_split` on x86-64: `prefixN` in constant time

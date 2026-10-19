@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 
 /-!
 # ML-KEM on AArch64: the loads and compressions of the vector codecs

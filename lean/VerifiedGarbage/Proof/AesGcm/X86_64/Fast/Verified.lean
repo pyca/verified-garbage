@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 
 /-!
 # AES-GCM `seal_split` on x86-64 with a prepared key context: `Verified`

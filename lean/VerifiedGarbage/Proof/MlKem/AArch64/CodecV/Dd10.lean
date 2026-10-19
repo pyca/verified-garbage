@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 
 /-!
 # ML-KEM on AArch64: `dd10Half`
