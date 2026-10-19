@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
 meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
@@ -198,6 +198,32 @@ meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Failure
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Dsa.Derive
+public import VerifiedGarbage.Proof.Dsa.DomainWidths
+public import VerifiedGarbage.Proof.Dsa.Layout
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
+public import VerifiedGarbage.Proof.Dsa.X86_64.EntryFieldsFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.EntryScratch
+public import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
+public import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parity
+public import VerifiedGarbage.Proof.Dsa.X86_64.RangeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+public import VerifiedGarbage.Proof.Dsa.X86_64.Save
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSizesCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantLoop
+public import VerifiedGarbage.Proof.Dsa.X86_64.TopMask
+public import VerifiedGarbage.Proof.Dsa.X86_64.WidthMask
+public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
+public import VerifiedGarbage.Proof.RsaPss.Params
 meta import VerifiedGarbage.Proof.Dsa.X86_64.KeyPointers
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Load
 meta import VerifiedGarbage.Proof.Dsa.X86_64.LoadCheckCT
