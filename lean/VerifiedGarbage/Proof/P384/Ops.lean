@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
 
 /-!
 # P-384's field operations inline on AArch64
@@ -147,7 +148,7 @@ theorem redLoad_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, RegUpd.gpr_write,
     BitVec.setWidth_eq, Option.some.injEq, exists_eq_left', z₁, l₁, hw, reduceCtorEq, ite_false, ite_true]
-  refine ⟨by decide, by decide, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨by decide, by decide, ⟨fun r hr => ?_, k₁.mem, k₁.rd, k₁.wr, k₁.sp⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, ite_false]
   exact k₁.gpr r (by simp [hr.2])
@@ -225,12 +226,11 @@ theorem finish_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [llen] at e₅ O₅
   have kr : ∀ r, r ∉ clobX → s₄.gpr r = s.gpr r := fun r hr => by
-    rw [kw k₄ (fun q hq => wC q (by simp [hq])) r hr, kw k₃ (fun q hq => wC q (by simp [hq])) r hr,
-      kw k₂ (fun q hq => wC q (by simp [hq])) r hr, kw k₁ (fun q hq => wC q (by simp [hq])) r hr]
+    rw [kw k₄ (by decide) r hr, kw k₃ (by decide) r hr, kw k₂ (by decide) r hr, kw k₁ (by decide) r hr]
   have hmem₄ : s₄.mem = s.mem := by rw [k₄.mem, k₃.mem, k₂.mem, k₁.mem]
   have hR : wordsVal s₅.mem base o 6 =
       (regsVal s₃ P384Mul.lowRegs + 2 ^ 384 * (s₃.gpr .x21).toNat) % p384 := by
-    rw [e₅, e₄]
+    rw [e₅, e₄, M_n]
   refine ⟨fun r hr => by rw [k₅.gpr r (by simp), kr r hr], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [k₅.rd, k₄.rd, k₃.rd, k₂.rd, k₁.rd]
   · rw [k₅.wr, k₄.wr, k₃.wr, k₂.wr, k₁.wr]
@@ -249,16 +249,16 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (hM : ModOkA M size p384 s.mem base) {o a b : Nat} (ho : o + 48 ≤ size) (ha : a + 48 ≤ size)
     (hb : b + 48 ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hb8 : b % 8 = 0)
     (hB : wordsVal s.mem base b 6 < p384) :
-    WP isa (.block (Ops.mul o a b)) s fun s' => OpKeepX base o s s' ∧
+    WP isa (.block (Impl.P384.Ops.mul o a b)) s fun s' => OpKeepX base o s s' ∧
       wordsVal s'.mem base o 6 < p384 ∧
       wordsVal s'.mem base o 6 * 2 ^ (64 * 6) % p384 = wordsVal s.mem base a 6 * wordsVal s.mem base b 6 % p384 := by
   have wB : ∀ r ∈ P384Mul.bRegs384, r ∈ clobX := by decide
   have kw : ∀ {rs : List Reg} {t t' : State}, Keeps rs t t' → (∀ q ∈ rs, q ∈ clobX) →
       ∀ r, r ∉ clobX → t'.gpr r = t.gpr r := fun k h r hr => k.gpr r fun h' => hr (h _ h')
-  rw [Ops.mul, WP.block_append_iff]
-  refine WP.mono (loads_ok P384Mul.bRegs384 hs (a := b) (by simpa using hb) hb8 (by decide))
-    fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hB₁ : regsVal s₁ P384Mul.bRegs384 = wordsVal s.mem base b 6 := by rw [e₁]; rfl
+  rw [Impl.P384.Ops.mul, WP.block_append_iff, loads_eq]
+  refine WP.mono (loadsEach_ok P384Mul.bRegs384 hs.ptr (a := b) hb hb8 (by decide) (by decide))
+    fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hB₁ : regsVal s₁ P384Mul.bRegs384 = wordsVal s.mem base b 6 := VG.Proof.Weierstrass.AArch64.Mont.regsVal_of_loads _ b e₁
   have hs₁ : Scr s₁ base size := hs.of_keeps k₁ (by decide)
   rw [List.cons_append, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (zero7_ok s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
@@ -277,23 +277,23 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     exact Nat.mul_lt_mul_of_lt_of_le (by simpa using wordsVal_lt s.mem base a 6) (Nat.le_of_lt hB) (by decide)
   refine WP.mono (finish_ok hs₃ hM₃ ho ho8 z₃ hX) fun s' ⟨G, rd, wr, sp, O, V, C⟩ => ?_
   refine ⟨⟨fun r hr => ?_, by rw [rd, k₃.rd, k₂.rd, k₁.rd], by rw [wr, k₃.wr, k₂.wr, k₁.wr],
-    by rw [sp, k₃.sp, k₂.sp, k₁.sp], fun x hx _ => by rw [O x hx, hm₃]⟩, V, by rw [C, e₃, hm₃]⟩
+    by rw [sp, k₃.sp, k₂.sp, k₁.sp], fun x hx _ => by rw [O x hx, hm₃]⟩, V, by rw [C, e₃]⟩
   rw [G r hr, kw k₃ (by decide) r hr, kw k₂ (by decide) r hr, kw k₁ wB r hr]
 
 /-- `[o] = [a]^2 2^-384 mod p`. -/
 theorem sqr_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (hM : ModOkA M size p384 s.mem base) {o a : Nat} (ho : o + 48 ≤ size) (ha : a + 48 ≤ size)
     (ho8 : o % 8 = 0) (ha8 : a % 8 = 0) (hA : wordsVal s.mem base a 6 < p384) :
-    WP isa (.block (Ops.sqr o a)) s fun s' => OpKeepX base o s s' ∧
+    WP isa (.block (Impl.P384.Ops.sqr o a)) s fun s' => OpKeepX base o s s' ∧
       wordsVal s'.mem base o 6 < p384 ∧
       wordsVal s'.mem base o 6 * 2 ^ (64 * 6) % p384 = wordsVal s.mem base a 6 * wordsVal s.mem base a 6 % p384 := by
   have wB : ∀ r ∈ P384Sqr.aRegs, r ∈ clobX := by decide
   have kw : ∀ {rs : List Reg} {t t' : State}, Keeps rs t t' → (∀ q ∈ rs, q ∈ clobX) →
       ∀ r, r ∉ clobX → t'.gpr r = t.gpr r := fun k h r hr => k.gpr r fun h' => hr (h _ h')
-  rw [Ops.sqr, WP.block_append_iff]
-  refine WP.mono (loads_ok P384Sqr.aRegs hs (a := a) (by simpa using ha) ha8 (by decide))
-    fun s₁ ⟨e₁, k₁, _⟩ => ?_
-  have hA₁ : regsVal s₁ P384Sqr.aRegs = wordsVal s.mem base a 6 := by rw [e₁]; rfl
+  rw [Impl.P384.Ops.sqr, WP.block_append_iff, loads_eq]
+  refine WP.mono (loadsEach_ok P384Sqr.aRegs hs.ptr (a := a) ha ha8 (by decide) (by decide))
+    fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hA₁ : regsVal s₁ P384Sqr.aRegs = wordsVal s.mem base a 6 := VG.Proof.Weierstrass.AArch64.Mont.regsVal_of_loads _ a e₁
   have hs₁ : Scr s₁ base size := hs.of_keeps k₁ (by decide)
   rw [List.cons_append, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (zero7_ok s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
@@ -320,19 +320,19 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     (hM : ModOkA M size p384 s.mem base) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < p384) :
-    WP isa (.block (Ops.op (.mul o a b))) s fun t =>
+    WP isa (.block (Impl.P384.Ops.op (.mul o a b))) s fun t =>
       OpKeepX base o s t ∧ wordsVal t.mem base o M.n < p384 ∧
       wordsVal t.mem base o M.n * 2 ^ (64 * M.n) % p384 =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % p384 := by
   rw [M_n] at ho ha hb hB ⊢
   by_cases hab : a = b
   · subst b
-    simp only [Ops.op, beq_self_eq_true, ↓reduceIte]
+    simp only [Impl.P384.Ops.op, beq_self_eq_true, ↓reduceIte]
     exact sqr_ok hs hM ho ha ho8 ha8 hB
-  · simp only [Ops.op, beq_iff_eq, hab, ↓reduceIte]
+  · simp only [Impl.P384.Ops.op, beq_iff_eq, hab, ↓reduceIte]
     exact mul_ok hs hM ho ha hb ho8 ha8 hb8 hB
 
-theorem op_eq_opCode {f : FOp} (hf : ∀ o a b, f ≠ .mul o a b) : Ops.op f = opCode M f := by
+theorem op_eq_opCode {f : FOp} (hf : ∀ o a b, f ≠ .mul o a b) : Impl.P384.Ops.op f = VG.Impl.Weierstrass.AArch64.opCode M f := by
   cases f with
   | mul o a b => exact absurd rfl (hf o a b)
   | add => rfl
@@ -343,7 +343,7 @@ theorem fop_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} (h
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {base : Addr} {V : List Nat} {E : Nat → Fin m}
     {s : State} (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
     (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (.block (Ops.op op)) s fun s' =>
+    WP isa (.block (Impl.P384.Ops.op op)) s fun s' =>
       OpKeepX base op.out s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
   subst hmp
   cases op with
@@ -352,14 +352,14 @@ theorem fop_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} (h
       forall_eq_or_imp, forall_eq] at hS hR
     refine WP.mono (mulOp_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (hI.lt b hR.2))
-      fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.updateX hL hS.1 hk hlt ?_⟩
+      fun s' ⟨hk, hlt, heq⟩ => ⟨hk, Inv.updateX hL hI hS.1 hk hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>
     rw [op_eq_opCode (by intros; exact FOp.noConfusion)]
-    exact WP.mono (Weierstrass.AArch64.fop_ok hL hAl hm hI hS hR) fun _ ⟨k, I⟩ => ⟨k.toX, I⟩
+    exact WP.mono (Weierstrass.AArch64.fop_ok hL hAl hm hI hS hR) fun _ ⟨k, I⟩ => ⟨OpKeep.toX k, I⟩
   | sub o a b =>
     rw [op_eq_opCode (by intros; exact FOp.noConfusion)]
-    exact WP.mono (Weierstrass.AArch64.fop_ok hL hAl hm hI hS hR) fun _ ⟨k, I⟩ => ⟨k.toX, I⟩
+    exact WP.mono (Weierstrass.AArch64.fop_ok hL hAl hm hI hS hR) fun _ ⟨k, I⟩ => ⟨OpKeep.toX k, I⟩
 
 /-- `Fprog.lean`'s `fprog_ok`, for a straight line of `Ops.op`. -/
 theorem fprog_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} (hL : Lay M size Sl)
@@ -367,7 +367,7 @@ theorem fprog_ok {size m : Nat} [NeZero m] (hmp : m = p384) {Sl : Nat → Prop} 
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
       readsOk ops V = true →
-      WP isa (.block (ops.flatMap Ops.op)) s fun s' => ProgKeepX base (ops.map FOp.out) s s' ∧
+      WP isa (.block (ops.flatMap Impl.P384.Ops.op)) s fun s' => ProgKeepX base (ops.map FOp.out) s s' ∧
         Inv M base size m Sl (validAfter ops V) (runOps ops E) s'
   | [], _, _, s, hI, _, _ => WP.block_nil ⟨ProgKeepX.refl _ _ s, hI⟩
   | op :: ops, V, E, s, hI, hS, hR => by

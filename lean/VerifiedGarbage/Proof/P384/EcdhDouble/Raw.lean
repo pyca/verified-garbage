@@ -15,6 +15,9 @@ window's doubling by calls, but changes the registers `clobX`.
 
 @[expose] public section
 
+-- Powers of two up to `2^384` are evaluated.
+set_option exponentiation.threshold 512
+
 namespace VG.Proof.P384.EcdhDouble
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64 VG.Impl.P384.EcdhDouble
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64
@@ -47,7 +50,7 @@ theorem raw_ok {C : Curve} (hC : C.p = p384) {base : Addr} {size : Nat} (hL : Wi
     fun s' ⟨hk, hI'⟩ => ⟨⟨hk.gpr, hk.rd, hk.wr, hk.sp⟩, ?_, _, hI'.sub fun x hx => ?_,
       fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out hN op hop),
       congrArg₂ Prod.mk (ofN_run hN hAp E 6) (congrArg₂ Prod.mk (ofN_run hN hAp E 7) (ofN_run hN hAp E 8))⟩
-  · refine (hk.mono fun w hw => ?_).unch.mono fun w hw => ?_
+  · refine (Ops.ProgKeepX.mono (W' := rcbW K.S o) hk fun w hw => ?_).unch.mono fun w hw => ?_
     · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
       exact ofN_out hN op hop
     · simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢

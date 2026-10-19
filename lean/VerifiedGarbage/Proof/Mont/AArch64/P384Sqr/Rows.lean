@@ -60,8 +60,6 @@ theorem sqRowOk {size i : Nat} (hi : i < 5) : RowOk size (sqX i) (sqRowRegs i) (
     subst hq
     exact hrd _ hr
 
-/-- Row `i`: `[acc] += 2^(64 (2i + 1)) a_i [a_(i+1) … a_5]`, the accumulator
-being below `2^(64 (6 + i))` before and `2^(64 (7 + i))` after. -/
 /-- What the rows need of their base register. -/
 abbrev RmOk (rm : Reg) : Prop := rm ∉ Reg.x2 :: .x3 :: .x7 :: P384Mul.accRegs
 
@@ -70,6 +68,8 @@ theorem RmOk.row {rm : Reg} (h : RmOk rm) : ∀ i < 5, rm ∉ Reg.x2 :: .x3 :: s
     decide
   exact fun i hi hm => h (this i hi _ hm)
 
+/-- Row `i`: `[acc] += 2^(64 (2i + 1)) a_i [a_(i+1) … a_5]`, the accumulator
+being below `2^(64 (6 + i))` before and `2^(64 (7 + i))` after. -/
 theorem sqRow_ok {rm : Reg} (hrm : RmOk rm) {i : Nat} (hi : i < 5) {s : State} {base : Addr} {size : Nat}
     (hp : Ptr s rm base size) (hz : s.gpr .x7 = 0) (hv : regsVal s P384Mul.accRegs < 2 ^ (64 * (6 + i))) :
     WP isa (.block (sqRowAt rm i)) s fun t =>
