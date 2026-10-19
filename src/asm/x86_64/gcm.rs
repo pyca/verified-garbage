@@ -37437,11 +37437,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 21f
 20:
 21:
@@ -70254,11 +70249,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 21f
 20:
 21:
@@ -91613,11 +91603,6 @@ shr rax, 8
 cmp r10, 256
 cmovae rax, r11
 or r11, rax
-mov rax, QWORD PTR [rsp+32]
-and r10, 15
-test rax, rax
-cmovne r10, r11
-or r11, r10
 jmp 23f
 22:
 23:

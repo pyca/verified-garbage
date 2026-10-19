@@ -49,9 +49,8 @@ first slice's length `a` and the text's `len`. -/
 def fB (long : Bool) (acc a len : BitVec 64) : BitVec 64 :=
   let x := a >>> 4 <<< 4 + 16#64
   let b₁ := acc ||| if (!decide (x.toNat < len.toNat)) = true then acc else x
-  let b₂ := b₁ ||| if (!decide (a.toNat < (256#64).toNat)) = true then b₁
+  b₁ ||| if (!decide (a.toNat < (256#64).toNat)) = true then b₁
     else (if long = true then len ||| BitVec.signExtend 64 (BitVec.ofNat 32 256) else len) >>> 8
-  b₂ ||| if (!((len &&& len) == 0)) = true then b₂ else a &&& 15#64
 
 /-- `r11` after the tests of `frontCore`. -/
 def fR11 (long : Bool) (s : State) : BitVec 64 :=
@@ -217,7 +216,7 @@ theorem front_facts {long : Bool} (h : frontGo long s = true) :
     have hc0 := cnt_ne_of hc
     unfold fB at h0
     simp only [BitVec.or_eq_zero_iff] at h0
-    obtain ⟨⟨⟨hA, hx⟩, -⟩, -⟩ := h0
+    obtain ⟨⟨hA, hx⟩, -⟩ := h0
     unfold fA at hA
     simp only [hc, decide_true, Bool.not_true, Bool.false_eq_true, ↓reduceIte] at hA
     split at hA

@@ -352,9 +352,7 @@ def frontSlice (long : Bool) : List Instr :=
     .mov .rax (.reg .r10), .shift .shr .rax 4, .shift .shl .rax 4, .alu .add .rax (imm 16),
     .alu .cmp .rax (.mem (at_ .rsp 32)), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax),
     .mov .rax (.mem (at_ .rsp 32))] ++ (if long then [.alu .or .rax (imm 256)] else []) ++
-  [.shift .shr .rax 8, .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax),
-    .mov .rax (.mem (at_ .rsp 32)), .alu .and .r10 (imm 15), .alu .test .rax (.reg .rax), .cmov .ne .r10 (.reg .r11),
-    .alu .or .r11 (.reg .r10)]
+  [.shift .shr .rax 8, .alu .cmp .r10 (imm 256), .cmov .ae .rax (.reg .r11), .alu .or .r11 (.reg .rax)]
 
 /-- The tests of `frontArgs` and `frontSlice long`; `ZF` if all pass. -/
 def frontCore (long : Bool) : Prog isa :=
