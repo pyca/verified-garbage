@@ -23,7 +23,7 @@ and only the rest with those calls:
   restored, and `x22`, `x23` set to the data not yet absorbed: everything
   after the chunks when decrypting, and also the last chunk when encrypting
   (`polyOut`); the chunks use SVE2 as the stream does (`XorCallee.sve`);
-* with SVE2 when encrypting, if data follows the chunks, the last chunk is
+* when encrypting, if data follows the chunks, the last chunk is
   absorbed while the keystream of the next four blocks is computed, and up to
   256 bytes of the rest encrypted with it (`Tail.rest`, below);
 * the rest of the data is encrypted (`vg_chacha20_xor`, from where the
@@ -71,9 +71,9 @@ def polyOut (enc : Bool) : List Instr :=
 /-! ## The rest after the chunks when encrypting
 
 After the chunks (`Stitch.bulk`) and `polyOut true`, `seal` still has to
-absorb the last chunk and to encrypt the rest. With SVE2, if a rest remains,
-`seal` computes the keystream of its first four blocks (`kernel`, the
-four-block kernel `Neon4` with each vector XOR and rotation one XAR) while the
+absorb the last chunk and to encrypt the rest. If a rest remains, `seal`
+computes the keystream of its first four blocks (`kernel`, the four-block
+kernel `Neon4`; with SVE2, each vector XOR and rotation is one XAR) while the
 integer units absorb the last chunk (`Poly.block`: two blocks, and then three
 after each double round), rather than calling `vg_chacha20_xor` for the rest
 and then absorbing the chunk with it. The accumulator is loaded back into
@@ -96,9 +96,9 @@ affect timing.
 
 namespace Tail
 
-/-- A double round of the four-block kernel, with SVE2's XAR. -/
-def doubleRound : List Instr :=
-  VG.Impl.ChaCha20.AArch64.Mixed5.roundOps.flatMap (VG.Impl.ChaCha20.AArch64.Neon4.Op.codeFor true)
+/-- A double round of the four-block kernel, with SVE2's XAR if `sve`. -/
+def doubleRound (sve : Bool) : List Instr :=
+  VG.Impl.ChaCha20.AArch64.Mixed5.roundOps.flatMap (VG.Impl.ChaCha20.AArch64.Neon4.Op.codeFor sve)
 
 /-- Our caller's `x20` kept in `x8`, `x20` pointed at the last chunk (`x22`
 after `polyOut true`), the rest (`x1`) kept in `x7`, and, as before the
@@ -109,10 +109,10 @@ def load : List Instr := [mov .x8 .x20, mov .x20 .x22, mov .x7 .x1] ++ polyIn
 def start : List Instr := Poly.block ++ Poly.block ++ [.movz .x .x4 10 0]
 
 /-- A double round, and three blocks. -/
-def round : Prog isa :=
-  .seq (.block doubleRound) (.block (Stitch.absorb3 ++ [.subImm .x .x4 .x4 1]))
+def round (sve : Bool) : Prog isa :=
+  .seq (.block (doubleRound sve)) (.block (Stitch.absorb3 ++ [.subImm .x .x4 .x4 1]))
 
-def rounds : Prog isa := .loop round (.nonzero .x .x4)
+def rounds (sve : Bool) : Prog isa := .loop (round sve) (.nonzero .x .x4)
 
 /-- The buffer `x3[0, 256)` zeroed and the keystream XORed into it. -/
 def finish : List Instr :=
@@ -121,8 +121,9 @@ def finish : List Instr :=
 
 /-- The keystream of four blocks into `x3[0, 256)`, with the 512 bytes from
 `x20` absorbed. -/
-def kernel : Prog isa :=
-  .seq (.block VG.Impl.ChaCha20.AArch64.Neon4.setup) (.seq (.block start) (.seq rounds (.block finish)))
+def kernel (sve : Bool) : Prog isa :=
+  .seq (.block VG.Impl.ChaCha20.AArch64.Neon4.setup)
+    (.seq (.block start) (.seq (rounds sve) (.block finish)))
 
 /-- The accumulator stored, `x22` set to the rest and `x23` to its length,
 our caller's `x20` restored, and the counter advanced past the four blocks. -/
@@ -141,17 +142,17 @@ def args : List Instr :=
    .addImm .x .x0 .x21 64, .addImm .x .x3 .x21 128]
 
 /-- The rest after the chunks, from `polyOut true`'s state. -/
-def rest : Prog isa :=
-  .seq (.block load) (.seq kernel (.seq (.block out) (.seq take (.seq Short.xorKs (.block args)))))
+def rest (sve : Bool) : Prog isa :=
+  .seq (.block load)
+    (.seq (kernel sve) (.seq (.block out) (.seq take (.seq Short.xorKs (.block args)))))
 
 end Tail
 
-/-- After the chunks: the accumulator stored (`polyOut`); with SVE2 when
-encrypting, if a rest remains, its first four blocks' keystream computed while
-the last chunk is absorbed, and up to 256 bytes of it encrypted
-(`Tail.rest`). -/
+/-- After the chunks: the accumulator stored (`polyOut`); when encrypting,
+if a rest remains, its first four blocks' keystream computed while the last
+chunk is absorbed, and up to 256 bytes of it encrypted (`Tail.rest`). -/
 def afterBulk (sve enc : Bool) : Prog isa :=
-  if sve && enc then .seq (.block (polyOut true)) (.ite (.zero .x .x2) (.block []) Tail.rest)
+  if enc then .seq (.block (polyOut true)) (.ite (.zero .x .x2) (.block []) (Tail.rest sve))
   else .block (polyOut enc)
 
 /-- The whole chunks. -/

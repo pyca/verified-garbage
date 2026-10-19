@@ -115,13 +115,13 @@ theorem block_eq (S : CState) (k : Fin 16) :
     (block S)[k] = (Nat.repeat innerBlock 10 S)[k] + S[k] := by
   simp only [block, Fin.getElem_fin, Vector.getElem_zipWith]
 
-theorem kernel_ok {R a : Nat} {W : Addr} {s : State}
+theorem kernel_ok (sve : Bool) {R a : Nat} {W : Addr} {s : State}
     (hx20 : s.gpr .x20 = W)
     (hin : ∀ k : Fin 16, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4)
     (hw : ∀ d, d + 16 ≤ 256 → InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 d) 16)
     (hst : (⟨s.gpr .x0, 64⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩)
     (hr : Readable W s) (ha : Acc R a s) :
-    WP isa Tail.kernel s fun u =>
+    WP isa (Tail.kernel sve) s fun u =>
       (∀ k < 256, u.mem (s.gpr .x3 + BitVec.ofNat 64 k) =
         (serialize (block (ctr (stateAt s.mem (s.gpr .x0)) (k / 64)))).getD (k % 64) 0) ∧
       Frame [⟨s.gpr .x3, 256⟩] s.mem u.mem ∧
@@ -176,7 +176,7 @@ theorem kernel_ok {R a : Nat} {W : Addr} {s : State}
     · rw [RegUpd.gpr_write_self]; rfl
   have hr₄ : Readable W s₄ := hr₂.of (by show s₃.rd = _; rw [rd₃]) (by show s₃.wr = _; rw [wr₃])
     (by rw [RegUpd.gpr_write_of_ne s₃ .x _ (by decide), k₃.gpr' (r := .x0)])
-  refine WP.seq ((rounds_ok hr₄ h₄).mono fun s₅ h₅ => ?_)
+  refine WP.seq ((rounds_ok sve hr₄ h₄).mono fun s₅ h₅ => ?_)
   have x3₅ : s₅.gpr .x3 = s.gpr .x3 := by
     rw [h₅.keep _ (by decide) (by decide), RegUpd.gpr_write_of_ne s₃ .x _ (by decide),
       k₃.gpr' (r := .x3), l₂.gpr _ (by decide)]

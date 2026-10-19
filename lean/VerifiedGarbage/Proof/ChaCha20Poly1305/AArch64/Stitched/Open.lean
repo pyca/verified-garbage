@@ -58,7 +58,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
   have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
-  refine WP.seq ((cryptStitched_ok false (Bool.and_false _) hp i₃ st₃ R₃).mono fun s₄ ⟨T, hc⟩ => ?_)
+  refine WP.seq ((cryptStitched_ok false rfl hp i₃ st₃ R₃).mono fun s₄ ⟨T, hc⟩ => ?_)
   have hle := hc.le
   have hpre : pre false T = 512 * T := rfl
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩

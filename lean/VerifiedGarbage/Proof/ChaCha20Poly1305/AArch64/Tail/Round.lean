@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # ChaCha20-Poly1305 on AArch64, the rest when encrypting: the rounds
 
 `Tail.rounds`: ten double rounds of the four-block kernel (`Neon4`, with
-SVE2's XAR), and after each three blocks of Poly1305 (`Stitch.absorb3`) of
+SVE2's XAR if `sve`), and after each three blocks of Poly1305 (`Stitch.absorb3`) of
 the 512 bytes from `W`, two of which `Tail.start` absorbed. The rounds write
 only vector registers, and the blocks only `Poly.regs`; neither writes
 memory, so each keeps what the other computes.
@@ -33,23 +33,24 @@ open VG.Spec.ChaCha20 (innerBlock)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Proof.Poly1305 (absorbAll)
 
-/-- The operations with SVE2. -/
-theorem ops_ok : ∀ (ops : List Op) {vs : Nat → CState} {s : State}, Holds vs s →
+/-- The operations, with SVE2 if `sve`. -/
+theorem ops_ok (sve : Bool) : ∀ (ops : List Op) {vs : Nat → CState} {s : State}, Holds vs s →
     s.v .v30 = rol8Table →
-    WP isa (.block (ops.flatMap (Op.codeFor true))) s fun s' =>
+    WP isa (.block (ops.flatMap (Op.codeFor sve))) s fun s' =>
       Holds (fun j => ops.foldl step (vs j)) s' ∧ RoundSame s s'
   | [], _, _, h, _ => WP.block_nil ⟨h, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩
   | op :: ops, _, _, h, ht => by
-    exact WP.block_append ((op_ok_for true op h ht).mono fun _ ⟨h', hs⟩ =>
-      (ops_ok ops h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
+    exact WP.block_append ((op_ok_for sve op h ht).mono fun _ ⟨h', hs⟩ =>
+      (ops_ok sve ops h' (hs.v30.trans ht)).mono fun _ ⟨h'', hs'⟩ => ⟨h'', hs.trans hs'⟩)
 
 /-- A double round. -/
-theorem doubleRound_ok {vs : Nat → CState} {s : State} (h : Holds vs s) (ht : s.v .v30 = rol8Table) :
-    WP isa (.block Tail.doubleRound) s fun s' =>
+theorem doubleRound_ok (sve : Bool) {vs : Nat → CState} {s : State} (h : Holds vs s)
+    (ht : s.v .v30 = rol8Table) :
+    WP isa (.block (Tail.doubleRound sve)) s fun s' =>
       Holds (fun j => innerBlock (vs j)) s' ∧ RoundSame s s' := by
   have e : (fun j => (VG.Impl.ChaCha20.AArch64.Mixed5.roundOps).foldl step (vs j)) =
       fun j => innerBlock (vs j) := funext fun j => innerBlock_eq (vs j)
-  exact (ops_ok _ h ht).mono fun _ ⟨h', hs⟩ => ⟨e ▸ h', hs⟩
+  exact (ops_ok sve _ h ht).mono fun _ ⟨h', hs⟩ => ⟨e ▸ h', hs⟩
 
 /-- The 512 bytes from `W` are readable, and so is the key. -/
 structure Readable (W : Addr) (s : State) : Prop where
@@ -121,12 +122,12 @@ theorem absorb3_eq : Stitch.absorb3 = (List.replicate 3 Poly.block).flatten := b
     List.flatten_nil, List.append_nil, List.append_assoc]
 
 /-- The loop body, from `TI … i` to `TI … (i + 1)`. -/
-theorem iter_ok {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ s : State} {i : Nat} (hi : i < 10)
-    (hr : Readable W s₀) (h : TI vs R a W s₀ s i) :
-    WP isa Tail.round s fun u => TI vs R a W s₀ u (i + 1) := by
+theorem iter_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ s : State} {i : Nat}
+    (hi : i < 10) (hr : Readable W s₀) (h : TI vs R a W s₀ s i) :
+    WP isa (Tail.round sve) s fun u => TI vs R a W s₀ u (i + 1) := by
   unfold Tail.round
   apply WP.seq
-  refine (doubleRound_ok h.vec h.table).mono fun b ⟨hb, hsb⟩ => ?_
+  refine (doubleRound_ok sve h.vec h.table).mono fun b ⟨hb, hsb⟩ => ?_
   have hbacc : Acc R (absorbAll R a (bytesAt b.mem W (16 * (2 + 3 * i)))) b := by
     rw [hsb.mem, h.mem]
     exact h.acc.of (fun r _ => by rw [hsb.gpr]) hsb.mem
@@ -164,15 +165,15 @@ theorem iter_ok {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ s : State} {i
     simp only [Nat.sub_sub]
 
 /-- The loop: ten iterations. -/
-theorem rounds_ok {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ s : State}
+theorem rounds_ok (sve : Bool) {vs : Nat → CState} {R a : Nat} {W : Addr} {s₀ s : State}
     (hr : Readable W s₀) (h : TI vs R a W s₀ s 0) :
-    WP isa Tail.rounds s fun u => TI vs R a W s₀ u 10 := by
+    WP isa (Tail.rounds sve) s fun u => TI vs R a W s₀ u 10 := by
   let Inv : Nat → State → Prop := fun n u => ∃ i, i < 10 ∧ n = 10 - i ∧ TI vs R a W s₀ u i
-  have hstep : ∀ n u, Inv n u → WP isa Tail.round u (fun w =>
+  have hstep : ∀ n u, Inv n u → WP isa (Tail.round sve) u (fun w =>
       (eval (.nonzero .x .x4) w = some false ∧ TI vs R a W s₀ w 10) ∨
       (eval (.nonzero .x .x4) w = some true ∧ ∃ m < n, Inv m w)) := by
     rintro n u ⟨i, hi, rfl, hu⟩
-    refine (iter_ok hi hr hu).mono fun w hw => ?_
+    refine (iter_ok sve hi hr hu).mono fun w hw => ?_
     have he : eval (.nonzero .x .x4) w = some (BitVec.ofNat 64 (10 - (i + 1)) != 0) := by
       simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hw.cnt]
     by_cases hl : i + 1 = 10

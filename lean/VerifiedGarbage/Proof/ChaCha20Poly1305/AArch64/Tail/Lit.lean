@@ -14,6 +14,9 @@ meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 
 namespace VG
 
-materialize_code Impl.ChaCha20Poly1305.AArch64.Tail.rest
+materialize_code ChaCha20Poly1305.AArch64.tailRest :=
+  Impl.ChaCha20Poly1305.AArch64.Tail.rest false
+materialize_code ChaCha20Poly1305.AArch64.tailRestSve :=
+  Impl.ChaCha20Poly1305.AArch64.Tail.rest true
 
 end VG
