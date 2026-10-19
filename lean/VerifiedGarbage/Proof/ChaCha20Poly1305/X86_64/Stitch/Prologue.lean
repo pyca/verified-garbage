@@ -17,7 +17,7 @@ the prologue calls `vg_chacha20_xor` as `prologue` does. Either way it ends as
 chunks, their keystream is at `ctx + 736` (`TailKs`).
 
 `twoKs` is proven with its permissions narrowed to the state copy and the 320
-bytes from `ctx + 672` (`twoKsRN_ok`), which `RegionModel.wp_narrow` moves to
+bytes from `ctx + 672` (`twoKsN_ok`), which `RegionModel.wp_narrow` moves to
 `open`'s: they are `stR (stA c')` and `bufR (bfA c')` for `c' = ctx + 544`.
 -/
 
@@ -233,13 +233,13 @@ theorem endB_ok (s : State) :
     WP.mono (ptr_ok .rsi .r15 (k := 128) (by lit_omega) s₁) fun s₂ ⟨e₂, g₂, rd₂, wr₂, m₂⟩ =>
       ⟨by rw [e₂, g₁], fun r h => by rw [g₂ r h, g₁], by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩)
 
-/-- `twoKsR`, with its permissions: the state copy at `stA c'` and `bfA c'`
+/-- `twoKs`, with its permissions: the state copy at `stA c'` and `bfA c'`
 for `c' = c + 544` (`c` in `r15`), whose first 128 bytes it leaves the
 keystream of the blocks at counters `0` and `xCtr len` in. -/
-theorem twoKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.RoundsOk 1 R) {c : Addr} {s : State}
-    (hr15 : s.gpr .r15 = c) (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
+theorem twoKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
+    (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
     (hwr : s.wr = [stR (stA (c + BitVec.ofNat 64 544)), bufR (bfA (c + BitVec.ofNat 64 544))]) :
-    WP isa (twoKsR R) s fun t =>
+    WP isa (twoKs vl) s fun t =>
       (∀ k < 128, t.mem (bfA (c + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
         (serialize (Spec.ChaCha20.block (ctr (stateAt s.mem (stA (c + BitVec.ofNat 64 544)))
           (cOf (xCtr (s.gpr .r13)).toNat (k / 64))))).getD (k % 64) 0) ∧
@@ -247,12 +247,12 @@ theorem twoKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hb : off c 672 = bfA (c + BitVec.ofNat 64 544) := by
     rw [off_eq]; simp only [bfA, Offset.add_add]
-  unfold twoKsR
+  unfold twoKs
   refine WP.seq (WP.mono (twoPre_ok (buf := bfA (c + BitVec.ofNat 64 544)) (by rw [hr15, hb]) (by rw [hwr]; simp))
     fun s₁ ⟨m₁, r9₁, rcx₁, g₁, rd₁, wr₁⟩ => ?_)
   have hc : VG.Proof.ChaCha20.X86_64.Avx512Tail.Ctx 0 s₁ := ctx0 (c := c + BitVec.ofNat 64 544)
     (by rw [g₁ _ (by decide) (by decide) (by decide), hrdi]) r9₁ (by rw [wr₁, hwr]; simp) (by rw [wr₁, hwr]; simp)
-  refine WP.seq (WP.mono (twoC_ok (c := (xCtr (s.gpr .r13)).toNat) hR hc (by rw [m₁, r9₁]; exact twoMem_consts _ _ _)
+  refine WP.seq (WP.mono (twoC_ok (c := (xCtr (s.gpr .r13)).toNat) vl hc (by rw [m₁, r9₁]; exact twoMem_consts _ _ _)
     (by rw [m₁, r9₁]; exact twoMem_incs _ _ _)) fun s₂ ⟨ks₂, _, g₂, rd₂, wr₂⟩ => ?_)
   refine WP.mono (endB_ok s₂) fun s₃ ⟨rsi₃, g₃, m₃, rd₃, wr₃⟩ => ?_
   have F₁ : Frame [bufR (bfA (c + BitVec.ofNat 64 544))] s.mem s₁.mem := by
@@ -267,8 +267,8 @@ theorem twoKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
     rw [rdi₁]
     exact Proof.ChaCha20.X86_64.Xor.stateAt_frame F₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact st_bf
-  refine ⟨fun k hk => ?_, by rw [rsi₃, g₂ .r15 (by decide), g₁ _ (by decide) (by decide) (by decide), hr15],
-    fun r h₁ h₂ h₃ h₄ => by rw [g₃ r h₄, g₂ r h₁, g₁ r h₁ h₂ h₃], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
+  refine ⟨fun k hk => ?_, by rw [rsi₃, g₂, g₁ _ (by decide) (by decide) (by decide), hr15],
+    fun r h₁ h₂ h₃ h₄ => by rw [g₃ r h₄, g₂, g₁ r h₁ h₂ h₃], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
   rw [m₃, ← r9₁, ks₂ k hk, S₁]
 
 /-! ## The four blocks, on narrowed permissions -/
@@ -416,13 +416,13 @@ theorem fourMem_incs (buf : Addr) (x : BitVec 64) (m : Mem) :
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint_base buf (Nat.le_refl _) (by decide))
 
-/-- `fourKsR`, with its permissions: as `twoKsRN_ok`, with the first 256 bytes
+/-- `fourKs`, with its permissions: as `twoKsN_ok`, with the first 256 bytes
 of `bfA c'` the keystream of the blocks at counters `0` and `1 + 8 ⌊len / 512⌋`
 to `3 + 8 ⌊len / 512⌋`. -/
-theorem fourKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.RoundsOk 2 R) {c : Addr} {s : State}
-    (hr15 : s.gpr .r15 = c) (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
+theorem fourKsN_ok (vl : Bool) {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
+    (hrdi : s.gpr .rdi = stA (c + BitVec.ofNat 64 544))
     (hwr : s.wr = [stR (stA (c + BitVec.ofNat 64 544)), bufR (bfA (c + BitVec.ofNat 64 544))]) :
-    WP isa (fourKsR R) s fun t =>
+    WP isa (fourKs vl) s fun t =>
       (∀ k < 256, t.mem (bfA (c + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
         (serialize (Spec.ChaCha20.block (ctr (stateAt s.mem (stA (c + BitVec.ofNat 64 544)))
           (VG.Proof.ChaCha20.X86_64.Avx2Tail.cOf4 (1 + 8 * ((s.gpr .r13).toNat / 512)) (k / 64))))).getD (k % 64) 0) ∧
@@ -430,12 +430,12 @@ theorem fourKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.Round
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   have hb : off c 672 = bfA (c + BitVec.ofNat 64 544) := by
     rw [off_eq]; simp only [bfA, Offset.add_add]
-  unfold fourKsR
+  unfold fourKs
   refine WP.seq (WP.mono (fourPre_ok (buf := bfA (c + BitVec.ofNat 64 544)) (by rw [hr15, hb]) (by rw [hwr]; simp))
     fun s₁ ⟨m₁, r9₁, rcx₁, g₁, rd₁, wr₁⟩ => ?_)
   have hc : VG.Proof.ChaCha20.X86_64.Avx512Tail.Ctx 0 s₁ := ctx0 (c := c + BitVec.ofNat 64 544)
     (by rw [g₁ _ (by decide) (by decide) (by decide), hrdi]) r9₁ (by rw [wr₁, hwr]; simp) (by rw [wr₁, hwr]; simp)
-  refine WP.seq (WP.mono (VG.Proof.ChaCha20.X86_64.Avx2Tail.fourC_ok (c := 1 + 8 * ((s.gpr .r13).toNat / 512)) hR hc
+  refine WP.seq (WP.mono (VG.Proof.ChaCha20.X86_64.Avx2Tail.fourC_ok (c := 1 + 8 * ((s.gpr .r13).toNat / 512)) vl hc
     (by rw [m₁, r9₁]; exact fourMem_consts _ _ _)
     (by rw [m₁, r9₁]; exact fourMem_incs _ _ _)) fun s₂ ⟨ks₂, _, g₂, rd₂, wr₂⟩ => ?_)
   refine WP.mono (endB_ok s₂) fun s₃ ⟨rsi₃, g₃, m₃, rd₃, wr₃⟩ => ?_
@@ -453,8 +453,8 @@ theorem fourKsRN_ok {R : Prog isa} (hR : VG.Proof.ChaCha20.X86_64.Avx2Tail.Round
     rw [rdi₁]
     exact Proof.ChaCha20.X86_64.Xor.stateAt_frame F₁ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact st_bf
-  refine ⟨fun k hk => ?_, by rw [rsi₃, g₂ .r15 (by decide), g₁ _ (by decide) (by decide) (by decide), hr15],
-    fun r h₁ h₂ h₃ h₄ => by rw [g₃ r h₄, g₂ r h₁, g₁ r h₁ h₂ h₃], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
+  refine ⟨fun k hk => ?_, by rw [rsi₃, g₂, g₁ _ (by decide) (by decide) (by decide), hr15],
+    fun r h₁ h₂ h₃ h₄ => by rw [g₃ r h₄, g₂, g₁ r h₁ h₂ h₃], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁]⟩
   rw [m₃, ← r9₁, ks₂ k hk, S₁]
 
 /-- If 1 to 192 bytes are left after the whole chunks, their keystream at
@@ -509,7 +509,7 @@ theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass
     · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega⟩)
   have hn : (twoKs v.callee.vl).noCalls = true := by cases v.callee.vl <;> decide +kernel
   refine regionModel.wp_narrow (r := []) (w := w)
-    (twoKsRN_ok (VG.Proof.ChaCha20.X86_64.Avx2Tail.roundsS_roundsOk v.callee.vl (.inl rfl)) (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
+    (twoKsN_ok v.callee.vl (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
     (Covers.right hw) hw (Code.noFrames_of_noCalls hn) (.inl hn) fun _ s' _ rd' wr' f' hP => ?_
   obtain ⟨ks₀, rsi₀, g₀, -, -⟩ := hP
   have ks' : ∀ k < 128, s'.mem (bfA (cx s₀ + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
@@ -587,7 +587,7 @@ theorem fourKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pas
     · exact ⟨672, by rw [eB], by show 672 + 320 ≤ 1696; omega⟩)
   have hn : (fourKs v.callee.vl).noCalls = true := by cases v.callee.vl <;> decide +kernel
   refine regionModel.wp_narrow (r := []) (w := w)
-    (fourKsRN_ok (VG.Proof.ChaCha20.X86_64.Avx2Tail.roundsS_roundsOk v.callee.vl (.inr rfl)) (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
+    (fourKsN_ok v.callee.vl (s := s.withRegions [] w) (c := cx s₀) h.r15 (by rw [State.withRegions_gpr, h.rdi, eS]) rfl)
     (Covers.right hw) hw (Code.noFrames_of_noCalls hn) (.inl hn) fun _ s' _ rd' wr' f' hP => ?_
   obtain ⟨ks₀, rsi₀, g₀, -, -⟩ := hP
   have ks' : ∀ k < 256, s'.mem (bfA (cx s₀ + BitVec.ofNat 64 544) + BitVec.ofNat 64 k) =
