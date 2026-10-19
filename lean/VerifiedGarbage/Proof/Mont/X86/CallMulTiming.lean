@@ -80,6 +80,23 @@ theorem Context.agree {n m₁ m₂ size₁ size₂ : Nat} {base : Addr} {s t : S
     obtain rfl := List.mem_singleton.mp hr
     exact C₁.edi_eq C₂
 
+/-- The call, from what each run is given (`Rdy`, which makes it ready) to what
+each run gives after it (`G`, which keeps a context). -/
+theorem callMul_ready {n o a b : Nat} (hn : 2 ≤ n) (sp : BitVec 32) (base : Addr) {Rdy G : State → Prop}
+    (hR : ∀ σ, Rdy σ → ∃ m size, MulReady n m base size o a b σ)
+    (hG : ∀ σ, σ.gpr .esp = sp → Rdy σ → WP isa (callMul n (slot n o) (slot n a) (slot n b)) σ G)
+    (hC : ∀ σ, G σ → ∃ m size, Context n m base size σ) :
+    RelCT isa (fun s t => s.gpr .esp = sp ∧ t.gpr .esp = sp ∧ Rdy s ∧ Rdy t)
+      (callMul n (slot n o) (slot n a) (slot n b))
+      (fun s t => VG.X86.Taint.Agree (workspaceTaint false) s t ∧ G s ∧ G t) :=
+  (((callMul_relCT (o := o) (a := a) (b := b) hn sp base).mono
+    (fun _ _ ⟨hs, ht, r₁, r₂⟩ => ⟨hs, ht, hR _ r₁, hR _ r₂⟩) fun _ _ h => h).wp
+    (fun _ _ ⟨hs, ht, r₁, r₂⟩ => ⟨hG _ hs r₁, hG _ ht r₂⟩)).mono
+    (fun _ _ h => h) fun _ _ ⟨_, g₁, g₂⟩ => by
+      obtain ⟨_, _, C₁⟩ := hC _ g₁
+      obtain ⟨_, _, C₂⟩ := hC _ g₂
+      exact ⟨C₁.agree C₂, g₁, g₂⟩
+
 /-- The call, with what each run gives after it (`G`, which keeps a context). -/
 theorem callMul_ws {n o a b : Nat} (hn : 2 ≤ n) (sp : BitVec 32) (base : Addr) {G : State → Prop}
     (hG : ∀ σ m size, σ.gpr .esp = sp → MulReady n m base size o a b σ →

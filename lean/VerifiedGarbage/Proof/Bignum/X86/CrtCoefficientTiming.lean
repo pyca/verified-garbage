@@ -31,19 +31,50 @@ def CoefReduced (n : Nat) (sp : BitVec 32) (base : Addr) (s : State) : Prop :=
 def CallAt (n : Nat) (sp : BitVec 32) (base : Addr) (o a b : Nat) (s : State) : Prop :=
   s.gpr .esp = sp ∧ ∃ m bytes, MulReady n m base bytes o a b s
 
-theorem coefReduced_of {n : Nat} {sp : BitVec 32} {base : Addr} {s : State} (h : CoefReady n sp base s) :
-    WP isa (reduceOperand n 5) s (CoefReduced n sp base) := by
+/-- After the multiplication of `m_q` by `R²`. -/
+def CoefEncoded (n : Nat) (sp : BitVec 32) (base : Addr) (s : State) : Prop :=
+  s.gpr .esp = sp ∧ ∃ m bytes, Context n m base bytes s ∧ CallRoom sp base bytes ∧
+    wordsVal s.mem base (slot n 6) n < m ∧ wordsVal s.mem base (slot n 3) n = 1 ∧
+    wordsVal s.mem base (slot n 4) n = 2 ^ (128 * n) % m
+
+theorem coefReady_mul {n : Nat} {sp : BitVec 32} {base : Addr} {s : State} (h : CoefReady n sp base s) :
+    ∃ m size, MulReady n m base size 5 5 4 s := by
+  obtain ⟨hsp, m, bytes, H, R, _, _, r2⟩ := h
+  exact ⟨m, bytes, H, hsp ▸ R, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide, by rw [r2]; exact Nat.mod_lt _ (by have := H.gt_one; omega)⟩
+
+theorem coefEncoded_mul {n : Nat} {sp : BitVec 32} {base : Addr} {s : State} (h : CoefEncoded n sp base s) :
+    ∃ m size, MulReady n m base size 5 5 3 s := by
+  obtain ⟨hsp, m, bytes, H, R, _, one, _⟩ := h
+  exact ⟨m, bytes, H, hsp ▸ R, by decide, by decide, by decide, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide, by rw [one]; exact H.gt_one⟩
+
+theorem coefEncoded_of {n : Nat} (hn : 2 ≤ n) {sp : BitVec 32} {base : Addr} (s : State)
+    (_ : s.gpr .esp = sp) (h : CoefReady n sp base s) :
+    WP isa (callMul n (slot n 5) (slot n 5) (slot n 4)) s (CoefEncoded n sp base) := by
   obtain ⟨hsp, m, bytes, H, R, A, one, r2⟩ := h
-  have positive : 0 < m := by have := H.gt_one; omega
-  refine WP.mono (reduceOperand_ok H (.inl rfl) one r2) fun u ⟨C, B, O, K⟩ => ?_
-  have Ku : OpKeep (contextMod n) base (slot n 2) (slot n 5) s u := by
-    apply OpKeep.of K (by decide)
-    rw [context_accLen]
-    exact O
-  have Au := context_slot_val H (i := 6) (by decide) (by decide) (by decide) (by decide) Ku
-  have Ru := context_slot_val H (i := 4) (by decide) (by decide) (by decide) (by decide) Ku
-  exact ⟨(Ku.gpr _ (by decide)).trans hsp, m, bytes, C, R, by rw [Au]; exact A,
-    by rw [B]; exact Nat.mod_lt _ positive, by rw [Ru, r2]⟩
+  refine WP.mono (callMul_ok hn H (hsp ▸ R) (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r2]; exact Nat.mod_lt _ (by have := H.gt_one; omega)))
+    fun u ⟨C, K, _⟩ => ?_
+  have keep (i : Nat) (hi : i < 9) (h5 : i ≠ 5) (h1 : i ≠ 1) (h2 : i ≠ 2) :=
+    K.slot_val H (hsp ▸ R) hi h5 h1 h2
+  exact ⟨K.esp.trans hsp, m, bytes, C, R,
+    by rw [keep 6 (by decide) (by decide) (by decide) (by decide)]; exact A,
+    by rw [keep 3 (by decide) (by decide) (by decide) (by decide)]; exact one,
+    by rw [keep 4 (by decide) (by decide) (by decide) (by decide)]; exact r2⟩
+
+theorem coefReduced_of {n : Nat} (hn : 2 ≤ n) {sp : BitVec 32} {base : Addr} (s : State)
+    (_ : s.gpr .esp = sp) (h : CoefEncoded n sp base s) :
+    WP isa (callMul n (slot n 5) (slot n 5) (slot n 3)) s (CoefReduced n sp base) := by
+  obtain ⟨hsp, m, bytes, H, R, A, one, r2⟩ := h
+  refine WP.mono (callMul_ok hn H (hsp ▸ R) (o := 5) (a := 5) (b := 3) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [one]; exact H.gt_one))
+    fun u ⟨C, K, L, _⟩ => ?_
+  have keep (i : Nat) (hi : i < 9) (h5 : i ≠ 5) (h1 : i ≠ 1) (h2 : i ≠ 2) :=
+    K.slot_val H (hsp ▸ R) hi h5 h1 h2
+  exact ⟨K.esp.trans hsp, m, bytes, C, R,
+    by rw [keep 6 (by decide) (by decide) (by decide) (by decide)]; exact A, L,
+    by rw [keep 4 (by decide) (by decide) (by decide) (by decide)]; exact r2⟩
 
 theorem coefSub_of {n : Nat} {sp : BitVec 32} {base : Addr} {s : State} (h : CoefReduced n sp base s) :
     WP isa (subW (contextMod n) (slot n 2) (slot n 7) (slot n 6) (slot n 5)) s (CallAt n sp base 8 8 4) := by
@@ -77,9 +108,12 @@ theorem crtCoefficient_relCT {n : Nat} (hn : 2 ≤ n) (sp : BitVec 32) (base : A
         CoefReady n sp base t) (crtCoefficient n)
       (VG.X86.Taint.Agree (workspaceTaint false)) := by
   unfold crtCoefficient
-  refine VG.RelCT.seq (((reduceOperand_relCT n 5).mono (fun _ _ h => h.1) fun _ _ h => h).wp
-    (F₁ := CoefReduced n sp base) (F₂ := CoefReduced n sp base)
-    fun _ _ h => ⟨coefReduced_of h.2.1, coefReduced_of h.2.2⟩) ?_
+  refine VG.RelCT.seq ((callMul_ready hn sp base (Rdy := CoefReady n sp base) (G := CoefEncoded n sp base)
+    (fun _ h => coefReady_mul h) (coefEncoded_of hn) fun _ ⟨_, m, size, C, _⟩ => ⟨m, size, C⟩).mono
+    (fun _ _ ⟨_, h₁, h₂⟩ => ⟨h₁.1, h₂.1, h₁, h₂⟩) fun _ _ h => h) ?_
+  refine VG.RelCT.seq ((callMul_ready hn sp base (Rdy := CoefEncoded n sp base) (G := CoefReduced n sp base)
+    (fun _ h => coefEncoded_mul h) (coefReduced_of hn) fun _ ⟨_, m, size, C, _⟩ => ⟨m, size, C⟩).mono
+    (fun _ _ ⟨_, h₁, h₂⟩ => ⟨h₁.1, h₂.1, h₁, h₂⟩) fun _ _ h => h) ?_
   refine VG.RelCT.seq (((subW_relCT _ _ _ _ _).mono (fun _ _ h => h.1) fun _ _ h => h).wp
     (F₁ := CallAt n sp base 8 8 4) (F₂ := CallAt n sp base 8 8 4)
     fun _ _ h => ⟨coefSub_of h.2.1, coefSub_of h.2.2⟩) ?_

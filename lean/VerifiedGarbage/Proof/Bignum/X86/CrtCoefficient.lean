@@ -31,12 +31,12 @@ theorem coefficient_op {n o : Nat} {base : Addr} {s t : State} (sp : BitVec 32)
   rcases hr with rfl | rfl | rfl <;> dsimp only <;> rcases ho with rfl | rfl | rfl <;> omega
 
 theorem coefficient_call {n o : Nat} {base : Addr} {s t : State}
-    (K : CallKeep n base (slot n o) s t) (ho : o = 7 ∨ o = 8) :
+    (K : CallKeep n base (slot n o) s t) (ho : o = 5 ∨ o = 7 ∨ o = 8) :
     OutsZ base (s.gpr .esp) (coefficientRanges n) s.mem t.mem := by
   refine K.mem.mono fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · rcases ho with rfl | rfl <;> simp [coefficientRanges]
+  · rcases ho with rfl | rfl | rfl <;> simp [coefficientRanges]
   · simp [coefficientRanges]
 
 theorem crtCoefficient_ok {s : State} {base : Addr} {bytes n m : Nat} (hn : 2 ≤ n)
@@ -52,15 +52,31 @@ theorem crtCoefficient_ok {s : State} {base : Addr} {bytes n m : Nat} (hn : 2 �
       OutsZ base (s.gpr .esp) (coefficientRanges n) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
   have positive : 0 < m := by have := H.gt_one; omega
   unfold crtCoefficient
-  refine WP.seq (WP.mono (reduceOperand_ok H (.inl rfl) one r2) fun u ⟨C, B, O, K⟩ => ?_)
-  have Ku : OpKeep (contextMod n) base (slot n 2) (slot n 5) s u := by
-    apply OpKeep.of K (by decide)
-    rw [context_accLen]
-    exact O
-  have Au := context_slot_val H (i := 6) (by decide) (by decide) (by decide) (by decide) Ku
-  have Ru := context_slot_val H (i := 4) (by decide) (by decide) (by decide) (by decide) Ku
-  have Iu := context_slot_val H (i := 8) (by decide) (by decide) (by decide) (by decide) Ku
-  have espu : u.gpr .esp = s.gpr .esp := Ku.gpr _ (by decide)
+  refine WP.seq (WP.mono (callMul_ok hn H R (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by rw [r2]; exact Nat.mod_lt _ positive))
+    fun u₁ ⟨C₁, K₁, L₁, V₁⟩ => ?_)
+  have esp₁ : u₁.gpr .esp = s.gpr .esp := K₁.esp
+  have Encoded₅ : wordsVal u₁.mem base (slot n 5) n = wordsVal s.mem base (slot n 5) n * 2 ^ (64 * n) % m :=
+    mont_encode H.coprime L₁ (by rw [V₁, r2])
+  have One : wordsVal u₁.mem base (slot n 3) n = 1 := by
+    rw [K₁.slot_val H R (i := 3) (by decide) (by decide) (by decide) (by decide), one]
+  refine WP.seq (WP.mono (callMul_ok hn C₁ (esp₁ ▸ R) (o := 5) (a := 5) (b := 3) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by rw [One]; exact H.gt_one))
+    fun u ⟨C, K₂, L₂, V₂⟩ => ?_)
+  have B := VG.Proof.Dsa.mont_decode (A := wordsVal u₁.mem base (slot n 5) n)
+    (out := wordsVal u.mem base (slot n 5) n) H.coprime
+    (by rw [Encoded₅, Nat.mod_mod]) (by rw [V₂, One])
+  rw [Nat.mod_eq_of_lt L₂] at B
+  have keep (i : Nat) (hi : i < 9) (h5 : i ≠ 5) (h1 : i ≠ 1) (h2 : i ≠ 2) :
+      wordsVal u.mem base (slot n i) n = wordsVal s.mem base (slot n i) n :=
+    (K₂.slot_val C₁ (esp₁ ▸ R) hi h5 h1 h2).trans (K₁.slot_val H R hi h5 h1 h2)
+  have Au := keep 6 (by decide) (by decide) (by decide) (by decide)
+  have Ru := keep 4 (by decide) (by decide) (by decide) (by decide)
+  have Iu := keep 8 (by decide) (by decide) (by decide) (by decide)
+  have espu : u.gpr .esp = s.gpr .esp := K₂.esp.trans esp₁
+  have Z₀ := coefficient_call K₁ (.inl rfl)
+  have Z₀' := coefficient_call K₂ (.inl rfl)
+  rw [esp₁] at Z₀'
   refine WP.seq (WP.mono (contextSub_ok C (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide)
     (by rw [Au]; exact A) (by rw [B]; exact Nat.mod_lt _ positive)) fun v ⟨Cv, Kv, D⟩ => ?_)
@@ -78,12 +94,13 @@ theorem crtCoefficient_ok {s : State} {base : Addr} {bytes n m : Nat} (hn : 2 �
   have Dw := Kw.slot_val Cv (espv ▸ R) (i := 7) (by decide) (by decide) (by decide) (by decide)
   refine WP.mono (callMul_ok hn Cw (espw ▸ R) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) Lw) fun t ⟨Ct, Kt, Lt, Vt⟩ => ?_
-  have Z₁ := coefficient_call Kw (.inr rfl)
-  have Z₂ := coefficient_call Kt (.inl rfl)
+  have Z₁ := coefficient_call Kw (.inr (.inr rfl))
+  have Z₂ := coefficient_call Kt (.inr (.inl rfl))
   rw [espv] at Z₁
   rw [espw] at Z₂
-  refine ⟨Ct, ?_, (((coefficient_op _ Ku (.inl rfl)).trans (coefficient_op _ Kv (.inr (.inl rfl)))).trans Z₁).trans Z₂,
-    ((K.trans (OpKeep.keeps Kv)).trans (Kw.keeps.mono (by decide))).trans (Kt.keeps.mono (by decide))⟩
+  refine ⟨Ct, ?_, (((Z₀.trans Z₀').trans (coefficient_op _ Kv (.inr (.inl rfl)))).trans Z₁).trans Z₂,
+    ((((K₁.keeps.mono (by decide)).trans (K₂.keeps.mono (by decide))).trans (OpKeep.keeps Kv)).trans
+      (Kw.keeps.mono (by decide))).trans (Kt.keeps.mono (by decide))⟩
   have Eq : wordsVal t.mem base (slot n 7) n * 2 ^ (64 * n) % m =
         (wordsVal v.mem base (slot n 7) n * wordsVal s.mem base (slot n 8) n) * 2 ^ (64 * n) % m := by
     rw [Vt, Encoded, Dw, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
