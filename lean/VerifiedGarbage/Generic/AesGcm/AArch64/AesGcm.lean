@@ -138,8 +138,9 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
 
 /-- What `vg_aes_gcm_seal_gather` does: it calls `vg_aes_gcm_seal`. -/
 def gatherNote (fn : String) : String :=
-  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
-    encrypts them there in place with `" ++ fn ++ "`."
+  "This implementation copies the slices one after the other to `dst`, 16 bytes at a time and then \
+    the last bytes of each eight, four and one at a time, and encrypts them there in place with `" ++
+    fn ++ "`."
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
