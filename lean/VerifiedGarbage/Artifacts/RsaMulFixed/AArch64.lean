@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedHelper
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedHelper
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Bignum.AArch64.MulFixedCall

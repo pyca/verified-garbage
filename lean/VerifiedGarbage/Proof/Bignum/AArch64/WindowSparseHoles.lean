@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
 import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Octets

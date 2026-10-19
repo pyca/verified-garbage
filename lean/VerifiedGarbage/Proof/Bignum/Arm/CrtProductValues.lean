@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # Interpret native product operands in the shared RSA number model -/
 

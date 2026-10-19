@@ -9,9 +9,9 @@ public import Batteries.Tactic.SeqFocus
 public import Mathlib.Util.CompileInductive
 public import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86_64.Step
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
 
 /-!
 # X25519 on x86-64, inversion by divsteps: running blocks

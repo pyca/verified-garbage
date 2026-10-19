@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Mont.AArch64.Row
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
 
 /-!
 # Montgomery arithmetic on AArch64: the small blocks of a round

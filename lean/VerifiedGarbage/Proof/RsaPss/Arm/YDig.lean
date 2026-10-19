@@ -2,7 +2,7 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 public import VerifiedGarbage.Spec.RsaPss
 
-import VerifiedGarbage.Proof.RsaPss.EncBytes
+public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -267,7 +267,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
 import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
-import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 import VerifiedGarbage.Proof.RsaPss.Arm.CtPad
 import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
 import VerifiedGarbage.Proof.RsaPss.Encoding

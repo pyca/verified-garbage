@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Impl.Bignum.Layout
 import VerifiedGarbage.Impl.Rsa.AArch64.Crt
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.Rsa.AArch64
 
 
 /-! # Workspace representation shared by RSA and FFDH Miller–Rabin -/

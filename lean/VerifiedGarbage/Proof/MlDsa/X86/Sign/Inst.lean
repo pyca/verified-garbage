@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Impl.MlKem.X86.CheckEk
@@ -44,6 +44,8 @@ import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls

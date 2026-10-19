@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
 import VerifiedGarbage.Spec.Weierstrass.Mont
 import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
 
 @[expose] public section
 

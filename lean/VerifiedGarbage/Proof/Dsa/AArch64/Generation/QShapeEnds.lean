@@ -69,7 +69,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Failure
 import VerifiedGarbage.Proof.Dsa.AArch64.Load
 import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 import VerifiedGarbage.Proof.Dsa.AArch64.Store
 import VerifiedGarbage.Proof.Dsa.AArch64.StoreSuffix
@@ -77,7 +77,7 @@ import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave

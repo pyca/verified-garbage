@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckBounds
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckFinish
 import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
 
 /-! # Functional validity predicate computed by ARMv7 instructions -/
 

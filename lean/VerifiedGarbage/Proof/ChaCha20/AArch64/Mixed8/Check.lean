@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes

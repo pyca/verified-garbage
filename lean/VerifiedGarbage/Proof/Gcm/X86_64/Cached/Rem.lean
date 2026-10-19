@@ -21,13 +21,13 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemBody
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
-import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup

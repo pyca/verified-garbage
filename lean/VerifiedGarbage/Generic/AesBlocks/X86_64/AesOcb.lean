@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Impl.AesCcm.X86_64
 import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 import VerifiedGarbage.Impl.Gcm.X86_64

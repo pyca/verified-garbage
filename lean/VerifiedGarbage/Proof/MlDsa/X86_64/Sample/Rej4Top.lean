@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, correctness

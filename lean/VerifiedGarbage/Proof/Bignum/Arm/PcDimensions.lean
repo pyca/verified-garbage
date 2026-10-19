@@ -7,12 +7,12 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Proof.Rsa.BytesFrame
 import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
 import VerifiedGarbage.Proof.Bignum.Arm.BasesTail
 import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
 import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
-import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.InitMetaMemory
 import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath

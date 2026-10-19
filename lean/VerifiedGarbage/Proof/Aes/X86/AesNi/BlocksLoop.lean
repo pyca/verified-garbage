@@ -6,10 +6,10 @@ public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Imc
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.RegUpd

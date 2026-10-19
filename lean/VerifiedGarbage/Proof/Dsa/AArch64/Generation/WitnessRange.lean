@@ -5,7 +5,7 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd

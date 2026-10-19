@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcAdd
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcColumns

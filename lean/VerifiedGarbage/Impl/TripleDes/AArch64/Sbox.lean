@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.TripleDes.Circuit
 public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.TripleDes.Circuit
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+public import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 public meta import VerifiedGarbage.TCB.AArch64.Isa
 

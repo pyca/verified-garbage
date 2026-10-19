@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Spec.MlKem.Kpke16
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.PlainSimp

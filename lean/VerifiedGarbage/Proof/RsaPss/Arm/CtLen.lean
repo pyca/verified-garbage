@@ -263,7 +263,7 @@ import VerifiedGarbage.Proof.Rsa.ZeroTest32
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtInit
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Spec.Pbkdf2.Generic
 

@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightProducts
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightWord
@@ -28,6 +28,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

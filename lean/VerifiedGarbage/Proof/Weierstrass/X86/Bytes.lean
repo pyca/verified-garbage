@@ -25,14 +25,15 @@ import VerifiedGarbage.Proof.Mont.X86.SparseShift
 import VerifiedGarbage.Proof.Mont.X86.SparseStep
 import VerifiedGarbage.Proof.Mont.X86.Step
 import VerifiedGarbage.Proof.Weierstrass.Words
-import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): big-endian words

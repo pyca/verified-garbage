@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Blowfish.X86.Run
+public import VerifiedGarbage.Proof.Blowfish.X86.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
 public import VerifiedGarbage.Impl.Blowfish.X86
 public import VerifiedGarbage.Proof.Blowfish.F

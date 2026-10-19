@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate

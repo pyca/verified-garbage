@@ -125,7 +125,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.Setup
 import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizesCT
 import VerifiedGarbage.Proof.Dsa.AArch64.SignificantLoop
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningCT
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningMain
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningReadyCT
@@ -162,6 +162,7 @@ import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # The signing ABI and its shared-contract precondition -/
 

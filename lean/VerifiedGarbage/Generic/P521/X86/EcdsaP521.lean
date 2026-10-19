@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Verified
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
@@ -61,6 +61,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Impl.Ecdsa.P521.X86
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86 (32-bit)
