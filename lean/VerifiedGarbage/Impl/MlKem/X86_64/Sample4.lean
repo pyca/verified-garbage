@@ -42,10 +42,12 @@ less than `q` of each lane in `eax` (`vcand`); it then moves those of each
 lane to its bottom with `vpshufb`, whose indices are the static's masks of
 `m₀` and `m₁`, stores the low lane's eight words to `a[j..j+8)`, adds to
 `j` the static's count of `m₀`, and does the same with the high lane and
-`m₁` (`vput`). Otherwise (`j ≥ 241`, or 32-bit coefficients) it runs eight
-iterations of the loop of `vg_mlkem_sample_ntt` (`snBody`), which stops at
-256. A value stored but not counted lies past the coefficients sampled,
-and is overwritten by the next. It keeps each seed's `j`.
+`m₁` (`vput`). Otherwise (`j ≥ 241`, or 32-bit coefficients), while
+`j < 256`, it runs eight iterations of the loop of `vg_mlkem_sample_ntt`
+(`snBody`), which stops at 256; once `j` = 256 it only moves past their 24
+bytes (`scaG`), since they would store nothing. A value stored but not
+counted lies past the coefficients sampled, and is overwritten by the next.
+It keeps each seed's `j`.
 
 Only if a seed has fewer than 256 coefficients (`tail4`), the states are
 still there: the code squeezes two more blocks of each seed to its buffer
@@ -231,11 +233,16 @@ def vput : List Instr := vputA ++ vputB
 /-- Eight iterations of the loop of `vg_mlkem_sample_ntt` (`snBody`). -/
 def sca8 (w16 : Bool) : Prog isa := .seq (.block [.mov32 .rcx (.imm 8)]) (.loop (snBody w16) .ne)
 
+/-- Eight iterations of the loop with `snBody` if `j < 256`; otherwise they
+would store nothing, and only `rsi` moves past their 24 bytes. -/
+def scaG (w16 : Bool) : Prog isa :=
+  .seq (.block [.alu .cmp .rdi (.imm 256)]) (.ite .b (sca8 w16) (.block [.alu .add .rsi (.imm 24)]))
+
 /-- Eight iterations of the loop: for 16-bit coefficients with AVX2 if
-`j ≤ 240`, and otherwise with `snBody`. -/
+`j ≤ 240`, and otherwise with `scaG`. -/
 def vgrp (w16 : Bool := false) : Prog isa :=
-  if w16 then .seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (sca8 w16))
-  else sca8 w16
+  if w16 then .seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (scaG w16))
+  else scaG w16
 
 /-- Eight iterations of the loop; `r10` counts down. -/
 def vbody (w16 : Bool := false) : Prog isa := .seq (vgrp w16) (.block [.alu .sub .r10 (.imm 1)])

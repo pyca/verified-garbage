@@ -230,6 +230,43 @@ theorem sca_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK 
         ⟨s₀₁, x₁, ⟨l₁, fun hw h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ₁ K (b + t) 8) (by rwa [Nat.add_assoc])) (v₁ hw)⟩, d₁⟩,
         ⟨s₀₂, x₂, ⟨l₂, fun hw h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ₂ K (b + t) 8) (by rwa [Nat.add_assoc])) (v₂ hw)⟩, d₂⟩⟩
 
+/-- Eight iterations with `snBody` while there are fewer than 256 coefficients,
+and otherwise only `rsi` moved past their 24 bytes: `j` is the same in both
+runs, and so is the branch. -/
+theorem scaG_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK : K < 4) (ht : t + 8 ≤ 168)
+    (hbt : b + t + 8 ≤ 280) :
+    RelCT isa (RXW w16 X fun σ s₀ s => LAtW w16 σ s₀ K b t s ∧ (w16 = true → ¬ (Lt σ K (b + t)).length < 241) ∧
+      s.gpr .r10 = c) (scaG w16) (RVW w16 X K b (t + 8) c) := by
+  refine RelCT.seq (relInvX (I' := fun σ s₀ s => (LAtW w16 σ s₀ K b t s ∧
+      (w16 = true → ¬ (Lt σ K (b + t)).length < 241) ∧ s.gpr .r10 = c) ∧
+      s.cf = some (decide ((Lt σ K (b + t)).length < 256))) (fun σ s₀ s _ _ h => ?_)
+    (taintRel [.rdi] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h₁.1.rdi, h₂.1.rdi, pub_Lt hq hK])
+      (by taint_decide))) (RelCT.ite (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ => by
+        show x.cf = y.cf; rw [h₁.2, h₂.2, pub_Lt hq hK]) ?_ ?_)
+  · have hlen : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
+    refine WP.mono_syms (cmp256_ok s) fun s' ⟨hcf, hm, hg, hrd, hwr, _⟩ sy => ?_
+    exact ⟨⟨h.1.same hg hm hrd hwr sy, h.2.1, by rw [hg]; exact h.2.2⟩,
+      by rw [hcf, h.1.rdi, ofNat64_toNat (by bdd_omega)]⟩
+  · -- with `snBody`
+    exact RelCT.mono (sca_ct hK ht hbt) (fun x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, i₁, _⟩, ⟨s₀₂, x₂, i₂, _⟩⟩, _⟩ =>
+      ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, i₁⟩, ⟨s₀₂, x₂, i₂⟩⟩) fun _ _ h => h
+  · -- past the 24 bytes
+    refine RelCT.mono
+      (P := RXW w16 X fun σ s₀ s => LAtW w16 σ s₀ K b t s ∧ (Lt σ K (b + t)).length = 256 ∧ s.gpr .r10 = c)
+      (relInvX (fun σ s₀ s _ _ h => WP.mono (skip_ok h.1 h.2.1) fun s' ⟨l', h10⟩ =>
+          ⟨⟨l', fun _ h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ K (b + t) 8) (by rwa [Nat.add_assoc]))
+            (by rw [h.2.1]; decide)⟩, by rw [h10]; exact h.2.2⟩)
+        (taintRel [] (fun _ _ _ _ hr => absurd hr List.not_mem_nil) (by taint_decide))) ?_ fun _ _ h => h
+    rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, ⟨l₁, -, d₁⟩, f₁⟩, ⟨s₀₂, x₂, ⟨l₂, -, d₂⟩, f₂⟩⟩, hb⟩
+    have hb₁ : ¬ (Lt σ₁ K (b + t)).length < 256 := by
+      have : x.cf = some false := hb
+      rw [f₁] at this; simpa using this
+    have hb₂ : ¬ (Lt σ₂ K (b + t)).length < 256 := by rw [← pub_Lt hq hK]; exact hb₁
+    have e₁ : (Lt σ₁ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
+    have e₂ : (Lt σ₂ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
+    exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, by omega, d₁⟩, ⟨s₀₂, x₂, l₂, by omega, d₂⟩⟩
+
 /-- The registers `vput` reads, after `vcand`, are the same in both runs. -/
 theorem viw_regs {σ₁ σ₂ : State} (hq : sample4K.pub σ₁ σ₂) {s₀₁ s₀₂ : State} {K b t : Nat} (hK : K < 4)
     (ht : t + 8 ≤ 168) (hbt : b + t + 8 ≤ 280) {x y : State} (h₁ : VIW w16 σ₁ s₀₁ K b t x)
@@ -274,11 +311,11 @@ theorem vgrp_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
     (hbt : b + t + 8 ≤ 280) : RelCT isa (RVW w16 X K b t c) (vgrp w16) (RVW w16 X K b (t + 8) c) := by
   cases w16 with
   | false =>
-    exact RelCT.mono (sca_ct hK ht hbt) (fun x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, d₁⟩, ⟨s₀₂, x₂, l₂, d₂⟩⟩ =>
+    exact RelCT.mono (scaG_ct hK ht hbt) (fun x y ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, d₁⟩, ⟨s₀₂, x₂, l₂, d₂⟩⟩ =>
       ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁.lat, fun hw => absurd hw (by decide), d₁⟩,
         ⟨s₀₂, x₂, l₂.lat, fun hw => absurd hw (by decide), d₂⟩⟩) fun _ _ h => h
   | true =>
-  show RelCT isa _ (.seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (sca8 true))) _
+  show RelCT isa _ (.seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (scaG true))) _
   refine RelCT.seq (relInvX (I' := fun σ s₀ s => (LVW true σ s₀ K b t s ∧ s.gpr .r10 = c) ∧
       s.cf = some (decide ((Lt σ K (b + t)).length < 241))) (fun σ s₀ s _ _ h => cmpG_ok h)
     (taintRel [.rdi] (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, _, h₁⟩, ⟨_, _, h₂⟩⟩ r hr => by
@@ -311,8 +348,8 @@ theorem vgrp_ct {X : State → State → Prop} {K b t : Nat} {c : BitVec 64} (hK
       rw [f₁] at this; simpa using this
     have hb'' : (Lt σ₂ K (b + t)).length < 241 := by rw [← pub_Lt hq hK]; exact hb'
     exact ⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, l₁, v₁ rfl hb', hb', d₁⟩, ⟨s₀₂, x₂, l₂, v₂ rfl hb'', hb'', d₂⟩⟩
-  · -- with `snBody`
-    refine RelCT.mono (sca_ct hK ht hbt) ?_ fun _ _ h => h
+  · -- with `scaG`
+    refine RelCT.mono (scaG_ct hK ht hbt) ?_ fun _ _ h => h
     rintro x y ⟨⟨σ₁, σ₂, p₁, p₂, hq, ⟨s₀₁, x₁, ⟨⟨l₁, -⟩, d₁⟩, f₁⟩, ⟨s₀₂, x₂, ⟨⟨l₂, -⟩, d₂⟩, f₂⟩⟩, hb⟩
     have hb' : ¬ (Lt σ₁ K (b + t)).length < 241 := by
       have : x.cf = some false := hb
