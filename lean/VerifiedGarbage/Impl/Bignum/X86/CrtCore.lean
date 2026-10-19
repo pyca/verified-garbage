@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRecombine
 public import VerifiedGarbage.Impl.Bignum.X86.CheckFactorProduct
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Impl.Bignum.X86.CrtNarrow
 
 /-! # The i686 private CRT arithmetic pipeline in one reusable workspace -/
 
@@ -54,8 +55,14 @@ def loadCoefficient (n : Nat) : Prog isa :=
 def coefficient (n : Nat) : Prog isa :=
   .seq (loadCoefficient n) (.seq (checkedPreparePrime n) (crtCoefficient n))
 
+/-- The factor's exponentiation at `half n` words when its length (the argument
+`lenArg`, public) fits them, at the modulus's width otherwise. -/
+def factorPowerFit (n prime exponent output lenArg : Nat) : Prog isa :=
+  .seq (.block (lengthFits n lenArg))
+    (.ite .b (narrowPower n prime exponent output) (factorPower n prime exponent output))
+
 def powers (n : Nat) : Prog isa :=
-  .seq (factorPower n pSlot dpSlot mpSlot) (factorPower n qSlot dqSlot mqSlot)
+  .seq (factorPowerFit n pSlot dpSlot mpSlot 7) (factorPowerFit n qSlot dqSlot mqSlot 9)
 
 def compute (n : Nat) : Prog isa :=
   .seq (powers n) (.seq (coefficient n)

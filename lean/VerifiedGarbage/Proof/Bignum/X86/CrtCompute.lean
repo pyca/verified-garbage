@@ -23,7 +23,8 @@ def resultValue (p q dp dq qi x : Nat) : Nat :=
 def computeRanges (n : Nat) : List (Nat × Nat) := powersRanges n ++ recombineRanges n
 
 theorem compute_ok {s : State} {base : Addr} {bytes n : Nat}
-    (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes) :
+    (hs : Scr s base bytes) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32) (hz : size n ≤ bytes)
+    (args : PowerArgs base bytes n s) :
     WP isa (compute n) s fun t =>
       wordsVal t.mem base (slot n resultSlot) (2 * n) =
         resultValue (wordsVal s.mem base (slot n pSlot) n) (wordsVal s.mem base (slot n qSlot) n)
@@ -32,7 +33,7 @@ theorem compute_ok {s : State} {base : Addr} {bytes n : Nat}
       Outs base (computeRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
   have fit : size n ≤ 2 ^ 64 := by have := hs.nowrap; omega
   unfold compute
-  refine WP.seq (WP.mono (powers_ok hs hn hn32 hz) fun u ⟨P, _, Q, Qw, O, K⟩ => ?_)
+  refine WP.seq (WP.mono (powers_ok hs hn hn32 hz args) fun u ⟨P, _, Q, Qw, O, K⟩ => ?_)
   have Pu := powers_value O (i := pSlot) (k := n) (by decide) (by decide) (by omega) fit
   have Qu := powers_value O (i := qSlot) (k := n) (by decide) (by decide) (by omega) fit
   have QIu := powers_value O (i := inverseSlot) (k := n) (by decide) (by decide) (by omega) fit

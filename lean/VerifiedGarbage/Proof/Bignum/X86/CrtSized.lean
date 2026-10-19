@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowBounds
 public import VerifiedGarbage.Proof.Bignum.X86.CrtImport
 public import VerifiedGarbage.Proof.Bignum.X86.CrtExport
 public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
@@ -35,7 +36,8 @@ theorem sized_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
   have Narrow : wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot n modulusSlot) n = componentValue s.mem args 2 := by
     dsimp only [n, modulusSlot]
     rw [VG.Proof.Bignum.wordsVal_low_half, N, Nat.mod_eq_of_lt modWordBound]
-  refine WP.seq (WP.mono (checkedCompute_ok hu.scratch dims.1 dims.2.1 h.space (Narrow.trans N.symm))
+  refine WP.seq (WP.mono (checkedCompute_ok hu.scratch dims.1 dims.2.1 h.space (Narrow.trans N.symm)
+    (import_powerArgs h hu P Q DP DQ))
     fun v ⟨A, V, Ov, Kv⟩ => ?_)
   dsimp only [pSlot, qSlot, dpSlot, dqSlot, inverseSlot, inputSlot, modulusSlot] at V
   dsimp only [n, modulusSlot] at Narrow

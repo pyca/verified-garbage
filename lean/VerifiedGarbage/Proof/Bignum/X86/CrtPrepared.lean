@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86.CrtNarrowBounds
 public import VerifiedGarbage.Proof.Bignum.X86.CrtSized
 
 /-! # Resources and a boolean acceptance mask survive private CRT arithmetic -/
@@ -20,11 +21,12 @@ theorem prepared_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → 
   have sz := size_eq (Spec.Rsa.modulusWords len)
   have modulusBound : componentValue s.mem args 2 < 2 ^ (64 * Spec.Rsa.modulusWords len) :=
     Nat.lt_of_lt_of_le h.modulus_bound (Nat.pow_le_pow_right (by decide) (by omega))
-  refine WP.seq (WP.mono (importComponents_ok h) fun u ⟨N, _, _, _, _, _, _, O, hu, K⟩ => ?_)
+  refine WP.seq (WP.mono (importComponents_ok h) fun u ⟨N, _, P, Q, DP, DQ, _, O, hu, K⟩ => ?_)
   have Narrow : wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot (Spec.Rsa.modulusWords len) 9) (Spec.Rsa.modulusWords len) =
       wordsVal u.mem base (VG.Impl.Mont.X86.Dynamic.slot (Spec.Rsa.modulusWords len) 9) (2 * Spec.Rsa.modulusWords len) := by
     rw [VG.Proof.Bignum.wordsVal_low_half, N, Nat.mod_eq_of_lt modulusBound]
-  refine WP.mono (checkedCompute_ok hu.scratch dims.1 dims.2.1 h.space Narrow) fun t ⟨A, _, Ot, Kt⟩ => ?_
+  refine WP.mono (checkedCompute_ok hu.scratch dims.1 dims.2.1 h.space Narrow
+    (import_powerArgs h hu P Q DP DQ)) fun t ⟨A, _, Ot, Kt⟩ => ?_
   have Kst : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := K.trans (Kt.mono (by decide))
   have Ost := (O.mono (by omega : 0 ≤ 64) (by omega : 64 + (bytes - 64) ≤ 0 + bytes)).trans
     (body_scratch (checked_frame Ot h.space) (by omega))

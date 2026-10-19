@@ -40,6 +40,10 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.CrtValues.code_sp
     stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
+    notes := ["Each factor whose length (`p_len`, `q_len`) fits half the modulus's words has the \
+      input reduced modulo it at the modulus's width, then its exponentiation at half the width, \
+      with half the exponent's bits: a balanced key's. A longer factor's exponentiation runs at the \
+      modulus's width. The lengths are public; the factors' values select no branch."]
     code := Impl.Bignum.X86.Crt.code
     verified := Proof.Bignum.X86.Crt.verified
     spSafe := Proof.Bignum.X86.Crt.code_sp
