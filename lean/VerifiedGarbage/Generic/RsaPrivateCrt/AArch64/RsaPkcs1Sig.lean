@@ -5,6 +5,14 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignVerified
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 /-! # RSASSA-PKCS1-v1_5 signing on AArch64, for each implementation of the CRT -/
 

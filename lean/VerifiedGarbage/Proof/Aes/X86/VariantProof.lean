@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBlocks
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
@@ -27,7 +27,7 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
 import VerifiedGarbage.Proof.Aes.X86.Keys
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Gcm.Spec
@@ -46,6 +46,16 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Mmx
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyVerified
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Body
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Loops
+public import VerifiedGarbage.Proof.Aes.X86.Keys
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
 
 @[expose] public section
 
