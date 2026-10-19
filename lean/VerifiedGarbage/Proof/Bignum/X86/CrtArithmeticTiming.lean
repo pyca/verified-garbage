@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.X86.CheckFactorProduct
 public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
-public import VerifiedGarbage.Proof.Bignum.X86.RuntimeSubTiming
 public import VerifiedGarbage.Proof.Bignum.X86.WideProductTiming
 public import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
 
@@ -20,11 +19,18 @@ theorem reduceOperand_relCT (n operand : Nat) :
   VG.RelCT.seq (checkedProgramChange (mul_check false _ _ _ _ _ _) (by rfl))
     (checkedProgramChange (mul_check false _ _ _ _ _ _) (by rfl))
 
+theorem subW_relCT (M : VG.Impl.Mont.Mod) (acc o a b : Nat) :
+    RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (subW M acc o a b)
+      (VG.X86.Taint.Agree (workspaceTaint false)) := by
+  apply erased_relCT (subW M acc o a b) (subW eraseMod 0 0 0 0)
+    (VG.Taint.hintOf taint (workspaceTaint false) (subW eraseMod 0 0 0 0)) rfl rfl rfl
+  rfl
+
 theorem crtCoefficient_relCT (n : Nat) :
     RelCT isa (VG.X86.Taint.Agree (workspaceTaint false)) (crtCoefficient n)
       (VG.X86.Taint.Agree (workspaceTaint false)) :=
   VG.RelCT.seq (reduceOperand_relCT n 5)
-    (VG.RelCT.seq (runtimeSub_relCT _ _ _ _ _)
+    (VG.RelCT.seq (subW_relCT _ _ _ _ _)
       (VG.RelCT.seq (checkedProgramChange (mul_check false _ _ _ _ _ _) (by rfl))
         (checkedProgramChange (mul_check false _ _ _ _ _ _) (by rfl))))
 

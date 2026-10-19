@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.Recover
 open VG.Impl.Bignum.X86 VG.Impl.Mont.X86
-open VG.Proof.Bignum.X86.Crt (stackSafe sub_sp)
+open VG.Proof.Bignum.X86.Crt (stackSafe)
 
 theorem sized_sp (n : Nat) : (sized n).all stackSafe = true := by
   simp only [sized, numbers, loads, load, prod, rest, halving, halfInit, halfBody,
