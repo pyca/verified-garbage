@@ -14,7 +14,7 @@ open VG.Proof.Sha3.AArch64.Neon
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
-theorem readonly_pair_tail_ok {w16 : Bool} {initial s : State} {p a f g w : Addr} {off0 off1 ns n : Nat}
+theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 ns n : Nat}
     (tr0 tr1 : Bool) (hn : n+1<256) (h0 : off0<65536) (h1 : off1<65536) (hns : ns<65536)
     (hk : Partial (pairWrites p f g w) initial s) (sv : Saved p initial s.mem)
     (hp : s.gpr .x19=p) (ha : s.gpr .x20=p+400) (hb : s.gpr .x21=p+528)
@@ -26,11 +26,11 @@ theorem readonly_pair_tail_ok {w16 : Bool} {initial s : State} {p a f g w : Addr
     (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves f w)
     (ht1 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves g w)
     (hfar : ∀r∈pairWrites p f g w,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
-    WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair,outCodeWith (Ntt16.Readonly.nttAtR w16) off0 ns 400 tr0 w16,outCodeWith (Ntt16.Readonly.nttAtR w16) off1 ns 528 tr1 w16,
+    WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair,outCodeWith Ntt16.Readonly.nttAtWithW off0 ns 400 tr0,outCodeWith Ntt16.Readonly.nttAtWithW off1 ns 528 tr1,
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]) s fun t =>
       Kept (pairWrites p f g w) initial t ∧
-      PolyIsW (cw w16) t.mem f (sampled initial.mem a n tr0) ∧
-      PolyIsW (cw w16) t.mem g (sampled initial.mem a (n+1) tr1) := by
+      PolyIsW (cw true) t.mem f (sampled initial.mem a n tr0) ∧
+      PolyIsW (cw true) t.mem g (sampled initial.mem a (n+1) tr1) := by
   simp only [seqs]
   refine WP.seq (WP.mono_syms (squeezePair_ok hp ha hb (by rw [hp])
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -60,7 +60,7 @@ theorem readonly_pair_tail_ok {w16 : Bool} {initial s : State} {p a f g w : Addr
     (by rw [ku.gpr .x28 (by decide)]; exact hw)
     hs.bufA hs.fw (by rw [ku.rd,ku.wr]; exact hs.cbdA)
     (by rw [ku.wr]; exact hs.nttA) tab0) fun v ⟨kv,pv⟩ vuSym => ?_)
-  have pvv : PolyIsW (cw w16) v.mem f (sampled initial.mem a n tr0) := by simpa only [r0,sampled] using pv
+  have pvv : PolyIsW (cw true) v.mem f (sampled initial.mem a n tr0) := by simpa only [r0,sampled] using pv
   have pkeep : Partial (pairWrites p f g w) initial v := pu.trans ((Partial.of_kept kv).mono (by simp [pairWrites]))
   have svv : Saved p initial v.mem := svu.frame kv.frame (by
     intro r hr; apply hs.savedFar r
@@ -80,8 +80,8 @@ theorem readonly_pair_tail_ok {w16 : Bool} {initial s : State} {p a f g w : Addr
     (by rw [kv.cs .x28 (by decide) (by decide),ku.gpr .x28 (by decide)]; exact hw)
     hs.bufB hs.gw (by rw [kv.rd,kv.wr,ku.rd,ku.wr]; exact hs.cbdB)
     (by rw [kv.wr,ku.wr]; exact hs.nttB) tab1v) fun z ⟨kz,pz⟩ => ?_)
-  have pzz : PolyIsW (cw w16) z.mem g (sampled initial.mem a (n+1) tr1) := by simpa only [r1v,sampled] using pz
-  have pfz : PolyIsW (cw w16) z.mem f (sampled initial.mem a n tr0) :=
+  have pzz : PolyIsW (cw true) z.mem g (sampled initial.mem a (n+1) tr1) := by simpa only [r1v,sampled] using pz
+  have pfz : PolyIsW (cw true) z.mem f (sampled initial.mem a n tr0) :=
     Proof.MlKem.polyIsW_frame_poly kz.frame (by simpa using And.intro hs.fg hs.fw) pvv
   have pkeepz := pkeep.trans ((Partial.of_kept kz).mono (by simp [pairWrites]))
   have svz : Saved p initial z.mem := svv.frame kz.frame (by

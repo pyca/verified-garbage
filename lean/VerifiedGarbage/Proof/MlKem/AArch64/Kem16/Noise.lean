@@ -31,7 +31,7 @@ theorem noiseW_einv {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (ht
   have hc : Covers [⟨kA s₀ L.sc,P.scl⟩] s.wr := by
     have hh := cov_w hp h.kb ⟨hp.scw,hp.scb⟩ (o := 0) (l := P.scl) (by rw [hp.scl]; omega)
     simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables (w16 := true) hw hr false h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
+  refine WP.mono (Noise.readonly_noiseAll_tables hw hr false h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   have keepB : ∀o l, o+l≤SS → o+l≤P.scl-1024*P.k →
       (Spec.Sha3.bytesAt t.mem (sA L s₀ o) l=Spec.Sha3.bytesAt s.mem (sA L s₀ o) l) := by
     intro o l ho ht

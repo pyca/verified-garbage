@@ -248,7 +248,7 @@ theorem readonly_noise_encodeW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Ro
   have hc : Covers [⟨kA s₀ 3,P.scl⟩] s.wr := by
     have hh := cov_w hp h.kb (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
     simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables (w16 := true) hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
+  refine WP.mono (Noise.readonly_noiseAll_tables hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   refine ⟨kt,noise_cinvW hp hr h kt,?_,?_,fun _ hj => by omega,Frame.refl _ _⟩
   · intro j hj
     have p : PolyIsW 16 _ _ _ := pt j (by omega)
