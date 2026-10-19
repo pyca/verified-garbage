@@ -97,7 +97,10 @@
 //! message of at least `POWERS_MIN_LEN` (128) bytes, or the first one after
 //! it with a 12-byte nonce and at most 16 bytes of additional data (a TLS
 //! record): its `_store_powers` instance stores them while it hashes the
-//! text. The key uses them for those messages only.
+//! text. Once it has, every message uses them, shorter ones too, which
+//! never count towards them: `vg_ghash_with_powers_aes` loads `H · x⁻¹`
+//! rather than computing it, and `encrypt` copies its pieces with `memcpy`
+//! rather than `vg_aes_gcm_seal_gather`'s 16-byte steps and single bytes.
 //! `encrypt` with them copies its pieces to its output and seals them there,
 //! as `vg_aes_gcm_seal_gather` does. Streaming keeps the plain functions,
 //! and does not count towards them.
@@ -720,8 +723,8 @@ struct Powers {
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers); once they are published, `SHORT_READY` on
-    /// x86-64, so that messages shorter than `POWERS_MIN_LEN` take the
+    /// delays the powers); once they are published, `SHORT_READY`, so
+    /// that messages shorter than `POWERS_MIN_LEN` take the
     /// `_prepared` instances too. That test comes after the length's, so
     /// longer messages pay nothing for it, and such messages never count
     /// (`Powers::get` finds the powers ready).
@@ -813,11 +816,10 @@ impl Powers {
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` take the `_prepared`
-    /// instances: once the powers are published, on x86-64 (`SHORT_READY`;
-    /// on AArch64 this is `false` without a load).
+    /// instances: once the powers are published (`SHORT_READY`).
     #[inline(always)]
     fn short_ready(&self) -> bool {
-        cfg!(target_arch = "x86_64") && self.calls.load(Ordering::Relaxed) == SHORT_READY
+        self.calls.load(Ordering::Relaxed) == SHORT_READY
     }
 
     /// Publishes `ctx`, unless another thread has published a key context
@@ -840,8 +842,6 @@ impl Powers {
                 q
             }
         };
-        // Only x86-64's `_prepared` instances gain for shorter messages.
-        #[cfg(target_arch = "x86_64")]
         self.calls.store(SHORT_READY, Ordering::Relaxed);
         // SAFETY: as in `get`.
         unsafe { &*q }
@@ -1297,7 +1297,7 @@ impl AesGcm {
             return Ok(tag);
         }
         #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-        if out.len() >= POWERS_MIN_LEN
+        if (out.len() >= POWERS_MIN_LEN || self.powers.short_ready())
             && let Some(tag) = self.seal_pieces_prepared(nonce, aad, plaintext, out)
         {
             return Ok(tag);
@@ -2837,6 +2837,30 @@ mod tests {
                 let mut out = [0u8; 700];
                 let tag = k.encrypt(&nonce, &aad, &[&msg[..1], &msg[1..]], &mut out);
                 assert_eq!((out, tag), (want, Ok(want_tag)));
+                // Shorter messages take the powers too, in place and out of
+                // place, sealing and opening, and do not count.
+                assert!(k.powers.short_ready());
+                for len in [0, 1, 15, 16, 17, 63, 64, POWERS_MIN_LEN - 1] {
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                        .unwrap();
+                    let mut ct = msg;
+                    let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
+                    assert_eq!((&ct[..len], tag), (&want[..len], want_tag));
+                    let mut out = [0u8; 700];
+                    let pieces: [&[u8]; 2] = [&msg[..len / 2], &msg[len / 2..len]];
+                    let tag = k.encrypt(&nonce, &aad, &pieces, &mut out[..len]);
+                    assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
+                    let mut bad = want_tag;
+                    bad[0] ^= 1;
+                    let rejected = k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad);
+                    assert_eq!(rejected, Err(Error::TagMismatch));
+                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &want_tag)
+                        .unwrap();
+                    assert_eq!(&ct[..len], &msg[..len]);
+                }
+                assert!(k.powers.short_ready());
                 // On x86-64, the prepared context begins with the plain
                 // one, so the plain streaming functions read either alike.
                 #[cfg(target_arch = "x86_64")]
