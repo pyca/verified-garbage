@@ -67,19 +67,21 @@ structure BatchHOk16 (b : Prog isa) : Prop where
   noCalls : b.noCalls = true
   ctl : ctlOk b = true
   sp : b.all (fun i => !isa.writesSp i) = true
+  /-- It uses no stack. -/
+  xd : b.x86_64Depth = 0
 
 /-- The checks of every instruction of a fragment, at once. -/
 def BatchHOk16.checks (b : Prog isa) : Bool :=
-  b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i)
+  b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i) && b.x86_64Depth == 0
 
 theorem sampleH16_checks (fast : Bool) : BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
   cases fast <;> decide +kernel
 
 theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampleH fast true) := by
   have h := sampleH16_checks fast
-  simp only [BatchHOk16.checks, Bool.and_eq_true] at h
-  exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1, h.1.2,
-    Code.all_of_allInstrs h.2⟩
+  simp only [BatchHOk16.checks, Bool.and_eq_true, beq_iff_eq] at h
+  exact ⟨SH.correctW (w16 := true) (fast := fast), SH.ctW (w16 := true) (fast := fast), h.1.1.1, h.1.1.2,
+    Code.all_of_allInstrs h.1.2, h.2⟩
 
 /-- What a caller needs of an implementation's code with 16-bit
 coefficients (`Callee4.s16`): it meets `sample4KW true`, in constant time,
@@ -120,6 +122,8 @@ structure Sample4Impl where
       RelCT isa (LRel rbs wbs) (callee.prfs N₀ n o wl) fun _ _ => True
   prfs_ctl : ∀ N₀ n o wl, ctlOk (callee.prfs N₀ n o wl) = true
   prfs_sp : ∀ N₀ n o wl, (callee.prfs N₀ n o wl).all (fun i => !isa.writesSp i) = true
+  /-- Its calls use at most 16 bytes of stack. -/
+  prfs_xd : ∀ N₀ n o wl, (callee.prfs N₀ n o wl).x86_64Depth ≤ 16
   /-- The polynomial arithmetic that goes with it is correct, constant
   time, and safe to call. -/
   arith : ArithOk callee.arith
@@ -162,6 +166,7 @@ def scalar : Sample4Impl where
   prfs_tr := fun hcs => prfsScalar_tr hcs
   prfs_ctl := prfsScalar_ctl
   prfs_sp := prfsScalar_sp
+  prfs_xd := prfsScalar_xd
   arith := ArithOk.sse
   batchH16 := fun _ h => nomatch h
   suffix := ""
@@ -189,6 +194,7 @@ def avx2 : Sample4Impl where
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
+  prfs_xd := prfsAvx2_xd
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok false
   suffix := "_avx2"
@@ -216,6 +222,7 @@ def avx512 : Sample4Impl where
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
   prfs_sp := prfsAvx2_sp
+  prfs_xd := prfsAvx2_xd
   arith := ArithOk.sse16
   batchH16 := fun _ h => Option.some.inj h ▸ sampleH16_ok true
   suffix := "_avx512"

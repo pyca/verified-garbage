@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
@@ -120,6 +121,10 @@ theorem prf1_ctl (N : Nat) (out : Ptr) : ctlOk (prf1 N out) = true := by kernel_
 
 theorem prf1_sp (N : Nat) (out : Ptr) : (prf1 N out).all (fun i => !isa.writesSp i) = true := by kernel_rfl
 
+/-- Its calls use 16 bytes of stack. -/
+theorem prf1_xd (N : Nat) (out : Ptr) : (prf1 N out).x86_64Depth ≤ 16 :=
+  Nat.le_of_ble_eq_true (by kernel_rfl)
+
 /-! ## Several outputs -/
 
 /-- What `prfs N₀ n o wl` writes, of either implementation: the index `N`,
@@ -226,11 +231,23 @@ theorem all_seqR {p : Instr → Bool} {f : Nat → Prog isa} (h : ∀ k, (f k).a
   | 0, _ => rfl
   | n + 1, a => all_seq (h a) (all_seqR h n (a + 1))
 
+theorem xd_seq {a b : Prog isa} {k : Nat} (ha : a.x86_64Depth ≤ k) (hb : b.x86_64Depth ≤ k) :
+    (Code.seq a b).x86_64Depth ≤ k :=
+  Nat.max_le.2 ⟨ha, hb⟩
+
+theorem xd_seqR {f : Nat → Prog isa} {k : Nat} (h : ∀ i, (f i).x86_64Depth ≤ k) :
+    ∀ n a, (seqR f a n).x86_64Depth ≤ k
+  | 0, _ => Nat.zero_le _
+  | n + 1, a => xd_seq (h a) (xd_seqR h n (a + 1))
+
 theorem prfsScalar_ctl (N₀ n o wl : Nat) : ctlOk (prfsScalar N₀ n o wl) = true :=
   ctlOk_seqR (fun _ => prf1_ctl _ _) n 0
 
 theorem prfsScalar_sp (N₀ n o wl : Nat) : (prfsScalar N₀ n o wl).all (fun i => !isa.writesSp i) = true :=
   all_seqR (fun _ => prf1_sp _ _) n 0
+
+theorem prfsScalar_xd (N₀ n o wl : Nat) : (prfsScalar N₀ n o wl).x86_64Depth ≤ 16 :=
+  xd_seqR (fun _ => prf1_xd _ _) n 0
 
 /-! ## Four at a time -/
 
@@ -459,6 +476,12 @@ theorem permute4_ctl (fast : Bool) : ctlOk (Impl.Sha3.X86_64.X4.permute4 fast) =
 theorem permute4_sp (fast : Bool) : (Impl.Sha3.X86_64.X4.permute4 fast).all (fun i => !isa.writesSp i) = true := by
   cases fast <;> kernel_rfl
 
+theorem permute4_xd (fast : Bool) : (Impl.Sha3.X86_64.X4.permute4 fast).x86_64Depth = 0 := by
+  cases fast <;> kernel_rfl
+
+theorem batch_xd {fast : Bool} (m wl : Nat) : (batch m wl fast).x86_64Depth = 0 := by
+  simp only [batch, Code.x86_64Depth, permute4_xd]; rfl
+
 theorem batch_ctl {fast : Bool} {m : Nat} (wl : Nat) (hm : m < 5) : ctlOk (batch m wl fast) = true :=
   ctlOk_seq (by kernel_rfl) (ctlOk_seq (permute4_ctl fast) (by
     rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
@@ -475,6 +498,14 @@ theorem quads_ctl {fast : Bool} (N₀ q o wl : Nat) : ctlOk (quads N₀ q o wl f
 theorem quads_sp {fast : Bool} (N₀ q o wl : Nat) : (quads N₀ q o wl fast).all (fun i => !isa.writesSp i) = true := by
   unfold quads
   exact all_seq (by kernel_rfl) (all_loop (all_seq (batch_sp wl (by decide)) (by kernel_rfl)))
+
+theorem quads_xd {fast : Bool} (N₀ q o wl : Nat) : (quads N₀ q o wl fast).x86_64Depth = 0 := by
+  simp only [quads, Code.x86_64Depth, batch_xd]; rfl
+
+theorem prfsX4_xd {fast : Bool} {wl : Nat} (n N₀ o : Nat) : (prfsX4 fast N₀ n o wl).x86_64Depth = 0 := by
+  unfold prfsX4
+  simp only [Code.x86_64Depth]
+  split <;> split <;> simp only [Code.x86_64Depth, quads_xd, batch_xd] <;> rfl
 
 theorem prfsX4_ctl {fast : Bool} {wl : Nat} (n N₀ o : Nat) : ctlOk (prfsX4 fast N₀ n o wl) = true := by
   unfold prfsX4
@@ -567,5 +598,8 @@ theorem prfsAvx2_ctl {fast : Bool} (N₀ n o wl : Nat) : ctlOk (prfsAvx2 (fast :
 
 theorem prfsAvx2_sp {fast : Bool} (N₀ n o wl : Nat) : (prfsAvx2 (fast := fast) N₀ n o wl).all (fun i => !isa.writesSp i) = true :=
   all_seq (prfsScalar_sp _ _ _ _) (Prf4.prfsX4_sp _ _ _)
+
+theorem prfsAvx2_xd {fast : Bool} (N₀ n o wl : Nat) : (prfsAvx2 (fast := fast) N₀ n o wl).x86_64Depth ≤ 16 :=
+  xd_seq (prfsScalar_xd _ _ _ _) (by rw [Prf4.prfsX4_xd]; decide)
 
 end VG.Proof.MlKem.X86_64

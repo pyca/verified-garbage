@@ -60,21 +60,26 @@ theorem kgWf1024 : KeyGen.KgWf kem1024 := by kem_wf kemWf1024
 theorem ecWf1024 : Encaps.EcWf kem1024 := by kem_wf kemWf1024
 theorem dcWf1024 : Decaps.DcWf kem1024 := by kem_wf kemWf1024
 theorem kpke1024 : KpkeOk kem1024w.L := KpkeOk.k1024
-theorem kg16Wf1024 : KeyGen16.Kg16Wf kem1024w := by kem_wf kemWf1024
-theorem ec16Wf1024 : Encaps16.Ec16Wf kem1024w := by kem_wf kemWf1024
-theorem dc16Wf1024 : Decaps16.Dc16Wf kem1024w := by kem_wf kemWf1024
+/-- What the functions with 16-bit polynomials write of `scratch`: its first
+37376 bytes (`kem1024w`'s K-PKE working space ends there). -/
+abbrev scr16 : Nat := 37376
+
+theorem kemWf1024n : KemWf (narrowL kem1024 scr16) := by kem_wf
+theorem kg16Wf1024 : KeyGen16.Kg16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
+theorem ec16Wf1024 : Encaps16.Ec16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
+theorem dc16Wf1024 : Decaps16.Dc16Wf (narrowK kem1024w scr16) := by kem_wf kemWf1024n
 theorem ekWf1024 : Ek.EkWf kem1024 := by kem_wf ecWf1024
 
-theorem ek16FWf1024 : EkF16.Ek16FWf kem1024w := by kem_wf ec16Wf1024.toEcWfB
-theorem ek16HWf1024 : EkF16.Ek16HWf kem1024w := by kem_wf ek16FWf1024
+theorem ek16FWf1024 : EkF16.Ek16FWf (narrowK kem1024w scr16) := by kem_wf ec16Wf1024.toEcWfB
+theorem ek16HWf1024 : EkF16.Ek16HWf (narrowK kem1024w scr16) := by kem_wf ek16FWf1024
 
 /-- The taint checks of the fused encapsulation's pieces, with 16-bit polynomials. -/
-theorem ekt16Wf1024 : EkF16.EkT16Wf kem1024w where
+theorem ekt16Wf1024 : EkF16.EkT16Wf (narrowK kem1024w scr16) where
   rT := ⟨_, by taint_decide⟩
   zT := ⟨_, by taint_decide⟩
   hT := by
     intro i hi
-    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb kem1024w.L = 4 by decide] at hi; omega
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb (narrowK kem1024w scr16).L = 4 by decide] at hi; omega
     rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   hcT := ⟨_, by taint_decide⟩
   ij := by decide +kernel
@@ -132,7 +137,7 @@ theorem keyGenImp1024 : (keyGenK kem1024).Implies (Spec.MlKem1024.keyGenContract
 
 theorem keyGen1024_verified (v : Sample4Impl) :
     Verified X86_64.target (keyGen1024 v.callee) (Spec.MlKem1024.keyGenContract X86_64.abi 32) :=
-  keyGenSel_verified kpke1024 v kg16Wf1024 kgWf1024 keyGenImp1024
+  keyGenSel_verified (n := scr16) (by decide) kpke1024 v kg16Wf1024 kgWf1024 keyGenImp1024
     (fun _ c S => by s16_ctl v c S kpke1024)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
@@ -157,7 +162,7 @@ theorem encapsHImp1024 : (encapsK kem1024).Implies (Spec.MlKem1024.encapsHContra
 
 theorem encapsH1024_verified (v : Sample4Impl) :
     Verified X86_64.target (encapsH1024 v.callee) (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
-  encapsHSel_verified kpke1024 v ec16Wf1024 ecWf1024 calls1024 encapsHImp1024
+  encapsHSel_verified (n := scr16) (by decide) kpke1024 v ec16Wf1024 ecWf1024 calls1024 encapsHImp1024
     (fun _ c S => by s16_ctl v c S kpke1024)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
@@ -179,7 +184,7 @@ theorem encapsImp1024 : (encK kem1024).Implies (Spec.MlKem1024.encapsContract X8
 
 theorem encaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (encaps1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
-  encapsSel_verified kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 calls1024 encapsImp1024
+  encapsSel_verified (n := scr16) (by decide) kpke1024 v ek16HWf1024 ekt16Wf1024 ekWf1024 calls1024 encapsImp1024
     (fun _ c b S B => by ek16_ctl v c b S B kpke1024) (encaps1024_ctl v)
 
 /-- The shared contract of `decaps1024`, from the contract its proofs are written against. -/
@@ -196,7 +201,7 @@ theorem decapsImp1024 : (decapsK kem1024).Implies (Spec.MlKem1024.decapsContract
 
 theorem decaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (decaps1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
-  decapsSel_verified kpke1024 v dc16Wf1024 dcWf1024 calls1024 decapsImp1024
+  decapsSel_verified (n := scr16) (by decide) kpke1024 v dc16Wf1024 dcWf1024 calls1024 decapsImp1024
     (fun _ c S => by s16_ctl v c S kpke1024)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 

@@ -88,4 +88,22 @@ crate::mlkem_common::ml_kem! {
     dk: 3168,
     ct: 1568,
     scratch: 6144,
+    scratch_written: {
+        keygen: (
+            crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN,
+            crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN,
+        ),
+        encaps_h: (
+            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN,
+            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN,
+        ),
+        encaps: (
+            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN,
+            crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN,
+        ),
+        decaps: (
+            crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN,
+            crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN,
+        ),
+    },
 }
