@@ -23,7 +23,7 @@ def ErrorsW (P : KemLay) (L : Layout) (s₀ : State) (rv : List Byte) (s : State
 theorem noiseW_einv {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (ht : Optimized.TransformTables s)
     {kC co : Nat} {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte}
     (h : EInvW true P L s₀ kC co mE mB v rv mv 0 0 s) :
-    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P false true) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P false) s fun t =>
       Kept (Noise.allWrites P false (kA s₀ L.sc)) s t ∧
       EInvW true P L s₀ kC co t.mem mB v rv mv P.k 0 t ∧ ErrorsW P L s₀ rv t := by
   have hw := hp.wf
