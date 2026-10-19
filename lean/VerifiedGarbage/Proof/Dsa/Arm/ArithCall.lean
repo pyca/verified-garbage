@@ -21,18 +21,18 @@ open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont.Arm.Dynamic VG.Proof.Mont VG.Proof.
 open VG.Impl.Dsa.Arm VG.Impl.Dsa.Arm.Pow VG.Impl.Dsa.Arm.Arith
 open VG.Proof.X25519.Arm (Rest Upd wp_mov wp_dp wp_movw op2_reg dpVal)
 
-theorem mulBody_noCalls (n : Nat) : (mulBody n).noCalls = true := by
-  simp only [mulBody, contextSetup, ordinaryMul, Dynamic.mul, rowD, digitRowD, mulRowD, csubD, Dynamic.zeros,
-    ptrLoop, one, powerTwo, addD, addDigits, Code.noCalls, Bool.and_self]
+theorem mulBody_noFrames (n : Nat) : (mulBody n).noFrames = true := by
+  simp only [mulBody, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, ordinaryMul, Dynamic.mul, rowD, digitRowD, mulRowD, csubD, Dynamic.zeros,
+    ptrLoop, one, powerTwo, addD, addDigits, Code.noFrames, Bool.and_self]
 
 theorem doubles_noCalls (n k : Nat) : (doubles n k).noCalls = true := by
   unfold doubles
   split <;> simp only [countedDouble, addDigits, csubD, ptrLoop, Code.noCalls, Bool.and_self]
 
-theorem reduceBody_noCalls (n : Nat) : (reduceBody n).noCalls = true := by
-  simp only [reduceBody, contextSetup, reduceStream, streamStep, reduceStep, addD, addDigits,
-    csubD, Dynamic.zeros, ptrLoop, one, powerTwo, Code.noCalls, Bool.and_self, Bool.and_true, Bool.true_and]
-  exact doubles_noCalls n 8
+theorem reduceBody_noFrames (n : Nat) : (reduceBody n).noFrames = true := by
+  simp only [reduceBody, Impl.Dsa.Arm.Context.call, Impl.Dsa.Arm.Context.body, contextSetup, reduceStream, streamStep, reduceStep, addD, addDigits,
+    csubD, Dynamic.zeros, ptrLoop, one, powerTwo, Code.noFrames, Bool.and_self, Bool.and_true, Bool.true_and]
+  exact Code.noFrames_of_noCalls (doubles_noCalls n 8)
 
 /-! ## Products -/
 
@@ -46,9 +46,9 @@ theorem mulCall_ok {s : State} {base : Addr} {size n m : Nat} (hs : Ws s base si
   unfold mulCall
   refine WP.seq (WP.mono (head_ok n) fun u ⟨h11, h0, h1, R₁, M₁⟩ => ?_)
   have w₁ := hs.of_rest R₁ (by decide)
-  refine WP.seq (WP.call (k := mulK n) (mulK_correct hn hn48)
+  refine WP.seq (WP.callCalls (k := mulK n) (mulK_correct hn hn48)
     (entry_pre (e := 1) hs hz hn48 h0 h1 M₁ (by rw [hv]; exact hodd) (by rw [hv]; exact hm1))
-    (Covers.right (covers_ctx w₁ hz)) (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (mulBody_noCalls n))
+    (Covers.right (covers_ctx w₁ hz)) (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (mulBody_noFrames n))
   have b0 : State.addr (u.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0, hs.wb]
   simp only [mulK, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem, b0, M₁, hv] at post
   obtain ⟨V, O⟩ := post
@@ -81,7 +81,7 @@ theorem mulCall_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ n : Nat
   have w₁ := hs₁.of_rest R₁ (by decide)
   have w₂ := hs₂.of_rest R₂ (by decide)
   refine SameTrace.of_relCT (P := fun a b => a = u₁ ∧ b = u₂) (RelCT.seq
-    (RelCT.call (mulK_correct hn hn48) (mulK_ct n) [] [⟨base, contextBytes n⟩] ?_)
+    (RelCT.call (mulK_correct hn hn48) (mulK_ct n hn hn48) [] [⟨base, contextBytes n⟩] ?_)
     ((relCT_of_check (τ := VG.Arm.Taint.ofRegs []) (σ := VG.Arm.Taint.ofRegs []) (h := .block [])
       (by decide)).mono (fun _ _ _ => nothing _ _) fun _ _ _ => trivial)) ⟨rfl, rfl⟩
   rintro a b ⟨rfl, rfl⟩
@@ -148,11 +148,11 @@ theorem reduceCall_ok {s : State} {base : Addr} {size n m len : Nat} {p : BitVec
   unfold reduceCall
   refine WP.seq (WP.mono (rhead_ok n) fun u ⟨h2, h3, h11', h0, h1, R₁, M₁⟩ => ?_)
   have w₁ := hs.of_rest R₁ (by decide)
-  refine WP.seq (WP.call (k := reduceK n) (reduceK_correct hn hn48)
+  refine WP.seq (WP.callCalls (k := reduceK n) (reduceK_correct hn hn48)
     (rentry_pre hs hz hn48 h0 h1 (h2.trans h11) (by rw [h3, l3]) hfit hd M₁ (by rw [hv]; exact hodd)
       (by rw [hv]; exact hm))
     (Covers.append_left (Covers.one (by rw [R₁.rd, R₁.wr]; exact hr)) (Covers.right (covers_ctx w₁ hz)))
-    (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (reduceBody_noCalls n))
+    (covers_ctx w₁ hz) (fun v hrd hwr hsp _ P _ post => ?_) (reduceBody_noFrames n))
   have b0 : State.addr (u.callEntry.gpr .r0) = base := by rw [State.callEntry_gpr _ (by decide), h0, hs.wb]
   have e2 : u.callEntry.gpr .r2 = p := by rw [State.callEntry_gpr _ (by decide), h2, h11]
   have e3 : (u.callEntry.gpr .r3).toNat = len := by rw [State.callEntry_gpr _ (by decide), h3, l3]

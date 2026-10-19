@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.Arm.Context
+public import VerifiedGarbage.Impl.Dsa.Arm.Context
 public import VerifiedGarbage.Spec.Dsa.ModPow
 
 /-! # DSA's exponentiation as a function on 32-bit ARM
@@ -31,7 +31,7 @@ def save : List Instr := .mov .r12 (.reg .r0) :: slots.map fun (r, o) => .str r 
 def restore : List Instr := slots.map fun (r, o) => .ldr r .r12 o
 
 def body (n e : Nat) : Prog isa :=
-  .seq (.block save) (.seq (contextSetup n) (.seq (exponentiate n e) (.block restore)))
+  .seq (.block save) (.seq (Context.call n) (.seq (exponentiate n e) (.block restore)))
 
 /-- The function's own bytes: the header's first 64, and every slot but the
 modulus's. -/

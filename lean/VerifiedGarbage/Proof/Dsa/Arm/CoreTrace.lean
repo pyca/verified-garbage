@@ -96,6 +96,7 @@ theorem setup_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
   rw [← P₁.w.n_eq]
   obtain ⟨n0, n48, hl, hl'⟩ := P₁.w.bounds
   have s0 := slot_lt (i := 0) n48 (by decide)
+  have cb := contextBytes_le n48
   have z₁ := P₁.hz
   have z₂ := P₂.hz
   refine SameTrace.seq (load_trace P₁.ws P₂.ws (by omega) (by omega) P₁.R.ok he)
@@ -103,8 +104,10 @@ theorem setup_trace {s₁ s₂ : State} {base : Addr} {size₁ size₂ len n m�
       (by simp only [modS]; omega) (by omega) P₁.w.four hl P₁.w.word (by simp only [modS]; omega))
     (load_ok (n := n) (dst := modS n) P₂.ws (by omega) P₂.R (by simp only [modS]; omega)
       (by simp only [modS]; omega) (by omega) P₁.w.four hl P₁.w.word (by simp only [modS]; omega))
-    fun u₁ u₂ ⟨w₁, _⟩ ⟨w₂, _⟩ => ?_
-  exact SameTrace.of_relCT (contextSetup_relCT false false n) (agree0 w₁ w₂)
+    fun u₁ u₂ ⟨w₁, V₁, _⟩ ⟨w₂, V₂, _⟩ => ?_
+  exact Context.call_trace w₁ w₂ (by omega) (by omega) n0 n48
+    (by rw [V₁, P₁.hm]; exact P₁.hodd) (by rw [V₁, P₁.hm]; exact P₁.hm1)
+    (by rw [V₂, P₂.hm]; exact P₂.hodd) (by rw [V₂, P₂.hm]; exact P₂.hm1)
 
 /-- After the setup of an operation, its operands' pointers are still the same. -/
 theorem ptrEq_setup {s₁ s₂ u₁ u₂ : State} {base : Addr} {p : Pointer} (hp : PtrOk p) (he : PtrEq base s₁ s₂ p)

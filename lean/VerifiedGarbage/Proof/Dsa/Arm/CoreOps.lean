@@ -80,7 +80,7 @@ theorem setup_ok {s : State} {base : Addr} {size len n m : Nat} {modulus : Field
   refine WP.seq (WP.mono (load_ok (n := n) (dst := modS n) hs (by omega) R (by simp only [modS]; omega)
     (by simp only [modS]; omega) (by omega) w.four hl w.word (by simp only [modS]; omega))
     fun u ⟨wu, Vu, Ru, Ou⟩ => ?_)
-  refine WP.mono (contextSetup_ok wu n0 (by omega) (by omega) (by omega) (by rw [← hm]; exact Vu) hm1 hodd)
+  refine WP.mono (Context.call_ok wu (by omega) n0 n48 (by rw [← hm]; exact Vu) hm1 hodd)
     fun t ⟨ct, one, rr, Ot, Rt⟩ => ⟨ct, one, rr, ?_, (Ru.mono (by decide)).trans (Rt.mono (by decide))⟩
   exact (Outs.of_slot (i := 0) Ou (by decide) n48).trans (Outs.arith Ot (setupRanges_arith n48))
 

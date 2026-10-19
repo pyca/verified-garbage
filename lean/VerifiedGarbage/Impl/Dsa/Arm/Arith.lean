@@ -23,12 +23,12 @@ def lenAt : Nat := 44
 
 def reduceBody (n : Nat) : Prog isa :=
   .seq (.block (save ++ [.mov .r11 (.reg .r2), .str .r3 .r12 lenAt])) <|
-  .seq (contextSetup n) <|
+  .seq (Context.call n) <|
   .seq (.block [.ldr .lr .r12 lenAt, .dp .add .lr .lr (.reg .r11)]) <|
   .seq (reduceStream n) (.block restore)
 
 def mulBody (n : Nat) : Prog isa :=
-  .seq (.block save) (.seq (contextSetup n) (.seq (ordinaryMul n) (.block restore)))
+  .seq (.block save) (.seq (Context.call n) (.seq (ordinaryMul n) (.block restore)))
 
 def reduceLayout (n : Nat) : Spec.Dsa.ModArith.ReduceLayout where
   n := n
