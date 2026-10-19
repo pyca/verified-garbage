@@ -136,12 +136,13 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
 include hG in
 /-- `finalize` of the state to `scratch + o`, from the arguments in `rdi`,
 `rsi`, `rdx`, `rcx`. -/
-theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem fin_frame_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {o : Nat} (ho : o + 64 ≤ oSt ∨ (oSt + 256 ≤ o ∧ o + 64 ≤ oW))
     (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S o) (hcx : t.gpr .rcx = off S oW) :
     WP isa (.call G.finN G.finC) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
       Rep t'.mem F S (fun x => if inR [(oSt, G.S), (o, G.F), (oW, hG.Wb)] x then t'.mem (off S x) else V x) W ∧
+      Frame (regs S [(oSt, G.S), (o, G.F), (oW, hG.Wb)] ++ [retR F]) t.mem t'.mem ∧
       (∀ m, hG.SH.Repr t.mem (off S oSt) m → m.length < 2 ^ 64 → t.gpr .rsi = BitVec.ofNat 64 m.length →
         ∀ i < G.D, t'.mem (off S (o + i)) = (hG.SH.H.hash m).getD i 0) := by
   have hz := sizes hG
@@ -162,11 +163,23 @@ theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
     (by have := A.frame; rw [L.rsp] at this; exact this) (keep_cs A.cs) A.wr
-  refine ⟨L', A.rd, A.wr, A.cs, R', fun m hm hl hc i hi => ?_⟩
+  refine ⟨L', A.rd, A.wr, A.cs, R', (by have hf := A.frame; rw [L.rsp] at hf; exact hf), fun m hm hl hc i hi => ?_⟩
   have e := hr m hm hl hc
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega),
     Option.map_some, Option.getD_some, off_off]
+
+include hG in
+theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {o : Nat} (ho : o + 64 ≤ oSt ∨ (oSt + 256 ≤ o ∧ o + 64 ≤ oW))
+    (hdi : t.gpr .rdi = off S oSt) (hdx : t.gpr .rdx = off S o) (hcx : t.gpr .rcx = off S oW) :
+    WP isa (.call G.finN G.finC) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧
+      Rep t'.mem F S (fun x => if inR [(oSt, G.S), (o, G.F), (oW, hG.Wb)] x then t'.mem (off S x) else V x) W ∧
+      (∀ m, hG.SH.Repr t.mem (off S oSt) m → m.length < 2 ^ 64 → t.gpr .rsi = BitVec.ofNat 64 m.length →
+        ∀ i < G.D, t'.mem (off S (o + i)) = (hG.SH.H.hash m).getD i 0) := by
+  exact WP.mono (fin_frame_ok hG L R ho hdi hdx hcx)
+    fun _ ⟨Lt, rd, wr, cs, Rt, _, hr⟩ => ⟨Lt, rd, wr, cs, Rt, hr⟩
 
 include hG in
 /-- `update` of the state with the `len` bytes at `d`, outside our working

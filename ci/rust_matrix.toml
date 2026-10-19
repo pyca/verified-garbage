@@ -115,8 +115,8 @@ aes,avx,pclmulqdq,ssse3 | aes_gcm aes_xts cpu
 aes,avx,avx2,pclmulqdq,ssse3 | aes_gcm cpu
 aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
 aes,avx,avx2,ssse3,vaes | aes_xts cpu
-sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
-avx,avx2,bmi2,adx,sha,ssse3 | rsa_oaep cpu
+sha,ssse3 | dsa_parameters rsa_pkcs1 rsa_pss rsa_oaep p256_sha cpu
+avx,avx2,bmi2,adx,sha,ssse3 | dsa_parameters rsa_oaep cpu
 avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
 adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
 """

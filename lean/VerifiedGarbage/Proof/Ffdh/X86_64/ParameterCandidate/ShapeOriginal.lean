@@ -37,7 +37,7 @@ theorem shapeOriginal_ok {p : CandidateP} {used : Nat} {s : State}
     fun u ⟨⟨hbp, hop, hrp, hcx, hdx, hm⟩, k⟩ => ?_)
   have hsrc : Src u p.B p.Z p.rp p.prefix := source_take
     (h.base.rand.congrK (by rw [hm]; exact InScr.refl _ _ _) k) p.k
-  refine WP.seq (WP.mono (shape_ok h.base.bits1 h.base.bits2 (hprefix.trans h.base.len) hrp hop
+  refine WP.seq (WP.mono (shape_ok (Nat.le_trans (by decide) h.base.bits1) h.base.bits2 (hprefix.trans h.base.len) hrp hop
     (by rw [hprefix]; exact hcx) hdx hsrc.rd
     (fun i hi => by rw [k.2.2]; exact h.base.out.wr i (by omega_using [hprefix, hi]))
     (fun i hi => by

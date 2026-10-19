@@ -1,0 +1,71 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+
+/-! # Public controller counters and status determine every p-search branch -/
+
+@[expose] public section
+namespace VG.Proof.Dsa.X86_64.Generation
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.Impl.Dsa.X86_64.Generation
+
+structure SearchControlPublic where
+  B : Addr
+  counter : Nat
+  stride : Nat
+  status : Nat
+  statusBound : status ≤ 3
+
+def SearchControlBefore (p : SearchControlPublic) (s : State) : Prop :=
+  SearchControl p.B p.counter p.stride s ∧ word s.mem p.B 16 = BitVec.ofNat 64 p.status
+
+def SearchControlCompared (p : SearchControlPublic) (s : State) : Prop :=
+  SearchControlBefore p s ∧ s.zf = some (decide (p.status = 3))
+
+theorem searchControl_compare {p : SearchControlPublic} {s : State} (h : SearchControlBefore p s) :
+    WP isa (.block pSearchStatusCmp) s (SearchControlCompared p) := by
+  exact WP.mono (searchStatusCmp_ok h.1 p.statusBound h.2) fun _ ⟨hz, hm, hk⟩ =>
+    ⟨⟨h.1.congr hm hk, hm ▸ h.2⟩, hz⟩
+
+theorem searchStatusCmp_ct : RelCT isa (Two SearchControlBefore) (.block pSearchStatusCmp)
+    (Two SearchControlCompared) := by
+  refine two_post (two_taint [.rdi] ?_ (by taint_decide)) (fun _ _ h => searchControl_compare h)
+  intro p s t hs ht r hr
+  simp only [List.mem_singleton] at hr; subst r
+  exact hs.1.rdi.trans ht.1.rdi.symm
+
+def SearchAdvanceBefore (limit stride : Nat) (p : SearchControlPublic) (s : State) : Prop :=
+  SearchControlBefore p s ∧ p.counter < limit ∧ p.stride = stride
+
+def SearchAdvanceReady (limit stride : Nat) (p : SearchControlPublic) (s : State) : Prop :=
+  SearchControl p.B (p.counter + 1) stride s ∧ s.cf = some (decide (p.counter + 1 < limit))
+
+theorem searchAdvanceHead_ct (limit stride : Nat) (hl : limit ≤ 12288) (hs : stride ≤ 12)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi]) (.block (pSearchAdvanceHead limit stride)) hc).isSome = true) :
+    RelCT isa (Two (SearchAdvanceBefore limit stride)) (.block (pSearchAdvanceHead limit stride))
+      (Two (SearchAdvanceReady limit stride)) := by
+  refine two_post (two_taint [.rdi] ?_ ht) ?_
+  · intro p s t hs ht r hr
+    simp only [List.mem_singleton] at hr; subst r
+    exact hs.1.1.rdi.trans ht.1.1.rdi.symm
+  · intro p s h
+    have ctrl : SearchControl p.B p.counter stride s := by rw [← h.2.2]; exact h.1.1
+    exact WP.mono (searchAdvanceHead_ok ctrl h.2.1 hl hs) fun _ ⟨hc, hf, _, _⟩ => ⟨hc, hf⟩
+
+theorem searchAdvance_ct (limit stride : Nat) (hl : limit ≤ 12288) (hs : stride ≤ 12)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (ht : (taint.check (Taint.ofRegs [.rdi]) (.block (pSearchAdvanceHead limit stride)) hc).isSome = true) :
+    RelCT isa (Two (SearchAdvanceBefore limit stride)) (pSearchAdvance limit stride) (fun _ _ => True) := by
+  refine RelCT.seq (searchAdvanceHead_ct limit stride hl hs ht)
+    (two_ite (fun _ _ _ hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_)
+  all_goals
+    exact two_taint [.rdi] (by
+      intro p s t hs ht r hr
+      simp only [List.mem_singleton] at hr; subst r
+      exact hs.1.1.rdi.trans ht.1.1.rdi.symm) (by taint_decide)
+
+end VG.Proof.Dsa.X86_64.Generation
