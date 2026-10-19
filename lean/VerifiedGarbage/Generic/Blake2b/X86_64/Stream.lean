@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # Streaming BLAKE2b on x86-64, for every compression backend

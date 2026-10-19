@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.J0
+public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on ARMv7: what every function does

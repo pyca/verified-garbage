@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-public import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 public import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+public import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Proof.Weierstrass.Pow
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): powers

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivLay
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_private_checked` on AArch64: between the frames' pushes and pops

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinkStep
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStrides
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLinkStep
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStrides
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksMemory
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # All CRT buffer links come from public lengths and addresses -/
 

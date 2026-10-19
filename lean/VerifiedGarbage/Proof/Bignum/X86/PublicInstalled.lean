@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicABI
+public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicResources
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
+import VerifiedGarbage.Proof.Bignum.X86.PublicResources
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 
 /-! # Installing the checked public operation's caller resources -/
 

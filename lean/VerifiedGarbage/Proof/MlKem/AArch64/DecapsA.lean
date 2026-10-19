@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

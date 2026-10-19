@@ -1,6 +1,10 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Compute
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

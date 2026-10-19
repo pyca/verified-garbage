@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
@@ -12,19 +10,56 @@ import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P384
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Mont.Read
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Mont.Read
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Mont.Read
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Mont.X86.Chain
+meta import VerifiedGarbage.Proof.Mont.X86.Csub
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Mont.X86.Row
+meta import VerifiedGarbage.Proof.Mont.X86.SparseStep
+meta import VerifiedGarbage.Proof.Mont.X86.Step
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+meta import VerifiedGarbage.Proof.X25519.Field
 meta import VerifiedGarbage.Proof.X25519.X86.Arith
+meta import VerifiedGarbage.Proof.X25519.X86.Fold
 meta import VerifiedGarbage.Spec.Rc2
 
 /-!

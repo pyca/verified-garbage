@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
-import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
-public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

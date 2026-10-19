@@ -1,7 +1,18 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the contract on the registers

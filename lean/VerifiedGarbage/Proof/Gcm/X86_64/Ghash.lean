@@ -28,8 +28,6 @@ import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import Mathlib.Tactic.LinearCombination
 meta import Mathlib.Tactic.LinearCombination
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -38,18 +36,26 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
 meta import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86_64.Parts`.
 

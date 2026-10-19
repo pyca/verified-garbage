@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHeadTiming
 
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticTiming
+import VerifiedGarbage.Proof.Dsa.X86.ArithmeticTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Complete modular products have secret-independent execution traces -/
 

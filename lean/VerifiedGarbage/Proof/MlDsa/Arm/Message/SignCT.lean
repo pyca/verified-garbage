@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCall
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on ARMv7, `sign_message`: constant time

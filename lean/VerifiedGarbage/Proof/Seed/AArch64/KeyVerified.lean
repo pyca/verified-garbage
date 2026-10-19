@@ -1,8 +1,24 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Seed.AArch64.ConstantTime
+public import VerifiedGarbage.Proof.Seed.SboxLit
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.TCB.AArch64.Target
 
 import VerifiedGarbage.Proof.Seed.AArch64.Key
-public import VerifiedGarbage.Proof.Seed.AArch64.Verified
+import VerifiedGarbage.Proof.Seed.AArch64.Verified
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Seed.AArch64.KeyLoad
+import VerifiedGarbage.Proof.Seed.AArch64.Setup
+import VerifiedGarbage.Proof.Seed.AArch64.Swap
 
 /-! # Key expansion meets its contract, with the scratch buffer as an argument -/
 

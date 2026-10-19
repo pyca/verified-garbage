@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Exponent
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # The complete little-endian exponent shift -/
 

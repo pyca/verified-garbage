@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBody
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 
 @[expose] public section
 

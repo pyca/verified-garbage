@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Combining modulus-rejection bits on i686 -/
 

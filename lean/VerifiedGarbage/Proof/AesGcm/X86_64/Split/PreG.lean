@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixOk
 import VerifiedGarbage.Proof.Gcm.StreamTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 
 /-!
 # AES-GCM `seal_split` on x86-64: what a prefix leaves

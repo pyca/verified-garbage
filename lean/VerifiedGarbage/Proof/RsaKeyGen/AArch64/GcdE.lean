@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A candidate on AArch64: `gcd(c − 1, e)`

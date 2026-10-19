@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import VerifiedGarbage.Proof.Bignum.X86.CrtCompute
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtResult
-public import VerifiedGarbage.Proof.Bignum.WordsPrefix
+import VerifiedGarbage.Proof.Bignum.X86.CrtResult
+import VerifiedGarbage.Proof.Bignum.WordsPrefix
 
 /-! # An accepted double-width CRT result fits the caller's output length -/
 

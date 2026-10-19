@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Vec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # ML-DSA on x86-64: coefficients in the doublewords of SSE registers

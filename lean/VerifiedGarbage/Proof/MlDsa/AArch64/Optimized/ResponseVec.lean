@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

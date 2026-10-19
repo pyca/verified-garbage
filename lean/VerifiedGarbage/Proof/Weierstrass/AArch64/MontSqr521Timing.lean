@@ -2,9 +2,42 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
-import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Mont.AArch64.Chain
+meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+meta import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+meta import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+meta import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 
 /-! Constant-time execution of the P-521 square with public pointer and low32 offsets. -/
 

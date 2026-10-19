@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Body
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Save
 public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
-public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## `Contract` -/
 

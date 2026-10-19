@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.BitStep
-import VerifiedGarbage.Proof.X448.AArch64.Counters
+import VerifiedGarbage.Proof.X448.AArch64.BitStep
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.X448.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Ops
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: the Montgomery ladder

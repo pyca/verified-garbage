@@ -2,13 +2,17 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
 import VerifiedGarbage.Proof.Ffdh.Choose
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Ffdh.AArch64
-import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

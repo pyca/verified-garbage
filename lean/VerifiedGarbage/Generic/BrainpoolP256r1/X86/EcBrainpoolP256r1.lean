@@ -1,15 +1,14 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 
 /-!
 # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.KeyRound
 public import VerifiedGarbage.Proof.Seed.KeySchedule
+import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The sixteen rounds of the key schedule on x86-64

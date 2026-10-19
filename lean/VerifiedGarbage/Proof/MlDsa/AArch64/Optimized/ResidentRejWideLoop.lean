@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideBody
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

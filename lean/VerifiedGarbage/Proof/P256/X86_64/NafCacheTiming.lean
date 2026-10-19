@@ -4,12 +4,26 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-! Building the cache uses fixed addresses; lookup depends only on the public digit. -/
 

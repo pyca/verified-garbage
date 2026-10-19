@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!
 # ML-DSA on x86-64, `sign_message`: constant time

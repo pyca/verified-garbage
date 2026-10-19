@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Halving an RSA workspace array with an incoming carry -/
 

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.Arm.Core
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Modes.Arm.Ops
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The modes one block at a time on ARMv7: the contract, the invariant, the prologue

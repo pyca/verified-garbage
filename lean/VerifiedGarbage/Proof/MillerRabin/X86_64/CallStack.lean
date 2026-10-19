@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # The return address of the round's Montgomery calls

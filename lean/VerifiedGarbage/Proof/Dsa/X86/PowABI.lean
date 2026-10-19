@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowTiming
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Resources for the shared IA-32 modular-exponentiation contract -/
 

@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.X86.Top
 
-public import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
 
 /-!
 # ML-KEM on x86 (32-bit): the code of the top-level functions between calls

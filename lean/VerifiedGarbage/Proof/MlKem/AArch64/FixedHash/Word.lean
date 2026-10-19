@@ -1,6 +1,8 @@
 module
-public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

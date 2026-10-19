@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Impl.Weierstrass.Arm.LadderP
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM: copies and calls

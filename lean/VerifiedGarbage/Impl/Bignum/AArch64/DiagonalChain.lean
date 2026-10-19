@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 
 /-! Double the cross-product stream and add diagonal squares with one carry
 chain. The preceding undoubled high word carries the shift bit separately

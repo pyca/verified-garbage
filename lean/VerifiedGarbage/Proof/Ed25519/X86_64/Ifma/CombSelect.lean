@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarWord
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the selection

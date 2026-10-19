@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCorrect
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCT
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCorrect
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallCT
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 

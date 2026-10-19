@@ -1,11 +1,34 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Gamma
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_use_hint`

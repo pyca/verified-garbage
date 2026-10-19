@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Impl.Mgf1.X86_64
 
 /-! # Shape the suffix of the concatenated p-candidate hashes -/
 

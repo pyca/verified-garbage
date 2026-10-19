@@ -3,19 +3,80 @@ module
 public import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Idea.Arm.ModeCore
 public import VerifiedGarbage.Proof.Idea.FbScratch
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Spec.Idea.Cfb
 meta import VerifiedGarbage.Proof.Idea.FbScratch
-public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-public import VerifiedGarbage.Impl.Idea.Arm.Modes
-meta import VerifiedGarbage.Impl.Idea.Arm.Modes
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.Arm.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Arm.Block
+import VerifiedGarbage.Proof.Idea.Arm.Key
+import VerifiedGarbage.Proof.Idea.Arm.Verified
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits32
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.Arm.Counter
+import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Ctr.Contract
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.Aes.SboxSpec
+meta import VerifiedGarbage.Proof.AesCtr.Ctr32
+meta import VerifiedGarbage.Proof.AesCtr.Spec
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Words
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Syms
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Idea.Arith32
+meta import VerifiedGarbage.Proof.Idea.Arm.Block
+meta import VerifiedGarbage.Proof.Idea.Arm.Key
+meta import VerifiedGarbage.Proof.Idea.Arm.Verified
+meta import VerifiedGarbage.Proof.Idea.KeyBits
+meta import VerifiedGarbage.Proof.Idea.KeyBits32
+meta import VerifiedGarbage.Proof.Idea.Memory
+meta import VerifiedGarbage.Proof.Modes.Addr
+meta import VerifiedGarbage.Proof.Modes.Arm.Counter
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqLoop
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Spec.Idea.Cfb
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on ARMv7 meet their contracts

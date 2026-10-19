@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
+public import VerifiedGarbage.Proof.Sm4.X86_64.Prologue
 
-public import VerifiedGarbage.Proof.Sm4.X86_64.KeyInit
+import VerifiedGarbage.Proof.Sm4.X86_64.KeyInit
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Sm4.X86_64.Group
+import VerifiedGarbage.Proof.Sm4.X86_64.Keys
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The loop of the SM4 key schedule on x86-64

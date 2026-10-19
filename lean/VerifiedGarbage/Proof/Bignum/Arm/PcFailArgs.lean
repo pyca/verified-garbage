@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Native-word count and output pointer for RSA rejection zeroing -/
 

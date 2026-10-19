@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivReturn
-public import VerifiedGarbage.Proof.Rsa.X86.PrivRestore
+import VerifiedGarbage.Proof.Rsa.X86.PrivReturn
+import VerifiedGarbage.Proof.Rsa.X86.PrivRestore
+import VerifiedGarbage.Proof.Rsa.X86.PrivNoSp
+import VerifiedGarbage.Proof.Rsa.X86.PrivBody
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 /-! # Callable checked private RSA restores the i686 calling convention -/
 

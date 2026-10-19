@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # ECDSA on AArch64: the result

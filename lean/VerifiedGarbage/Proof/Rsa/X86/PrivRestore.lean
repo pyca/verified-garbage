@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseArgs
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Restoring the three registers above the final pop -/
 

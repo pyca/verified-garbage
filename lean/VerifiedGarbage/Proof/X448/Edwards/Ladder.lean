@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X448.Edwards.URep
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
-public import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.X448.Ladder
 import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!

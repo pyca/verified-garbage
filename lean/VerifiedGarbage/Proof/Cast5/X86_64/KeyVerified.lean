@@ -12,8 +12,32 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 public import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Cast5.Table
+meta import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.X86_64.Block
+import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
+import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Cast5.X86_64.Block
+meta import VerifiedGarbage.Proof.Cast5.X86_64.KeyHalf
+meta import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # CAST5 key expansion on x86-64: verified against the shared contract

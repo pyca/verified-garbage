@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCore
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleCore
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCore
+public import VerifiedGarbage.Impl.Bignum.Arm.Double
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+import VerifiedGarbage.Proof.Bignum.Arm.MontCore
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete modular doubling from pointers and a packed-word count -/
 

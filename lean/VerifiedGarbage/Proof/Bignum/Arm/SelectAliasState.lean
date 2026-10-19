@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
 
 /-! # In-place selection preserves unread source words -/
 

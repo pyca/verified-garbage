@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerTraversal
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Argon2 H′ on ARMv7: the state of the body

@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Dsa.X86.SignFinishTiming
+import VerifiedGarbage.Proof.Dsa.X86.SignFinishTiming
+import VerifiedGarbage.Proof.Dsa.X86.KeyTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant-time signing computation -/
 

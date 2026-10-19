@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Load the modulus's low byte and the public sanity-check bit -/
 

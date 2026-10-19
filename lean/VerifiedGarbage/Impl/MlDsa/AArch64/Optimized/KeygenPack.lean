@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
-import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 @[expose] public section
 

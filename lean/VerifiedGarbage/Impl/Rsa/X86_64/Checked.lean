@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
-public import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-!
 # RSA within BoringSSL's limits on the public exponent, on x86-64

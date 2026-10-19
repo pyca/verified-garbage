@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Arm.Prf
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives on the buffers of a `Site`

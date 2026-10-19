@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CombSelect
-public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ed25519.X86.CombDigit
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Call
 import VerifiedGarbage.Proof.Ed25519.PointDouble
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The comb's loop

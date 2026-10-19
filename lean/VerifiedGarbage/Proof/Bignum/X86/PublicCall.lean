@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 
 /-! # Stable cdecl arguments while RSA uses its disjoint scratch buffer -/
 

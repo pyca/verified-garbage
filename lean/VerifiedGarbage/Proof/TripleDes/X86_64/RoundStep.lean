@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.PassSteps
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Spills
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
+import VerifiedGarbage.Proof.TripleDes.X86_64.Box
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

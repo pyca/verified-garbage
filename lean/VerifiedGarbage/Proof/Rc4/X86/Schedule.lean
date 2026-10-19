@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.Replace
+import VerifiedGarbage.Proof.Rc4.X86.Replace
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
+public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 import VerifiedGarbage.Proof.Rc4.Stream
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Dword
 
 /-! # RC4 on x86 (32-bit): key scheduling -/
 

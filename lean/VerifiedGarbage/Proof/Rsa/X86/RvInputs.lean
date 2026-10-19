@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
-public import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
-public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
 
 /-! # Input and output geometry of the prime-recovery call -/
 

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Load
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH parameter generation on x86-64: load either modulus from the output -/
 

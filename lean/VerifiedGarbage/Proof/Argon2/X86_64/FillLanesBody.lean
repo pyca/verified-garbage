@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
 
 /-! One lane iteration fills its segment and advances the public lane. -/
 

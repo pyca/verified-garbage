@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryReady
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # The secret acceptance slot does not overlap saved AAPCS registers -/
 

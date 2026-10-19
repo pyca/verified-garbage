@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Copy
 public import VerifiedGarbage.Proof.X448.Freeze
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

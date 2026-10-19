@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+public import VerifiedGarbage.Proof.Rsa.X86.KcPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcLoadsTiming
-public import VerifiedGarbage.Proof.Rsa.X86.KcCoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcLoadsTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcCoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcLoad
+import VerifiedGarbage.Proof.Rsa.X86.KcBody
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Fixed-width key validation has a trace independent of private components -/
 

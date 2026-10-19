@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 public import VerifiedGarbage.Proof.Blake2.Spec
 public import VerifiedGarbage.Impl.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

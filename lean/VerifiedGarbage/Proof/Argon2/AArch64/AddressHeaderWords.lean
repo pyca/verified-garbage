@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressHeader
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+public import VerifiedGarbage.Spec.Argon2.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.BlockStore`. -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 

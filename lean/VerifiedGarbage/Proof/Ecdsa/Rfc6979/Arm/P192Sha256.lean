@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P192
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P192Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
 /-!
 # Deterministic ECDSA over P-192 with HMAC-SHA-256 on 32-bit ARM

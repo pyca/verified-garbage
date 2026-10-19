@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 
 /-! # ML-DSA (FIPS 204) key generation on AArch64 -/
 

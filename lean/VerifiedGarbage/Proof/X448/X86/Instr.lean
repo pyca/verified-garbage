@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Mem
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block

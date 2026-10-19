@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Splitting two elements' limbs into radix-2²⁸ vectors

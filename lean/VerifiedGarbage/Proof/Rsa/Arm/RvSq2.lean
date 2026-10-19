@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvCand1
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvSq1
+import VerifiedGarbage.Proof.Rsa.Arm.RvSq1
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand2
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a squaring under masks (`sqStep_vp`)
 

@@ -1,9 +1,9 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Memory-safe component and digest slices of external DSA inputs -/
 

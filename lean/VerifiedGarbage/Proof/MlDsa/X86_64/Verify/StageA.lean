@@ -5,6 +5,8 @@ import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA verification on x86-64: the samplers

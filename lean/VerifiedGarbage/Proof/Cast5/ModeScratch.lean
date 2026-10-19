@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Spec.Cast5.Cbc
 public import VerifiedGarbage.Spec.Cast5.Ofb
 public import VerifiedGarbage.Spec.Cast5.Cfb
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 with their working space as an argument

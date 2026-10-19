@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Signature encodings compare byte for byte without an early exit -/
 

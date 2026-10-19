@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Rows6
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
-public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 

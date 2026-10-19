@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointTable
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-! A descending scalar bit: add its point power, then select using the bit mask. -/
 

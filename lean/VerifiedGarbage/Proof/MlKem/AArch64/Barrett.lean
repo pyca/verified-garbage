@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-KEM on AArch64: the tables

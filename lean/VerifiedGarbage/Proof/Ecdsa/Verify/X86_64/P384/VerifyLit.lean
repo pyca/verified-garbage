@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
 
 /-!
 # ECDSA verification over P-384 on x86-64: the shared code's literals

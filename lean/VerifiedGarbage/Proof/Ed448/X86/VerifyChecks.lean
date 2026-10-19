@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyField
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
 import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.Copy
-import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): accumulating checks

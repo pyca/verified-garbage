@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! # FFDH parameter candidates on x86-64: public bit-mask selection -/
 

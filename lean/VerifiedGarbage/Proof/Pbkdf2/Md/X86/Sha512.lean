@@ -1,9 +1,56 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Md5.X86.Compress
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Md5.X86.Compress
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # HMAC-SHA-512's `init` and `finalize` and PBKDF2-HMAC-SHA-512's `iterate` on x86 (32-bit)

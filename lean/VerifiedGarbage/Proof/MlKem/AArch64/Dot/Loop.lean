@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopInput
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopInput
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

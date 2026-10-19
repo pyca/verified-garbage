@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86_64.Env
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 import VerifiedGarbage.Proof.X448.X86_64.Setup
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 base-point multiplication on x86-64: the constants

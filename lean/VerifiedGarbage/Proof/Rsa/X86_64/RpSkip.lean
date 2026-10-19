@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: whether `d e - 1` is even and positive

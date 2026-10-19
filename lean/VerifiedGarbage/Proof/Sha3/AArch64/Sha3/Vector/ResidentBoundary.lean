@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Sha3.Stream
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 @[expose] public section
 

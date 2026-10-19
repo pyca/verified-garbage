@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressS.Body
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-import VerifiedGarbage.TCB.X86.Target
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+import VerifiedGarbage.Proof.MdStream.X86.Common
 
 /-!
 # BLAKE2s on x86 (32-bit): the compression function

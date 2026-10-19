@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Spec.Dsa.Generate
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABI
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABI
 
 /-! Concrete public inputs satisfy the parameter-generation contract. -/
 @[expose] public section

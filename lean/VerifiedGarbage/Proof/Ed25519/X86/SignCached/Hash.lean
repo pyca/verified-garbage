@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 import VerifiedGarbage.Proof.Sha512.Stream
 
 @[expose] public section

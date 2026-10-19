@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+public import VerifiedGarbage.Proof.Argon2.HPrime
 
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Next`. -/
 

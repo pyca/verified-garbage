@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-CMAC on x86-64: `vg_cmac_aes_update` is correct

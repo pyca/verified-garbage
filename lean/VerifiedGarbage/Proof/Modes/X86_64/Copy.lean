@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Loops over blocks on x86-64

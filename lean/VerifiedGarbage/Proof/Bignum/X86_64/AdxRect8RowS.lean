@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-!
 # A row of a square, with the carry handed from the row before

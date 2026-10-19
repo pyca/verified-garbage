@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # ECDSA on x86 (32-bit): the setup and the tables of bits

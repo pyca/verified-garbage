@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsS
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on ARMv7: `ExpandA`

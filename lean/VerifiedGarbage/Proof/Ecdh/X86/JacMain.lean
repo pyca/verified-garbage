@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.X86.JacPow
+import VerifiedGarbage.Proof.Ecdh.X86.JacPow
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+import VerifiedGarbage.Proof.Ecdh.X86.Peer
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # ECDH correctness with the x86 P-256 signed-window multiplier -/
 

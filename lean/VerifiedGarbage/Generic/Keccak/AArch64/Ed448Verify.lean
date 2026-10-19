@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
-public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Verified
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.AArch64.Verify
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 verification on AArch64

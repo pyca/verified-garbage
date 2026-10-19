@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8AddChain
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Add the input block and saved overflow before its register product. -/
 

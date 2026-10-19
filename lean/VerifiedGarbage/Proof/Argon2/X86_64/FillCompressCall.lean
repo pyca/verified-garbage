@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Invoke the verified compression primitive with narrowed permissions,
 retaining the surrounding matrix and derivation frame. -/

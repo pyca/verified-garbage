@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section

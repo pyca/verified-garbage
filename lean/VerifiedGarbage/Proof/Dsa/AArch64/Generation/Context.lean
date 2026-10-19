@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Persistent inputs shared by every phase of the native parameter search -/
 

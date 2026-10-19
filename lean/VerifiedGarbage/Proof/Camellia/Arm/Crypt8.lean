@@ -5,6 +5,10 @@ public import VerifiedGarbage.Proof.Camellia.Arm.StoreFrame
 public import VerifiedGarbage.Proof.Camellia.Layout32
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on ARMv7

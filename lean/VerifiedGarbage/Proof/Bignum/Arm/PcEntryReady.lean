@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # Establish all precomputation-body assumptions from AAPCS arguments -/
 

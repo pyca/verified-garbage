@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
 
 /-! # Successful initial rejection bypasses both continuation blocks -/
 @[expose] public section

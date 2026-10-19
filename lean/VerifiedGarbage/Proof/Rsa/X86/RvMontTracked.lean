@@ -1,6 +1,7 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontSetup
 
 /-! # Recovering Montgomery readiness from the tracked workspace -/
 

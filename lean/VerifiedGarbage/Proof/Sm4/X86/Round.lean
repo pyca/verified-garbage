@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86.Linear
 public import VerifiedGarbage.Proof.Sm4.X86.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 
 /-!

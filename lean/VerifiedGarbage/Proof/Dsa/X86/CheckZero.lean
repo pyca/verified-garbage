@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Zero and nonzero checks with accumulated acceptance masks -/
 

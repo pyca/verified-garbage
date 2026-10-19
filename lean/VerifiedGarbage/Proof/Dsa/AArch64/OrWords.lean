@@ -1,7 +1,12 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Fixed-length word scans for DSA validation -/
 @[expose] public section

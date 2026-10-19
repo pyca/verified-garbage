@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Tail
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8ScalarCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8ScalarCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BatchCT
 
 /-! # Public invariants across vector and scalar rejection steps -/
 

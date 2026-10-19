@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Correct
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 @[expose] public section
 

@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
 import Std.Data.DTreeMap.Internal.Operations
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.MlDsa.FusedInverse
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Window
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
-import VerifiedGarbage.Proof.Ed448.VerifyEq
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 
 /-! The joint window loop represents `[S]B + [k](-A)` for valid decoded points. -/
 

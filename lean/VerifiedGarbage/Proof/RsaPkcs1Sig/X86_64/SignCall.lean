@@ -1,15 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignBlocks
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the call of `vg_rsa_private_checked`

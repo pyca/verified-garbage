@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailBody
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailEpi
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 
 @[expose] public section
 

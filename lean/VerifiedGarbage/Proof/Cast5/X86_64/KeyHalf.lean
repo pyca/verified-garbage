@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.KeyGroup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cast5.Memory
 
 /-!
 # CAST5 key expansion on x86-64: a half

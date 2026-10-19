@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerSafety
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ControllerSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
 
 /-! # Instruction safety of the complete parameter-generation entry point -/
 

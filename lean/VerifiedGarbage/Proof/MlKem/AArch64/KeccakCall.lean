@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.SplitIfs
 
 /-!

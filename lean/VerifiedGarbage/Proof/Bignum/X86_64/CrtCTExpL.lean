@@ -1,6 +1,8 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV

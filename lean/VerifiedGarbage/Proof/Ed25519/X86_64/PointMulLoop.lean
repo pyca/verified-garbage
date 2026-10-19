@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Complete descent through the checkpoint table. -/
 

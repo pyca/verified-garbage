@@ -1,6 +1,14 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Seed.SboxLit
 
-public import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Slots, copies of blocks, and saving registers, on x86 (32-bit)

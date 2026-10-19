@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Impl.Bignum.Arm.Zero
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A runtime-length zeroing of a packed-word accumulator -/
 

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcFn
+import VerifiedGarbage.Proof.Bignum.Arm.PcFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Public precomputation satisfies the shared RSA contract under AAPCS -/
 

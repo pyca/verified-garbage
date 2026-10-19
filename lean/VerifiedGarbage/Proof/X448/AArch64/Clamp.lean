@@ -1,9 +1,14 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
-public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.X448.AArch64
+import VerifiedGarbage.Proof.X448.Ladder
 
 /-!
 # X448 on AArch64: clamping the scalar bits

@@ -1,9 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.X448.X86_64.Pow223
+import VerifiedGarbage.Proof.X448.X86_64.Pow223
 public import VerifiedGarbage.Proof.Ed448.Root
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.X448.X86_64.Inv
 
 /-!
 # Ed448 verification's equation on x86-64: the square root's power

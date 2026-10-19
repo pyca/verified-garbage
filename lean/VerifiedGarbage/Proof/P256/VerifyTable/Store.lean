@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.P256.VerifyTable
-public import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
+import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
 public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The stores of a co-Z table entry: the point `E` into entry `x19`, the powers
 of its `Z` into the entry's cache. -/

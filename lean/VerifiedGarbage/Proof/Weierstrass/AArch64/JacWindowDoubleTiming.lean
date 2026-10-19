@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! Relational timing of the five consecutive Jacobian doublings. -/
 

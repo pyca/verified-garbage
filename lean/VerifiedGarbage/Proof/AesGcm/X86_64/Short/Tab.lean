@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
-public import VerifiedGarbage.Spec.Gcm.Precomputed
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
 

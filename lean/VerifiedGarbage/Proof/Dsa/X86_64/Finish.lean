@@ -1,9 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
+import VerifiedGarbage.Proof.Dsa.X86_64.Store
 
 /-! # Returning an encoded DSA arithmetic result to the parent workspace -/
 

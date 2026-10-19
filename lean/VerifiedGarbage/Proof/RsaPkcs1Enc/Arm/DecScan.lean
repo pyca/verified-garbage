@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecAl
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecTaint
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the scan of `EM`

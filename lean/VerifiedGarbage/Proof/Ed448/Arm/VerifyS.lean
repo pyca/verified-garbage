@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
-import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.Ed448.Arm.ScalarNat
 import VerifiedGarbage.Proof.X448.Arm.Carry
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
-import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.Arm.Pass
 
 /-!
 # Ed448 verification's equation on ARMv7: limbs from bytes, and `S < L`

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyBits
+import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Scalar header operations for the binary RSA inverse -/
 

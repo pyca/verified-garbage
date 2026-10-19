@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The public q>1 decision and mask store at the end of initialization. -/
 @[expose] public section

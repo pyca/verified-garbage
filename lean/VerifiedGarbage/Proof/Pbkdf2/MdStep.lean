@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Spec.Pbkdf2
 import VerifiedGarbage.Proof.Hmac.Common
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2-HMAC over a Merkle–Damgård hash function: one step as two compressions

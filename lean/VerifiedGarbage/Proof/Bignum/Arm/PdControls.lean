@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdAccepted
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
+import VerifiedGarbage.Proof.Bignum.Arm.PdAccepted
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # Establish the complete exponentiation precondition from public RSA arguments -/
 

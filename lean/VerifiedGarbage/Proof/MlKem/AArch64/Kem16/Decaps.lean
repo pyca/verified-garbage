@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 
 /-! # The 16-bit decapsulation is correct
 

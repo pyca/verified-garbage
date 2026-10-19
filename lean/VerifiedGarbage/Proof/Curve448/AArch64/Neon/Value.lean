@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.NFinish
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Math
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.X448.Field
-public import VerifiedGarbage.Proof.X448.Limbs
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 
 /-!
 # The value and bounds of `mul2`'s results

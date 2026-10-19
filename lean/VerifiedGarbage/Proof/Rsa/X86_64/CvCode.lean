@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvMain
 import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_crt_values` on x86-64: correctness

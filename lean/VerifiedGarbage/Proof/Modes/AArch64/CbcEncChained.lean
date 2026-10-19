@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
+import VerifiedGarbage.Proof.Modes.AArch64.CbcEncLoop
 public import VerifiedGarbage.Proof.Modes.AArch64.Fb
-public import VerifiedGarbage.Proof.Modes.CbcNext
+import VerifiedGarbage.Proof.Modes.CbcNext
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
+public import VerifiedGarbage.Proof.Modes.CbcEnc
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CBC encryption on AArch64 that updates the chaining value, for any core

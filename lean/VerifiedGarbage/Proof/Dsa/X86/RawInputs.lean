@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Paired component loading without assuming a valid modulus -/
 

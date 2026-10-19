@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallSample
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-!
 # ML-DSA key generation and verification on AArch64: calls of the rounding primitives

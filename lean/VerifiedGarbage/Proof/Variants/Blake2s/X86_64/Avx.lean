@@ -4,6 +4,22 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Stream
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Compress
 public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # BLAKE2s on x86-64 with AVX: the variant's code and proofs

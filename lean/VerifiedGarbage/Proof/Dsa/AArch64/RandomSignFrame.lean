@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignABI
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEntry
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Allocate the wrapper frame and locate the incoming stack arguments. -/
 @[expose] public section

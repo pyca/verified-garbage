@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashStep
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # All p-candidate hash contributions, with bounded public sequencing -/

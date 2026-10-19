@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentByte
-public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.X86.ExponentByte
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The public-exponent scanner computes the exact low word and saturated high word -/
 

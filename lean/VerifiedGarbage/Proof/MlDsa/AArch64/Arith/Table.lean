@@ -1,8 +1,20 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-DSA on AArch64: tables of constants in the working space

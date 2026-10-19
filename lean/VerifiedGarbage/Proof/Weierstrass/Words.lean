@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.Words
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Short Weierstrass curves: numbers as words, bits and bytes

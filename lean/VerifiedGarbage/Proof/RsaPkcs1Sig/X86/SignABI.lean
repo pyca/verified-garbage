@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractGeometry
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignGeometry
 
 /-! # Resources provided by the shared private RSA contract on i686 -/
 

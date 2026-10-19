@@ -15,6 +15,9 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
 
 /-!
 # RSASSA-PSS on x86-64: the encoding

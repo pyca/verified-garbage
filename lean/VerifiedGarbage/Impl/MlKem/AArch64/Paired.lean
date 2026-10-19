@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Rej8
-public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
 

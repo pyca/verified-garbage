@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.CombFunction
 public import VerifiedGarbage.Spec.EcKey.P256
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFacts
 
 /-! # Shared public-key contract for the x86 fixed-base comb -/
 

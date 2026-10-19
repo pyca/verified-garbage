@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.CTCommon`. -/
 

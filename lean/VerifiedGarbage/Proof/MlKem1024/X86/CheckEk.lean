@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.Common
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_check_ek`

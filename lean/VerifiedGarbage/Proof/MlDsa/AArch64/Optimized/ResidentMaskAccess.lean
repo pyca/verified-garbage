@@ -5,10 +5,11 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParsePair
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
 import VerifiedGarbage.Proof.MlKem.Mem
-import VerifiedGarbage.Spec.MlDsa
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentMaskInit.lean` -/
 

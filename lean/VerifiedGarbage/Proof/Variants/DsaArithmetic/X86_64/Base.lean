@@ -1,16 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
-public import VerifiedGarbage.Proof.Dsa.X86_64.Calls
-public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenCalls
+import VerifiedGarbage.Proof.Dsa.X86_64.Calls
+import VerifiedGarbage.Proof.Dsa.X86_64.KeygenCalls
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
 
 /-!
 # Baseline x86-64 Montgomery arithmetic for DSA: the variant's code and proofs

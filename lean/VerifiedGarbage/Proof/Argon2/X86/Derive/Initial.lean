@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Initial
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.Finish
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86.Compress
 
 /-!
 # Argon2 on x86 (32-bit): H₀

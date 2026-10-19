@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
-public import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlKem.Mem16Bytes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-!
 # ML-KEM on AArch64: polynomials stored with 16-bit coefficients

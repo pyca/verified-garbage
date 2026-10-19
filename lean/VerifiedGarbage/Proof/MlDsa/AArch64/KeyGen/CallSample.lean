@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-!
 # ML-DSA key generation on AArch64: calls of `RejBoundedPoly`

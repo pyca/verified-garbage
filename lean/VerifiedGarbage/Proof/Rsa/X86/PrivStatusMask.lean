@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Accepted results are released only when public re-exponentiation matches -/
 

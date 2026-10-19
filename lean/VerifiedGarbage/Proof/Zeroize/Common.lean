@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Zeroize
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Zero prefixes, shared by the word and byte loops on every target. -/
 

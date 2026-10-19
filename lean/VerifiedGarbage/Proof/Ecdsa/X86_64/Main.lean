@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
 
 /-!
 # ECDSA on x86-64: the whole function

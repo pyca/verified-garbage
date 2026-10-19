@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # RSAES-OAEP on x86-64: the stack its pieces use

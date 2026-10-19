@@ -3,9 +3,47 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Sign
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.Setup
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.P256Red
+import VerifiedGarbage.Proof.Mont.X86.RedRow
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.SparseShift
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Weierstrass.InvToM
+import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
+import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
+import VerifiedGarbage.Proof.Weierstrass.X86.Rep
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-521

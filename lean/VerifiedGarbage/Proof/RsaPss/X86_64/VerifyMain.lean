@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.RsaPss.X86_64.Params
+import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 
 /-!
 # RSASSA-PSS verification on x86-64: after the checks

@@ -1,8 +1,11 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preserve the counter and offset while a native candidate is evaluated -/
 

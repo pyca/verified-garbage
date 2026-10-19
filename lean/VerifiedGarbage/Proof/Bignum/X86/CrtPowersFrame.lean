@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtBothPowers
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Both powers leave the imported components intact -/
 

@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowVerified
-public import VerifiedGarbage.Proof.Dsa.X86.PowCall
+import VerifiedGarbage.Proof.Dsa.X86.PowVerified
+import VerifiedGarbage.Proof.Dsa.X86.PowCall
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Impl.Dsa.X86.Core
+import VerifiedGarbage.Proof.Dsa.X86.PowABI
 
 /-! # DSA's exponentiations on baseline i686
 

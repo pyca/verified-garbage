@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCount
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Creating a linked arithmetic child from its public operand length -/
 

@@ -5,6 +5,12 @@ public import VerifiedGarbage.Proof.Weierstrass.WindowJA
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the table into affine coordinates

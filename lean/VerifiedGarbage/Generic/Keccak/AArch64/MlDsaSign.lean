@@ -6,6 +6,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 
 /-! # ML-DSA (FIPS 204) signing on AArch64 -/
 

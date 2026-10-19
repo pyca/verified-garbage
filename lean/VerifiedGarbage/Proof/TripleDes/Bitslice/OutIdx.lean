@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
 
 /-!
 # Which S-box output goes into which word, relative to the written half

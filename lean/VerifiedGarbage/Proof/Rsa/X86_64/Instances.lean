@@ -1,23 +1,180 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Proof.Bignum.Amm52
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCopy
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowS
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8RowSCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tile
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Word
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatch
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRawCrossCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Word
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
+import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp5
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPMq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCode
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.StepU
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyCT
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StraightY
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.CallPatch
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTCode
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CvFail
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyImplies
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT7
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT8
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpLt
+import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
+import VerifiedGarbage.Proof.Rsa.X86_64.RpOut
+import VerifiedGarbage.Proof.Rsa.X86_64.RpProd
+import VerifiedGarbage.Proof.Rsa.X86_64.RpSkip
+import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 
 /-!
 # RSA on x86-64: the proofs `Artifacts/Rsa/X86_64.lean` registers

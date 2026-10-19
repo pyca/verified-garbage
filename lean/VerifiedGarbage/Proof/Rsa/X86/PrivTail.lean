@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCompareArgs
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTail
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
+import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
 
 /-! # Compare the public re-exponentiation before releasing any private bytes -/
 

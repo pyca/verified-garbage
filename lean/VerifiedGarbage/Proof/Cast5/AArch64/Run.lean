@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # CAST5 on AArch64: running blocks

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.X2
-public import VerifiedGarbage.Spec.Sha3.X2
 public import VerifiedGarbage.TCB.AArch64.Target
 
 /-!

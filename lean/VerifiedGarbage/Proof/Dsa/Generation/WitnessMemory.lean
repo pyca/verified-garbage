@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The forced-witness transformation in byte-addressed memory -/
 

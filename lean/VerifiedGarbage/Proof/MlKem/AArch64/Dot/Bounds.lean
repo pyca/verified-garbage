@@ -1,6 +1,8 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Accumulate
 
 /-! Bounds for the unreduced accumulators. No arithmetic wraps for at most
 four canonical polynomial terms. -/

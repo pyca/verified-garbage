@@ -4,6 +4,96 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Spec.GcmSiv.Contract
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ctr
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Gh
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+meta import VerifiedGarbage.Proof.Cmac.Dbl32
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+meta import VerifiedGarbage.Proof.Ocb.Spec
+meta import VerifiedGarbage.Proof.Siv.Spec
+meta import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop is constant time

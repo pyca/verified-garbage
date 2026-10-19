@@ -2,12 +2,22 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_high_bits` and `vg_mldsa_low_bits`

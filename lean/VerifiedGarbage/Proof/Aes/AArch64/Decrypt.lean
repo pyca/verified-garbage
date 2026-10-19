@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
 public import VerifiedGarbage.Proof.Aes.InvBitsliced
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Decrypting four blocks, bitsliced, on AArch64

@@ -1,15 +1,14 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
-public import VerifiedGarbage.Proof.EcKey.X86.Secp256k1.Verified
+import VerifiedGarbage.Proof.EcKey.X86.Secp256k1.Verified
 public import VerifiedGarbage.Proof.EcKey.X86.Secp256k1.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
 
 /-!
 # secp256k1 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

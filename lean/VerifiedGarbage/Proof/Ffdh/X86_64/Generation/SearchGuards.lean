@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # Public native loop guards and normalized u32 candidate statuses -/
 

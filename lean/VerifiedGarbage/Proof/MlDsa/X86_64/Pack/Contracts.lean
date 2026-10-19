@@ -4,7 +4,6 @@ public import VerifiedGarbage.Spec.MlDsa.Poly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: the contracts of the encodings, for the proofs

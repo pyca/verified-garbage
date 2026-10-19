@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyPowers
+import VerifiedGarbage.Proof.Dsa.X86.VerifyPowers
+import VerifiedGarbage.Proof.Dsa.X86.VerifyScalars
 
 /-! # Complete arithmetic schedule of x86 DSA verification -/
 

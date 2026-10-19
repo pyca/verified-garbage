@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
-public import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.X86
-public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Idea
+import VerifiedGarbage.Proof.Idea.Arith
 
 /-!
 # IDEA on x86 (32-bit): ⊙ without branches

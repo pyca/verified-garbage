@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X448.X86.AddSub
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.X86.Columns
 
 /-!
 # X448 on x86 (32-bit): multiplication by a24

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.CT
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Calls
 
 /-!
 # Ed448 verification on x86-64: `Verified`

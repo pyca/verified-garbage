@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PdChecked
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdBody
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicWritten
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The packed-key result implies the shared, modulus-quantified RSA postcondition -/
 

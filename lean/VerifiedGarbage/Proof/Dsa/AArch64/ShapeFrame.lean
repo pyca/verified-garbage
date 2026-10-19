@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeMasks
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Dsa.Layout
 

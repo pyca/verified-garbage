@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignCtEnc
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignVerified
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignFail
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # RSASSA-PSS signing on x86-64: constant time, and `Verified`

@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Forward
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Forwarding changes memory reads to register reads with identical state results. -/
 

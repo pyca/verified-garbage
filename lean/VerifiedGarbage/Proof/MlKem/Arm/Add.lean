@@ -13,6 +13,14 @@ meta import VerifiedGarbage.Impl.MlKem.Arm.Poly
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_add` and `vg_mlkem_sub`

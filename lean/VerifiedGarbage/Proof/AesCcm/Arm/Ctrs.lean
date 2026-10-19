@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Compare
-import VerifiedGarbage.Proof.AesCcm.Arm.Words
+import VerifiedGarbage.Proof.AesCcm.Arm.Compare
 public import VerifiedGarbage.Impl.AesCcm.Arm
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-CCM on ARMv7: `Ctr₀` (`ctrs`)

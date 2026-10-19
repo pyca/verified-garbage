@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The operations on the arrays of the working space: low words and equality -/
 

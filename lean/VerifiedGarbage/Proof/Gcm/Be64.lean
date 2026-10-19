@@ -1,8 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Gcm.Bits
 
 /-!
 # GCM: the lengths block from byte-reversed words

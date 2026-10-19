@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS verification on x86-64: the call of `vg_rsa_public_checked`

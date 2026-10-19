@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 
 /-! # Checked i686 private RSA follows every private CRT implementation -/
 

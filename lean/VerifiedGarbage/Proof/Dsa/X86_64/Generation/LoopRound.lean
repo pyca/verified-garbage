@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopExhausted
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
 
 /-! # Continue or finish the primality loop after one complete draw -/
 

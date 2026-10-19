@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 
 /-!
 # ML-DSA signing on ARMv7: decoding leaks only the pointers

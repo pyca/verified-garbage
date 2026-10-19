@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSlots
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 
 /-! Set up the supplied-nonce signer's register and stack arguments. -/
 @[expose] public section

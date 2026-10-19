@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Replace
+import VerifiedGarbage.Proof.Rc4.Arm.Replace
 public import VerifiedGarbage.Proof.Rc4.Identity
 public import VerifiedGarbage.Proof.Rc4.Schedule
+public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
 import Mathlib.Tactic.SplitIfs
 
 /-! # RC4 on ARMv7: key scheduling -/

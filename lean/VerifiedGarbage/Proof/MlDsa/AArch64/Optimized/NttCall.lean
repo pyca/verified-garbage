@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
+public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 
 @[expose] public section
 

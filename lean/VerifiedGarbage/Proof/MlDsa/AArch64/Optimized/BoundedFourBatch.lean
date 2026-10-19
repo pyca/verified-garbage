@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchState
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParse
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `BoundedFourBatchStep.lean` -/
 

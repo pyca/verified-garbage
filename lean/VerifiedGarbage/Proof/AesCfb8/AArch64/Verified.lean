@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+public import VerifiedGarbage.Proof.AesCfb8.AArch64.Loop
+public import VerifiedGarbage.Spec.Cfb8.Contract
 
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
-public import VerifiedGarbage.Proof.AesCfb8.AArch64.CT
+import VerifiedGarbage.Proof.AesCfb8.AArch64.CT
+import VerifiedGarbage.Proof.AesCfb8.AArch64.Body
+import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 
 /-!
 # AES-CFB8 on AArch64: `Verified`

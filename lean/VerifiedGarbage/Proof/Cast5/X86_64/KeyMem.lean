@@ -1,6 +1,13 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Cast5.X86_64
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Sig
 
-public import VerifiedGarbage.Proof.Cast5.X86_64.KeyLine
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cast5.KeyMem
 
 /-!
 # CAST5 key expansion on x86-64: the working space and the subkeys

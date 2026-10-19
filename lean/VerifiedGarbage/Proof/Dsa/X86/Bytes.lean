@@ -1,11 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Bytes
-public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
-import VerifiedGarbage.Proof.AesOcb.X86.Dbl
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # DSA component decoding, encoding and failure-output masking -/
 

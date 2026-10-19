@@ -8,13 +8,41 @@ public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.X86_64.Copy
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.X86_64.Counter
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Spec.Camellia.Contract
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Copy
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Modes.Addr
+meta import VerifiedGarbage.Proof.Modes.X86_64.Counter
+meta import VerifiedGarbage.Proof.Modes.X86_64.Setup
+meta import VerifiedGarbage.Proof.Modes.X86_64.Steps
+meta import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia's batches under prepared subkeys on x86-64 meet their contract

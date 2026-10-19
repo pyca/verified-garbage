@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
-import VerifiedGarbage.Spec.Dsa
 
 /-! # Writing one entry of the joint exponentiation table -/
 

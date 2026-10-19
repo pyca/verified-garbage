@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SaveAcceptance
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Saving acceptance leaves the RSA workspace and saved base unchanged -/
 

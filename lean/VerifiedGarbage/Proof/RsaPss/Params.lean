@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss
-import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # RSASSA-PSS: the encoding's parameters from the modulus' first octet

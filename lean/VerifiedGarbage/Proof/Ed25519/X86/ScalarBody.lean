@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
+public import VerifiedGarbage.Proof.X25519.X86.Column
 
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Scalar
 

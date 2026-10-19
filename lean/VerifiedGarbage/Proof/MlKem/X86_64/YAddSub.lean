@@ -1,9 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
 /-!
 # ML-KEM on x86-64: addition and subtraction with AVX2, which the K-PKE functions inline

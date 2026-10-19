@@ -1,8 +1,68 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Generation.Layout
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaOaep.Scan
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Bignum.Layout
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.RsaOaep.Scan
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-! # Phase gates branch only on the public generation status -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Run
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Dword
 
 /-! # RC4 on ARMv7: the table lookup, a word at a time -/
 

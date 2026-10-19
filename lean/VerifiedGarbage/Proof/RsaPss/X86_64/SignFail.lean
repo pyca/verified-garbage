@@ -1,8 +1,13 @@
 module
+public import Mathlib.Data.Int.GCD
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignPro
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 /-!
 # RSASSA-PSS signing on x86-64: refusing

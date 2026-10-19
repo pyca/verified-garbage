@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorEvaluateCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorDecisionCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorDecisionCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStatus
 
 /-! # Timing of a complete generator attempt, including both retry decisions -/
 

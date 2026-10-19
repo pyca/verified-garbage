@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
-public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
-public import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 
 /-! # Instruction safety of the x86-64 FFDH private-key validator -/
 

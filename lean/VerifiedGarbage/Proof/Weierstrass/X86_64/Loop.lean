@@ -1,9 +1,11 @@
 module
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Short Weierstrass curves on x86-64: loops counted down in `rbx`

@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillSteps
-public import VerifiedGarbage.Proof.Argon2.FillStep
-import VerifiedGarbage.Proof.Argon2.FillPositions
 public import VerifiedGarbage.Proof.Argon2.Arm.Words
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+public import VerifiedGarbage.Proof.Argon2.Matrix
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 
 /-!
 # Argon2 on ARMv7: the state of the filling loops

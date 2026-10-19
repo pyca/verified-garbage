@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Byte-subtraction lemma used by the scalar range check. -/
 @[expose] public section

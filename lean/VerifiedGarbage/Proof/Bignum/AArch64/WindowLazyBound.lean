@@ -1,8 +1,12 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyFinish
-public import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowLazy

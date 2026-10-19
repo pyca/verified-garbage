@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Round
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: the 24 rounds

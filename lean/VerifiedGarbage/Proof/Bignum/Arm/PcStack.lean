@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Public precomputation arguments saved in the outer frame -/
 

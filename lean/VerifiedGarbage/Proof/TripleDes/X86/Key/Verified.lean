@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.X86.Key.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.TripleDes.Scratch
+public import Batteries.Logic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.X86.ConstantTime
+public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 
 @[expose] public section
 

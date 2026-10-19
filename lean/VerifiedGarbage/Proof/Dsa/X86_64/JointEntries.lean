@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointStore
+import VerifiedGarbage.Proof.Dsa.X86_64.JointStore
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointAdvance
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Spec.Dsa
 
 /-! # Construction of all sixteen joint exponentiation table entries -/
 

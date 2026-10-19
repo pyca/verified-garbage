@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: one HMAC

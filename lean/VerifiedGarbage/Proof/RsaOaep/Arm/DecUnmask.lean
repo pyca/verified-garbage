@@ -1,9 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
 public import VerifiedGarbage.Proof.RsaOaep.Arm.MgfSlots
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
+public import VerifiedGarbage.Proof.RsaOaep.Mask
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.RsaOaep.Arm.Label
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaOaep.Decode
+import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
 
 /-!
 # RSAES-OAEP decryption on ARMv7: `EM` unmasked

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyFinish
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheckStep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySampled
+import VerifiedGarbage.Proof.Dsa.Derive
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's body: entry, the domain check, generation, the finish -/
 

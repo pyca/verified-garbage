@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusArgs
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtPadModulus
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ExportPadded
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact full-width modulus padding for CRT validation -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Rc2
 
-public import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # CBC over lists of blocks: concatenation, and decryption block by block -/
 

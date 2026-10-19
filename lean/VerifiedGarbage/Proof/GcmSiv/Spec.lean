@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Spec.GcmSiv
-import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.Proof.GcmSiv.MulX
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-GCM-SIV: lemmas on the specification

@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.BoundaryCommon
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

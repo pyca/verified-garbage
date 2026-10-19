@@ -1,6 +1,7 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezePiece
 
 /-! # Output pointers and permissions survive fixed word copies -/
 @[expose] public section

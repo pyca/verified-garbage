@@ -1,15 +1,18 @@
 module
+public import VerifiedGarbage.Impl.P256.EcdhJac
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
 
-import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.P256.EcdhJac.Select
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.P256.EcdhJac.Select
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## `Entry` -/
 

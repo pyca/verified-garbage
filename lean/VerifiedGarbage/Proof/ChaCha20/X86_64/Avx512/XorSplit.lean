@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.SymSel
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.FinishSel
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the loop

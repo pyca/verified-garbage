@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # Streaming SHA-256 on AArch64: the digest, sixteen bytes at a time
 

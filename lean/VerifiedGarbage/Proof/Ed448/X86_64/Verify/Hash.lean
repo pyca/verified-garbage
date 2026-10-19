@@ -6,6 +6,10 @@ import VerifiedGarbage.Proof.X25519.Bytes
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 verification on x86-64: the hash

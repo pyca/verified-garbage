@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.TCB.Artifact
 
 /-! # The OR of a plane accumulator's words -/
 

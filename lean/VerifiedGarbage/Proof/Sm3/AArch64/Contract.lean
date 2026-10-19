@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Sm3
-public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # SM3: the AArch64 contracts

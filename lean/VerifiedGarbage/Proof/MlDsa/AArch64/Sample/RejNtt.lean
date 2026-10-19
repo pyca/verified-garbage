@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_rej_ntt_poly`

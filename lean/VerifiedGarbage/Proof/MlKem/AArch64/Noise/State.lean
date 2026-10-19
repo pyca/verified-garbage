@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Seed
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.Arith
 
 /-! # The concrete words of a padded 33-byte noise seed -/

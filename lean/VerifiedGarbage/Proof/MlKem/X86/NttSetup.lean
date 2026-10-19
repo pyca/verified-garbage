@@ -2,16 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlKem.X86.Compress
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
+import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
 
 /-!
 # ML-KEM on x86 (32-bit): the start of `vg_mlkem_ntt` and `vg_mlkem_inv_ntt`

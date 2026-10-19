@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 @[expose] public section
 

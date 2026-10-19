@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullStart
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullInit
 
 /-! # Reject the first three paired SHAKE128 blocks -/
 

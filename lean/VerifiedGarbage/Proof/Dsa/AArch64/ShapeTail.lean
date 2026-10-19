@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.OddCheck
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFinish
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.Masks
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Composition of domain masks, parity, and digest-prefix selection -/
 

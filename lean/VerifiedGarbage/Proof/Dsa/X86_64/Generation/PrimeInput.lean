@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeSetup
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetup
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetup
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 
 /-! # Preserved arguments around modulus preparation -/
 

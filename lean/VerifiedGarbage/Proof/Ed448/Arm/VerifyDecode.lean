@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed448.Arm.VerifyChecks
+public import VerifiedGarbage.Proof.X448.Radix16Bytes
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
+import VerifiedGarbage.Proof.Ed448.Arm.VerifySign
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyRoot
 import VerifiedGarbage.Proof.Ed448.Recover
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyDecodeY
+import VerifiedGarbage.Proof.Ed448.Scalar
 
 /-!
 # Ed448 verification's equation on ARMv7: decoding a point

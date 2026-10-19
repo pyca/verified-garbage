@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.Entry
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # The complete callable Montgomery function is constant time -/
 

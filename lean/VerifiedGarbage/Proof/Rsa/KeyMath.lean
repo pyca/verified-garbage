@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Math
 public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
 
 /-!
 # RSA keys: the mathematics of the constant-time algorithms

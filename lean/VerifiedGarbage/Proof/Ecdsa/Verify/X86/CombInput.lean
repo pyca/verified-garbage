@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.PublicValues
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
+import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 
 @[expose] public section
 

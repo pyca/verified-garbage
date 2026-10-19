@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Arm.Call
-import VerifiedGarbage.Proof.AesCcm.Arm.Callee
-import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.Siv.Spec
 public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+public import VerifiedGarbage.Spec.Siv
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on ARMv7: where everything is

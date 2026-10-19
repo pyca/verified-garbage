@@ -1,12 +1,16 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-public import VerifiedGarbage.Impl.RsaOaep.AArch64
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
 import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 /-! Precise byte and memory framing for the shared native output-clearing loop. -/
 @[expose] public section

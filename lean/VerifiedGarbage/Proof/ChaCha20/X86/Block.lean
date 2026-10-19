@@ -1,7 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.X86.Exec
-meta import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.ChaCha20.Spec
@@ -16,12 +14,18 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

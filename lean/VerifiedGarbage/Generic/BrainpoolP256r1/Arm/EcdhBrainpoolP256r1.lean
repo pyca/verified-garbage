@@ -3,9 +3,15 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.Arm
-public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
 
 /-!
 # ECDH over brainpoolP256r1 (SP 800-64A) on 32-bit ARM

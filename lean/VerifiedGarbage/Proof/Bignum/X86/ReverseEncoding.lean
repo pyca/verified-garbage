@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
-public import VerifiedGarbage.Proof.Bignum.ReverseEncoding
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.ReverseEncoding
 
 /-! # Byte reversal implements RSA's OS2IP -/
 

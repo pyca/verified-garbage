@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.AesTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 
 /-! # Cached-key GCM groups with distinct input and output buffers -/
 

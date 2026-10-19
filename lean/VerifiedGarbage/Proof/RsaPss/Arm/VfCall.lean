@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.VfChk
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the call

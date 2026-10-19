@@ -1,7 +1,12 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.AesCcm.X86
+public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Crypt
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesCcm.X86.Env
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on x86: the entry and the exit

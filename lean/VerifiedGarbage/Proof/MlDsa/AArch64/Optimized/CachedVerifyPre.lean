@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 
 @[expose] public section
 

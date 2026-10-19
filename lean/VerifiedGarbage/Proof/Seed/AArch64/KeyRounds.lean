@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
 public import VerifiedGarbage.Proof.Seed.KeySchedule
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.Round
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The sixteen rounds of the key schedule on AArch64

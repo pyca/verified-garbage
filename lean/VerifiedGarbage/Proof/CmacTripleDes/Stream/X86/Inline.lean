@@ -1,17 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.X86.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Cmac.TripleDesContract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Streaming TDEA-CMAC on x86: the code of `init`, `update` and `finalize`, inline

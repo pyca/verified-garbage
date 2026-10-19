@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # The callees of encryption and decryption

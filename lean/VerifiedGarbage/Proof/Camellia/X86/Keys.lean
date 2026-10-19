@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Camellia.X86.Core
 
-public import VerifiedGarbage.Proof.Camellia.X86.Prologue
+import VerifiedGarbage.Proof.Camellia.X86.Prologue
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.X86.Copy
+import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced subkeys on x86 (32-bit)

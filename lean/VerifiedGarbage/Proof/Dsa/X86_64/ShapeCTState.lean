@@ -1,13 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.ScanFieldCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
 
 /-! # Public state carried through DSA domain-shape validation -/
 

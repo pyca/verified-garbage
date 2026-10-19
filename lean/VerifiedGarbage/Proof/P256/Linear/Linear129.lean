@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.P256.Linear.Form
 public import VerifiedGarbage.Proof.P256.Linear.Correction
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

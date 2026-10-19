@@ -6,13 +6,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
-meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
-import VerifiedGarbage.Proof.Rc2.Scratch
-meta import VerifiedGarbage.Proof.Rc2.Scratch
 public import VerifiedGarbage.Proof.Rc2.X86_64.Key
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Key
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -20,6 +17,31 @@ import VerifiedGarbage.Proof.Rc2.CbcMemory
 import VerifiedGarbage.Proof.Rc2.Stream
 meta import VerifiedGarbage.Proof.Rc2.CbcMemory
 meta import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.Rc2.Word
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Finish
 
 @[expose] public section
 

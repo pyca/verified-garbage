@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyChildPointer
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyHeaderPointer
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductCount
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyChildPointer
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyHeaderPointer
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductCount
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductMemory
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Prepare the verified full-width factor multiplication -/
 

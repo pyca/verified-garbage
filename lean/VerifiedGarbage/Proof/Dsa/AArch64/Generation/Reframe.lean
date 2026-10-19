@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! # Reuse the fixed generation layout at the next offset and witness cursor -/
 

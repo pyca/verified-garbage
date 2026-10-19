@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcStart
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
+public import VerifiedGarbage.Proof.Rsa.X86.MulMod
+import VerifiedGarbage.Proof.Rsa.X86.KcOps
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # The checks of an RSA key on i686: the checks after the division of `n` by `p`
 

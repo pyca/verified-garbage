@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublish
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Published consumption, preserved signature bytes, and erased nonce bytes. -/

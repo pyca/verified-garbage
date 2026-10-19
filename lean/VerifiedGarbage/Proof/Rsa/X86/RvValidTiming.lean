@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+public import VerifiedGarbage.Proof.Rsa.X86.RvSizedTiming
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvValid
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Recovery limb-width selection depends only on the public modulus length -/
 

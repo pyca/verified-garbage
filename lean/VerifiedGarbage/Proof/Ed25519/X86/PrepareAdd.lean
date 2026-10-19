@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
-public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
+import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 

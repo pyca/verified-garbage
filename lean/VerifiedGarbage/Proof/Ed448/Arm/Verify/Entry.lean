@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Body
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
 
 /-!
 # Ed448 verification on ARMv7: the contract, and the frame

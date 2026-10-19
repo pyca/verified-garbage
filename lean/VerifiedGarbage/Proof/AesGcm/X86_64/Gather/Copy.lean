@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: copying a slice

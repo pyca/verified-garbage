@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Setup
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: saving registers, the accumulator, the constants

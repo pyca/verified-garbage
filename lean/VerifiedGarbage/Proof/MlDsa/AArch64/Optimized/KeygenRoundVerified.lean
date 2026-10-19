@@ -10,6 +10,46 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundSemantic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+meta import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-! ## From `KeygenRoundLoop.lean` -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 
 /-!

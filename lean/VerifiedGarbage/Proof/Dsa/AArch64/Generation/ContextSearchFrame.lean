@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSearch
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Lift the bounded prime search back to the persistent generation state -/

@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
-public import VerifiedGarbage.Proof.Framework.X86_64.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Sbox
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 
 /-!
 # The machine state of the bitsliced ECB code

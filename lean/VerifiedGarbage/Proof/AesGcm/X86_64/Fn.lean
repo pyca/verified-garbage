@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
-import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: what every function does

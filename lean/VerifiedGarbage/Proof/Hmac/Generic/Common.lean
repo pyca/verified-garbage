@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Spec.Pbkdf2
-import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.Spec.Md5
-import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.Proof.Framework.OmegaLit
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # HMAC over any streaming hash function: lemmas shared by every target
@@ -14,6 +16,9 @@ Addresses and regions, the bytes `init`'s loops write, and the streaming
 states of SHA-256, SHA-1, MD5 and the SHA-512 family moved between
 addresses, about memory alone: every target's proof uses them, so they
 import no target's ISA or proofs.
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.Stream
 -/
 
 @[expose] public section

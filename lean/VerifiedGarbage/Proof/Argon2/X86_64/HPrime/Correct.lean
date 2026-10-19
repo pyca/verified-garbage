@@ -1,16 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Input
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Setup
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Restore`. -/
 

@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.TCB.X86_64.Isa
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Cmac
 
-import VerifiedGarbage.Proof.AesSiv.X86_64.Call
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Cmac.Block
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-SIV on x86-64: common lemmas

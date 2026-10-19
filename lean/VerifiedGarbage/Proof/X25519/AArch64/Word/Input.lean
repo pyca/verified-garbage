@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
+public import VerifiedGarbage.Proof.X25519.AArch64.Setup
+public import VerifiedGarbage.Spec.X25519.Contract
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
-public import VerifiedGarbage.Proof.X25519.AArch64.Top
-public import VerifiedGarbage.Proof.Ed25519.AArch64.FieldBound
+import VerifiedGarbage.Proof.X25519.AArch64.Top
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Decode RFC 7748 inputs into four-word fields. -/
 

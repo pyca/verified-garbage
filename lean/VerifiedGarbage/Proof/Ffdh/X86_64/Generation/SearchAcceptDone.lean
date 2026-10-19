@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAccept
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDoneUpdate
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAccept
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDoneUpdate
 
 /-! # Successful candidates finish the complete native parameter search -/
 

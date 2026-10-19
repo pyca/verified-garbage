@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Sha256
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.X86_64.Gpr
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import Mathlib.Tactic.Tauto
+import Mathlib.Util.CompileInductive
 
 /-!
 # Deterministic ECDSA on x86-64: big-endian numbers

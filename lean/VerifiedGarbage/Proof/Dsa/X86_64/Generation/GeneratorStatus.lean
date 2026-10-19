@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # Generator decision flags and persistent success/retry status -/
 

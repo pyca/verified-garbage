@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Bignum.CrtExp
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
 
 /-! # Bounds of the DSA scratch layout -/
 

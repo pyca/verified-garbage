@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
 
 @[expose] public section
 

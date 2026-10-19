@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
-public import VerifiedGarbage.Proof.Ed448.Facts
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Verified
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ed448.X86_64.Verify
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # Ed448 verification on x86-64

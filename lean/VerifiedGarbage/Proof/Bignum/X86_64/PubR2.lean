@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # `vg_rsa_public` on x86-64: `R² mod m`

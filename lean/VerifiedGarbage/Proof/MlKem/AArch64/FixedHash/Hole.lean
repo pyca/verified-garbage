@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashCallers
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
-public import VerifiedGarbage.Proof.Framework.CallFill
+import VerifiedGarbage.Proof.Framework.CallFill
 
 /-!
 # The fixed hash over any single-state permutation, and over a hole

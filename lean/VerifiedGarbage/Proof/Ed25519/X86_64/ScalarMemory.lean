@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarWord
 public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarLoop`. -/
 

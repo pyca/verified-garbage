@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: clearing words

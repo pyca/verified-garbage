@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Step
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.TripleDes.BitsliceCircuit
 
 /-!
 # An AdvSIMD round on the machine

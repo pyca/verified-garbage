@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.Spec
 public import VerifiedGarbage.Proof.Cmac.Block32
+public import VerifiedGarbage.Spec.Cbc
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # CBC: blocks moved as 32-bit words

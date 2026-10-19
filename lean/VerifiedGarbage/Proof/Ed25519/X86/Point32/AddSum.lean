@@ -8,6 +8,14 @@ public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! The summaries of `vg_ed25519_r32_point_add` and `_add_affine` (see
 `X25519/X86/Field32/CallTaint`), which keep `esi`, the callers' loop counter. The comb calls

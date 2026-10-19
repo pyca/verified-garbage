@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 
 /-! # Loading and validating the public modulus preserves all call inputs -/
 

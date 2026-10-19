@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The function

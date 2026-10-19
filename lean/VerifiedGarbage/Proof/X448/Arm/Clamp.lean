@@ -1,8 +1,14 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.Arm.Mem
 
-public import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.Field
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.Ladder
 
 /-!
 # X448 on ARMv7: clamping the scalar bits

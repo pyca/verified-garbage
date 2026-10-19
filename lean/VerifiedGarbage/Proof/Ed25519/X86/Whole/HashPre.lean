@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Spatial preconditions for calls of the x86 streaming SHA-512 functions. -/
 

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the loads and the check of `p q = n`

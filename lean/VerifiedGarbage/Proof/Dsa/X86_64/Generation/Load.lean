@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Load
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Bignum.CrtRedc

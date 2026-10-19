@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Saved registers and return address survive the public RSA body -/
 

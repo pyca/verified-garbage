@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.Zero
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Zero
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! The right-to-left byte borrow used by scalar rejection sampling. -/
 @[expose] public section

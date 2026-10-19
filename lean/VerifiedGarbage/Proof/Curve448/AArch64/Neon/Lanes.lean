@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-!
 # Lanes of the AdvSIMD operations of `Neon.mul2`

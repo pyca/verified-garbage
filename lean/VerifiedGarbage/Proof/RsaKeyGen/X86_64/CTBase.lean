@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A candidate on x86-64: constant time, the taint of a piece

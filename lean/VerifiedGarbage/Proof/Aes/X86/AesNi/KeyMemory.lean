@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
 import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Gcm.Spec
 
 @[expose] public section
 

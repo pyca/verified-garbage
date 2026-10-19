@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Signing matrix expansion: four seeds, with the earlier matrix and caller state preserved. -/
 

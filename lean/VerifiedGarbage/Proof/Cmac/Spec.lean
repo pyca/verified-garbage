@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac
-public import VerifiedGarbage.Proof.Aes.Blocks
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Aes.Blocks
 
 /-!
 # CMAC: lemmas about the specification

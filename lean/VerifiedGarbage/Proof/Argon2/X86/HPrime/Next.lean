@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Calls
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Spec.Pbkdf2
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import Mathlib.Tactic.Conv
 
 /-!
 # PBKDF2 on the 32-bit targets, the whole derivation: what does not depend on the target

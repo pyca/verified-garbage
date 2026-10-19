@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPhase
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqAdvance
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqAdvance
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPair
 
 @[expose] public section
 

@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.SetupP
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 /-! # Preparing the AVX-512 loop state by loading encoded powers -/
 

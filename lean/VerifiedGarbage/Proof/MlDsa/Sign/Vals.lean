@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA: signing's values, from its inputs

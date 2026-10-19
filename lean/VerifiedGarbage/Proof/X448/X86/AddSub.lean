@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.FnCtx
+public import VerifiedGarbage.Proof.X448.X86.Normalize
 
-public import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Columns
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 

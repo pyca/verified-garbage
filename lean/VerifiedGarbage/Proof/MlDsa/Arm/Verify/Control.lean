@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inv
-import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

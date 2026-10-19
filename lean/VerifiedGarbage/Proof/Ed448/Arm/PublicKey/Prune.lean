@@ -1,10 +1,18 @@
 module
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
-import VerifiedGarbage.Proof.Ed448.PruneBytes
 import VerifiedGarbage.Proof.Ed448.Scalar
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
 import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
+import VerifiedGarbage.Proof.Ed448.PruneBytes
 
 /-!
 # Ed448 public-key derivation on ARMv7: pruning the hash in place

@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Copy
+public import VerifiedGarbage.Proof.Seed.AArch64.Rounds
 import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A batch on AArch64

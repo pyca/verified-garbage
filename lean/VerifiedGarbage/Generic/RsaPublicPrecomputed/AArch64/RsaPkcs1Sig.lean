@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
 /-! # PKCS #1 v1.5 verification and recovery over precomputed RSA public variants on AArch64 -/
 

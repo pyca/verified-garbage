@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.DefEqTransformations
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedLoop
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

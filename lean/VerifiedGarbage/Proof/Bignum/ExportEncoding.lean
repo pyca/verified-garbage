@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Octets
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Packed byte exports have the shared RSA precomputation word format -/
 

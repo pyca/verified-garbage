@@ -1,11 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.X448.Arm.Save
 public import VerifiedGarbage.Proof.X448.Arm.Env
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Save
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the entry

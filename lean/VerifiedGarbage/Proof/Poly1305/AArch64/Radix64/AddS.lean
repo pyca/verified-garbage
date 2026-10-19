@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
 
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

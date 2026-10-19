@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSized
-public import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Rsa.RecoverTries
 
 /-! # The refusal branch is determined by the declared recovery attempt count -/
 

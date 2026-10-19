@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLeavePrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLeavePrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # Complete CRT workspace initialization preserves all three layouts -/
 

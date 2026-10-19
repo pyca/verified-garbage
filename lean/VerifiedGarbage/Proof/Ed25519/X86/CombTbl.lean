@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed25519's base-point multiplication on x86: the comb's tables in a static

@@ -4,12 +4,11 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ed25519.Word64
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Ed25519.Word64
 
 /-!
 # Montgomery arithmetic on AArch64: rows of products

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
 public import VerifiedGarbage.Proof.AesCbc.Mem
 public import VerifiedGarbage.Impl.AesCbc.X86_64
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-CBC on x86-64: the code between the calls

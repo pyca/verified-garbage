@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
 
-public import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.X448.X86_64.Chain
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X448 on x86-64: products by columns

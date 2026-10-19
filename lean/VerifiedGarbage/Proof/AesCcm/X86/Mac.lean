@@ -1,9 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Aad
-import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesCcm.X86.Aad
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+public import VerifiedGarbage.Proof.AesCcm.X86.Callee
 import VerifiedGarbage.Proof.AesCcm.Words32
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-CCM on x86: `B₀`, the CBC-MAC and the tag (`b0 y`, `mac y`, `tag y`)

@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Mask
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # FFDH on x86-64: recover the scalar output's full-width pointer -/
 

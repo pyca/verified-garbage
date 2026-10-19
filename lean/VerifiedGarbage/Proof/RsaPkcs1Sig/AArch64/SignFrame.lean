@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
+public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyFrame
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
 

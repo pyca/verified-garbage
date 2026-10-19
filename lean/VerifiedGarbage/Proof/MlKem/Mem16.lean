@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Kpke16
-public import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM: polynomials stored with `w`-bit coefficients

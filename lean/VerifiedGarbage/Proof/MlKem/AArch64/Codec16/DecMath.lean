@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecSpec
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 
 /-! # SIMD decoder arithmetic -/
 

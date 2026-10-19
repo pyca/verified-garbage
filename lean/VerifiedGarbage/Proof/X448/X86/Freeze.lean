@@ -1,12 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.X448.X86.FreezePrep
-public import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Select
 public import VerifiedGarbage.Proof.X448.X86.Env
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.X448.X86.Carry
 
 /-!

@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCopyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCopyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashStep
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 

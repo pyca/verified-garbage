@@ -2,8 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Pow
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
-public import VerifiedGarbage.Proof.Mont.X86.Exponentiate
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+import VerifiedGarbage.Proof.Mont.X86.Exponentiate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Shared IA-32 DSA exponentiation: arithmetic and memory effects -/

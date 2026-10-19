@@ -1,14 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.Arm.Save
+public import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rc2.Arm.KeyLoop
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Rc2.Expansion
+public import VerifiedGarbage.TCB.Arm.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

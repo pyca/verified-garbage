@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
 
 /-!

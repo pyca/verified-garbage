@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86.Common
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 
 /-!
 # ML-DSA on x86 (32-bit): running blocks symbolically

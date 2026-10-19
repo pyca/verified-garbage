@@ -1,8 +1,20 @@
 module
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Loop
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
 
 /-!
 # The `zmm` comb: the rows of the `zmm` code

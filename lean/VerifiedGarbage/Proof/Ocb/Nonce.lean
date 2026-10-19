@@ -1,6 +1,10 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # OCB: the block `Nonce`

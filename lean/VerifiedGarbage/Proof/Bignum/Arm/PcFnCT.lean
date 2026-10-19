@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PcBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The callable RSA precomputation leaks only its public arguments and modulus -/
 

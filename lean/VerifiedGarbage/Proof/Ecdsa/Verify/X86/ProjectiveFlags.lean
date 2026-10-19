@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
 import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdh.X86.Peer
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Masks for the inversion-free x86 ECDSA comparison -/
 

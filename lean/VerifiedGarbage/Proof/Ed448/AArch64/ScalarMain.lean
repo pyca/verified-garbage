@@ -1,10 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarOperands
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarIO
 import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 scalar reduction on AArch64: the whole function

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # x86-64: `VEX.128` blocks keep cleared upper lanes cleared

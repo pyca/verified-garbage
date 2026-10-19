@@ -5,30 +5,92 @@ public import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.FbScratch
 public import VerifiedGarbage.Proof.Idea.X86.ModeCore
 meta import VerifiedGarbage.Proof.Idea.X86.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
 public import VerifiedGarbage.Proof.Idea.X86.ModesLit
 meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Idea.KeyBits32
 public import VerifiedGarbage.Proof.Idea.KeyLit32
-public import VerifiedGarbage.Proof.Idea.Memory32
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.Words
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits32
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.Memory32
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Ecb
+import VerifiedGarbage.Proof.Idea.X86.Invert
+import VerifiedGarbage.Proof.Idea.X86.Key
+import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.X86.Counter
+import VerifiedGarbage.Proof.Modes.X86.Ops
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.AesCcm.Mac
+meta import VerifiedGarbage.Proof.AesCtr.Ctr32
+meta import VerifiedGarbage.Proof.AesCtr.Spec
 meta import VerifiedGarbage.Proof.AesSiv.Ctr32
 meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Dbl32
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
 meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Idea.Arith32
+meta import VerifiedGarbage.Proof.Idea.KeyBits
 meta import VerifiedGarbage.Proof.Idea.KeyBits32
-meta import VerifiedGarbage.Proof.Idea.KeyLit32
+meta import VerifiedGarbage.Proof.Idea.Memory
 meta import VerifiedGarbage.Proof.Idea.Memory32
+meta import VerifiedGarbage.Proof.Idea.X86.Block
+meta import VerifiedGarbage.Proof.Idea.X86.Ecb
+meta import VerifiedGarbage.Proof.Idea.X86.Invert
+meta import VerifiedGarbage.Proof.Idea.X86.Key
+meta import VerifiedGarbage.Proof.Modes.Steps
+meta import VerifiedGarbage.Proof.Modes.X86.Counter
+meta import VerifiedGarbage.Proof.Modes.X86.Ops
+meta import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Spec.Idea.Cfb
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on x86 (32-bit) meet their contracts

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
 public import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # AES rounds using the cached high-register keys -/
 

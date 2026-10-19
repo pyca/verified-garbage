@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainMath
 public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Execute the single addition carry chain without dropping the shift bit. -/
 

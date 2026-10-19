@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FinalCall
 public import VerifiedGarbage.Impl.Argon2.AArch64.FinalOutput
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Argon2.AArch64.FinalOutputArgs`. -/
 

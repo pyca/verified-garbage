@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
+public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Argon2
 
 /-! # H′: selecting the first digest length -/
 

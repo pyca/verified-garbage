@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputePair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDataTiming
-public import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDataTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Valid moduli select a constant-time precomputation kernel -/
 

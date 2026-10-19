@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 public import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X25519 on x86-64: the working space as slots

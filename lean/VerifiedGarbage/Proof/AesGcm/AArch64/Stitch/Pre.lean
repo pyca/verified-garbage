@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Final
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
-import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on AArch64, interleaved: the first bytes

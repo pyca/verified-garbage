@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedTable
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Bfly
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

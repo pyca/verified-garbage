@@ -1,6 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
+public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.MlKem.Bits
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem16_sample_ntt`, verified

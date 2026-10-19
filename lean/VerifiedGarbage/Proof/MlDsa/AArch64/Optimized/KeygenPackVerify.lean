@@ -1,15 +1,65 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWritten
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-! ## From `KeygenPackTiming.lean` -/
 

@@ -2,20 +2,52 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: SHAKE256 leaks only the layout

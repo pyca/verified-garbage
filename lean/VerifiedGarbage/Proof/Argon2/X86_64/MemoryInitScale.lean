@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Fixed public scaling by powers of two using baseline additions -/
 

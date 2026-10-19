@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 
 /-!
 # ML-DSA verification on 32-bit ARM: its parameters, precondition and buffers

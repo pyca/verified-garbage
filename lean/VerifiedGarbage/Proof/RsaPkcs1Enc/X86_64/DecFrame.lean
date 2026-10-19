@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the frame

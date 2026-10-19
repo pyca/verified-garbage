@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Clearing a failed search preserves the native controller -/
 

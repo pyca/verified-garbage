@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Step
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: entry and exit

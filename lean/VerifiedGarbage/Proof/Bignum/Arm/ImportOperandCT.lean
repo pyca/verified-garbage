@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # Fixed-array operand imports do not expose operand bytes -/
 

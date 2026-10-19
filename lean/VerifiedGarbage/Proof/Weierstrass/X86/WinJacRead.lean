@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.Window5
 
 /-! Read a signed-window magnitude and scan both packed tables. -/
 

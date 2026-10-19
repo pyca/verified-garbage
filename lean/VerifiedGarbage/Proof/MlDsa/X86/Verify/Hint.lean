@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ML-DSA verification on x86 (32-bit): the hint and `z`

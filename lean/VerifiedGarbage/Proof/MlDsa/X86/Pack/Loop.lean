@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86 (32-bit): the loops over the groups, as pieces

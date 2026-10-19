@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Cached
-import VerifiedGarbage.Proof.X448.Wide.Term
 import Mathlib.Tactic.SplitIfs
+import Batteries.Logic
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.X448.AArch64.Mem
 
 /-! Untrusted: register allocation for cached wide X448 operands. -/
 

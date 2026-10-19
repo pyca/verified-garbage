@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Round
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 on ARMv7: the block function

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntryLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoadTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

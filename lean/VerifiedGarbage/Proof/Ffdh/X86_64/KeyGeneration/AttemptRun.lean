@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallPre
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Layout
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallEntry
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
 
 /-! # One attempt of the key-generation controller
 

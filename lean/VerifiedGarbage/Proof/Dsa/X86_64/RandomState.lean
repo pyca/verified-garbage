@@ -1,6 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDraw
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The sampler state retained across rejected draws. -/

@@ -1,8 +1,15 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Implies
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 
 /-!
 # Streaming TDEA-CMAC on ARMv7, with its working space on the stack

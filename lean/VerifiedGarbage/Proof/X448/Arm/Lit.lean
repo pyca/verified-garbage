@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.X448.Arm.FnLit
 meta import VerifiedGarbage.Proof.X448.Arm.FnLit
-public import VerifiedGarbage.Impl.X448.Arm
-meta import VerifiedGarbage.Impl.X448.Arm
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # X448 on ARMv7: the code as a literal

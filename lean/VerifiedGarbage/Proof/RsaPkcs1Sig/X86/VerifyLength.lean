@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifySpec
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Reject signatures whose public byte count differs from the modulus width -/
 

@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.PdExp
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.EvenLast
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
 
 @[expose] public section
 

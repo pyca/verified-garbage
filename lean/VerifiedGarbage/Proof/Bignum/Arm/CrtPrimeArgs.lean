@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Read a factor workspace pointer and its public arithmetic width -/
 

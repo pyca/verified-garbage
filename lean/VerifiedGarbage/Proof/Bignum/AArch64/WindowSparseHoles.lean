@@ -1,7 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.Bignum.AArch64
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightBound
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

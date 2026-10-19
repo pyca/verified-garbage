@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 
 /-! # Install caller resources for checked public RSA with a packed key -/
 

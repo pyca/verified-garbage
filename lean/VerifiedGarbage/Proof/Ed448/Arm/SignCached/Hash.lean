@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
+public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the hashes

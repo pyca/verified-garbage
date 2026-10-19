@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
-public import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Mont.X86.Ops
 
 /-! # Bounds and separation for the compact public RSA workspace -/
 

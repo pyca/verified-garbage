@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCallsCT
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCallsCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
+import VerifiedGarbage.Proof.Rsa.Arm.PrivTailCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
 /-! # The full private body has the same trace for independent secret inputs -/
 

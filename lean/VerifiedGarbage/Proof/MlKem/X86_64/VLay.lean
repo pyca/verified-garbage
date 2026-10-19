@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8`

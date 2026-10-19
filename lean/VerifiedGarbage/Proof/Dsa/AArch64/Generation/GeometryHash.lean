@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BufferSeparate
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.BufferSeparate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! # Concrete hash-contribution buffers for each supported parameter size -/
 

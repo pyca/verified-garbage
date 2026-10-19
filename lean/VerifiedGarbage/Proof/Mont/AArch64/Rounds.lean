@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Round
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Montgomery arithmetic on AArch64: the rounds of the multiplication

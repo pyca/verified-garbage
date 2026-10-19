@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86.Ecb
+import VerifiedGarbage.Proof.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.ModeCipher
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Seed.X86.Modes
-import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.X86.Prologue
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SEED's core for the modes on x86 (32-bit)

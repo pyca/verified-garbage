@@ -14,6 +14,20 @@ public import VerifiedGarbage.Proof.Md5.AArch64.Compress
 meta import VerifiedGarbage.Proof.Md5.AArch64.Compress
 public import VerifiedGarbage.Impl.Md5.AArch64.Stream
 meta import VerifiedGarbage.Impl.Md5.AArch64.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming MD5 on AArch64: `update` and `finalize`

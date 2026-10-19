@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.X86.Save
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

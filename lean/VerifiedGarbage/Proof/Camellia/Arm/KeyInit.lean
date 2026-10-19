@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
 public import VerifiedGarbage.Proof.Camellia.Arm.Prologue
-public import VerifiedGarbage.Proof.Camellia.Planes32
 public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Impl.Camellia.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.Arm.Core
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Camellia.Arm.KeyPair
+import VerifiedGarbage.Proof.Camellia.Planes32
 
 /-!
 # Camellia's key schedule on ARMv7: the prologue and the key

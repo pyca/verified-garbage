@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.X86_64.AddressHeaderCorrect`. -/
 

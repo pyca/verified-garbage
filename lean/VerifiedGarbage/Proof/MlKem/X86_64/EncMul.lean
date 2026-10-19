@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-public import VerifiedGarbage.Proof.MlKem.PolyW
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Spec.MlKem.Kpke16
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_encrypt_mul`

@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.P384.Curve
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
-public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import VerifiedGarbage.Proof.P384.Curve
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P384.PrimeOrder
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import Mathlib.Data.BitVec
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 
 /-!
 # P-384's group law and inversions, on x86-64

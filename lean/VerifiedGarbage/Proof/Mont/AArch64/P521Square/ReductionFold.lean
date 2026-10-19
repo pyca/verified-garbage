@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionWords
 
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
 
 @[expose] public section
 set_option exponentiation.threshold 1024

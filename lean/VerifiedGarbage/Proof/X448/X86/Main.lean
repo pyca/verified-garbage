@@ -3,13 +3,29 @@ module
 import VerifiedGarbage.Proof.X448.X86.BitsInput
 import VerifiedGarbage.Proof.X448.X86.Finish
 import VerifiedGarbage.Proof.X448.X86.Ladder
-public import VerifiedGarbage.Proof.X448.X86.FinalSwap
+import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
-public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.X448.X86.Setup
+public import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.X448.X86.Iter
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.X86.BitStep
+import VerifiedGarbage.Proof.X448.X86.BitWrite
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Small
 import VerifiedGarbage.Spec.X25519
 
 /-!

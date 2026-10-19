@@ -1,8 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.VKeep
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
+public import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Poly1305 on x86-64 with AVX-512: the integer instructions

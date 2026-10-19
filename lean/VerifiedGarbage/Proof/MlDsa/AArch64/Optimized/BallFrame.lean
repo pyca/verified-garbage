@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSave
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

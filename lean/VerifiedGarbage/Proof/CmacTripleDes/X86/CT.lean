@@ -4,10 +4,44 @@ public import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Finalize
 public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Cmac.TripleDesContract
+meta import VerifiedGarbage.Proof.Aes.Blocks
+meta import VerifiedGarbage.Proof.Cmac.Block
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Spec.Cmac.TripleDesContract
 
 /-!
 # TDEA-CMAC on x86: constant time

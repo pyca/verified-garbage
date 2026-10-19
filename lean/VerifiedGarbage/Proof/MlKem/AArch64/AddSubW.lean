@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
 

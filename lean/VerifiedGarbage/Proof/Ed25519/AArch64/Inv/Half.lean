@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # The inversion's rows: one product accumulated
 

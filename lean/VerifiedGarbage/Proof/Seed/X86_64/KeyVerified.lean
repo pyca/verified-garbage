@@ -1,8 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.SboxLit
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
+public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.Seed.X86_64.Key
-public import VerifiedGarbage.Proof.Seed.X86_64.Verified
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
+import VerifiedGarbage.Proof.Seed.X86_64.Setup
+import VerifiedGarbage.Proof.Seed.X86_64.Swap
+import VerifiedGarbage.Proof.Seed.X86_64.Verified
 
 /-! # Key expansion meets its contract, with the scratch buffer as an argument -/
 

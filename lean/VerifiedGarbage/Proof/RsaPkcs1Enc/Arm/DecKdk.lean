@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecHash
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
-public import VerifiedGarbage.Proof.Hmac.Common
-public import VerifiedGarbage.Proof.Sha256.Md
+public import Mathlib.Data.Fintype.Card
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `KDK = HMAC(DH, C)`

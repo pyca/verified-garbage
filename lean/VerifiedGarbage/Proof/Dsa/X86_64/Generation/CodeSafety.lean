@@ -1,7 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Correct
-public import VerifiedGarbage.Proof.Bignum.X86_64.Template
 
 /-! # Compositional instruction-safety checks for generation code -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyGenerate
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySample
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveStep
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveStep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Key generation after an accepted domain: the sampler, then the derivation -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
+public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 
 /-! # RC2-CBC on baseline AArch64
 

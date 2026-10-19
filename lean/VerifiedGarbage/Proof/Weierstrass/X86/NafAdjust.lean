@@ -1,15 +1,17 @@
 module
 
-import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Naf5
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 import VerifiedGarbage.Proof.Framework.X86.SseDword
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafSubChain
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Mont.Words128
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## `NafChoose` -/
 

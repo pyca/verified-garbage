@@ -1,8 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
+import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16
-public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
-public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem16_cbd2_avx2`

@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTimingState
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvSearchTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Initializing and running the bounded candidate search -/
 

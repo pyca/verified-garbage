@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedcMath
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! AArch64 Montgomery cancellation setup and pending-carry tail. -/
 

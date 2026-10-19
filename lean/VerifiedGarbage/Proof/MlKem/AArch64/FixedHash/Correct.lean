@@ -1,8 +1,13 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.AbsorbLoop
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Finish
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Init
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.AbsorbLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Finish
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Init
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Compiled
+public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Fusion
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Transport
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Permute
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

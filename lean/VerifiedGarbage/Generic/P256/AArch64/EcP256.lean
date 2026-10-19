@@ -1,16 +1,17 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Impl.EcKey.P256.AArch64
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+import VerifiedGarbage.Proof.P256.Comb7
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.P256.Prime
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P256
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on AArch64

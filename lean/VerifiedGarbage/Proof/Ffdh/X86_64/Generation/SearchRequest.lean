@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # The verified controller selects the exact next entropy request -/
 

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Lit

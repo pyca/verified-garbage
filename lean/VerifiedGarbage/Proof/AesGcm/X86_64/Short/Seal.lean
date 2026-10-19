@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM's short path on x86-64: `seal`

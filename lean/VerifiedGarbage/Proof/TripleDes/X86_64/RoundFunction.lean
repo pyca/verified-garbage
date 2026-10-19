@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Round
-public import VerifiedGarbage.Proof.TripleDes.Round
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.TripleDes.Round
 
 @[expose] public section
 

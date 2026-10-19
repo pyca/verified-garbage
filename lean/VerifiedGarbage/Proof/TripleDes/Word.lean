@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 @[expose] public section

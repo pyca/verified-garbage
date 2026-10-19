@@ -1,8 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+public import VerifiedGarbage.Proof.Sm4.SboxTable
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Keys
+import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 import VerifiedGarbage.Proof.Sm4.Common
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying blocks on AArch64

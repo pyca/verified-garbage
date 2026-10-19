@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Where the key-generation controller's buffers are -/
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Native pointers for branchless array selection -/
 

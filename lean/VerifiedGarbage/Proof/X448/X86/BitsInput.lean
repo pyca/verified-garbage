@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Bits
-public import VerifiedGarbage.Proof.X448.X86.Frame
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86.Contract
+import VerifiedGarbage.Proof.X448.X86.Frame
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X448.X86.Ops
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): loading the scalar argument

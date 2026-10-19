@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rho
+public import VerifiedGarbage.Proof.Sha3.Lanes
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 @[expose] public section
 

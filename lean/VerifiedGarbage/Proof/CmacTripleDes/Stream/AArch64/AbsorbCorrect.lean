@@ -2,10 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.AbsorbBlocks
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.CmacTripleDes.Block
 
 @[expose] public section
 

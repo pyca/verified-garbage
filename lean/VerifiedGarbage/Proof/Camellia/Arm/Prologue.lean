@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Camellia.Arm.Layers
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.Core
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Slots, and saving and restoring registers, on ARMv7

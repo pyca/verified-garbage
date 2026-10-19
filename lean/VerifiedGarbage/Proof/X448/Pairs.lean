@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Bytes
 public import VerifiedGarbage.Proof.X448.Limbs
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.X448.Contract
 
 /-!
 # X448: seven-byte chunks and limb pairs

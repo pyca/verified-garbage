@@ -7,6 +7,31 @@ import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.X448.X86.Output
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.ByteMem
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86.BitStep
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Pack
+import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Step
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the encoding

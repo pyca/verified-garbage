@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.ChaCha20
 
-public import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.ChaCha20.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming ChaCha20: words in memory, byte by byte

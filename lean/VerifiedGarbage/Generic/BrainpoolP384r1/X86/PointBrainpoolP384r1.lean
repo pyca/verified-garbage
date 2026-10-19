@@ -2,10 +2,18 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointBrainpoolP384r1
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.PointBrainpoolP384r1
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.BrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
 
 /-!
 # brainpoolP384r1's point addition and doubling on x86 (32-bit)

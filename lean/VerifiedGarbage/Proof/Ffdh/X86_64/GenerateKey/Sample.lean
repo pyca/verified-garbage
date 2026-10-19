@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH on x86-64: sampled bytes are the specified scalar -/
 

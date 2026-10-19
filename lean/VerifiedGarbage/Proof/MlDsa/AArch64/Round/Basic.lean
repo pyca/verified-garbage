@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
 /-!
 # ML-DSA on AArch64: what the rounding proofs share

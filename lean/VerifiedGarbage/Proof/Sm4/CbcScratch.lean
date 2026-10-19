@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Sm4.Cbc
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sm4.CtrCipher
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SM4-CBC with its working space as an argument

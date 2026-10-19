@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-public import VerifiedGarbage.Proof.Bignum.Triangular
+import VerifiedGarbage.Proof.Bignum.Triangular
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Eight-limb decomposition of a triangular square. The decomposition

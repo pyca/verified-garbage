@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Width dispatch branches only on the common public modulus length -/
 

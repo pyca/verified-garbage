@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Reduce
-public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Reduce
 
 /-! Reduction of three fused accumulators, before the output interleave. -/
 

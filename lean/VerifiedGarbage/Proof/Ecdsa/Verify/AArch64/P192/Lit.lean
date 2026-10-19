@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P192.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ECDSA verification over p192 on AArch64: the code as a literal

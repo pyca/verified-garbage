@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
 
 /-!
 # The SHA-3 sponge on AArch64, with its working space on the stack

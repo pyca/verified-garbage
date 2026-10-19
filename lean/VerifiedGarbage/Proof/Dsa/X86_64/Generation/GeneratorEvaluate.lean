@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPowerFresh
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPowerFresh
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Evaluate h^((p−1)/q) while retaining the persistent generation frame -/

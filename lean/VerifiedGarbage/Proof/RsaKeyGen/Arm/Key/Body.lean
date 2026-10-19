@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out2
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out3
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: the body (`body_vp`)
 

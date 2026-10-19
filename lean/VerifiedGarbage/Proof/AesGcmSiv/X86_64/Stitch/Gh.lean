@@ -1,7 +1,18 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 
 /-!
 # AES-GCM-SIV's interleaved loop: the POLYVAL loads

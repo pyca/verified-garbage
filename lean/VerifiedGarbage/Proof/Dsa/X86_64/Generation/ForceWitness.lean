@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ForceWitness
-public import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
+import VerifiedGarbage.Proof.Dsa.Generation.WitnessMemory
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.Words
 
 /-! # Native forced-witness byte transformation -/
 

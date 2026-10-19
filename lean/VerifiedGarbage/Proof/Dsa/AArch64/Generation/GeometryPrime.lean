@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Primality
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
 /-! # Instantiate the shared probable-prime engine for each shaped q -/
 

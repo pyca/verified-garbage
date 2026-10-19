@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
-public import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-public import VerifiedGarbage.Proof.Mont.X86.Inverse
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Mont.X86.PowerTwo
+import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Constructing the runtime Montgomery context -/
 

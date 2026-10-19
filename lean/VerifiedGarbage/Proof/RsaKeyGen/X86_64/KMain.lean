@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Close
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.LoadC
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 
 /-!
 # A candidate on x86-64: once `rand` has its octets

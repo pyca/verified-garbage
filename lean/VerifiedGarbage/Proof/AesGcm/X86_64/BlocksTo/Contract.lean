@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the contract the proof is written against

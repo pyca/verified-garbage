@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
 
 /-! # Private outgoing stack frames for generation controllers -/
 

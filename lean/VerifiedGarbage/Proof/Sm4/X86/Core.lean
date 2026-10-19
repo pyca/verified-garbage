@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Round
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Sm4.X86.Ecb
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Eight blocks of bitsliced SM4 on x86 (32-bit): the rounds

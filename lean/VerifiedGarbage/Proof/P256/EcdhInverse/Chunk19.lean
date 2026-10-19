@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhInverse.ChunkMatrix
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Matrix
-import VerifiedGarbage.Proof.Divstep.Packed
+public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk
+public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
 import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Divstep.WordDef
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

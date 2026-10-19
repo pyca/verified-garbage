@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Layout
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
-public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
 
 /-! # Zeros at the key-generation controller's outputs -/
 

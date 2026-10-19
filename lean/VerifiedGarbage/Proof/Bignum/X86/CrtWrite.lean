@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.X86.ExportBE
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.X86.ExportBE
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mont.X86.Dynamic
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Export the masked result and return the saved acceptance bit -/
 

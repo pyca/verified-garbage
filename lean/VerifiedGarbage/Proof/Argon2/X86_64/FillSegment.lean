@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillSegmentBody
 public import VerifiedGarbage.Proof.Argon2.Segment
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Termination and correctness of the active suffix of one segment. -/
 

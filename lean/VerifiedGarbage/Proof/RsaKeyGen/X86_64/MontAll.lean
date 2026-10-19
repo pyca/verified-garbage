@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
-public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
+public import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # A candidate on x86-64: all of `montSetup`

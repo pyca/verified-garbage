@@ -1,4 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec

@@ -1,7 +1,17 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
+import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Read
 
 /-! # IA-32 modular exponentiation against the shared DSA specification -/
 

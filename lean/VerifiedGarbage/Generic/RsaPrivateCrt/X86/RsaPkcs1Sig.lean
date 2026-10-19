@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignVerified
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
 
 /-! # PKCS #1 signing follows every i686 private CRT implementation -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Clear one 1024-byte address-generation block. The destination in `x0`
 is public; neither the old contents nor any input value affects the trace.

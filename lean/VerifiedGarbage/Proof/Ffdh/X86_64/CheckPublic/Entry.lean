@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 
 /-! # FFDH public-key validation on x86-64: save the arguments and ABI registers -/
 

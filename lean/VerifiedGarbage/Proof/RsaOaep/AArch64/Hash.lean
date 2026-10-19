@@ -6,6 +6,7 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Spec.Rsa.Contract
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP on AArch64: calling the streaming hash functions

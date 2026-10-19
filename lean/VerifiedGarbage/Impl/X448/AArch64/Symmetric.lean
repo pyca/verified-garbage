@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Cached
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
 
 /-! Symmetric squaring: each cross product is computed once. -/
 

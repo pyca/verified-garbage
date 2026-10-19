@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesSiv.X86.Verified
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Cmac.Contract
 
 /-!
 # AES-SIV (RFC 5297) on x86

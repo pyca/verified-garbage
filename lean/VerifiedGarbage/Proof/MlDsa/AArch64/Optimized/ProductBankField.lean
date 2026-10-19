@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductRepresentation
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
 @[expose] public section
 

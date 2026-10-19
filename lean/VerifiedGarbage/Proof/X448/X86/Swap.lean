@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86.Field
 
-public import VerifiedGarbage.Proof.X448.X86.Copy
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): constant-time conditional swaps

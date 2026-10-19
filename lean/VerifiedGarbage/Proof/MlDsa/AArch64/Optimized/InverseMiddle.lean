@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseHoisted
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

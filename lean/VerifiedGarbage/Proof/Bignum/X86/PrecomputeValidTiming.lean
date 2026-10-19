@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeSizedTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatchTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeDispatchTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Width dispatch depends only on the public modulus length -/
 

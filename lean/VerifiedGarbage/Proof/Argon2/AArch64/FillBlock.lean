@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillBlock
 import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
-import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
 public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.RandomSourceState`. -/
 

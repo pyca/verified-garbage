@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Save
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.TripleDes.X86.WordStore
-import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.TripleDes.X86.Bytes
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## `FinalPermutation` -/
 

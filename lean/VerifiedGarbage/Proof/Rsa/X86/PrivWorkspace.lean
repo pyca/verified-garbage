@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The private wrapper's stack workspace, independent of its pointer registers -/
 

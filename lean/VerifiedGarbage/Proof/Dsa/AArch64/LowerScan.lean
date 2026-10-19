@@ -1,9 +1,14 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeLow
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.OrWords
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Rejecting zero and one with a fixed-length limb scan -/
 @[expose] public section

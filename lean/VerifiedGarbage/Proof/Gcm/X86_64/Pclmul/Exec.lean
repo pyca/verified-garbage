@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-public import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # GHASH with PCLMULQDQ: what the instruction groups compute, as bits

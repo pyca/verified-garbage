@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncTail
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: correctness

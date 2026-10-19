@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.X25519.X86_64.Adx
 

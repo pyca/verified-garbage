@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Prepare
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Finish
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Spill
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
 
 @[expose] public section
 

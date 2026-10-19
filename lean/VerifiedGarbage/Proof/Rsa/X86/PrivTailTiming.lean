@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivTail
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivCompareBuffer
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Fault checking and private release reveal no secret-dependent trace -/
 

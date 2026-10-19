@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Main
-public import VerifiedGarbage.Proof.X25519.Arm.CT
+import VerifiedGarbage.Proof.X25519.Arm.CT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Proof.X25519.Arm.Lit
 import Batteries.Logic
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # X25519 on 32-bit ARM: verified

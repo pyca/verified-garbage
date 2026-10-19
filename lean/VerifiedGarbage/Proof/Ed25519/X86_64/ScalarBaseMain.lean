@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBaseMemory`. -/
 

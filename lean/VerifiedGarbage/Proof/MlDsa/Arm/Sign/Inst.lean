@@ -1,20 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintPackCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on ARMv7: the primitives it calls

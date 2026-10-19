@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Every saved argument has a defined value after the public shape check -/
 

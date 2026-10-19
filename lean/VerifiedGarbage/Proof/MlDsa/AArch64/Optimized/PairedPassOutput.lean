@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `PairedPassRead.lean` -/
 

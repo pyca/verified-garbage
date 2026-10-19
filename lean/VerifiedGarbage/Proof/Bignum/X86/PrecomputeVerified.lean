@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperationTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeObservations
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperationTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeObservations
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeCorrect
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Complete i686 certificate for public RSA precomputation -/
 

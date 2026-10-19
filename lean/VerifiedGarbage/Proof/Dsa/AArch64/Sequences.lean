@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Grouping adjacent DSA phases without changing their code -/
 

@@ -1,6 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.X86.Lanes
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Seed.X86.KeyRound
+import VerifiedGarbage.Proof.Seed.X86.KeyRound
+import VerifiedGarbage.Proof.Seed.X86.Ecb
+import VerifiedGarbage.Proof.Seed.X86.Crypt8
+import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SEED key expansion on x86 (32-bit): the whole function

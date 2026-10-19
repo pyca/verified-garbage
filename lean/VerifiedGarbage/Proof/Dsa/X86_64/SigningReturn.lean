@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInitialize
 import VerifiedGarbage.Proof.Dsa.X86_64.Failure
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.DomainWidths
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Both signing branches return the packed byte specification -/
 

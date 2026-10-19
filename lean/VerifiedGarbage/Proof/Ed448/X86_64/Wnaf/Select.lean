@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Sign
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Sparse signed-digit selection preserves the accumulator and curve constant. -/
 

@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
 
 /-! # Interpret native product operands in the shared RSA number model -/
 

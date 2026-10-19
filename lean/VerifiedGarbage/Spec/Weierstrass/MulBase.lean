@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Spec.P384
-public import VerifiedGarbage.Spec.P224
-public import VerifiedGarbage.Spec.P256
 
 /-!
 # The multiplication of a curve's base point, in its working space, as a function

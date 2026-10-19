@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QShape
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 
 /-! # Prepare the shared candidate shaper's arguments -/
 

@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrepTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The recoders preserve the field inputs and the external generator table. -/
 

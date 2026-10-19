@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
-import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Siv
 
 /-!
 # AES-SIV on x86-64: calling `vg_cmac_aes_finalize` with any subkeys

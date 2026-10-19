@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 
 /-!
 # ML-KEM on 32-bit ARM: a row of `Â ∘ v̂`

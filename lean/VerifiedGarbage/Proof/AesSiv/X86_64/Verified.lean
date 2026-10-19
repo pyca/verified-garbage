@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Init
+import VerifiedGarbage.Proof.AesSiv.X86_64.Init
 public import VerifiedGarbage.Proof.AesSiv.X86_64.EncCT
-import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.AesSiv.Scratch
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on x86-64: `Verified`

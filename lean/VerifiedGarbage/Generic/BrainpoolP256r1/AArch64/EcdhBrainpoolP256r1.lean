@@ -1,13 +1,15 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
+import Mathlib.Tactic.ClearExcept
 
 /-! # brainpoolP256r1 on AArch64, generic over its proven group law and inversions -/
 

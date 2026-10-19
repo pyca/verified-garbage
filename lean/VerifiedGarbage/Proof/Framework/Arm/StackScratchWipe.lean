@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, after stack arguments, wiped after use (ARMv7)

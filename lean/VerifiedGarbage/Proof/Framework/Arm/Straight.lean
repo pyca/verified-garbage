@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -2,8 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
 
 /-!
 # Streaming Poly1305 (RFC 8439 §2.5) on x86-64

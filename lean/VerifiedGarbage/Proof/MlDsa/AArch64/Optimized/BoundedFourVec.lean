@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourWord.lean` -/

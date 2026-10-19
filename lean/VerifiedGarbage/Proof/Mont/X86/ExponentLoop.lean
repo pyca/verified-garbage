@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Mont.X86.ExponentStep
+import VerifiedGarbage.Proof.Mont.X86.ExponentStep
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # Terminating secret-exponent loop -/
 

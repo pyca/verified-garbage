@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtBase
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-!
 # RSASSA-PSS verification on x86-64: the public-key operation in two runs

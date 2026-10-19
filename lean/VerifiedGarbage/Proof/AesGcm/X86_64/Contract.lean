@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.Gcm.Precomputed
 
 /-!
 # AES-GCM on x86-64: the contracts the proofs are written against

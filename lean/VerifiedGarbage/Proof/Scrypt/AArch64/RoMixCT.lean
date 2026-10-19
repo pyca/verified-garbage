@@ -12,15 +12,15 @@ public import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
@@ -29,6 +29,20 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptROMix on AArch64: the precondition

@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # H′: saving the caller and writing the length prefix -/
 

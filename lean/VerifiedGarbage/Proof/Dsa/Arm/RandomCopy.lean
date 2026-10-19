@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
+public import VerifiedGarbage.Proof.Dsa.RandomBytes
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying a draw into the nonce (32-bit ARM)

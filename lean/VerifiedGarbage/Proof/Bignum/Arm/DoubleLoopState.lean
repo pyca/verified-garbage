@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
-public import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
 
 /-! # Workspace and stack invariants shared by repeated modular doublings -/
 

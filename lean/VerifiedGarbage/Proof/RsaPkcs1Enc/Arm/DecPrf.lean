@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecMsg
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecKdk
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Steps
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the stages of an IRPRF block

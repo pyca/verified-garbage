@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Pack.Written
-public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

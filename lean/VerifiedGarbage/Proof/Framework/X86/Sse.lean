@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # x86 (32-bit): SSE values as doublewords

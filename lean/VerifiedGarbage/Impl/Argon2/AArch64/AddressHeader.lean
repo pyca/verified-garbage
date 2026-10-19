@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Fill the first seven words of an independently generated address input.
 The input pointer is `x0`; its remaining words were cleared once. The frame

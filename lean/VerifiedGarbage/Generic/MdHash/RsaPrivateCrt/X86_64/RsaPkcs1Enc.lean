@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT5
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecHash
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64

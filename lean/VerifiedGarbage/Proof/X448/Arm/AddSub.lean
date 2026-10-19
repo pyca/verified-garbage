@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Field
 
-public import VerifiedGarbage.Proof.X448.Arm.Columns
+import VerifiedGarbage.Proof.X448.Arm.Columns
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.Carry
 
 /-!
 # X448 on ARMv7: addition and subtraction

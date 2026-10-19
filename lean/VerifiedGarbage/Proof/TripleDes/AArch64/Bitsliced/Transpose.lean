@@ -6,8 +6,9 @@ public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The transposition of the AdvSIMD state

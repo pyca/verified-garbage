@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawPrefix
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawPrefix
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 
 /-! # FFDH parameter generation on x86-64: one rejection-sampling iteration -/
 

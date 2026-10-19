@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyScan
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 
 /-!
 # RSASSA-PSS verification on AArch64: unmasking `DB`

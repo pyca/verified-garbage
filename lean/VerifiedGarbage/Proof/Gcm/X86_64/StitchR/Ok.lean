@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Setup
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
-public import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Rem
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+public import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 
 /-!
 # The 256-bit interleaved loops with prepared powers meet their contracts

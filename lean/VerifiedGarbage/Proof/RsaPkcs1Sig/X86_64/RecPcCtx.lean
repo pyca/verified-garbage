@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

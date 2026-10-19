@@ -1,11 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `Constants.lean` -/
 

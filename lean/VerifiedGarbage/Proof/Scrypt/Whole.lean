@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Scrypt.Contract
 
-public import VerifiedGarbage.Proof.Scrypt.RoMix
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.RoMix
+import VerifiedGarbage.Proof.Scrypt.Memory
 import all Init.Data.Nat.Power2.Basic
 
 /-!

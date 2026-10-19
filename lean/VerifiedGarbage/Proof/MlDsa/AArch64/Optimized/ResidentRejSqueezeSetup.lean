@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqBlock
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Setup
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

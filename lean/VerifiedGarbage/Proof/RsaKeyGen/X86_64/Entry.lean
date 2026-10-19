@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!
 # A candidate on x86-64: the entry

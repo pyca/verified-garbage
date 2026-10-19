@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSized
+import VerifiedGarbage.Proof.Bignum.X86.PublicApply
+import VerifiedGarbage.Proof.Bignum.X86.PublicImport
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Resources and acceptance mask ready for checked RSA export -/
 

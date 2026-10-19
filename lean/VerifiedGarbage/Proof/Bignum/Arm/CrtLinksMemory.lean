@@ -1,6 +1,8 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-! # Exact header writes for the five CRT buffer links -/
 

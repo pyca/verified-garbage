@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinish
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSemantics
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 
 /-! # Complete native parameter-generation correctness -/
 

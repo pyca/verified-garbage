@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCheck
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86_64.Div
 
 /-! # The generator's upper endpoint p−1 requires only a low-limb decrement -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Outgoing
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-! # Candidate preconditions in the controller's private stack frame -/
 

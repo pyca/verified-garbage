@@ -5,6 +5,12 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_open`

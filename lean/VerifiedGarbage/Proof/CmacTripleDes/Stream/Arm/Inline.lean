@@ -1,16 +1,42 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Spec.Cmac.TripleDesContract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: the code of `init`, `update` and `finalize`, inline

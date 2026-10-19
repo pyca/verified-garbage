@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.X86.Core
 public import VerifiedGarbage.Proof.Camellia.Layout32
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on x86 (32-bit)

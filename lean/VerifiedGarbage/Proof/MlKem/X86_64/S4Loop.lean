@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag

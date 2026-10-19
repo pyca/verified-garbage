@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The `zmm` comb: the digits and their signs

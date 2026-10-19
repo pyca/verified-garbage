@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKey
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # HMAC's `init` for a key of any length over any Merkle–Damgård hash function on AArch64: constant time, verified

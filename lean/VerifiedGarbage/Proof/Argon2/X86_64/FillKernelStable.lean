@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Register-only helpers retain the filling allocation and position invariants. -/
 

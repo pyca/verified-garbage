@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 

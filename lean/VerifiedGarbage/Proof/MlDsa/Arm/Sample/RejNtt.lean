@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_ntt_poly`, correctness

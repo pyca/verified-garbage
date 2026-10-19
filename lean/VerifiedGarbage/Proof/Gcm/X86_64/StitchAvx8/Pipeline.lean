@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
 import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! ## Counter -/
 

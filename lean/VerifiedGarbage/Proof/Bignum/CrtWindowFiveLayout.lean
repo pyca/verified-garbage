@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.CrtFrame
 
-public import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! The wider window's table fits the existing public scratch contract.
 The optimized path is restricted by the public modulus length. -/

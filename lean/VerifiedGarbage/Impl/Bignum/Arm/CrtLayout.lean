@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.Setup
 
 /-! # ARMv7 CRT storage
 

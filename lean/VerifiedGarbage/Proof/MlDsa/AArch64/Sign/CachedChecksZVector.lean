@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBase
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## From `CachedChecksZ.lean` -/
 

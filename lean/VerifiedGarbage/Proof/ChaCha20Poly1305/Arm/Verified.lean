@@ -6,15 +6,14 @@ import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
-meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
@@ -24,8 +23,36 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.CallF
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

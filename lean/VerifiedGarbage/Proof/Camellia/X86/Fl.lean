@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Round
-import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import Mathlib.Tactic.SplitIfs
 
 /-!

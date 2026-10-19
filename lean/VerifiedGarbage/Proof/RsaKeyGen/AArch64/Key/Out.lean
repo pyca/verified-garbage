@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Key
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # An RSA key from its primes on AArch64: the outputs

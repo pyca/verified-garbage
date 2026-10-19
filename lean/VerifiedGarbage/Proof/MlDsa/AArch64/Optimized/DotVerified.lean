@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotContract
+public import VerifiedGarbage.Proof.Framework.ConstMem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `DotCorrect.lean` -/
 

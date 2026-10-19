@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
 public import VerifiedGarbage.Proof.Rsa.PrivCheck
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCrt
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the check and the release

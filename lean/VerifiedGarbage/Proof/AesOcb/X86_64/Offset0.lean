@@ -1,7 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
 public import VerifiedGarbage.Proof.Ocb.Stretch
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesOcb.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ocb
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-OCB on x86-64: `Offset_0` (`offset0`)

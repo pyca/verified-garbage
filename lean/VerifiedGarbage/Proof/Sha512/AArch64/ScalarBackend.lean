@@ -3,8 +3,28 @@ module
 public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha512.AArch64.Lit
-import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.Word64
 
 @[expose] public section

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
-public import VerifiedGarbage.Proof.Rsa.X86.DivCopy
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Workspace geometry and memory frames for i686 RSA key operations -/
 

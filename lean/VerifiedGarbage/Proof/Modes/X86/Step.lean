@@ -7,6 +7,11 @@ import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.X86.Ops
 
 /-!
 # One step of a mode on x86 (32-bit)

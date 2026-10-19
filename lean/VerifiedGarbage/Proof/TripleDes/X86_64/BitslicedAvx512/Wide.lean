@@ -5,6 +5,10 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
 import VerifiedGarbage.Proof.TripleDes.X86_64.SaveRegs
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Batches of 512 blocks

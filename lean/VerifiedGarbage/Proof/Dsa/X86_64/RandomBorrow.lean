@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 

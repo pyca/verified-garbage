@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 
 /-! The measured x86-64 P-256 joint multiplication layout and doubling dispatch. -/
 

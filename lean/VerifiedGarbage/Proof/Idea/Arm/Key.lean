@@ -1,14 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
-public import VerifiedGarbage.Proof.Idea.Arm.Mul
-public import VerifiedGarbage.Proof.Idea.KeyBits32
+import VerifiedGarbage.Proof.Idea.Arm.Mul
+import VerifiedGarbage.Proof.Idea.KeyBits32
 public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Idea.Contract
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Idea.KeyLit32
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Memory
 
 /-!
 # IDEA key expansion on ARMv7

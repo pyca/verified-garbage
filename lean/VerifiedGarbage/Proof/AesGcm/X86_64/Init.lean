@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init`

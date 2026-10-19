@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Digest
 
 /-! # Byte buffers used by DSA's parameter search on both architectures -/
 

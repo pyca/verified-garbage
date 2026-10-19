@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Timing of the additions and doublings whose products may be calls

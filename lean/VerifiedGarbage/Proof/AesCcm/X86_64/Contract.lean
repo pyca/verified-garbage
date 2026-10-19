@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Ccm.Contract
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Spec.Ccm.Contract
 
 /-!
 # AES-CCM on x86-64: the contracts the proofs are written against

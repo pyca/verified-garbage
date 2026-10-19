@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 
 @[expose] public section
 

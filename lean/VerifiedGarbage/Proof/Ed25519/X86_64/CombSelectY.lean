@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed25519's comb on x86-64: the selection with AVX2

@@ -1,10 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Double
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
-public import VerifiedGarbage.Proof.Rsa.AArch64.Div
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Arithmetic instructions preserve the workspace even when a result overflows. -/
 @[expose] public section

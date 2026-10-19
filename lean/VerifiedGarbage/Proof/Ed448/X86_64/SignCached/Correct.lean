@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Pre
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Ed448.Signing
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Ed448.Formulas
-import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Prune
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
 
 /-!
 # Ed448 signing with a cached public key on x86-64: correctness

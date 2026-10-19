@@ -1,8 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Compiled
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Fusion
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The fixed hash's shapes are their proof-oriented decompositions, for any permutation

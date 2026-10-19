@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Ready
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

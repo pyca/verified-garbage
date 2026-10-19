@@ -1,18 +1,14 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedConcreteCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSelectedTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 
 @[expose] public section
 

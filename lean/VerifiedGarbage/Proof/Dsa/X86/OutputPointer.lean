@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Selecting either scalar in the packed signature output -/
 

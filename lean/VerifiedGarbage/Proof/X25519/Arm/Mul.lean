@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Field
 
-public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X25519 on 32-bit ARM: multiplication

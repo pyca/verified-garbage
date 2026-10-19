@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Rc2.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RC2-CBC's streaming functions with their working space as an argument

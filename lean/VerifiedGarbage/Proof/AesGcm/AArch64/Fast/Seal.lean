@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_seal` with the path for TLS records

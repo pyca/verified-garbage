@@ -2,6 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
 meta import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_sample_ntt`, constant time and `Verified`

@@ -1,7 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyScalar
-public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+import VerifiedGarbage.Proof.Rsa.X86.KeyScalar
+import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
+import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Equality of native key arrays without data-dependent branches -/
 

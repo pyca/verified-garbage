@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
+import VerifiedGarbage.Impl.Rc2.AArch64.Block
 
-public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 
 /-! # RC2-CBC decryption on AArch64, eight blocks at a time
 

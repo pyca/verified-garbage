@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedConsts
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

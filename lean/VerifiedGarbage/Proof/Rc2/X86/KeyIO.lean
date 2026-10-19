@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Rc2.Memory32
 
 @[expose] public section

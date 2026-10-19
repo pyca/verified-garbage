@@ -1,8 +1,14 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import Mathlib.Tactic.SplitIfs
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
+import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.BitRead`. -/
 

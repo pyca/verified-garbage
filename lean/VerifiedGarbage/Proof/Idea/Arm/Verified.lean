@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Idea.Arm.Ecb
 public import VerifiedGarbage.Proof.Idea.Arm.Invert
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
 /-!
 # Verified IDEA on ARMv7, with its saved registers on the stack

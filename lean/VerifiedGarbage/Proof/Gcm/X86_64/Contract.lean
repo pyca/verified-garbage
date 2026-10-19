@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # GHASH on x86-64: the contract of `vg_ghash`

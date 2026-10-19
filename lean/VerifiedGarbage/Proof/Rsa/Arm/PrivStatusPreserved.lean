@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckRegions
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Retain the callee return bits and precomputation across subsequent setup -/
 

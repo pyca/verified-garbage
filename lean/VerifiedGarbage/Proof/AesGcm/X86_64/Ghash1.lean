@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: GHASH over one block of the state or of `T`

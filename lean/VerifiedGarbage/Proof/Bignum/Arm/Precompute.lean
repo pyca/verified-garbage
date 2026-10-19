@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
-public import VerifiedGarbage.Proof.Bignum.Arm.R2
+import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
+import VerifiedGarbage.Proof.Bignum.Arm.R2
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # RSA precomputation from modulus bytes, entirely in proved ARMv7 code -/
 

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTTop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CTTop
 public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Bits
 
 @[expose] public section
 

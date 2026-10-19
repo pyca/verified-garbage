@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 public import VerifiedGarbage.Proof.Framework.Mem
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

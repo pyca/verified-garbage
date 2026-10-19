@@ -4,6 +4,26 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Step
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Round
+import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
 
 /-! # The AVX2 bitsliced ECB functions are correct
 

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer in a register, on the stack (ARMv7)

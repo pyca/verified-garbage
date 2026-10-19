@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on x86: the entry of `seal` and `open`

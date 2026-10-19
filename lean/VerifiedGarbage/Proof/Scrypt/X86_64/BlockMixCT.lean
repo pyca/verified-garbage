@@ -4,26 +4,34 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-meta import VerifiedGarbage.Spec.Scrypt.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Scrypt.BlockMix
 meta import VerifiedGarbage.Proof.Scrypt.BlockMix
 import VerifiedGarbage.Proof.Scrypt.Memory
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptBlockMix on x86-64: correctness

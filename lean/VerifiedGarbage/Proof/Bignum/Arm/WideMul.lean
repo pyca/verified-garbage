@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.WideMul
-public import VerifiedGarbage.Proof.Bignum.Arm.WideValue
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Bignum.Arm.WideValue
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-! # ARMv7 full-width multiplication: instruction-level correctness -/
 

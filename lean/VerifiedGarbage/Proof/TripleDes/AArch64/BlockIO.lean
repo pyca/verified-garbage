@@ -1,11 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
+public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
 import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
 import VerifiedGarbage.Proof.TripleDes.AArch64.Word
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.AArch64.Box
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

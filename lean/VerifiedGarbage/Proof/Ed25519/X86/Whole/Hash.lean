@@ -1,11 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-! Reusable verified SHA-512 calls within the complete-operation frame. -/
 

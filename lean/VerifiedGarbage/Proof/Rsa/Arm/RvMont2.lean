@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_recover_primes` on ARMv7: steps around Montgomery multiplication
 

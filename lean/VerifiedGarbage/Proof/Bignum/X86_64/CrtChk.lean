@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtKey
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-!
 # RSA with the CRT on x86-64: the checks

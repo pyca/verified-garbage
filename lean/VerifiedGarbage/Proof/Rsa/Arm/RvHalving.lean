@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvHalf
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMM
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `m = 2^t r` (`halving_vp`) -/
 

@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressCall
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCalls
-import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.AddressCallsLayout`. -/
 

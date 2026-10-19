@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RoundLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeccakMix
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `Resident.lean` -/
 

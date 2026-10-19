@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Body
 public import VerifiedGarbage.Proof.TripleDes.X86.Save
-import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

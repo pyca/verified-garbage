@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
+import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Verified RC2-CBC encryption and decryption -/
 

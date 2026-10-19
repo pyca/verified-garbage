@@ -2,7 +2,8 @@ module
 
 public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Gpr
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the powers of `r`

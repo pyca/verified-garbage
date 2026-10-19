@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.CT
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Implies
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.CT
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Implies
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
+public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Contract
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Correct
 
 /-! # The verified key search (AArch64)
 

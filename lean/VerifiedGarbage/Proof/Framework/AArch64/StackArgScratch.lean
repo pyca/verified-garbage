@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, after stack arguments (AArch64)

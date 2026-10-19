@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
-public import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.RsaOaep.Mask
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.RsaOaep.Scan
 
 /-!
 # RSAES-OAEP on x86-64: MGF1

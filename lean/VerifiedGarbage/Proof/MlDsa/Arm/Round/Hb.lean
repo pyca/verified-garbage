@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.MlDsa.Arm.Round.Round
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: the values of `Decompose`

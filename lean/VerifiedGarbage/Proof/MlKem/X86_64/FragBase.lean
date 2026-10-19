@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-public import VerifiedGarbage.Proof.MlKem.X86_64.Groups
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.CallLay
 import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-768 on x86-64: moves, byte stores and copies

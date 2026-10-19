@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
-public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Mask a checked RSA result without branching on input acceptance
 

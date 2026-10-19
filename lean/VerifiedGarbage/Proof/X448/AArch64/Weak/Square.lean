@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 public import VerifiedGarbage.Proof.X448.Invert
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: runs of squarings

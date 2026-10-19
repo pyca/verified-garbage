@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Grp
-public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.Mem16Bytes
+import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
+import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 
 /-! # `vg_mlkem16_cbd2` on AArch64: eight iterations of 32 coefficients -/
 

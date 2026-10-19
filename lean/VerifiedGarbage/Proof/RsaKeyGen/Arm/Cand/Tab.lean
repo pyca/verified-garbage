@@ -1,8 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
-public import VerifiedGarbage.Proof.RsaKeyGen.Trial16
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
 
 /-! # A candidate on ARMv7: the table of small primes written (`table_ok`)
 

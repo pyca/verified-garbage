@@ -8,12 +8,36 @@ public import VerifiedGarbage.Spec.Cmac.Contract
 meta import VerifiedGarbage.Spec.Cmac.Contract
 public import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Finalize
-import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
+public import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import VerifiedGarbage.Proof.Cmac.Block
 meta import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

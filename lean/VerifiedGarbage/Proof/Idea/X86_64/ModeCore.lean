@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.Idea.X86_64.Modes
 public import VerifiedGarbage.Spec.Idea.Cbc
-public import VerifiedGarbage.Proof.Idea.ModeBytes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.X86_64.Lit
+public import VerifiedGarbage.Proof.Idea.X86_64.Round
+public import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Idea.ModeBytes
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Idea.X86_64.Block
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # IDEA's core for the modes on x86-64

@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Resume both public matrix streams and combine their success flags -/
 @[expose] public section

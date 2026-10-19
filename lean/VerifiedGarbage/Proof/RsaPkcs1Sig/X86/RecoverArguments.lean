@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocalArgument
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocalArgument
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Installing successive cdecl arguments preserves every earlier word -/
 

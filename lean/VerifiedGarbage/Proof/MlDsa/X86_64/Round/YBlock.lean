@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YLane
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ML-DSA on x86-64: the SSE2 code of the AVX2 rounding, on a register

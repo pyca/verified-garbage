@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Group.Decode
+import VerifiedGarbage.Proof.Ed448.Group.Decode
 public import Mathlib.Tactic.Abel
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
 
 /-!
 # Ed448: the verification equation, as code checks it

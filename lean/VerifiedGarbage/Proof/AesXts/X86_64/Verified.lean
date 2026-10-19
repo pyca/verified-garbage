@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.AesXts.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Spec.Xts.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-public import VerifiedGarbage.Proof.AesXts.X86_64.CT
+import VerifiedGarbage.Proof.AesXts.X86_64.CT
 
 /-!
 # XTS-AES on x86-64: `Verified`

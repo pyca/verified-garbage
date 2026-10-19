@@ -2,14 +2,43 @@ module
 
 import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.DecMain
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # RSAES-OAEP decryption on AArch64: the decoding in constant time

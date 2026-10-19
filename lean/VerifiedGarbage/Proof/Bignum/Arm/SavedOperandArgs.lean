@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
-public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
+import VerifiedGarbage.Proof.Bignum.Arm.StackPair
 
 /-! # Restore a private operand's pointer and length from the call frame -/
 

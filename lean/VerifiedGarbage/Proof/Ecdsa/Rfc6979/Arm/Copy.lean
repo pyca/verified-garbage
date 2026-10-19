@@ -1,8 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
 import VerifiedGarbage.Proof.Hmac.Common
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Batteries.Logic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: copying words

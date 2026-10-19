@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.RowMem
 
-public import VerifiedGarbage.Proof.X448.X86.RowTail
+import VerifiedGarbage.Proof.X448.X86.RowTail
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.Instr
 
 /-!
 # X448 on x86 (32-bit): one multiplication row

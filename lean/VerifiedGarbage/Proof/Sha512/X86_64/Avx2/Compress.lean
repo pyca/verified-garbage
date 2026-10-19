@@ -6,14 +6,34 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Rounds
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Rounds
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # SHA-512 with AVX2 on x86-64: the rounds of the first block

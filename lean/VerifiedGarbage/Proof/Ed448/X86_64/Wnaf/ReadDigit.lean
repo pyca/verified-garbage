@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Decoding the signed byte digits used by public table selection. -/
 

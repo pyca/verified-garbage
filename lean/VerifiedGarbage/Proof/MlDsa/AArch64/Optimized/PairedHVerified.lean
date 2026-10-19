@@ -3,23 +3,29 @@ module
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHStoredField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintSpecPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintOrder
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCount
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `PairedHAllFields.lean` -/
 

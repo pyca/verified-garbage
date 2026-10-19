@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
-public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+public import VerifiedGarbage.Impl.Sha3.AArch64
 
 /-!
 # The scalar sponge absorbing whole blocks with the state in registers

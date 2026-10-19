@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
+public import VerifiedGarbage.Spec.Dsa.Random
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDraw
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 
 /-! Value and status observations after one complete draw. -/
 @[expose] public section

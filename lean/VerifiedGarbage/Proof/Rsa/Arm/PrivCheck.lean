@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.PrivCheck
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckLogic
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckLogic
+import VerifiedGarbage.Proof.Rsa.Arm.PrivTailContext
+import VerifiedGarbage.Proof.Rsa.Arm.PrivStatusPreserved
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # Re-exponentiate, compare, and release only a checked private result -/
 

@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBodyTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignNoSp
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBodyTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignNoSp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
 
 /-! # Stack allocation and saved-register restoration reveal only public addresses -/
 

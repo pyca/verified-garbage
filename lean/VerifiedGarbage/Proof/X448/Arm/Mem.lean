@@ -4,8 +4,10 @@ public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Radix16
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on ARMv7: the working space

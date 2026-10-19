@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
 import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

@@ -1,11 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+import VerifiedGarbage.Impl.MlKem.AArch64.Noise
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgT
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgC
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
-public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
 
 /-! # One fused key-generation row with a precomputed error polynomial -/
 

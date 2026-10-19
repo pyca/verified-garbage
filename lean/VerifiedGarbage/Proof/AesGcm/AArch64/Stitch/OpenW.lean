@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Open
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tables
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # AES-GCM on AArch64, interleaved: `open`'s code with the interleaved loops (`openWithS`)

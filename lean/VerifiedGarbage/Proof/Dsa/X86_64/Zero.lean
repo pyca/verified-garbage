@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroHead
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroLoop
 import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
-public import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 
 /-! # Complete byte-buffer zero and nonzero checks -/
 

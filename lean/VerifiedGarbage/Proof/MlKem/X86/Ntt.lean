@@ -1,11 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 
-public import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlKem.X86.Compress
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
+import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_ntt`

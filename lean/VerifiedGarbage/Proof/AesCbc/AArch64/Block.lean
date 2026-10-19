@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 public import VerifiedGarbage.Impl.AesCbc.AArch64
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.AesCbc.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CBC on AArch64: the code between the calls

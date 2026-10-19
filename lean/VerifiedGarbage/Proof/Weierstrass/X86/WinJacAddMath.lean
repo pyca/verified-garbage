@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.Window5
 
 /-! The two branchless selections make each nonexceptional window addition total. -/
 

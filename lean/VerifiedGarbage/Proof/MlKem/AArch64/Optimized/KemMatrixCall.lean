@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixFrame
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixPost
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixPost
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Instantiate paired matrix calls at encryption scratch addresses -/
 @[expose] public section

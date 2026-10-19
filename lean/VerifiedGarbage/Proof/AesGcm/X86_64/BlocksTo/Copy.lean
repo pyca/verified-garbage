@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM out of place on x86-64: copying blocks (`BlocksTo.copyBlocks`)

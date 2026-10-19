@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Invariant
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Load
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
 
 /-! Complete public recoding into 461 signed byte digits. -/
 

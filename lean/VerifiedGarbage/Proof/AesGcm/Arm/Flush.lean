@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Absorb
 import VerifiedGarbage.Proof.AesGcm.Arm.Words
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM on ARMv7: padding the buffer (`flush`) and the lengths block (`lens`)

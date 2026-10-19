@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicValidCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicFailCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicValidCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicFailCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Modulus validation branches only on the public modulus -/
 

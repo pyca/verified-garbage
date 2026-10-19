@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Impl.Bignum.Arm.Shift
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A runtime-length in-place shift of a packed-word accumulator -/
 

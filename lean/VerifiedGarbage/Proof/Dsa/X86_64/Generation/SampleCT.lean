@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitnessCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sample
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoredWitnessCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoredWitnessCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoredWitnessCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
 
 /-! # DSA witness selection branches only on the public sampled candidate -/
 

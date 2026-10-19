@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
 
 /-!
 # ML-DSA (FIPS 204) on 32-bit ARM: verifying messages

@@ -2,6 +2,19 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Chunk
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Tag
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM-SIV on x86-64: counter mode (`crypt`)

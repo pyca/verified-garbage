@@ -2,13 +2,47 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontProductLoop
-public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Spec.MlDsa.PositiveNtt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+meta import VerifiedGarbage.Proof.MlDsa.Round.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 /-! ## From `MontProductCorrect.lean` -/
 

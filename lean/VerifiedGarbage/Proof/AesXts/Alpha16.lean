@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Xts
 
-public import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.Alpha
+import Mathlib.Data.List.Induction
 
 /-!
 # XTS: sixteen multiplications by `α` at once

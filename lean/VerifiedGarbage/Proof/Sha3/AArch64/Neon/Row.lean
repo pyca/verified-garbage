@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

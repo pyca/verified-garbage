@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedEntry
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 @[expose] public section
 

@@ -5,9 +5,15 @@ meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 public import VerifiedGarbage.Impl.TripleDes.X86.Modes
 meta import VerifiedGarbage.Impl.TripleDes.X86.Modes
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Triple DES-CBC on x86 (32-bit): the code as literals

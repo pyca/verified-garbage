@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDigitTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDoubleTiming
+public import VerifiedGarbage.Proof.Weierstrass.Window5
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

@@ -1,7 +1,11 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import Mathlib.Tactic.SplitIfs
 
 /-!

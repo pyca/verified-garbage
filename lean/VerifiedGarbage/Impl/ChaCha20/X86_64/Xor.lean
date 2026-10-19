@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+public import VerifiedGarbage.Impl.ChaCha20.X86_64
 
 /-!
 # ChaCha20 keystream XOR: x86-64 implementation

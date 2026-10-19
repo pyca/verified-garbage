@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Footprint
-public import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Impl.X448.AArch64.Fast
 import Mathlib.Tactic.SplitIfs
 

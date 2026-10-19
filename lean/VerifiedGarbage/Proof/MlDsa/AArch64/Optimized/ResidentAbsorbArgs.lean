@@ -1,14 +1,16 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSaved
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParsePair
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentZero.lean` -/
 

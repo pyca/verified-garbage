@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
 
 @[expose] public section
 

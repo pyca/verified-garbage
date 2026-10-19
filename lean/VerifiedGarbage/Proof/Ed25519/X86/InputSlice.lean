@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
-public import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

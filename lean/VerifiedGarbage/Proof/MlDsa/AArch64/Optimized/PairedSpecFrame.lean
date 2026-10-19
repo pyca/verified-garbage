@@ -1,10 +1,14 @@
 module
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 
-public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowKernel
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.TCB.AArch64.Simd
 
 @[expose] public section
 

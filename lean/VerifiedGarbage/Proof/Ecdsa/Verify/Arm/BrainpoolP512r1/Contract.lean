@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.BrainpoolP512r1
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ECDSA verification over brainpoolP512r1 on 32-bit ARM: the contract the proof is written against

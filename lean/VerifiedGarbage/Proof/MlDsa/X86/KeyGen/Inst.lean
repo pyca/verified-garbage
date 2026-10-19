@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Verified
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejBounded
 import VerifiedGarbage.Proof.MlDsa.X86.Round.Power2Round
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.BitPack
-import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA key generation on x86 (32-bit), with this library's primitives

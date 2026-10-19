@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
-public import VerifiedGarbage.Proof.Ed448.Facts
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
+import VerifiedGarbage.Proof.Ed448.Arm.Verify.Verified
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ed448.Arm.Verify
+public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Spec.Ed448.Contract
 
 /-!
 # Ed448 verification on ARMv7

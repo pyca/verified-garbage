@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Mont.Words128
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Direct copies of public Jacobian table entries. -/
 

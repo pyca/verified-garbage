@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.Arm.Update
 public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-public import VerifiedGarbage.Proof.Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import Mathlib.Tactic.SplitIfs
 
 /-!

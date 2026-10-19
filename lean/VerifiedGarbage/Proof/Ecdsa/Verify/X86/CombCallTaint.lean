@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA verification over P-256 on x86 (32-bit): what the comb's calls start from

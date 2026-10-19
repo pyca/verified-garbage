@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivatePre
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignCall
-public import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.X86.PrivCall
 
 /-! # Checked private RSA returns the signature of the exact local encoding -/
 

@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
+import VerifiedGarbage.Proof.Cast5.Arm.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.ModeCipher
-public import VerifiedGarbage.Proof.Cast5.ModeScratch
+import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Cast5.Arm.Modes
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+public import VerifiedGarbage.Proof.Cast5.Arm.Lit
+public import VerifiedGarbage.Proof.Cast5.Arm.Round
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # CAST5's ECB functions as the ARMv7 modes' core

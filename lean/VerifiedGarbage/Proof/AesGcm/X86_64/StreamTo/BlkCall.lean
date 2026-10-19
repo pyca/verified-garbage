@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Mid
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the call of the whole blocks

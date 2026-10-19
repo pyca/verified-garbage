@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Comb
-public import VerifiedGarbage.Proof.Weierstrass.Words
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # The comb's tables as words: their length and their entries

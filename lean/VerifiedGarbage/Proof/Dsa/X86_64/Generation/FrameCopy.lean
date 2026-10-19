@@ -1,6 +1,10 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Copy incoming stack arguments into the persistent frame -/
 

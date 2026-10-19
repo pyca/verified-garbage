@@ -1,7 +1,10 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X25519.X86_64.Small
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Inv
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64: the full reduction

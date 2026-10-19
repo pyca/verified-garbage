@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+public import VerifiedGarbage.Proof.Modes.Cfb8
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
+import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Loop
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.CbcGroup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CFB8 on x86-64, for any core: the whole function

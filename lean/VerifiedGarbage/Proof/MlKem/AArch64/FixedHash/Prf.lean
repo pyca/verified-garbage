@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64.Kem

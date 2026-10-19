@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Spec.Sha512.Contract
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha512.Md
 
 /-!
 # The one-shot SHA-512 family digests on AArch64, against their shared contracts

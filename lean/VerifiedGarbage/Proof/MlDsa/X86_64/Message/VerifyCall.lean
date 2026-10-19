@@ -2,11 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyPre
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the call of the verification function on `μ`

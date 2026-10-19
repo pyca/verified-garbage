@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Preserve the RSA workspace while saving registers and loading the fifth argument -/
 

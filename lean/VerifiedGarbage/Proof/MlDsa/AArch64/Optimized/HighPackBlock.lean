@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackTail
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoad
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

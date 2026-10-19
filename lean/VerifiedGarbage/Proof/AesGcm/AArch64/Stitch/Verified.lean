@@ -1,12 +1,10 @@
 module
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Weave
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Seal
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenW
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenCT
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
-import VerifiedGarbage.Spec.Gcm.Contract
 
 /-!
 # AES-GCM on AArch64, interleaved: what `Verified` needs of `sealWithS` and `openWithS`

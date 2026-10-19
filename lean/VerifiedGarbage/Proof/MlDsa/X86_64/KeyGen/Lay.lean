@@ -1,27 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
+public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA key generation on x86-64: its contract, parameters and buffers

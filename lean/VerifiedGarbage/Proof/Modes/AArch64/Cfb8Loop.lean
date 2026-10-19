@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Steps
+import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Steps
 public import VerifiedGarbage.Proof.Modes.Cfb8
+public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CFB8 on AArch64, for any core: the data loop

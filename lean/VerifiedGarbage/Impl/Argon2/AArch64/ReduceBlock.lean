@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 
 /-! XOR a last-lane block at `x1` into the accumulator at `x0`: eight words
 per pass of a loop counted down in `x14`, advancing both pointers, which are

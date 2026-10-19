@@ -2,15 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Parameters
 public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveAbi
-public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveSaved
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Covers
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
-public import VerifiedGarbage.Impl.Argon2.AArch64.Derive
-import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Argon2.AArch64.DeriveFrame
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+import VerifiedGarbage.Proof.Argon2.AArch64.DeriveSaved
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Argon2.AArch64.DeriveNormalize`. -/
 

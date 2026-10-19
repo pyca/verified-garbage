@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Argon2.HPrime
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Next`. -/
 

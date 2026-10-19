@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.SignCached
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Entry
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+public import VerifiedGarbage.Spec.Ed448.Contract
 import Mathlib.Tactic.Conv
 
 /-!

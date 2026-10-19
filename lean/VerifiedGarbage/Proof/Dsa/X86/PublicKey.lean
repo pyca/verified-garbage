@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Domain
-public import VerifiedGarbage.Proof.Dsa.X86.Subgroup
+import VerifiedGarbage.Proof.Dsa.X86.Domain
+import VerifiedGarbage.Proof.Dsa.X86.Subgroup
 public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
 /-! # Complete algebraic checks of public DSA components -/
 

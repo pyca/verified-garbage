@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Contract
 public import VerifiedGarbage.Proof.Ffdh.KeyGeneration
-public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Front
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 
 /-! # The key-generation controller's public data, loop states and buffers (AArch64)
 

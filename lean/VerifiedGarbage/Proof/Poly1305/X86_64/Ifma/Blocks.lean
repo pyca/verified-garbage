@@ -6,6 +6,34 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Final
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: `vg_poly1305_blocks_ifma`

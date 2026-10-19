@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialOne
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialOne
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

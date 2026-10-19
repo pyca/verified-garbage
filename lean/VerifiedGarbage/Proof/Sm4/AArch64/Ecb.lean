@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.Group
-import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Spec.Sm4.Contract
+public import VerifiedGarbage.Proof.Sm4.AArch64.Keys
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SM4 ECB on AArch64: the whole function

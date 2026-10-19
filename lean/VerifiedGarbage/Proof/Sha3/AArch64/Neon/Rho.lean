@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 
 @[expose] public section
 

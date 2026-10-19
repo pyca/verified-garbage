@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.FullTerm
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

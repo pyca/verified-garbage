@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Reading a byte for DSA streaming reduction -/
 

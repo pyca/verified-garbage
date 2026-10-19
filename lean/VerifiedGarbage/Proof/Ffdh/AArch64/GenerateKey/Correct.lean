@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Finish
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Rsa.Octets
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: correctness

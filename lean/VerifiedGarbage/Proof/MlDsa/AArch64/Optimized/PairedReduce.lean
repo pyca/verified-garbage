@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

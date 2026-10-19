@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+import VerifiedGarbage.Proof.Argon2.AArch64.Mix
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
+public import VerifiedGarbage.Proof.Argon2.Spec
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Argon2 compression working memory -/
 

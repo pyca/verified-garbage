@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.EncRow
+public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
 
 /-!
 # ML-KEM on x86 (32-bit): the ciphertext of K-PKE.Encrypt

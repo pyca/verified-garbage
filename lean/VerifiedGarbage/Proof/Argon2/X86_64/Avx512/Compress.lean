@@ -1,11 +1,48 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+import VerifiedGarbage.Proof.Argon2.PermuteMany
+meta import VerifiedGarbage.Proof.Argon2.PermuteMany
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX-512

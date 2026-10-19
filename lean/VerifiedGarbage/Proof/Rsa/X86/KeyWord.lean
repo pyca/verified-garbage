@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyBits
+import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Updating low words of RSA workspace arrays -/
 

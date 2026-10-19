@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
+import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Aes.Arm.Ctr32
+public import VerifiedGarbage.Proof.Aes.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Bitslicing the round keys, on ARMv7

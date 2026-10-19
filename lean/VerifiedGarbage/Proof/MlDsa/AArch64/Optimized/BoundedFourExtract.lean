@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 

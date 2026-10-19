@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
 
 /-! # Native inputs before entering the wrapper's two stack frames -/
 

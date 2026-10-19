@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Importing one CRT input into its fixed workspace array -/
 

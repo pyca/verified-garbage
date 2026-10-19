@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsC
+import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
 
 /-!
 # ML-DSA signing on x86-64: calls of the packing primitives

@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
 
 /-!
 # Camellia's core for the modes on AArch64: the return address across the calls

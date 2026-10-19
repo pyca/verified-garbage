@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!
 # RSA with the CRT on x86-64: the entry

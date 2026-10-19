@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Run
 public import VerifiedGarbage.Proof.Cast5.Table
-import VerifiedGarbage.Proof.Framework.Arm.Syms
+public import VerifiedGarbage.Impl.Cast5.Arm
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 on ARMv7: the scan of a table

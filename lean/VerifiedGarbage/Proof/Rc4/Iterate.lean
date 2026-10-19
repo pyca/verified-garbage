@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Rc4
 
-public import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Stream
 
 /-!
 # The stream, byte by byte

@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
 public import VerifiedGarbage.Proof.MlKem.CoeffW
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-! # Output and input advancement after stable vector compaction -/
 

@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+public import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # AES-GCM on AArch64: the tag (`tag o`)

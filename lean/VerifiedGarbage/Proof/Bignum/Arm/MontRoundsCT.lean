@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
+import VerifiedGarbage.Proof.Bignum.Arm.Round
 
 /-! # Constant-time Montgomery scanning with secret operands and inverse -/
 

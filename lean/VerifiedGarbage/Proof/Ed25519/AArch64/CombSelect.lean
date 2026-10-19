@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombDigit
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
-import VerifiedGarbage.Proof.Framework.CallLay
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The comb's tables

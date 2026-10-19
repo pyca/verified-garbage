@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
 import VerifiedGarbage.Proof.MlKem.Arm.Loops
 
 /-!

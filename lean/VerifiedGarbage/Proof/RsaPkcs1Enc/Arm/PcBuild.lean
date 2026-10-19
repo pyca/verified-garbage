@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcBase
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: building `EM`

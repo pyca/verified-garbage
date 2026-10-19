@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.Arith
 import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The SHA-3 sponge on AArch64: `pad`

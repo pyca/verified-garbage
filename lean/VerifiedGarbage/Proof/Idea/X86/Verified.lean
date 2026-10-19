@@ -4,16 +4,42 @@ public import VerifiedGarbage.Proof.Idea.X86.Ecb
 meta import VerifiedGarbage.Proof.Idea.X86.Ecb
 public import VerifiedGarbage.Proof.Idea.X86.Lit
 meta import VerifiedGarbage.Proof.Idea.X86.Lit
-public import VerifiedGarbage.Proof.Idea.Local
+import VerifiedGarbage.Proof.Idea.Local
 meta import VerifiedGarbage.Proof.Idea.Local
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Idea.X86.Invert
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Key
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Idea.Arith32
+meta import VerifiedGarbage.Proof.Idea.KeyBits
+meta import VerifiedGarbage.Proof.Idea.Memory
+meta import VerifiedGarbage.Proof.Idea.X86.Block
+meta import VerifiedGarbage.Proof.Idea.X86.Invert
+meta import VerifiedGarbage.Proof.Idea.X86.Key
 
 /-!
 # Verified IDEA on x86 (32-bit), with its working space on the stack

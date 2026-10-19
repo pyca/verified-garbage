@@ -1,11 +1,72 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+import VerifiedGarbage.Proof.MlKem.X86.EncV
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
+meta import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+meta import VerifiedGarbage.Proof.MlKem.X86.EncV
+meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
+meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA verification on x86 (32-bit): the body

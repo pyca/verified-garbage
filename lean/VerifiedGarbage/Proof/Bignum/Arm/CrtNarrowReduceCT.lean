@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimePowerInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
-public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Reducing the input modulo a factor hides the factor, the input and acceptance -/
 

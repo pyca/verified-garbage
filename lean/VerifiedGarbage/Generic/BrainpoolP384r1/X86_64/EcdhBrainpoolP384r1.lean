@@ -5,10 +5,8 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.Ecdh.X86_64.BrainpoolP384r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Spec.Ecdh.BrainpoolP384r1
 
 /-! # brainpoolP384r1 on x86-64, generic over its proven group law and inversions -/
 

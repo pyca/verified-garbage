@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Impl.Rsa.X86.Div
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Rsa.X86.DivBit
+import VerifiedGarbage.Proof.Rsa.X86.DivShift
 
 /-! # The quotient's high bit is shifted into the extended remainder -/
 

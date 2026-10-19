@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
 import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
 import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # DSA exponentiation, including conversion out of Montgomery form -/
 

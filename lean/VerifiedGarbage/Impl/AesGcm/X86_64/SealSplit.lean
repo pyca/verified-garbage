@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 
 /-!

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorScan
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Store a selected 64-byte block while preserving its source snapshot. -/
 

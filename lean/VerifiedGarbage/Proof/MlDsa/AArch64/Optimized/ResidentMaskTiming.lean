@@ -2,22 +2,99 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Spec.MlDsa.Poly
 meta import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 meta import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeccakMix
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorb
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRestoreG
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+meta import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwLanes
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.HwRounds
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
 
 /-! ## From `ResidentMaskDecode.lean` -/
 

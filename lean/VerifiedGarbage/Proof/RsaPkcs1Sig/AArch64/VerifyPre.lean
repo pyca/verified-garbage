@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Verify
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
 
 /-!

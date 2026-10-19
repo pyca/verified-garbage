@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
 
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
-public import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 
 /-!
 # Streaming BLAKE2 on x86 (32-bit): `Verified`, for any compression function

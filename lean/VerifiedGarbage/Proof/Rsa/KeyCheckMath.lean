@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Rsa.KeyParts
 
 /-!
 # RSA: the key checks from a division and products modulo `p - 1`

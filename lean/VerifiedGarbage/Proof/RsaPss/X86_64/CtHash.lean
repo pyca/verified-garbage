@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 public import VerifiedGarbage.Proof.RsaPss.CtPad
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS on x86-64: hashing a message of secret length

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideMath
+import VerifiedGarbage.Proof.Bignum.Arm.WideMath
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # The word-level value of ARMv7's full product -/

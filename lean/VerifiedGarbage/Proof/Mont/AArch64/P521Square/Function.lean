@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Saves
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMath
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! The P-521 square as an alias-safe leaf function with caller-state restoration. -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Rsa.X86.DivCopy
 
 /-! # Copying a key-workspace array -/
 

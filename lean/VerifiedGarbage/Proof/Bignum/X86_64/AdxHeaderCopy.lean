@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 
 /-! Scalar copies preserve every byte outside their destination. -/
 

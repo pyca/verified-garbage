@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The modes one block at a time on ARMv7: the loop and the whole function

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeBytes
 
 /-! # The probable-prime policy inherits stack bounds from shared arithmetic -/
 

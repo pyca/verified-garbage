@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # SHA-256 as a streaming Merkle–Damgård hash function

@@ -1,7 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Absorb
-import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesCcm.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-CCM on x86-64: the encoding of the length of the associated data

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPack
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackPartCT
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackPart
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Component packing preserves the native generation context -/
 

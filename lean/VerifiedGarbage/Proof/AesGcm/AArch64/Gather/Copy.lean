@@ -1,8 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: copying a slice

@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Verification's digits at the counter's position

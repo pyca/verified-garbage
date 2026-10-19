@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Weierstrass.Field
+import VerifiedGarbage.Proof.Weierstrass.Field
 public import Mathlib.Tactic.LinearCombination
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Inversion by divsteps: the result in Montgomery form

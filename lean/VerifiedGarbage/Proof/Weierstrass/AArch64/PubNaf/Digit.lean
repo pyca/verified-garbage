@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # The public NAF's digits

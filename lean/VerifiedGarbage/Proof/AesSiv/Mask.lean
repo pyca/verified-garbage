@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Siv.Spec
-public import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Spec.Siv
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-SIV: masking the data

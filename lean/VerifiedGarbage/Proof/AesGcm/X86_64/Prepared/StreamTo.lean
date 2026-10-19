@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.AesGcm.ScratchTo
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-! # Prepared-context StreamTo contracts -/
 

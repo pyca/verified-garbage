@@ -1,6 +1,8 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.X448.Field
+public import VerifiedGarbage.Proof.X448.X86.Mem
 
-public import VerifiedGarbage.Proof.X448.X86.Normalize
 import Mathlib.Tactic.SplitIfs
 
 /-!

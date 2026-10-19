@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.Arm.Verified
+import VerifiedGarbage.Proof.Seed.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
-public import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Spec.Seed.Cbc
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Seed.Arm.Lit
+public import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!

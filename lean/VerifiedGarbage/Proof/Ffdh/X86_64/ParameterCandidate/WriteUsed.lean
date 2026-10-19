@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+import VerifiedGarbage.Proof.Bignum.ExternalWords
 
 /-! # FFDH parameter generation on x86-64: write the public consumed count -/
 

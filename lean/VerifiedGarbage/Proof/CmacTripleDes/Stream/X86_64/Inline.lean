@@ -1,9 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Verified
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Implies
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Streaming TDEA-CMAC on x86-64: the code of `init`, `update` and `finalize`, inline

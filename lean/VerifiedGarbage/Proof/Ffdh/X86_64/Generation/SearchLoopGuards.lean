@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Only a native rejection continues the search loop -/
 

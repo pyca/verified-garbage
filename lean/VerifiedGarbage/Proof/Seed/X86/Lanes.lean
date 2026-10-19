@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.X86.G8
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The arrays of 32-bit words in the scratch buffer

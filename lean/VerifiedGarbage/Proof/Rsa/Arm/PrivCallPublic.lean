@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
 
 /-! # Public call arguments agree when the key and buffer geometry agree -/
 

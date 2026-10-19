@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.P521.X86
-public import VerifiedGarbage.Proof.EcKey.X86.P521.Verified
-import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.EcKey.X86.P521.Verified
+public import VerifiedGarbage.Proof.EcKey.X86.P521.Lit
+public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P521
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on x86 (32-bit)

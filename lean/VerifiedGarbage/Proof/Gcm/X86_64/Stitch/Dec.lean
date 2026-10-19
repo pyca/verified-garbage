@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Interleaved counter mode and GHASH: decryption

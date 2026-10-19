@@ -1,15 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-public import VerifiedGarbage.Proof.ChaCha20.X86.Block
+import VerifiedGarbage.Proof.ChaCha20.X86.Block
 meta import VerifiedGarbage.Proof.ChaCha20.X86.Block
 public import VerifiedGarbage.Impl.ChaCha20.X86.Stream
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Spec.ChaCha20.Contract
 meta import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.ChaCha20.Stream
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): `init` and `set_nonce`

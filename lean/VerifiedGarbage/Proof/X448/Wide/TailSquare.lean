@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
-import VerifiedGarbage.Proof.X448.Wide.TailProduct
 import VerifiedGarbage.Proof.X448.Wide.SymmetricColumns
-public import VerifiedGarbage.Proof.X448.Wide.Mul
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X448.Wide.Bridge
-import VerifiedGarbage.Proof.X448.Wide.CarryStep
 import VerifiedGarbage.Proof.X448.Wide.Encoded
 import VerifiedGarbage.Proof.X448.Wide.Reduce
 import VerifiedGarbage.Proof.X448.Wide.TailNormalize
+import VerifiedGarbage.Proof.X448.Wide.LoadCached
+import VerifiedGarbage.Proof.X448.Wide.Pack
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: cached-input squaring behind the unchanged field-slot contract. -/
 

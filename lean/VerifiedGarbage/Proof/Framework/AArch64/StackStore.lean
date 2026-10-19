@@ -1,6 +1,9 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-! Execution of an aligned stack-relative word store. -/
 @[expose] public section

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Compose leakage proofs while retaining independent secret states -/
 

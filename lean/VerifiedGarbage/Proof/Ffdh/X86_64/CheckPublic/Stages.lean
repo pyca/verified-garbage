@@ -1,14 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Correct
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Context
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 
 /-!
 # `vg_ffdh_check_public` on X86_64: the stages of a run

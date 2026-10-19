@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86.Mem
 
-public import VerifiedGarbage.Proof.X448.X86.Step
+import VerifiedGarbage.Proof.X448.X86.Step
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on x86 (32-bit): carry propagation

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentUnpackLoop.lean` -/
 

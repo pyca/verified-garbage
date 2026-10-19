@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseL
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 
 /-!
 # ML-DSA signing on ARMv7: the signature

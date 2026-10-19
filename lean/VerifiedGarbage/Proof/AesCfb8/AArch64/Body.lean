@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.AArch64.Steps
+import VerifiedGarbage.Proof.AesCfb8.AArch64.Steps
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+public import VerifiedGarbage.Proof.AesCfb8.AArch64.Loop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.AesCbc.Mem
 
 /-!
 # AES-CFB8 on AArch64: one byte

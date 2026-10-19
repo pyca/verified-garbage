@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.Round
-public import VerifiedGarbage.Proof.Cast5.Memory
+public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 on x86-64: a block

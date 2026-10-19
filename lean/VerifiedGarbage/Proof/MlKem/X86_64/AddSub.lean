@@ -2,18 +2,36 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Arith
-public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-public import VerifiedGarbage.Proof.MlKem.Arith
-meta import VerifiedGarbage.Proof.MlKem.Arith
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_add` and `vg_mlkem_sub`

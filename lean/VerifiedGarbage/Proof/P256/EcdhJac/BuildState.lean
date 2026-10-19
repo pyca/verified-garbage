@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.P256.EcdhJac.State
 
 import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! ## `Store` -/
 

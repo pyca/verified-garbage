@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotFive
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMiddle
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## From `DotLoop.lean` -/
 

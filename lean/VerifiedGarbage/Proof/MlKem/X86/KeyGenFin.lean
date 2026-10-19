@@ -4,6 +4,44 @@ public import VerifiedGarbage.Proof.MlKem.X86.KeyGenRow
 meta import VerifiedGarbage.Proof.MlKem.X86.KeyGenRow
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+meta import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
+meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
+meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+meta import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-KEM on x86 (32-bit): the keys in key generation

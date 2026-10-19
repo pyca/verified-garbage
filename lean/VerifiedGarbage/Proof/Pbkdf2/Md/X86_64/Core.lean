@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacInit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFin
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: the functions, verified

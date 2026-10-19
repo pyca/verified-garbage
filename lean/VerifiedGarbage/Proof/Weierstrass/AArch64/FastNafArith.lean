@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSubtract
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
-import VerifiedGarbage.Impl.Weierstrass.AArch64.FastNaf
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 @[expose] public section
 

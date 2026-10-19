@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
-public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Importing an integer preserves public call geometry and has a public trace -/
 

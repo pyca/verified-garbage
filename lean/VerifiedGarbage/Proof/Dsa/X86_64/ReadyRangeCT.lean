@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.OneScanCT
+import VerifiedGarbage.Proof.Dsa.X86_64.OneScanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
 
 /-! # Range-check timing in the complete DSA workspace -/
 

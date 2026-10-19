@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Multiword arithmetic: words in memory

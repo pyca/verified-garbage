@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcContract
+import VerifiedGarbage.Proof.Bignum.Arm.PcContract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # ARMv7 public precomputation is verified against the shared RSA contract -/
 

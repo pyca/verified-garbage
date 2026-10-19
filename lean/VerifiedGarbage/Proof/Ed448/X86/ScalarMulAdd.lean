@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 import VerifiedGarbage.Proof.X448.X86.MulLoop
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.X448.X86.Init
-import VerifiedGarbage.Proof.X448.X86.Ops
 import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.Carry
 
 /-!
 # Ed448 scalar multiply-add on x86 (32-bit): the steps

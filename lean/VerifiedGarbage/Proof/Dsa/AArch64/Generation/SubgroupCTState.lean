@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuildCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
+public import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public subgroup-generation data excludes unused frame contents -/

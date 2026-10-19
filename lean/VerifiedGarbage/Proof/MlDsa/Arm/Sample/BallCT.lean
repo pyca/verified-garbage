@@ -1,9 +1,36 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallLoop
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Ball
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_sample_in_ball`, constant time but for `c̃`, and `Verified`

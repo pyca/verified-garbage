@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
-import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the primitives verification calls

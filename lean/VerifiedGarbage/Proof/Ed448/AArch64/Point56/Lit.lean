@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.Ed448.AArch64.Point56
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-! Literals of the AArch64 point functions' code (`vg_ed448_r56_point_double`,
 `vg_ed448_r56_point_add`, `vg_gf448_r56_pow_p34`), which the checks of their

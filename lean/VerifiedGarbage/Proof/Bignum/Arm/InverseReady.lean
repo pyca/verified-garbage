@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
+import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Inverse initialization establishes the RSA arithmetic invariant -/
 

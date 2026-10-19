@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 
-public import VerifiedGarbage.Proof.X448.AArch64.Small
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

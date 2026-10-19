@@ -1,7 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 
 /-!
 # ML-DSA on x86 (32-bit): writing a table of constants

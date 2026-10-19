@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Storing a pair of words after the square's diagonal addition. -/
 

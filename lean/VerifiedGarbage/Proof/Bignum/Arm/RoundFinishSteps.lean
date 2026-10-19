@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Round
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Clear the high word and advance the Montgomery round's temporary state -/
 

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.SignedWindow
-public import VerifiedGarbage.Proof.Ed448.Window
-import VerifiedGarbage.Proof.Ed448.VerifyEq
+public import VerifiedGarbage.Proof.X448.BaseTable
+import VerifiedGarbage.Proof.Ed448.Window
 
 /-! Balanced five-bit recoding, including all 456 input bits. -/
 

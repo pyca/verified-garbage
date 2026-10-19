@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.P384
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.P384
 
 /-!
 # P-384 public keys on x86 (32-bit): the contract the proof is written against

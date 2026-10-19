@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorPower
-public import VerifiedGarbage.Proof.Dsa.X86_64.Parent
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Data.Int.ModEq
 
 /-! # Initialize the generator exponentiation's saved parent operands -/
 

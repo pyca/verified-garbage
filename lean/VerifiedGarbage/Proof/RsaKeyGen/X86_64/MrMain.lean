@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.RsaKeyGen.Bits
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # A candidate on x86-64: Miller–Rabin's loop

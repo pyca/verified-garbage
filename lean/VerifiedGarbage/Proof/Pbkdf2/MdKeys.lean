@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function: the padded keys

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallSample
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
 
 /-!
 # ML-DSA verification on x86-64: the result in `r15`, and the samplers

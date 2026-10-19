@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import Mathlib.Data.Int.GCD
+public import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-!
 # RSASSA-PSS verification on x86-64: the contract on the registers

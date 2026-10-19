@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Preparing the three operand bindings of a DSA arithmetic call -/
 

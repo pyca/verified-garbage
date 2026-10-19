@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRest
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The arithmetic recovery outputs satisfy the RSA byte-string result -/
 

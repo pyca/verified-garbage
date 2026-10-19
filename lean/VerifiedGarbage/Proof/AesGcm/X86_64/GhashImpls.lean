@@ -8,9 +8,30 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on x86-64: the implementations of `vg_ghash`

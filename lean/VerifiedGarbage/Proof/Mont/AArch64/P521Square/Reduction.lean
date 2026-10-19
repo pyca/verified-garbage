@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMachine
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionFold
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMath
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 set_option exponentiation.threshold 1024

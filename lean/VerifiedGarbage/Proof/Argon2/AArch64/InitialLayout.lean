@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
-import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
-public import VerifiedGarbage.Proof.Argon2.Initial
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Argon2.AArch64.Initial
 
 /-! # The stack inputs and scratch allocation used by H₀ -/
 

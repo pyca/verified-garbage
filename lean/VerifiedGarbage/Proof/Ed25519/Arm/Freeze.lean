@@ -4,6 +4,9 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
 import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.Arm.FreezeSteps`. -/
 

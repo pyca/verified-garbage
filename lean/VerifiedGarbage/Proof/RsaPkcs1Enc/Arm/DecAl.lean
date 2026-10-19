@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecIrprf
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecTaint
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrfLoop
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the alternative length

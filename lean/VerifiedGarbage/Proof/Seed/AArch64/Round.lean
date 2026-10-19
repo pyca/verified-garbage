@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Seed.AArch64.G16
+public import VerifiedGarbage.Proof.Seed.AArch64.Steps
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Swap
+import VerifiedGarbage.Proof.Seed.AArch64.Swap
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A round on AArch64

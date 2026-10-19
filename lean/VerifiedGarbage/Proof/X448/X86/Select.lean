@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Swap
+public import VerifiedGarbage.Proof.X448.X86.Instr
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 

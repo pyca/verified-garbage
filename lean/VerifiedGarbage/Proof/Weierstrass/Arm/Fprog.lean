@@ -2,13 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.Arm
-public import VerifiedGarbage.Proof.Mont.Arm.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontCall
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Field programs on 32-bit ARM

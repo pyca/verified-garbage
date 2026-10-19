@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The leading byte's high bit matches the specification's candidate-width guard. -/
 @[expose] public section

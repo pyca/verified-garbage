@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Rc4.Arm.ApplyStep
 import VerifiedGarbage.Proof.Rc4.Update
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # RC4 on ARMv7: the stream loop -/
 

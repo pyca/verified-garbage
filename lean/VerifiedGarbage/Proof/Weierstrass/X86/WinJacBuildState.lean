@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombSelect
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! ## `WinJacLayout` -/
 

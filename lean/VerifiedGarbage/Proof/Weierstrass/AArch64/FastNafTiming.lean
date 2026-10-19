@@ -1,11 +1,11 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafLoop
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

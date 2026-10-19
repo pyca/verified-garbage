@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfBody
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfBody
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfBase
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PKCS1-v1_5 verification with a precomputed public key on ARMv7: verified

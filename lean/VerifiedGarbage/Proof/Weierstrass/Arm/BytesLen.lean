@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.BytesLen32
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Weierstrass.Arm
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: numbers of `len` bytes

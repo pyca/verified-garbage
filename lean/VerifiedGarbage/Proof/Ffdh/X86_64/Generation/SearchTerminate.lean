@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Terminal transitions clear the attempt and entropy-request policy -/
 

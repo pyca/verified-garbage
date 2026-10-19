@@ -4,8 +4,38 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Iterate
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Iterate
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+meta import VerifiedGarbage.Proof.Sha256.StateMem
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86 (32-bit): constant time

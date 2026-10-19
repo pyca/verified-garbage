@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
 
 /-! # The loop's immutable arguments survive one draw and round -/
 

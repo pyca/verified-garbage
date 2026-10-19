@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
-public import VerifiedGarbage.Proof.Divstep.Tc32Red
+import VerifiedGarbage.Proof.Divstep.Tc32Red
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.BitVec
 import Mathlib.Tactic.Linarith

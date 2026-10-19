@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CopyArray
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Internal array transfers preserve integer values -/
 

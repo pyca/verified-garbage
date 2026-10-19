@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
-meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Secp256k1Literals
+import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ECDSA over secp256k1 on AArch64: the code as a literal

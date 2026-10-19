@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
-import VerifiedGarbage.Proof.Ed25519.Group.Decode
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! The verification inputs remain readable and outside the workspace. -/
 

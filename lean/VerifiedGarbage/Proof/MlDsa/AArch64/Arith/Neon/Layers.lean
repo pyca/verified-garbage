@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
 
 @[expose] public section
 

@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
-public import VerifiedGarbage.Proof.X448.AArch64.Init
 public import VerifiedGarbage.Proof.X448.Pairs
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 verification's equation on AArch64: seven-byte chunks

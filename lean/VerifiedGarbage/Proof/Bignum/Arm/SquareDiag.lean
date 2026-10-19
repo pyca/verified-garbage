@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareDouble
-public import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
-public import VerifiedGarbage.Proof.Bignum.Arm.Mac
+import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
+import VerifiedGarbage.Proof.Bignum.Arm.Mac
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Inline
 
 /-! # The squares of the operand's words added to the doubled cross products -/
 

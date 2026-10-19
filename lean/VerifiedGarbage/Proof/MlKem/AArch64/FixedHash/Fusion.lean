@@ -1,6 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.CallFill
+public import VerifiedGarbage.Proof.Framework.RelCT
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash.Fusion
 open VG

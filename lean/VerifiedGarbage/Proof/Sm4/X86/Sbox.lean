@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Impl.Sm4.X86.Sbox
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86.Straight
-import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced SM4 S-box on x86 (32-bit)

@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Contract
-public import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.X86.Top
 public import VerifiedGarbage.Impl.AesGcmSiv.X86
+public import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on x86: where everything is

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.CallPack
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 
 /-!
 # ML-DSA on 32-bit ARM: calling the primitives only verification uses

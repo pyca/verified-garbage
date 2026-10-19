@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Tail
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH private-key validation on x86-64: entry and modulus validation -/
 

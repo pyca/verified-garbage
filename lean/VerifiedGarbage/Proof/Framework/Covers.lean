@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Covering regions

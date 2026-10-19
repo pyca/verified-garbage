@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackInit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

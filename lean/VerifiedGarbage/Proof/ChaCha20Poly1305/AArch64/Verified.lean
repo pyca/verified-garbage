@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
@@ -14,6 +16,105 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Backends
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.ContractPost
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Init
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+meta import VerifiedGarbage.Proof.Poly1305.Limbs64
+meta import VerifiedGarbage.Proof.Poly1305.Stream
 
 /-!
 # ChaCha20-Poly1305 on AArch64: `Verified`

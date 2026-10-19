@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, sampling

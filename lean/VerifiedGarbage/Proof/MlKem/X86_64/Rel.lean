@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ML-KEM on x86-64: constant time by relating two runs

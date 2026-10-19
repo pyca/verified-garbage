@@ -1,8 +1,12 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalarHead
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalarHead
+import VerifiedGarbage.Proof.Dsa.AArch64.CopyMasked
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
 
 /-! # Masked copying of each DSA signature scalar to the caller -/
 

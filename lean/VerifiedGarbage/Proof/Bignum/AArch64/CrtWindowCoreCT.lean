@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSquares
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 
 /-! Constant-time composition of a five-bit window. Only workspace layout
 is shared between runs; the modulus, table and selected digit are secret. -/

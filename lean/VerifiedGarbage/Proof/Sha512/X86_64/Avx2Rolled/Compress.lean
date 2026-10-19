@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Rounds
+public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Weave
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: the compression function

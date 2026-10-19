@@ -1,14 +1,42 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Verified
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMulAdd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.Pow223
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 
 /-!
 # Ed448 verification on x86-64: the challenge and the equation

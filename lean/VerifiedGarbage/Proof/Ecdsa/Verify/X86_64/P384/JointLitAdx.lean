@@ -1,13 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLitAdx
-import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.P384Literals
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # ECDSA verification over P-384 on x86-64 with BMI2 and ADX: the code as a literal

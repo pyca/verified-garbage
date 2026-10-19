@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseA
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
-public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Words
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 
 /-!
 # ML-DSA signing on x86 (32-bit): the private key, and `ρ″`

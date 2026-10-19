@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! # The prepared round never changes its caller's saved stack words -/
 

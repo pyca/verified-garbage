@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # A factor shorter than the modulus leaves room for modular addition -/
 

@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStages
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStatus
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.Rsa.X86.PrivTailTiming
 
 /-! # The padding check never branches on the precomputed RSA call's status -/
 

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Newton64
-public import VerifiedGarbage.Proof.Bignum.Arm.Mul64
-public import VerifiedGarbage.Proof.Bignum.Arm.Sub64
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Sub64
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Loading, subtracting, and retaining one Newton iterate -/
 

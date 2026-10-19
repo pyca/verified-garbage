@@ -1,13 +1,15 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Verified
+import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Spec.Ecdh.Secp256k1
+import Mathlib.Tactic.ClearExcept
 
 /-! # secp256k1 on AArch64, generic over its proven group law and inversions -/
 

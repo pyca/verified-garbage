@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Secret CRT factor and coefficient loading is constant-time -/
 

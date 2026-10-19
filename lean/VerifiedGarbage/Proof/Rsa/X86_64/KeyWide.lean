@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-!
 # Full-exponent products and their bounded quotients

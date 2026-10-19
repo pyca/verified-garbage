@@ -1,15 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Only the verifying ABI's declared public observations determine its schedule -/
 

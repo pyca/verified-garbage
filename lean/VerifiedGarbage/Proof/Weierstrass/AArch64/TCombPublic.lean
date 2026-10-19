@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Framework.Lit
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! Direct table selection for public verification scalars. -/
 

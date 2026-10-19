@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Field
 
-public import VerifiedGarbage.Proof.X448.Arm.Copy
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on ARMv7: constant-time conditional swaps

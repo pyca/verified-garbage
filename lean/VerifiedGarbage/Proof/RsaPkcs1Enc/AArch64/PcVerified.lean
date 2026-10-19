@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCT
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-import VerifiedGarbage.Proof.Sha512.Word64
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: the shared contract

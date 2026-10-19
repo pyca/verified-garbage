@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Frag
 
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
-public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA verification on x86-64: moves, layouts and calls

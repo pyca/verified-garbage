@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Aes.Blocks
 
 /-!
 # CMAC: doubling a 16-byte block as a 128-bit integer

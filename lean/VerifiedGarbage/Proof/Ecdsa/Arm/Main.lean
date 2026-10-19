@@ -3,8 +3,15 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
 import VerifiedGarbage.Proof.Weierstrass.Arm.Rep
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
-public import VerifiedGarbage.Proof.Ecdsa.Sign
+public import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDSA on 32-bit ARM: the whole function

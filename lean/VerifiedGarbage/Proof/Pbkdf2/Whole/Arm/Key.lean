@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the prologue and the key

@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Bfly
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.Arith.VectorNtt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

@@ -2,10 +2,60 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.Spec
 meta import VerifiedGarbage.Proof.AesCfb.Spec
-public import VerifiedGarbage.Proof.AesOfb.X86_64.Body
+import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 meta import VerifiedGarbage.Proof.AesOfb.X86_64.Body
 public import VerifiedGarbage.Impl.AesCfb.X86_64
+public import VerifiedGarbage.Proof.AesCbc.Mem
+public import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Impl.AesCfb.X86_64
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Spec.Cfb.Contract
+import VerifiedGarbage.Spec.Ofb.Contract
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Spec.Cfb.Contract
+meta import VerifiedGarbage.Spec.Ofb.Contract
 
 /-!
 # AES-CFB128 on x86-64: one block, and constant time

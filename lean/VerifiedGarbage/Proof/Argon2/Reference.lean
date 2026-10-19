@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.Dimensions
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Argon2
 
 /-! # Bounds for the quadratic reference-window mapping in RFC 9106 §3.4.2 -/
 

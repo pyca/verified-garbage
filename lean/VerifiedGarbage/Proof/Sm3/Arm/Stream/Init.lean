@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Sm3.Arm.Compress
+import VerifiedGarbage.Proof.Sm3.Arm.Compress
 meta import VerifiedGarbage.Proof.Sm3.Arm.Compress
 import VerifiedGarbage.Proof.Sm3.Stream
 meta import VerifiedGarbage.Proof.Sm3.Stream
@@ -10,8 +10,30 @@ import VerifiedGarbage.Impl.Sm3.Arm.Stream
 meta import VerifiedGarbage.Impl.Sm3.Arm.Stream
 import VerifiedGarbage.Proof.Sm3.StateMem
 meta import VerifiedGarbage.Proof.Sm3.StateMem
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sm3.Arm.Contract
+public import VerifiedGarbage.Proof.Sm3.Arm.Lit
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SM3 on ARMv7: `init`

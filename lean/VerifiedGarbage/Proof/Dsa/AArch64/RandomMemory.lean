@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Source slices and the right-aligned nonce's memory frame. -/

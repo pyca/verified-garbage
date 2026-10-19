@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 
 /-!
 # Ed448's complete operations on AArch64: constant time in the frame's body

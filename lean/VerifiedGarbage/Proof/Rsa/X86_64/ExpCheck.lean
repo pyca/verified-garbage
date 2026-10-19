@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-!
 # RSA on x86-64: BoringSSL's limits on the public exponent

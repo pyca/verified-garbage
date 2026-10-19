@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+public import VerifiedGarbage.Proof.Ed448.Formulas
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The projective table occupies a separate range of the existing scratch space. -/
 

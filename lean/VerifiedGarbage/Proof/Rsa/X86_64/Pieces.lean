@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

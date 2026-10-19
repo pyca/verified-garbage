@@ -1,7 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
+import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
 public import VerifiedGarbage.Proof.Cmac.Block
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacAes.AArch64
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CMAC on AArch64: `vg_cmac_aes_finalize`, the last block

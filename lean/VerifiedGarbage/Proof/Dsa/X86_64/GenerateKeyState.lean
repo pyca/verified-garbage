@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyDerive
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyABI
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyEntry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Key generation's frame state, through its entry and the domain check -/
 

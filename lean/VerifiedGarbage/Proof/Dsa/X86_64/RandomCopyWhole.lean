@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopy
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Compose the masked first byte and unmasked suffix of a random draw. -/
 @[expose] public section

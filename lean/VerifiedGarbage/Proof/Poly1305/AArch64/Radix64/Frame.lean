@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Streaming Poly1305 on AArch64, with its working space on the stack

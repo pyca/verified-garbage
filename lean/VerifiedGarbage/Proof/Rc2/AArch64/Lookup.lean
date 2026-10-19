@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.Lookup
-import VerifiedGarbage.Proof.Rc2.Select
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Correctness of baseline AArch64 RC2 lookup steps -/
 

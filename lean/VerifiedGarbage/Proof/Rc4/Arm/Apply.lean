@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.ApplyLoop
-public import VerifiedGarbage.Proof.Rc4.Arm.Init
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+import VerifiedGarbage.Proof.Rc4.Arm.Init
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # RC4 on ARMv7: the stream function -/
 

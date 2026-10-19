@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseO
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseL
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA signing on x86-64: correctness

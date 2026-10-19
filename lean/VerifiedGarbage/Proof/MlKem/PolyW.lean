@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Spec.MlKem.Kpke16
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM: polynomials of `w`-bit words in memory, for every target

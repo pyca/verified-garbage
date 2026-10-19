@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Persistent state across DSA arithmetic and validation schedules -/

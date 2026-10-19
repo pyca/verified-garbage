@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Sm4.X86.Prepared
-public import VerifiedGarbage.Proof.Sm4.Planes
+import VerifiedGarbage.Proof.Sm4.Planes
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SM4's prepared round keys and batches on x86 (32-bit): the code

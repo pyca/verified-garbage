@@ -5,7 +5,22 @@ public import VerifiedGarbage.Proof.Blowfish.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Spec.Rc2
 

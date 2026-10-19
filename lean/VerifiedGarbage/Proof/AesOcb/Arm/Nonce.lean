@@ -2,6 +2,10 @@ module
 
 import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
 public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` (`nonce`)

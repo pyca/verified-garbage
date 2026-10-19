@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Ecdsa.Verify
+public import VerifiedGarbage.Spec.P384
 
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): the contract the proof is written against

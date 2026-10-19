@@ -2,14 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
-public import VerifiedGarbage.Impl.Sm4.X86.Ecb
-meta import VerifiedGarbage.Impl.Sm4.X86.Ecb
 public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
 meta import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
 public import VerifiedGarbage.Impl.Sm4.X86.Prepared
 meta import VerifiedGarbage.Impl.Sm4.X86.Prepared
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # SM4 on x86 (32-bit): the code as literals

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: their callee `vg_rsa_public_precomputed_checked`

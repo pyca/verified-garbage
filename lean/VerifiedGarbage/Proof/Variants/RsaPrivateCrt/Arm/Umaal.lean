@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
+import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
 
 /-!
 # `vg_rsa_private_crt` on ARMv7 with `umaal`: the variant's code and proofs

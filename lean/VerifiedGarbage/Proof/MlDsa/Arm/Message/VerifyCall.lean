@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCall
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: the call of the verification function on `μ`

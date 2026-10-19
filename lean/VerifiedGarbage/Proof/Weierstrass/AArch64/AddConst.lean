@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # The window method on AArch64: the recoded scalar

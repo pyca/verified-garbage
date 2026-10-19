@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvABI
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Rsa.X86.RvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.RvResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Recovery output writes preserve saved registers and the caller's return address -/
 

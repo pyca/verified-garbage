@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputArgs
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Every failed search zeros the complete output and returns zero -/

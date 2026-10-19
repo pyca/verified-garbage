@@ -2,9 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Env
 public import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
+public import VerifiedGarbage.Proof.AesSiv.Arm.Call
 import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on ARMv7: the CMAC of a string (`cmacOf`)

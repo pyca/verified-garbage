@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvSk
-public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
-public import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
+public import VerifiedGarbage.Proof.Rsa.Arm.RvCand4
+public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `y` out of Montgomery form, and `p = gcd(y - 1, n)`
 

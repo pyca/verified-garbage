@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Short Weierstrass curves on AArch64: loops counted down in `x19`

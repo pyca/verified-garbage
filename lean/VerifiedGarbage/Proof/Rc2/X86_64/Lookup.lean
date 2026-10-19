@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86_64.Lookup
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! # Correctness of baseline x86-64 RC2 lookup steps -/

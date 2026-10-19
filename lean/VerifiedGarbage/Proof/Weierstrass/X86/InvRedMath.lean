@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Tc32Words
 public import VerifiedGarbage.Proof.Mont.Words32
+public import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Data.BitVec
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
 
 /-! # Word positions used by the divstep reduction -/
 

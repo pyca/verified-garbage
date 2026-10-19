@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Normalizing unused bookkeeping preserves the prepared round -/

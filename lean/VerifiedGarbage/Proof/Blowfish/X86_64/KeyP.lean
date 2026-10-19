@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyInit
+public import VerifiedGarbage.Proof.Blowfish.X86_64.F
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Blowfish.KeyTable
 import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import VerifiedGarbage.Proof.Blowfish.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Key expansion: the keyed P-array

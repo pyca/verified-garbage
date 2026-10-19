@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+public import VerifiedGarbage.Impl.Sha3.X86_64.X4Reg
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # Keccak-f[1600] four times at once, in registers: one instruction at a time

@@ -1,10 +1,18 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.X448.X86.Field
+public import VerifiedGarbage.Spec.X448.Contract
 
-public import VerifiedGarbage.Proof.X448.X86.Pack
+import VerifiedGarbage.Proof.X448.X86.Pack
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86 (32-bit): the output buffer

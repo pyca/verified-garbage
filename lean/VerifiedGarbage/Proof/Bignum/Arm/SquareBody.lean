@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareFinish
+import VerifiedGarbage.Proof.Bignum.Arm.SquareFinish
+import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
+import VerifiedGarbage.Proof.Bignum.Arm.Csub
+import VerifiedGarbage.Proof.Bignum.Arm.CsubValue
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The whole ARMv7 Montgomery square: `a² R⁻¹ mod m`, canonical -/
 

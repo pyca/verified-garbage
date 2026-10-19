@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86.Fn
 public import VerifiedGarbage.Proof.AesGcm.X86.Contract
 import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: from the contracts to the pieces

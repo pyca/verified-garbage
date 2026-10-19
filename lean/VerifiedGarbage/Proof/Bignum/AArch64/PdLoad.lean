@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: the load and the checks

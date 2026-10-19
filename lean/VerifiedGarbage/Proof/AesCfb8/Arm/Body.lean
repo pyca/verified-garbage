@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Arm.Steps
+import VerifiedGarbage.Proof.AesCfb8.Arm.Steps
 public import VerifiedGarbage.Proof.AesCbc.Arm.Body
+public import VerifiedGarbage.Impl.AesCfb8.Arm
+public import VerifiedGarbage.Proof.AesCfb8.Arm.Loop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesOcb.Arm.Contract
 
 /-!
 # AES-CFB8 on ARMv7: one byte

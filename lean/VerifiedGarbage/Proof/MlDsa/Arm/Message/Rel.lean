@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: two runs

@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # `vg_rsa_public` on x86-64: the exponentiation

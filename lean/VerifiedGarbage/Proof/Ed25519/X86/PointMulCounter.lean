@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
-import VerifiedGarbage.Impl.Ed25519.X86.PointBatch
 import VerifiedGarbage.Proof.Ed25519.X86.PointPowersLoop
 import VerifiedGarbage.Proof.Ed25519.X86.PrepareAdd
 public import VerifiedGarbage.Impl.Ed25519.X86.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86.PointPowers
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.X86.Points
 

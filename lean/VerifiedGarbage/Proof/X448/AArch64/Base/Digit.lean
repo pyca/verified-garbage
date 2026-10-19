@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Base
-public import VerifiedGarbage.Proof.X448.AArch64.BitStep
 public import VerifiedGarbage.Proof.X448.BaseDigits
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.X448.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Swap
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 
 /-!
 # X448 of the base point on AArch64: the comb's digits and masks

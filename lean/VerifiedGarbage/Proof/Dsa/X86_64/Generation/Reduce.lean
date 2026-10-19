@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
-public import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native remainder subtraction and increment implement p reduction -/

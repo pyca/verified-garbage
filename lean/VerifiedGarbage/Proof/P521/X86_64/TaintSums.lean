@@ -3,8 +3,22 @@ module
 public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-!

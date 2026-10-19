@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.Arm.Subkeys
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_finalize`, the last block

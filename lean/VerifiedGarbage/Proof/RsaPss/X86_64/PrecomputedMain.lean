@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyPadding
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedFront
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 @[expose] public section
 

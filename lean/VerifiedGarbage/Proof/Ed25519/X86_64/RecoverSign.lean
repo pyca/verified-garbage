@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.X86_64.RecoverAdjust`. -/
 

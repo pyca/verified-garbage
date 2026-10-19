@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Public indices and public counter for the modular-doubling loop -/
 

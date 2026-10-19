@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScan
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentTest
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentTest
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The ARMv7 validator implements the shared public-exponent predicate -/
 

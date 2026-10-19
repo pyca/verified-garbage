@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.Arm.Mem
 
-public import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Carry
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on ARMv7: modular reduction

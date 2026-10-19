@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.Linear
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A round of bitsliced SM4 on AArch64

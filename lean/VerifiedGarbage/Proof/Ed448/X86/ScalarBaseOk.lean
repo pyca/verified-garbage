@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
-public import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
+import VerifiedGarbage.Proof.Ed448.Facts
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.Sym.Sym2.Init
@@ -10,10 +10,37 @@ public import Mathlib.Tactic.ContinuousFunctionalCalculus
 public import Mathlib.Tactic.NormNum.GCD
 public import Mathlib.Tactic.NormNum.Prime
 public import Mathlib.Tactic.Positivity.Finset
-public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Ed448.Group.Decode
+import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.VerifyEq
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Step
 
 /-!
 # Ed448 on x86: `vg_ed448_scalar_base` for its callers

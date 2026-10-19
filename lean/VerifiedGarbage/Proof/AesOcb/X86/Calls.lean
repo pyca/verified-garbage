@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Offset0
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: enciphering blocks (`callBlocks`)

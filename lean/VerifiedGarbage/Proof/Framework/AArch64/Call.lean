@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Calls and frames (AArch64)

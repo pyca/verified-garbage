@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Mul
-public import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the arithmetic of the lanes

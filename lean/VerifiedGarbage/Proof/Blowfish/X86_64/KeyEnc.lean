@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyStore
+import VerifiedGarbage.Proof.Blowfish.X86_64.KeyStore
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
+public import VerifiedGarbage.Proof.Blowfish.X86_64.KeyP
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Round
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Blowfish.X86_64.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Key expansion: the 521 encryptions

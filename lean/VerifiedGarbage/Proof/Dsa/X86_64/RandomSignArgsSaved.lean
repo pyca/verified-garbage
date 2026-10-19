@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Map the wrapper's saved arguments to the supplied-nonce signing ABI. -/

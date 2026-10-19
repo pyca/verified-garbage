@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # ARMv7: the addresses of statics never change

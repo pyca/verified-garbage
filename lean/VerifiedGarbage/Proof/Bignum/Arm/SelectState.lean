@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectStep
 public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
 
 /-! # The prefix invariant of branch-free multiword selection -/
 

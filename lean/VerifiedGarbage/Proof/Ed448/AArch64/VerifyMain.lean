@@ -10,6 +10,10 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Main
 
 /-!
 # Ed448 verification's equation on AArch64: the whole function

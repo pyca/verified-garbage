@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
-public import VerifiedGarbage.Spec.MlDsa.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.MlKem.Arm.Calls
 
 /-!
 # ML-DSA on 32-bit ARM: the contracts of the primitives, evaluated

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

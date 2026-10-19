@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 
 @[expose] public section
 

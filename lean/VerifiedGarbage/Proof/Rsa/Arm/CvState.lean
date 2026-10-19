@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvBase
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_crt_values` on ARMv7: what every stage keeps
 

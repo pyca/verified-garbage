@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
-public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
 
 /-!
 # ML-DSA: counting the 1s of a hint from its first coefficient, for every target

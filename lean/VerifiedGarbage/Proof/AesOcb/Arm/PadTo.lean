@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Impl.AesOcb.Arm
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.Arm.NonceBlock
 import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesOcb.Arm.Words
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB on ARMv7: `pad(S)` (`padTo`)

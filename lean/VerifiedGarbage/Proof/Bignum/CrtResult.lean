@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.CrtKey
 public import VerifiedGarbage.Proof.Bignum.CrtHdr
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
-public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with the CRT: the result

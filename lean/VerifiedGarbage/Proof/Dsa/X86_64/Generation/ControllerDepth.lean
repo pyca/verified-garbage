@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerDepth
 
 /-! # Search controllers inherit their bodies’ stack bounds -/
 

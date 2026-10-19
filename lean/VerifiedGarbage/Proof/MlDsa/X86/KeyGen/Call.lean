@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.Call
+public import VerifiedGarbage.Proof.MlKem.X86.Common
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.CallRet
-import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the primitives from the top-level functions

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CoreLoad
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Reinitializing the shared context from a DSA modulus -/
 

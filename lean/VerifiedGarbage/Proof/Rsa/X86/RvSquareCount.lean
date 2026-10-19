@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The iteration number and countdown of the recovery squaring loop -/
 

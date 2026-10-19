@@ -1,22 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on x86-64: the primitives it calls

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.EcKey.P256
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
+public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 
 /-!
 # P-256 public keys on AArch64: the contract the proof is written against

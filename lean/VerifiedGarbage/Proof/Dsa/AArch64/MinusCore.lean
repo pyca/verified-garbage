@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
 
 /-! # Exact subtraction of a small public value from the modulus -/
 @[expose] public section

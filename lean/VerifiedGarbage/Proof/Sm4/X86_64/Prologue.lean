@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.X86_64.Copy
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Sm4.X86_64.Round
 import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.X86_64.Core
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # SM4's prologue and epilogue on x86-64

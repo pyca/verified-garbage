@@ -4,8 +4,18 @@ import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 public import VerifiedGarbage.Impl.Cast5.X86_64.Modes
 meta import VerifiedGarbage.Impl.Cast5.X86_64.Modes
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # CAST5-CBC, -OFB and -CFB64's x86-64 code as literals, for kernel-evaluated checks -/
 

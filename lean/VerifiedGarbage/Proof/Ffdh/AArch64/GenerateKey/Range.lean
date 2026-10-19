@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Stages
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Stages
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Stages
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the scalar's range

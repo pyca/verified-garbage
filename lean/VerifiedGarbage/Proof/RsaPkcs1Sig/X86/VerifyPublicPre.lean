@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
 
 /-! # The precomputed public call is safe after the signature-length check -/
 

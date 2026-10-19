@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Setup
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Top
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 
 /-!
 # One-pass XTS-AES on x86-64: encryption

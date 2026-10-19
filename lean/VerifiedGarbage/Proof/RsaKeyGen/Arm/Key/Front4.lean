@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front3
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Div
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Div
+import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `L = lcm(p − 1, q − 1)` (`lcm_vp`) -/
 

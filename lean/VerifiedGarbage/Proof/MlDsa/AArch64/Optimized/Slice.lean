@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

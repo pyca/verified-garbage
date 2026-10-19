@@ -1,6 +1,7 @@
 module
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
 
-public import VerifiedGarbage.Proof.X448.Wide.Product
 
 /-!
 # Carrying a product's coefficients

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The bounded search for a factor-producing recovery candidate -/
 

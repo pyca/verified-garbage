@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
 import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 
 /-!
 # ML-DSA on AArch64: constant time of the sampling functions, piece by piece

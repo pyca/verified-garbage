@@ -1,9 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarHead
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalarHead
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 /-! # Masked copying of each DSA signature scalar to the caller -/
 

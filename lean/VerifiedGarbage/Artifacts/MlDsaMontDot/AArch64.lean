@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.MlDsa.MontDot
+public import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

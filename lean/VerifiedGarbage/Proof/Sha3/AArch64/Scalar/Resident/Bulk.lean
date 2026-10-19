@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Loop
 import Mathlib.Tactic.IntervalCases
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLoop
 
 /-!
 # The scalar resident absorber: whole blocks

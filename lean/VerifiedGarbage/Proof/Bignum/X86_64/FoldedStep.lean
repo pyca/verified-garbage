@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
+public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCounter
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.Math
 
 @[expose] public section
 

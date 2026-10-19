@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
 import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`, correct

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Cast5
 
 /-!
 # CAST5: rotation by a secret amount, in five masked steps

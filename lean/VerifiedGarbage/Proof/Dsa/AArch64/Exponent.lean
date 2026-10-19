@@ -1,9 +1,16 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.CrtExp
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The shared fixed-window exponentiation against DSA's arithmetic

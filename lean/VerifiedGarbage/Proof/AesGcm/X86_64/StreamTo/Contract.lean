@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the contracts

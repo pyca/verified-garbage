@@ -1,9 +1,40 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
+import VerifiedGarbage.Proof.Bignum.Arm.Minv64
+import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
+import VerifiedGarbage.Proof.Bignum.Arm.Mul64
+import VerifiedGarbage.Proof.Bignum.Arm.Mul64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Newton64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Newton64Steps
+import VerifiedGarbage.Proof.Bignum.Arm.Store64
+import VerifiedGarbage.Proof.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Bignum.Arm.Sub64
+import VerifiedGarbage.Proof.Bignum.Arm.Sub64Math
+import VerifiedGarbage.Proof.Bignum.Arm.WideMath
+import VerifiedGarbage.Proof.Bignum.Arm.WideValue
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Inverse initialization uses only public memory addresses -/
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Context
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Smear
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Data
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH key-generation attempts on x86-64: retained inputs -/

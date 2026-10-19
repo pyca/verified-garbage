@@ -1,6 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
-public import VerifiedGarbage.Proof.Rsa.Arm.InvHalf
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 
 /-! # `inverse` on ARMv7: `u` and `v` in a step -/
 

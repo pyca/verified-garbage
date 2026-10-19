@@ -5,6 +5,9 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.Wp
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20 on x86 (32-bit): the quarter rounds of the four-block code

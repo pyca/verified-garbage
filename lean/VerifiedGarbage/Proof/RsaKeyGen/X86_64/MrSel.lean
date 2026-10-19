@@ -1,9 +1,13 @@
 module
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # A candidate on x86-64: Miller–Rabin's comparisons

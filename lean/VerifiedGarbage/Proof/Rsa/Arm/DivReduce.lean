@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGe
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SubtractIfGe
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # The division remainder's conditional subtraction -/
 

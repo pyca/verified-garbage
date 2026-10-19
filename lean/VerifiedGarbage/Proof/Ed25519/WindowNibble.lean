@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
-public import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 
 /-!
 # Verification with windows, nibble by nibble

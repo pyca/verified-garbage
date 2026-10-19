@@ -1,9 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSave
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSave
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 
 /-! ## From `BallArgs.lean` -/
 

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Address and memory facts for a runtime-sized ARMv7 RSA workspace -/
 

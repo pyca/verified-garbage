@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetup
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPower
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # Stored R², input, and exponent survive the inverse-and-one setup -/
 

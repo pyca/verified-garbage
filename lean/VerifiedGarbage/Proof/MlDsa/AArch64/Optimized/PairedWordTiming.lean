@@ -1,17 +1,96 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowWord
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 @[expose] public section
 

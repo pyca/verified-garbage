@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceMap
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceMapArgs`. -/
 

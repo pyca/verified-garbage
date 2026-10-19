@@ -1,8 +1,11 @@
 module
+public import Mathlib.Data.BitVec
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg32Def
 
 import VerifiedGarbage.Proof.Divstep.Batch
-public import VerifiedGarbage.Proof.Divstep.Word32
-public import VerifiedGarbage.Proof.Divstep.Mred32
+import VerifiedGarbage.Proof.Divstep.Mred32
 import Mathlib.Algebra.Order.Ring.Abs
 
 /-!

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.InvStep
-public import VerifiedGarbage.Proof.Rsa.X86.DivCount
+import VerifiedGarbage.Proof.Rsa.X86.DivCount
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # `inverse` on i686: `32 w` iterations of two steps
 

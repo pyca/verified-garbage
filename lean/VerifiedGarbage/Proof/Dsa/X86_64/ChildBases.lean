@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.CrtLayout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-! # Constructing a child workspace header before loading its modulus -/
 

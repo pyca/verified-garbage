@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
+import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
 import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64: padding (`flush`) and the lengths block (`lens`)

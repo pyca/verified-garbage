@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Bignum.Layout
 public import VerifiedGarbage.Impl.Mont.X86.Inverse
 public import VerifiedGarbage.Impl.Mont.X86.Power
+public import VerifiedGarbage.Impl.Mont.X86.Dynamic
 
 /-! # Compact Montgomery workspace for public RSA on i686
 

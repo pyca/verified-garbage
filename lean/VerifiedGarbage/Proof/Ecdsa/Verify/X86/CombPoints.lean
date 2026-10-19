@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
-public import VerifiedGarbage.Proof.Ecdsa.X86.GMul
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 
 @[expose] public section
 

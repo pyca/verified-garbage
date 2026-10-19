@@ -1,11 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.AesCcm.BytesAt
-public import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.Cmac.Mem
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Gcm.Be64
 
 /-!

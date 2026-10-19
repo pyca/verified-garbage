@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 import VerifiedGarbage.Proof.Bignum.PdRanges
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # `vg_rsa_public_precomputed` on x86-64: constant time but for `pre` and `e`

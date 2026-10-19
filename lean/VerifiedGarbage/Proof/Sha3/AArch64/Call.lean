@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

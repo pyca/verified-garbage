@@ -1,5 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Link
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

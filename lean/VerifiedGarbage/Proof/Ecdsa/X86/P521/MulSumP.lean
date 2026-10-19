@@ -13,7 +13,15 @@ meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 meta import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Impl.Ecdsa.X86
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Impl.Ecdsa.X86
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): the summary of the multiplication modulo `p`

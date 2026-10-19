@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseL
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Rel
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on x86-64: the loop leaks what `signLeakT` says

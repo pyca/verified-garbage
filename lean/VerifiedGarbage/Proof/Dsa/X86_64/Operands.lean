@@ -2,9 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.X86_64.Core
-public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # Passing DSA operands through the parent workspace's call header -/
 

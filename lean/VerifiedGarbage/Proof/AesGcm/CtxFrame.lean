@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM: the key context under frames, and bytes written

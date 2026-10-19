@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Seed hashing fits the reserved stack below the persistent frame -/

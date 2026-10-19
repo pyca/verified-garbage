@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 
 /-! ## AdxTri8Closed -/
 

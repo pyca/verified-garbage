@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySetup
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 
 /-! # ABI arguments and writable regions required to initialize the native search -/
 

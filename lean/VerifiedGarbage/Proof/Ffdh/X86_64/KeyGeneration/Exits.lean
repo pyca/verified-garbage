@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Writes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The key-generation controller's exits without a key: exhausted, or short -/
 

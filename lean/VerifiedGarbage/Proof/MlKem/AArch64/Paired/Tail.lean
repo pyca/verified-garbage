@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Word
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Insert noise nonces and SHAKE256 padding in an interleaved state -/
 

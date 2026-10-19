@@ -30,6 +30,8 @@ public import VerifiedGarbage.Proof.X448.Wide.TailNormalize
 public import VerifiedGarbage.Proof.X448.Wide.TailPass
 public import VerifiedGarbage.Proof.X448.Wide.TailProduct
 public import VerifiedGarbage.Proof.X448.Wide.TailRegs
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 
 /-!
 # X448 on AArch64: the working space as field-element slots

@@ -1,7 +1,9 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductWindow
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+import VerifiedGarbage.Proof.Bignum.Arm.ProductWindow
+import VerifiedGarbage.Proof.Bignum.Arm.RowFull
 
 /-! # Bounds and positional value of a native wide-product row -/
 

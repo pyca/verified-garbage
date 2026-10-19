@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Where the attempt's buffers are, from the controller's (AArch64)
 

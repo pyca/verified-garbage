@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Pro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegment
-import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejParser
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SaveV
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

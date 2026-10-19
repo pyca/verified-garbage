@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
-import VerifiedGarbage.Proof.Modes.Cfb8
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # CFB8 on x86-64, for any core: the byte and the shift

@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the bases in the primes' workspaces

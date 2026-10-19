@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalArithmetic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

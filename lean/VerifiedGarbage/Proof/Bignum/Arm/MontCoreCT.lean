@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCore
-public import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
-public import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontRoundsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFinishCT
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundCT
 
 /-! # Constant time of canonical Montgomery multiplication after initialization -/
 

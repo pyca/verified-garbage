@@ -1,14 +1,49 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
-public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Frag
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.Sign.Setup
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-DSA signing on AArch64: the function's contract, layout, entry and exit

@@ -6,16 +6,24 @@ public import VerifiedGarbage.Proof.X25519.Chain250
 meta import VerifiedGarbage.Proof.X25519.Chain250
 import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Spec.X25519.Field64
-meta import VerifiedGarbage.Spec.X25519.Field64
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Field64
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.Field64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_gf25519_r64_pow250` on AArch64, verified

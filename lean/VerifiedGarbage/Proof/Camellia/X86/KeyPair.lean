@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.Crypt8
 public import VerifiedGarbage.Proof.Camellia.X86.KeyLin
+public import VerifiedGarbage.Proof.Camellia.X86.Core
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.X86.Fl
 
 /-!
 # Camellia's key schedule on x86 (32-bit): a pair of rounds on one value

@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # ECDSA on AArch64: where the powers' slots are

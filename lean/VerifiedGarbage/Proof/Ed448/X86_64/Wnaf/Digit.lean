@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
-public import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
 
 /-! The bounded word arithmetic implementing one public recoding step. -/
 

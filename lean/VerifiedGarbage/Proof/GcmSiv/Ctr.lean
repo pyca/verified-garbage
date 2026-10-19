@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Spec.GcmSiv
 
-public import VerifiedGarbage.Proof.GcmSiv.Spec
-public import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM-SIV: counter mode a block at a time

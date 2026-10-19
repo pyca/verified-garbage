@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Preparing ordinary operands for DSA exponentiation -/
 

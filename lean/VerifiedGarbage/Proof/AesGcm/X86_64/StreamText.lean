@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: the text of `stream_encrypt` and `stream_decrypt`

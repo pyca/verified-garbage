@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealBody
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM `seal_split` on x86-64: the end

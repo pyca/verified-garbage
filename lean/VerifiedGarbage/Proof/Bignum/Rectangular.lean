@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.Square
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Positional arithmetic for rows of rectangular multiplication tiles. -/
 

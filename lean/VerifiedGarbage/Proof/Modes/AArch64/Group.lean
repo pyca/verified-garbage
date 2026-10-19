@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Proof.Framework.AArch64.Straight
+public import VerifiedGarbage.Proof.Modes.AArch64.Core
+public import VerifiedGarbage.Proof.Modes.Counter
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Modes.AArch64.Counter
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # One group of blocks of CTR on AArch64, for any core

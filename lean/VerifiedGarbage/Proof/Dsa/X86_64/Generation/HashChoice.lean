@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Spec.Dsa
 
 /-! # One hash selection shared by the subgroup and prime searches -/
 

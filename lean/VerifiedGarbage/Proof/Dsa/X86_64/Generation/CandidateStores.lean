@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-public import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preserve p and the generator exponent across primality testing -/
 

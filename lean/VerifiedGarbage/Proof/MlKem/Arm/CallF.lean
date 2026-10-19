@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Arm.Call
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # Calls of code with frames (ARMv7)

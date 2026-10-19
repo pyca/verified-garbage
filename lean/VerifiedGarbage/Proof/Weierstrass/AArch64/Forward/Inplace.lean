@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

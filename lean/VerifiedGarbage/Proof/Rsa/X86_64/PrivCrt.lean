@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of the CRT

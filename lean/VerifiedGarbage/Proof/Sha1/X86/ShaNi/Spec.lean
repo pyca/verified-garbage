@@ -1,8 +1,10 @@
 module
 
 
-public import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Sha1.Spec
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86.Sse
 
 /-!
 # SHA-1 with the SHA extensions on x86: the values in the SSE registers

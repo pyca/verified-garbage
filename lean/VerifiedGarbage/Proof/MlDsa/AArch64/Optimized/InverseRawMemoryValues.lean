@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ## From `InverseRawMemory.lean` -/
 

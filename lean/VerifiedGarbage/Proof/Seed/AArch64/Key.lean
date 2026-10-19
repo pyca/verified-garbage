@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.Seed.AArch64.KeyBody
 import VerifiedGarbage.Proof.Seed.AArch64.Ecb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Seed.AArch64.KeyLoad
+import VerifiedGarbage.Proof.Seed.AArch64.Setup
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Key expansion on AArch64

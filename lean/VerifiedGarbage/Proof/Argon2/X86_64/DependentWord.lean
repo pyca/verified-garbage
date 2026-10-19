@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelSpec
 public import VerifiedGarbage.Impl.Argon2.X86_64.DependentWord
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelPrepare
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.DependentWordPointer`. -/
 

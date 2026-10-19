@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.MillerRabin
-public import VerifiedGarbage.Proof.Bignum.Layout
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Read preserved words from the shared round's contract -/
 

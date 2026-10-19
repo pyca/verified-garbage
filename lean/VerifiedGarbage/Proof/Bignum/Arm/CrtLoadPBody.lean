@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayout
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Import p and qInv and accumulate the exact qInv < p check -/
 

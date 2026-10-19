@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.P384.Curve
 public import VerifiedGarbage.Proof.P384.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-public import VerifiedGarbage.Proof.Weierstrass.InvArith
+public import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # P-384's group law, on AArch64

@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowTable
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Writes to the control words of the header
 

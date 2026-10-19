@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.RowStep
 public import VerifiedGarbage.Proof.Bignum.Arm.Mac
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The memory and arithmetic effects of one ARMv7 Montgomery row step -/
 

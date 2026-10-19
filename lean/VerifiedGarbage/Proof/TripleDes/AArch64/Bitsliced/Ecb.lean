@@ -1,9 +1,30 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
 
 /-!
 # The function's environment

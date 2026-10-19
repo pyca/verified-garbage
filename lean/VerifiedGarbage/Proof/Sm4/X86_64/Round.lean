@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sm4.X86_64.Linear
 public import VerifiedGarbage.Proof.Sm4.X86_64.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A round of bitsliced SM4 on x86-64

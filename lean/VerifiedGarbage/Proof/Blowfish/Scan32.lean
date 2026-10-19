@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Blowfish
 
-public import VerifiedGarbage.Proof.Blowfish.F
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A lookup that scans an S-box's planes a word at a time

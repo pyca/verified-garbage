@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSized
-public import VerifiedGarbage.Proof.Rsa.X86.RvDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Rsa.X86.RvSized
+import VerifiedGarbage.Proof.Rsa.X86.RvDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Recovery dispatch follows the public modulus length -/
 

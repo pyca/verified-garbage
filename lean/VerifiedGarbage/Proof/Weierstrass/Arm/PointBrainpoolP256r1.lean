@@ -1,19 +1,48 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP256r1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP256r1
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Spec.BrainpoolP256r1
-meta import VerifiedGarbage.Spec.BrainpoolP256r1
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Row
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.Arm.Csub
+meta import VerifiedGarbage.Proof.Mont.Arm.Row
+meta import VerifiedGarbage.Proof.Mont.Arm.Step
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 meta import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Spec.X25519
 

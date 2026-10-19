@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.WidthMask
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Public selection of supported DSA modulus widths -/
 

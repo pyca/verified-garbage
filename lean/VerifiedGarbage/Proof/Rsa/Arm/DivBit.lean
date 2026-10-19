@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # Append the quotient bit without a branch on the borrow -/
 

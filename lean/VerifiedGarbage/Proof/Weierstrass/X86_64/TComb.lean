@@ -22,6 +22,12 @@ public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 
 /-!
 # The fixed-base comb from tables in memory on x86-64

@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
 import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The scalar bits, point multiplication, and canonical encoding compose. -/
 

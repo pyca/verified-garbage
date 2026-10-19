@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Body
-import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Sponge
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 verification on AArch64: the hash

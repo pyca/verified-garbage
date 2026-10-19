@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtx
+public import VerifiedGarbage.Spec.RsaPss.Precomputed
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
 
 /-!
 # RSASSA-PSS verification using cached public-key values

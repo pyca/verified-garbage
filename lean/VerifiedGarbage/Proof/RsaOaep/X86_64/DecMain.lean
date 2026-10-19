@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecOut
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+public import VerifiedGarbage.Proof.RsaOaep.Decode
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecFrame
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Stack
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSelV
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 /-!
 # RSAES-OAEP decryption on x86-64: the decoding

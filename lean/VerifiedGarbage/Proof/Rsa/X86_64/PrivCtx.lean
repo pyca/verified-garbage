@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+public import Mathlib.Data.Int.GCD
+public import Mathlib.Tactic.Set
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the contract on the registers

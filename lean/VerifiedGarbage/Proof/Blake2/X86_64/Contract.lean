@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Blake2
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # BLAKE2 compression function on x86-64: the contract

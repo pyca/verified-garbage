@@ -3,7 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Rows
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: pass 1

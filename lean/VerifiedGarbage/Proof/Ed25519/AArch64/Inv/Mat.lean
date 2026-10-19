@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
-public import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
 
 /-! # The inversion's matrix as magnitudes and signs
 

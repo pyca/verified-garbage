@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Scan
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Constant-time selection of the fixed-base verification window point. -/
 

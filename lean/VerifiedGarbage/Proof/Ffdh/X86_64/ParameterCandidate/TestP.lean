@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseRounds
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordShape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 
 /-! # FFDH parameter generation on x86-64: the p primality phase -/
 

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
 
 /-! # Clear the unwritten suffix after bounded rejection failure -/
 

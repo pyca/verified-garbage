@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Contract
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Composition
+public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Body
 import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Save
+import VerifiedGarbage.Proof.TripleDes.Bytes
 
 @[expose] public section
 

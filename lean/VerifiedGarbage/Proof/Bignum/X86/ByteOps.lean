@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.X86.Wp
 
-public import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Byte-load and byte-store rules for the RSA conversion loops -/
 

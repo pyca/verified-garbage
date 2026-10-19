@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvSt
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
 
-public import VerifiedGarbage.Proof.Rsa.RecoverSubtract
-public import VerifiedGarbage.Proof.Rsa.Arm.RvCand5
-public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the steps of the factors as pieces
 

@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Workspaces
-public import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
 
 /-! # Persistent state across DSA arithmetic and validation schedules -/
 

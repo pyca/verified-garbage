@@ -4,8 +4,18 @@ public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
 public import VerifiedGarbage.Proof.Seed.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Spec.Seed.Contract
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Seed.AArch64.Setup
+import VerifiedGarbage.Proof.Seed.AArch64.Swap
+import VerifiedGarbage.Proof.Seed.Scratch
 
 /-! # The ECB functions meet their contracts, with the scratch buffer as an argument -/
 

@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Mont.X86.RedRow
+import VerifiedGarbage.Proof.Mont.X86.RedRow
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the loop of the multiplication

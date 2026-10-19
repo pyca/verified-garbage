@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin, its header

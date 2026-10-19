@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-!
 # ML-DSA on x86-64: tables of constants in the working space

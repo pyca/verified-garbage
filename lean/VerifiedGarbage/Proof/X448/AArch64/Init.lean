@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # X448 on AArch64: initializing coefficient arrays

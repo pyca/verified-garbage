@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.Dimensions
 
 /-! Complete active-cell update from a random word and the matrix allocation. -/
 

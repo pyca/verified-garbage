@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
-import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
-import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
 import VerifiedGarbage.Proof.Cmac.Dbl32
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-SIV on x86-64: the counter

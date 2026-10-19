@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.TripleDes
 
-import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

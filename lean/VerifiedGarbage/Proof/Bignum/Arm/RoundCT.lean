@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
+import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
+import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 
 /-! # A Montgomery round leaks only its public layout and word count -/
 

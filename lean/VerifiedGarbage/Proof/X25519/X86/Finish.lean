@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86.Contract
+public import VerifiedGarbage.Proof.X25519.X86.Step
 
-public import VerifiedGarbage.Proof.X25519.X86.Setup
-import VerifiedGarbage.Proof.X25519.X86.Invert
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.X25519.X86.Fn
+import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # X25519 on x86 (32-bit): the end of the ladder, and the result

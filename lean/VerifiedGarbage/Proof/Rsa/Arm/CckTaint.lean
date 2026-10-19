@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
-meta import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_check_crt_key` on ARMv7: the pieces that read the stack arguments
 

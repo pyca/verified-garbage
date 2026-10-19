@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.FillStep
-import VerifiedGarbage.Proof.Argon2.FillPositions
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.MemoryInit
+public import VerifiedGarbage.Proof.Argon2.X86.Compress
+import VerifiedGarbage.Proof.Argon2.Dimensions
 
 @[expose] public section
 

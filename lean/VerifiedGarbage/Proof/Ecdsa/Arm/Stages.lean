@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # ECDSA on 32-bit ARM: the setup and the tables of bits

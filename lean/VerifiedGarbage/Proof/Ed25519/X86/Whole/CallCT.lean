@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+public import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 @[expose] public section
 

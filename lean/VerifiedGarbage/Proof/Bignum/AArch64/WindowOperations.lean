@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowArithmetic
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduce
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduceCanonical
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduce
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowReduceCanonical
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawSquare
 import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawProduct
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 
 @[expose] public section

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Rel
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: constant time

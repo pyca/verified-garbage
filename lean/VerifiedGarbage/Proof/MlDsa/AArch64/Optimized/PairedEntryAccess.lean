@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProlog
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedKernelReady
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 @[expose] public section
 

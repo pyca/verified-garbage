@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
+public import VerifiedGarbage.Proof.Rc2.Expansion
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.KeySetup
+import VerifiedGarbage.Proof.Rc2.AArch64.KeySetup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.AArch64.Mask
+import VerifiedGarbage.Proof.Rc2.AArch64.CopyKey
+import VerifiedGarbage.Proof.Rc2.AArch64.KeyCompose
 
 /-! # Composing the RC2 key-expansion stages -/
 

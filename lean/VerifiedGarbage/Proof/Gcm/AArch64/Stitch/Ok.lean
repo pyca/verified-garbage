@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
 
-public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Loop
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Loop
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: `enc` and `dec`

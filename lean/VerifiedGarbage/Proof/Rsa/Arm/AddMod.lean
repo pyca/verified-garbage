@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.MulModArithmetic
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
-public import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.MulModArithmetic
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
 /-! # `addMod` on ARMv7: `[o] = ([a] + [b]) mod [m]` -/
 

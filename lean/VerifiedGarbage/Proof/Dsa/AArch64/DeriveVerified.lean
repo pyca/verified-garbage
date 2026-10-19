@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveMainCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveMainCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABI
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # AArch64 DSA key derivation verified against the shared contract -/
 

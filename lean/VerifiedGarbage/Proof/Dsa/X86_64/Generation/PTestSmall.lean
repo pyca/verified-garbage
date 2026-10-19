@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Undersized p candidates retry without consuming witness bytes -/
 

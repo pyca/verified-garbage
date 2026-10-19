@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointReadyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Composable timing steps for complete DSA arithmetic schedules -/
 

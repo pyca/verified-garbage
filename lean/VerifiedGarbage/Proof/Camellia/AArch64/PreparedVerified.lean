@@ -2,17 +2,33 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.PreparedBody
 meta import VerifiedGarbage.Proof.Camellia.AArch64.PreparedBody
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Camellia.AArch64.Copy
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Camellia.Contract
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Copy
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Camellia.Contract
 
 /-!
 # Camellia's prepared subkeys and batches on AArch64 meet their contracts

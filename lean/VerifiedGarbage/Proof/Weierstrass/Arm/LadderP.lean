@@ -5,15 +5,12 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.Weierstrass.Words
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The ladder by calls of the point functions, on 32-bit ARM

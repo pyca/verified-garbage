@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM's short path on x86-64: what the steps keep

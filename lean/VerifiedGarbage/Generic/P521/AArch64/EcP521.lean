@@ -1,14 +1,16 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-public import VerifiedGarbage.Proof.P521.Comb7
+import VerifiedGarbage.Proof.P521.Comb7
 public import VerifiedGarbage.Impl.EcKey.P521.AArch64
-public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
+import VerifiedGarbage.Proof.EcKey.AArch64.P521.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.EcKey.AArch64.P521.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P521
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on AArch64

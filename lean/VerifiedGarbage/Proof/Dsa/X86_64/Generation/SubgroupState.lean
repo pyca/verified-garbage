@@ -1,13 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeResult
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # State connecting subgroup hashing to the complete native primality call -/
 

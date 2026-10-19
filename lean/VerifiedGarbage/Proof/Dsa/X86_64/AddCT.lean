@@ -1,8 +1,16 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # Constant time of DSA modular addition -/
 

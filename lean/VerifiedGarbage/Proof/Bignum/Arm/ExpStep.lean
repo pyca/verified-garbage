@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
-public import VerifiedGarbage.Proof.Bignum.FoldedPublic
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
+import VerifiedGarbage.Proof.Bignum.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Proved squaring, multiplication, and conversion out of Montgomery form -/
 

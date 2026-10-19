@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Common
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

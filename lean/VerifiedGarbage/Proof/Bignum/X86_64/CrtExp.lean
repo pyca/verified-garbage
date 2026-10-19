@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Bignum.CrtExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

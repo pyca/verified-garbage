@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
-import VerifiedGarbage.Proof.Sha3.Stream
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `ResidentPair.lean` -/
 

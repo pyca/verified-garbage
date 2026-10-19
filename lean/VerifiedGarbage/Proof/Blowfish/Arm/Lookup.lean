@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
+public import VerifiedGarbage.Proof.Blowfish.F
 import Mathlib.Tactic.SplitIfs
 
 /-!

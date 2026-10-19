@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
 import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA: the samplers are monotone in their bounds

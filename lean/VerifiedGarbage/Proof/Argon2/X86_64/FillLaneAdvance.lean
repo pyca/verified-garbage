@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillLanes
-public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Lane advancement retains the allocation and public segment parameters. -/
 

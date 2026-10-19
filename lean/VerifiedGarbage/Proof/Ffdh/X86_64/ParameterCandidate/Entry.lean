@@ -1,8 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
 
 /-! # FFDH parameter generation on x86-64: save the ABI arguments and registers -/
 

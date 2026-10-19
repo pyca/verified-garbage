@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Rsa.AArch64
+import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
 
 /-!
 # `vg_rsa_public_checked` as encryption's callee on AArch64

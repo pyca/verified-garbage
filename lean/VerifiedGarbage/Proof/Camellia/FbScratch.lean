@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Camellia.Ofb
 public import VerifiedGarbage.Spec.Camellia.Cfb
-public import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia-OFB and Camellia-CFB128 with their working space as an argument

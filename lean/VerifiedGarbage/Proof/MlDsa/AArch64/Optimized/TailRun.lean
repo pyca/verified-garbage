@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailGroup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

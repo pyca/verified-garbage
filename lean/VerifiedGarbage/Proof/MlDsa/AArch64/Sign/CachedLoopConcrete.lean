@@ -1,13 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
-import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

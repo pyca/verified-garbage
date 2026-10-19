@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Division
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Subtract
 
 /-! # Public workspace invariants between the reduction's arithmetic pieces -/
 

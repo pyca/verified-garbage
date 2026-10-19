@@ -11,7 +11,30 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Spec.Rc4.Contract
+import VerifiedGarbage.Proof.Rc4.X86_64.Init
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Init
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Rc4.X86_64.ApplyStep
+import VerifiedGarbage.Proof.Rc4.X86_64.Replace
+import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Rc4.Table
+meta import VerifiedGarbage.Proof.Rc4.X86_64.ApplyStep
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Replace
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
 
 /-! # RC4 on x86-64: verified against the shared contracts -/
 

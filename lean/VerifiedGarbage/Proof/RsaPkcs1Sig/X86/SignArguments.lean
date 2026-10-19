@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Installing successive cdecl arguments preserves every earlier word -/
 

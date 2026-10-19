@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Spec.Poly1305
-meta import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -20,12 +18,8 @@ public import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -36,6 +30,12 @@ meta import VerifiedGarbage.Spec.Poly1305.Contract
 -- Formerly the module `VerifiedGarbage.Proof.Poly1305.AArch64.Steps`.
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

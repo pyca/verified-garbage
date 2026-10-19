@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.ContextBody
 public import VerifiedGarbage.Proof.Dsa.SameTrace
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
 
 /-! # Calls of shared ARMv7 Montgomery setup -/
 

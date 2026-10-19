@@ -4,9 +4,10 @@ import VerifiedGarbage.Proof.Scrypt.Memory
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
 public import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.TCB.AArch64.Target
 import all Init.Data.Nat.Power2.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # scrypt on AArch64: common lemmas

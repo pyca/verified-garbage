@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!

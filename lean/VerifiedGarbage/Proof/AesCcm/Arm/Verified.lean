@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.AesCcm.Arm.CTFn
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
+import VerifiedGarbage.Proof.AesCcm.Arm.Open
+import VerifiedGarbage.Proof.AesCcm.Arm.Seal
 
 /-!
 # AES-CCM on ARMv7: `Verified`

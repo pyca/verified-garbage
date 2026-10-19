@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.MillerRabin
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Omega
 

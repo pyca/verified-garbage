@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowLazy
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyTile
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyTile
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowLazy

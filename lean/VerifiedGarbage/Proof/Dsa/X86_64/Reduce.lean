@@ -1,8 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceInit
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetup
 
 /-! # Complete streaming modular reduction for DSA -/
 

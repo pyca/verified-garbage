@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_crt_values` on ARMv7: the arguments
 

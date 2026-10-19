@@ -1,7 +1,12 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
+public import VerifiedGarbage.Impl.Sha3.Tables
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.Spec
 
 @[expose] public section
 

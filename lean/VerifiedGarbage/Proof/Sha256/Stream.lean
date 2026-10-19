@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Sha256
 public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming SHA-256: facts about the specification

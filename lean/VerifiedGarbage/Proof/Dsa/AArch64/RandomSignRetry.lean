@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Update the bounded signing-attempt counter after a supplied-nonce call. -/
 @[expose] public section

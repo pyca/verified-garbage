@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP512r1.Arm
-public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Verified
+import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 
 /-!
 # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM

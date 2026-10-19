@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

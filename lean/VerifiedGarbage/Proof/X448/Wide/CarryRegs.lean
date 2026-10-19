@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Wide.Word
 
-public import VerifiedGarbage.Proof.X448.Wide.Reduce
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: extracting a radix-2⁵⁶ digit and one-word carry. -/
 

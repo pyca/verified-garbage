@@ -12,14 +12,27 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
 meta import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Argon2.AArch64.Compress
-meta import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Impl.MdStream.Arm
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: common lemmas

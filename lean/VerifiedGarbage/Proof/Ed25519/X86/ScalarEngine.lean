@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLoop
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Arith
 
 @[expose] public section
 

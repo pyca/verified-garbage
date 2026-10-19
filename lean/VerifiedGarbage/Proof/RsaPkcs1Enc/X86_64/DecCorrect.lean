@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecResult
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: correctness

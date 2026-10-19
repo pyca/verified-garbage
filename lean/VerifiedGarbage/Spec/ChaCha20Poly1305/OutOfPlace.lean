@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Spec.ChaCha20Poly1305
+public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 
 /-!
 # ChaCha20-Poly1305 encryption out of place

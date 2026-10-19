@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Reuse a verified generation operation inside a controller
 

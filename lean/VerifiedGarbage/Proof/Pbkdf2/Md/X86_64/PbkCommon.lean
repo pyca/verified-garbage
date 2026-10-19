@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: `pbkdf2`'s parts

@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentSeed
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentAbsorbWord
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentPad.lean` -/
 

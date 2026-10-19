@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Sha1.Arm.Compress
 import VerifiedGarbage.Proof.Sha1.Arm.Stream.Init
-public import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
+import VerifiedGarbage.Proof.Sha1.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Sha1.Arm.Stream
+public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+public import VerifiedGarbage.Proof.MdStream.Arm.Update
+public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Sha1.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # Sha1 on Arm: the shared contracts

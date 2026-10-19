@@ -3,8 +3,13 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86.Ecb.Verified
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.TripleDes.X86.Modes
-public import VerifiedGarbage.Spec.TripleDes.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+import VerifiedGarbage.Proof.Modes.X86.Ops
+import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)

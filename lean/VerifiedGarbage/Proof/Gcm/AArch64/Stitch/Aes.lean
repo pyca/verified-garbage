@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Impl.Gcm.AArch64.Stitch
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: the counter mode

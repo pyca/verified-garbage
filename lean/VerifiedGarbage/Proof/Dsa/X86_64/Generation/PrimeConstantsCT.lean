@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyR1CT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2CT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NegateR1CT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NegateR1CT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NegateR1CT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
 
 /-! # Constant-time derivation of the prepared Montgomery constants -/
 

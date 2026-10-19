@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.CombTable16
-public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
-import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
+import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 
 /-!
 # Ed25519: base-point multiplication with a comb, one table per digit

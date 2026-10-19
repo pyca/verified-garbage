@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Base
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Sponge
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 
 @[expose] public section
 

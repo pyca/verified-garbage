@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchEntry
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PAttemptTailCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptBlocksCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The p-search counter and entropy cursor determine each public attempt -/

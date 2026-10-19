@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Pass
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Transpose
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Bytes
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # An AdvSIMD batch

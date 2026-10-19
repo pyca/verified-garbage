@@ -1,6 +1,7 @@
 module
+public import Mathlib.Data.Int.ModEq
 
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Natural-number CRT recombination agrees with the signed RFC coefficient -/
 

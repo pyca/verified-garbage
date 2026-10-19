@@ -6,6 +6,34 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 import Mathlib.Tactic.Conv
 meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_sample_in_ball`, constant time but for `c̃`

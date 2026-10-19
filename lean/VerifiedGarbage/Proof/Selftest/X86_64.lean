@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Selftest
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Selftest.X86_64
 import VerifiedGarbage.Proof.Framework.Semantics

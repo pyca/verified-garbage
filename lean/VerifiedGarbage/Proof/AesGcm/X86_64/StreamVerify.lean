@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify`

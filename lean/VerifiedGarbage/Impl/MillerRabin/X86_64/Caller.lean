@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
+import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 
-public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
 
 /-! # Keep the RSA workspace around a shared Miller–Rabin call -/
 

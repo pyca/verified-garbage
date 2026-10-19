@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Residue
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import Mathlib.Data.Nat.GCD.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: exact small remainders -/
 

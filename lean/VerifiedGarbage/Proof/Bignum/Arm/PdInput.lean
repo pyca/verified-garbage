@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 
 /-! # Native AAPCS assumptions for checked public RSA -/
 

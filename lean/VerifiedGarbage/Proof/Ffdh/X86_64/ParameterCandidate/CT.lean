@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.OuterCT
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.BodyCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.BodyCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Body
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
+import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyCT
 
 /-! # FFDH parameter generation on x86-64: constant time under the public tape contract -/
 

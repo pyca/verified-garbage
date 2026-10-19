@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.TCB.X86_64.State
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Masked 512-bit moves of the first quadwords

@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillLanes
-public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Lane advancement retains the allocation and public segment parameters. -/
 

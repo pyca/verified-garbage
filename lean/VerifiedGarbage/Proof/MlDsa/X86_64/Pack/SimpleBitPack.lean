@@ -1,15 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Loop
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Contracts
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Stream
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_simple_bit_pack`

@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
-public import VerifiedGarbage.Proof.Dsa.X86.SignCompute
-public import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
-public import VerifiedGarbage.Proof.Dsa.X86.Result
+import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.SignCompute
+import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
+import VerifiedGarbage.Proof.Dsa.X86.Result
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Functional correctness of the post-shape signing body -/
 

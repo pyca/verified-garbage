@@ -1,7 +1,13 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlKem.AArch64.Rej8
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 
 /-! # Packed twelve-bit candidate decoding for ML-KEM's vector sampler -/
 

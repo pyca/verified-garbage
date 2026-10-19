@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Init
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Arithmetic
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

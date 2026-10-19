@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.X86.CheckedPrimePower
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.X86.CrtCoefficient
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Bignum.X86.PreparePrime
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Arithmetic preserves the saved CRT components and callee-saved header -/
 

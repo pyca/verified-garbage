@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM-1024: compressed encodings byte by byte, for every target

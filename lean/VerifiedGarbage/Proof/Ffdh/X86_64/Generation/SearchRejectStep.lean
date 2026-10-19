@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectHeaders
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectHeaders
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
 
 /-! # A native rejection continues with smaller budgets and the exact suffix -/
 

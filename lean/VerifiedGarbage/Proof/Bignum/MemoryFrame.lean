@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Translate offset-based arithmetic frames to byte-region frames -/
 

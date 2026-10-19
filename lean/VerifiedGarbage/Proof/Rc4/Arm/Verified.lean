@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+public import VerifiedGarbage.Proof.Rc4.Scratch
 
-public import VerifiedGarbage.Proof.Rc4.Arm.ConstantTime
+import VerifiedGarbage.Proof.Rc4.Arm.ConstantTime
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Rc4.Arm.Apply
+import VerifiedGarbage.Proof.Rc4.Arm.Init
 
 /-! # RC4 on ARMv7: `Verified` -/
 

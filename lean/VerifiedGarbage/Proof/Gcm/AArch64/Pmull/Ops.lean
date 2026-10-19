@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # GHASH with PMULL: the values

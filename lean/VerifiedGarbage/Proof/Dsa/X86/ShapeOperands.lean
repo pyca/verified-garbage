@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Shape
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
-public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Dsa.X86.RunBytes
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Spill
 
 /-! # Caller operands survive public shape checking -/
 

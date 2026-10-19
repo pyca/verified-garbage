@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.MulInput
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Point engines preserve register saves, the output pointer, and
 the three packed points reserved for verification. -/

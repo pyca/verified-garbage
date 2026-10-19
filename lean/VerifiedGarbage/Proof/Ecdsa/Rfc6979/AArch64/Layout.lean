@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on AArch64: where everything is

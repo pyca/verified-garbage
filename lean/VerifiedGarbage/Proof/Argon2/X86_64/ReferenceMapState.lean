@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceCount
 public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceMap
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceMapArgs`. -/
 

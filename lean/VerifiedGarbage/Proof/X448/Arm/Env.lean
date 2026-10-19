@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.X448.Arm.Call
 public import VerifiedGarbage.Proof.X448.Arm.Swap
 public import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.Copy
 
 /-!
 # X448 on ARMv7: the working space as field-element slots

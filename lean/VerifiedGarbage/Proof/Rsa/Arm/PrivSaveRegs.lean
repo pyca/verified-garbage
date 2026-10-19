@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 
 /-! # Save the register-passed output, modulus, and length before preparing calls -/
 

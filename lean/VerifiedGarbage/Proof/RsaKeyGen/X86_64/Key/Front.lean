@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Pieces
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.RsaKeyGen
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 
 /-!
 # An RSA key from its primes on x86-64: the primes

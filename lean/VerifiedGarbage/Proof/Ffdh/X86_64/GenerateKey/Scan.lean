@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Bound
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: the bound scan preserves the key-generation inputs -/

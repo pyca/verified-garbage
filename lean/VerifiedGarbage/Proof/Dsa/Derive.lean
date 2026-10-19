@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Derive
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.Random
 

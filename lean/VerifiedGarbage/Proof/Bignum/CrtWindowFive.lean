@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Arithmetic for extracting eight five-bit windows from a group of five
 big-endian exponent bytes. No padding bits are added to the exponent. -/

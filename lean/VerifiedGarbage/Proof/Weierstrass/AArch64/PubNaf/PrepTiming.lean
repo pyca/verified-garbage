@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Timing of the public NAF's recoding

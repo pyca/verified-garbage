@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 
 /-! # Prepared-context GatherCallee contracts -/
 

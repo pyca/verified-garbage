@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Impl.CmacTripleDes.Index
 
 /-!

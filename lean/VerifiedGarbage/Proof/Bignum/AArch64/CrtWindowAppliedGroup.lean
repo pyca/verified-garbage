@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedStep
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedStep
 import VerifiedGarbage.Proof.Bignum.CrtWindowFive
 import Mathlib.Data.Int.ModEq
 

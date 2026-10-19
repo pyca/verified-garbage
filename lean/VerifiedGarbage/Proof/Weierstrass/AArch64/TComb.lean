@@ -19,6 +19,15 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow
 public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
+import VerifiedGarbage.Proof.Weierstrass.Law3
 
 /-!
 # The fixed-base comb from tables in memory on AArch64

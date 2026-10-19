@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.AbsorbBlocks
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 

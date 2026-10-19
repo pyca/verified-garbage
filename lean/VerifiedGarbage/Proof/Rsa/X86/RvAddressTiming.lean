@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86.Recover
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvPair
-public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
+import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 
 /-! # Initialization blocks use only the public workspace and stack addresses -/
 

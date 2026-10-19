@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Advance the entropy cursor exactly once before copying the draw's suffix. -/
 @[expose] public section

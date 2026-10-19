@@ -1,7 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
 meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Proof.Sha1.AArch64.Compress
@@ -10,8 +8,22 @@ public import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 meta import VerifiedGarbage.Impl.Sha1.AArch64.Stream
 import VerifiedGarbage.Proof.Sha1.Stream
 meta import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SHA-1 on AArch64: `init`

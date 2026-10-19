@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
 public import VerifiedGarbage.Proof.Sha3.Seed34
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlKem.Mem
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

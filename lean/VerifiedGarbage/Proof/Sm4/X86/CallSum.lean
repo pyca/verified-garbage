@@ -4,6 +4,14 @@ public import VerifiedGarbage.Proof.Sm4.X86.Lit
 meta import VerifiedGarbage.Proof.Sm4.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The constant-time analysis of the x86 modes' calls of SM4, once

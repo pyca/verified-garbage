@@ -1,8 +1,36 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
 public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the setting

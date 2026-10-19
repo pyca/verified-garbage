@@ -4,10 +4,8 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86.Exec
-meta import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 meta import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -26,6 +24,12 @@ public import VerifiedGarbage.Proof.Sha1.X86.Contract
 meta import VerifiedGarbage.Proof.Sha1.X86.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # SHA-1 compression function on x86 (32-bit): the message schedule and the rounds

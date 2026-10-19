@@ -4,9 +4,6 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.FillSegmentBody
 public import VerifiedGarbage.Proof.Argon2.Segment
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Termination and correctness of the active suffix of one segment. -/
 

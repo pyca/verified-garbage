@@ -1,9 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass2
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvPass1
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.Barrett
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: `vg_mlkem_ntt_inv`

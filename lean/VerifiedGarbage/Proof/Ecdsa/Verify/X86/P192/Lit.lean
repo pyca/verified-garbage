@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.X86
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P192.X86
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P192
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # ECDSA verification over P-192 on x86 (32-bit): the code as a literal

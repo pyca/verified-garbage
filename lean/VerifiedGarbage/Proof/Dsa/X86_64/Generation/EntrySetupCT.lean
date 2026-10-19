@@ -1,13 +1,22 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Taint
-meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-! # Entry setup accesses only fixed offsets of the public stack pointer -/
 

@@ -14,6 +14,30 @@ public import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Cast5.AArch64.Run
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Run
+import VerifiedGarbage.Proof.Cast5.Table
+meta import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Cast5.AArch64.Block
+import VerifiedGarbage.Proof.Cast5.AArch64.KeyHalf
+import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Block
+meta import VerifiedGarbage.Proof.Cast5.AArch64.KeyHalf
+meta import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+meta import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 key expansion on AArch64: verified against the shared contract

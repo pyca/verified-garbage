@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
-public import VerifiedGarbage.Proof.Dsa.Generation.SeedAdd
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Carry propagation for one wrapped-seed byte -/
 

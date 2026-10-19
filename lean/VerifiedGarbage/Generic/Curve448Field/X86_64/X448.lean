@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Tactic.ToDual
-public import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.X448.X86_64.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Instances

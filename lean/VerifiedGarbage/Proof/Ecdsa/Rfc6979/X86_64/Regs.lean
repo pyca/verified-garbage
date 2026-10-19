@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: addresses and registers

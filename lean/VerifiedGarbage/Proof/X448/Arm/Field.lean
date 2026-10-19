@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.X448.Arm.Mem
+public import VerifiedGarbage.Proof.X448.Field
 
-public import VerifiedGarbage.Proof.X448.Arm.Normalize
 import Mathlib.Tactic.SplitIfs
 
 /-!

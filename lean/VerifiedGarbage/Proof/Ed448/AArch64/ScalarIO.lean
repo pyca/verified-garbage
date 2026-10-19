@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
 public import VerifiedGarbage.Proof.Ed448.AArch64.MemWords
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
 import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 scalar arithmetic on AArch64: entry and exit

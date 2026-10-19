@@ -5,8 +5,6 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

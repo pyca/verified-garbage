@@ -1,7 +1,11 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.AesCfb.X86
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Spec.Cfb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
-public import VerifiedGarbage.Proof.AesCfb.X86.Body
+import VerifiedGarbage.Proof.AesCfb.X86.Body
 
 /-!
 # AES-CFB128 on x86: `Verified`

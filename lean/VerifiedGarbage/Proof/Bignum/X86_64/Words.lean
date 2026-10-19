@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Bignum.Octets
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # Multiword arithmetic on x86-64: words in the working space

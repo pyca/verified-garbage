@@ -1,6 +1,12 @@
 module
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Saving registers outside the workspace preserves its shared RSA precondition -/
 

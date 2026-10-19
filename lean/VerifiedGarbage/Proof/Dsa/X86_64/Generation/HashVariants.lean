@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCode
 
 /-! # Select the SHA-1 and SHA-256 stream implementations for DSA generation -/
 

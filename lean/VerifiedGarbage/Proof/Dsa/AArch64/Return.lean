@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
-import VerifiedGarbage.Proof.Dsa.AArch64.Frame
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
 /-! # Composing DSA arithmetic with result encoding and workspace return -/
 

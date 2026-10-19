@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Vec
 
 @[expose] public section
 

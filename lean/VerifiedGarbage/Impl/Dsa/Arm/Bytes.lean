@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.Arm.Dynamic
 
-public import VerifiedGarbage.Impl.Mont.Arm.Context
 
 /-! # DSA's fixed-width big-endian components on 32-bit ARM
 

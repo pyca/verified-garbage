@@ -2,16 +2,60 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Env
-public import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Siv.Spec
 meta import VerifiedGarbage.Proof.Siv.Spec
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import VerifiedGarbage.Proof.Cmac.Block
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 meta import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Contract
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 
 /-!
 # AES-SIV on x86-64: the CMAC of the data (`cmacOf`)

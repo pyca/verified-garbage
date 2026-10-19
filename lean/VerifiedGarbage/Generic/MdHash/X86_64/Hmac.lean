@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on x86-64

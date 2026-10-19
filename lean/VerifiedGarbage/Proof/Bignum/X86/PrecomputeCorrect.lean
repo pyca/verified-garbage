@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperation
-public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInstalled
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOperation
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 
 /-! # Functional correctness and cdecl preservation of RSA precomputation -/
 

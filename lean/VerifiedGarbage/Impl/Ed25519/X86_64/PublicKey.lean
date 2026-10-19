@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 public import VerifiedGarbage.Spec.Sha512.Contract
+import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 public-key derivation on x86-64

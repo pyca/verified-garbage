@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 
 /-! Group identities for interleaved public two-scalar multiplication. -/

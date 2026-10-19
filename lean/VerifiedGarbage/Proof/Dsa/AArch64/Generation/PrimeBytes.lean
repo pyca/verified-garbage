@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeBytes
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+public import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Connect saved candidate bytes to the shared primality operation -/

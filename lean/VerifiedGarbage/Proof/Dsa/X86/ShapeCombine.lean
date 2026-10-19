@@ -1,6 +1,16 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Shape
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeMasks
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Execution of the supported-domain mask combination -/
 

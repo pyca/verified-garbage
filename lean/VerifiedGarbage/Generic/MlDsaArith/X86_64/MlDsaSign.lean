@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: signing

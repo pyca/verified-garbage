@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.WidthChoice
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+import Mathlib.Tactic.Set
 
 /-! # The two public width scans and supported-size selection -/
 

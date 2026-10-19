@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Impl.X448.AArch64.Base
 import VerifiedGarbage.Proof.X448.AArch64.Init
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Proof.X448.Wide.Limbs
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # X448 on AArch64: field elements from immediates

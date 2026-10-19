@@ -3,12 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealPw
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPw
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
-import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64

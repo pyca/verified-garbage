@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
+import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Impl.AesCtr.X86_64
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-CTR on x86-64: one call

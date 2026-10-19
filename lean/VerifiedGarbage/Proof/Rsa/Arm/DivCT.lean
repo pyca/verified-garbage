@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivLoop
-public import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivInitCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivStepCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivInitCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+import VerifiedGarbage.Proof.Rsa.Arm.DivStep
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 
 /-! # Fixed-iteration division is constant-time for all secret array contents -/
 

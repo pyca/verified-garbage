@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
 public import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Read
 
 /-! # The memory frame of ARMv7 packed-limb zeroing -/
 

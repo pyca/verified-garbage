@@ -3,8 +3,9 @@ module
 public meta import Lean.Meta.Reduce
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.Arm.Target
 public meta import VerifiedGarbage.TCB.Arm.Target
+import Lean.Meta.Reduce
+import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Moving a proof to a shared contract, on Arm

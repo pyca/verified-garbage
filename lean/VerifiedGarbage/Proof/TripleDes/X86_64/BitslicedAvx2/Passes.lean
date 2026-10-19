@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Pass
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The three AVX2 passes

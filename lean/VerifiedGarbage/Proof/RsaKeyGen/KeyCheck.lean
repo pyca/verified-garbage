@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Proof.Rsa.Octets
 
 /-!

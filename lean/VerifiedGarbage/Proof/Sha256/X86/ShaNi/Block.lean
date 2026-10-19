@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
 public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Impl.Sha256.X86.ShaNi
+public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Spec
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MdStream.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86_64.Block
+import VerifiedGarbage.Proof.Idea.X86_64.Block
 public import VerifiedGarbage.Proof.Idea.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Idea.Contract
+public import VerifiedGarbage.Proof.Idea.X86_64.Round
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # IDEA ECB on x86-64

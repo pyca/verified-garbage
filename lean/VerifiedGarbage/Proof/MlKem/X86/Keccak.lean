@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.X86.Permute
 public import VerifiedGarbage.Impl.MlKem.X86.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-KEM on x86 (32-bit): calling the Keccak streaming functions

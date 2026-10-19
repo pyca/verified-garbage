@@ -2,8 +2,11 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon

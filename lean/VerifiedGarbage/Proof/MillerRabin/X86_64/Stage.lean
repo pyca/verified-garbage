@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Save the unused RSA bookkeeping before the shared round -/

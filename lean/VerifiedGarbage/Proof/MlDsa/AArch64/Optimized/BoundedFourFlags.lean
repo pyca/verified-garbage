@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchGeometry
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 @[expose] public section
 

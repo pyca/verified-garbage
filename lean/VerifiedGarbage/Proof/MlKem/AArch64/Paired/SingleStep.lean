@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleWords
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One singleton fallback permutation and serialization -/
 @[expose] public section

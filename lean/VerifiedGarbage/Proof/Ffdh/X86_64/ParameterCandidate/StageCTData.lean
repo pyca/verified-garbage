@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.OuterCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.InnerCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCTData
 import VerifiedGarbage.Proof.Framework.Omega
 

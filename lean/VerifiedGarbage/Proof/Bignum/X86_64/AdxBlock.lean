@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

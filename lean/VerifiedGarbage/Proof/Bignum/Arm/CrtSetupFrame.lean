@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
 
 /-! # Initialization changes only bytes in the caller's scratch buffer -/
 

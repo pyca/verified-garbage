@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-!
 # `vg_rsa_check_key` on x86-64: the entry

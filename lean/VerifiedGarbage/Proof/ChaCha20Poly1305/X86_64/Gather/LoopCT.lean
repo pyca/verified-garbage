@@ -1,11 +1,67 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.Gcm.SealGather
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering in constant time

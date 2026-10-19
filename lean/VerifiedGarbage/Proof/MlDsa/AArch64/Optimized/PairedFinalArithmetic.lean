@@ -4,9 +4,9 @@ public import Mathlib.Data.Fintype.Fin
 public import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedScaleBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## From `PairedScaleRun.lean` -/
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFrameContext
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! Five-bit prime exponentiation with an explicitly bounded wider table. -/
 

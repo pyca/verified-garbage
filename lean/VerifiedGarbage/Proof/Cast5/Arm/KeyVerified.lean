@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Cast5.Arm.Key
 meta import VerifiedGarbage.Proof.Cast5.Arm.Key
 public import VerifiedGarbage.Proof.Cast5.Arm.Lit
 meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
@@ -13,7 +13,33 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cast5.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Cast5.Arm.Ecb
+import VerifiedGarbage.Proof.Cast5.Arm.KeyHalf
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Cast5.Arm.Ecb
+meta import VerifiedGarbage.Proof.Cast5.Arm.KeyHalf
+meta import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.CallF
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # CAST5 key expansion on ARMv7: verified

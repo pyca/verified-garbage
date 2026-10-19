@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
 import VerifiedGarbage.Proof.Ffdh.WordPred
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `vg_ffdh_check_domain` on AArch64: its own pieces

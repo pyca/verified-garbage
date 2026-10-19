@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Pairs
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Exec
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
 
 /-!
 # A half's products are its coefficients

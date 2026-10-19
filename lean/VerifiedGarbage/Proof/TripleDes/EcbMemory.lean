@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

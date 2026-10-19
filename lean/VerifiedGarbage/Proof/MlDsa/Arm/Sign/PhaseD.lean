@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsD
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsB
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
 
 /-!
 # ML-DSA signing on ARMv7: the private key and `ρ″`

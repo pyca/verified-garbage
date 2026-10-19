@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Relate fixed-count recovery loops while their secret arithmetic differs -/
 

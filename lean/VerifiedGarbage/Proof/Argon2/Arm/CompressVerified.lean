@@ -1,15 +1,36 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Compress
+import VerifiedGarbage.Proof.Argon2.Arm.Compress
 meta import VerifiedGarbage.Proof.Argon2.Arm.Compress
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Argon2.Contract
-meta import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Argon2.Arm.Mix
+meta import VerifiedGarbage.Proof.Argon2.Arm.Rounds
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Argon2 compression on ARMv7: verified

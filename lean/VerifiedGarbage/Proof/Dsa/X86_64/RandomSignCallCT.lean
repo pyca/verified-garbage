@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallPre
+import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
 
 /-! Instantiate the supplied-nonce signer's leakage contract at a wrapper call. -/
 @[expose] public section

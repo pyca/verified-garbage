@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ECDSA on 32-bit ARM: the setup

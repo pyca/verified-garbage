@@ -1,13 +1,80 @@
 module
+public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Enc
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
 meta import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.AesXts.X86_64.CT
+import VerifiedGarbage.Proof.AesXts.X86_64.CT
 meta import VerifiedGarbage.Proof.AesXts.X86_64.CT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesXts.Alpha
+import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
+import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
+import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
+meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
+meta import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+meta import VerifiedGarbage.Proof.AesXts.Alpha
+meta import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Loop
+meta import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Step
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Clmul87
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Body
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Enc
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+meta import VerifiedGarbage.Proof.Cmac.Dbl32
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Ocb.Spec
 
 /-!
 # XTS-AES of data units on x86-64: constant time

@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
-public import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 public import VerifiedGarbage.Proof.P256.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.Proof.P256.Curve
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Weierstrass.Booth
+public import Mathlib.Data.BitVec
 
 /-!
 # P-256's group law, on x86 (32-bit)

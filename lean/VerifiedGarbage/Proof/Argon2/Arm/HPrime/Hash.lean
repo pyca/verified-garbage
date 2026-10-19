@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Calls
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 H′ on ARMv7: hashing in `scratch`

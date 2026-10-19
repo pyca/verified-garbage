@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
 
 /-! # Shared round implementations for generic callers -/
 

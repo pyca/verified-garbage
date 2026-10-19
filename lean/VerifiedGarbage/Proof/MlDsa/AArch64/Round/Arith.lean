@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # ML-DSA on AArch64: the values the rounding code computes

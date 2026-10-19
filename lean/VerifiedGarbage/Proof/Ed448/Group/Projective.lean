@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Edwards.Group
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import Mathlib.Tactic.NormNum.Prime
-public import VerifiedGarbage.Spec.X448
 public import VerifiedGarbage.Proof.Ed448.Ref
-public import VerifiedGarbage.Spec.Ed448
 public import Mathlib.FieldTheory.Finite.Basic
 
 /-!

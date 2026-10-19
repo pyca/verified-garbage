@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Steps
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on AArch64: scalars longer than the hash

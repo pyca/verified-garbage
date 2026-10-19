@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

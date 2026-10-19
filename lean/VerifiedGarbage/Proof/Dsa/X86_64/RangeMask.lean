@@ -1,11 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeLow
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeLow
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeHead
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+import VerifiedGarbage.Proof.Dsa.X86_64.Masks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-! # Exact scalar range masks without secret-dependent branches -/
 

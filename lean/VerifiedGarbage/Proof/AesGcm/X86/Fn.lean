@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
 
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: what every function does

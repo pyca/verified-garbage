@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Exp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the vector code from the regions

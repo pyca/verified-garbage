@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.X448.Wide.Column
 
-public import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Wide.AddCoefficient
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: fold wide product coefficients with 2⁴⁴⁸ = 2²²⁴ + 1. -/
 

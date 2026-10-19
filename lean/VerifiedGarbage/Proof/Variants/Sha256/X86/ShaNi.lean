@@ -2,12 +2,58 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Md5.X86.Compress
+import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
+import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Hmac.Common
+meta import VerifiedGarbage.Proof.Md5.X86.Compress
+meta import VerifiedGarbage.Proof.MdStream.Prefix
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Load
+meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
+meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+meta import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 
 /-!
 # SHA-256 on x86 with the SHA extensions: the variant's code and proofs

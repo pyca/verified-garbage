@@ -1,23 +1,81 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
 public import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Scalar
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 
 /-!
 # ML-DSA verification on x86-64: the primitives it calls

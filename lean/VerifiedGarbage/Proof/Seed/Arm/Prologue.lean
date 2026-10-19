@@ -1,6 +1,15 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Seed.Arm.Ecb
+public import VerifiedGarbage.Proof.Framework.Arm.Straight
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Seed.SboxLit
 
-public import VerifiedGarbage.Proof.Seed.Arm.Crypt8
+import VerifiedGarbage.Proof.Seed.Arm.Crypt8
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Slots, copies of blocks, and saving registers, on ARMv7

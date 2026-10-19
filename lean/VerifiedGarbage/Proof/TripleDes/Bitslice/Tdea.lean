@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Round
 import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Bytes
 
 /-!
 # Three bitsliced DES passes, and the blocks they come from

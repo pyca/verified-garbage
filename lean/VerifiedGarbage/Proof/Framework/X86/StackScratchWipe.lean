@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A scratch buffer on the stack, wiped after use (x86)

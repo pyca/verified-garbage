@@ -2,8 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackFields
-import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 
 /-! ## From `UseHintPackFour.lean` -/
 

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Arguments
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Set
 
 /-! # Input and output bindings for streaming reduction -/
 

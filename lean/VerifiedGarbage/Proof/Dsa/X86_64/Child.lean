@@ -1,11 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.NewChild
-public import VerifiedGarbage.Proof.Dsa.X86_64.SealChild
+import VerifiedGarbage.Proof.Dsa.X86_64.SealChild
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import VerifiedGarbage.Proof.Dsa.X86_64.Setup
 
 /-! # Complete initialization of one DSA Montgomery workspace -/
 

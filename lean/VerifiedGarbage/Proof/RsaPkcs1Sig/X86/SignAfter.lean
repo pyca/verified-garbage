@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipe
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipe
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
 /-! # Compose checked signing or public encoding rejection with output clearing -/
 

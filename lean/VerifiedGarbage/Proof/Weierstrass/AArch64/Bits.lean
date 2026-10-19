@@ -1,10 +1,17 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Weierstrass.AArch64
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-public import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.BitByte
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!

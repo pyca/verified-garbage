@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMath
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 

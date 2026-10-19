@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Arith
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Combining the halves' coefficients

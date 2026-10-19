@@ -1,22 +1,49 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.Ball
+public import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
+import VerifiedGarbage.Proof.MlDsa.Sample.Signs
+import VerifiedGarbage.Proof.MlDsa.Sample.Word
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Table
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls

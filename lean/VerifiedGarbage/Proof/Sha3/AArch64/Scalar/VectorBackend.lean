@@ -4,20 +4,54 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlKem
-import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-import VerifiedGarbage.TCB.Axioms
 meta import Mathlib.Tactic.IntervalCases
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ScheduleFacts
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Rounds
+meta import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 

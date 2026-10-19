@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.StagePower
+public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHead
+import VerifiedGarbage.Proof.Dsa.X86.CorePowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.StagePower
 
 /-! # Exponentiation stages preserve a public call layout -/
 

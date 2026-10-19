@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # Montgomery products as functions on AArch64: registers saved in vector lanes

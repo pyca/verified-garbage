@@ -1,9 +1,37 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Mont.X86
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.P256Red
+import VerifiedGarbage.Proof.Mont.X86.RedRow
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.SparseShift
+import VerifiedGarbage.Proof.Mont.X86.SparseStep
+import VerifiedGarbage.Proof.Mont.X86.Step
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
+import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Spec.Rc2
 
 /-!

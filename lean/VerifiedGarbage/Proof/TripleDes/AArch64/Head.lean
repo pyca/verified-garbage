@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Body
 public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Save
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Ready
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Bytes
 

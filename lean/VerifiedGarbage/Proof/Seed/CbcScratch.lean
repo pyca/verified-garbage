@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Seed.Cbc
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Seed.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Seed-CBC with its working space as an argument

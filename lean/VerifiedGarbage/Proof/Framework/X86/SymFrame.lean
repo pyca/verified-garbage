@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Call
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Obtaining a static address with a balanced four-byte CALL frame -/
 

@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeAcc
+import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: the AVX2 accumulator added to a polynomial

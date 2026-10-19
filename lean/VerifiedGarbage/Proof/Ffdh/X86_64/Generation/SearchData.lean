@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Start
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 
 /-! # Public search inputs and the persistent native loop state -/
 

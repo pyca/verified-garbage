@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
+import VerifiedGarbage.Proof.Rsa.X86.RvMontClear
 
 /-! # Montgomery products return full key-array values -/
 

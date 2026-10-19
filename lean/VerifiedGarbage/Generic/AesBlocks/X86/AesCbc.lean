@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCbc.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesCbc.X86.Body
 
 /-!
 # AES-CBC (NIST SP 800-38A §6.2) on x86

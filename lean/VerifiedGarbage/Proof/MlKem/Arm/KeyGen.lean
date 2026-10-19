@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
 
 /-!
 # ML-KEM on 32-bit ARM: key generation, correctness

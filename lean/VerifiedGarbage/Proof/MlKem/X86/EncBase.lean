@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
 public import VerifiedGarbage.Proof.MlKem.X86.Extra
-public import VerifiedGarbage.Impl.MlKem.X86.Encrypt
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Impl.MlKem.X86.Kem
+import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Impl.MlKem.X86.Encrypt
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-KEM on x86 (32-bit): the setting of K-PKE.Encrypt

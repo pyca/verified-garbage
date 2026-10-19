@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyEntry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Key generation's frame state, through its entry and the domain check -/
 

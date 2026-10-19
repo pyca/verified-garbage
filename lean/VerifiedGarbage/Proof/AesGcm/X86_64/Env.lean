@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.AesGcm.X86_64
 
 /-!
 # AES-GCM on x86-64: where everything is

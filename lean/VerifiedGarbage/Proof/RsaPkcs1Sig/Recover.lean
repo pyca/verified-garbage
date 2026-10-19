@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.RsaPkcs1Sig
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery by encoding

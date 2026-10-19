@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # The out-of-place AVX-512 loop: a batch of sixteen blocks

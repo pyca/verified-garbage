@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-KEM on AArch64: an iteration of `dd4Body`

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 
 /-!
 # AES-GCM on x86-64: `seal`'s path for TLS records

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Bounds for the three reviewed DSA generation sizes -/
 

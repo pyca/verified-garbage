@@ -4,13 +4,16 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
 public import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSA with the CRT on x86-64: `x R_X^(-K) mod X`

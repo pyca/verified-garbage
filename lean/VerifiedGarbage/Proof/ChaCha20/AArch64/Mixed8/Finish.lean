@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Spill2
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Calls with their own frames preserve retained private-wrapper state -/
 

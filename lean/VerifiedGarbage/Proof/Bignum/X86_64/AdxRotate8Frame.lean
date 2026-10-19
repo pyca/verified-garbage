@@ -1,7 +1,12 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Sig
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Words
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Sse
 
 /-! The reduction block writes one carry word and a separate output range. -/
 

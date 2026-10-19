@@ -1,20 +1,23 @@
 module
 
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Dec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
-import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-public import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
+import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.X86_64.Alloc
-import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
 
 /-! # Eight-state AES-NI/GHASH correctness
 

@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Short Weierstrass curves on X86: the ladder computes `[k]P`

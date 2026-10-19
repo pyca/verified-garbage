@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyCT
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Offset

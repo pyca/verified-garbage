@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Generate
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyABI
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public parameter-generation ABI and its disjoint input buffers -/

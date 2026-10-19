@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
 import VerifiedGarbage.Proof.Weierstrass.Words32
-import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
-import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the blocks between the calls

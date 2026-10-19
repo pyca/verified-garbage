@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86.Isa
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Mmx
 

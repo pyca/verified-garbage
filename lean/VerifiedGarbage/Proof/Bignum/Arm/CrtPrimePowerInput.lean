@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSources
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # A validated factor becomes an arithmetic workspace while retaining its sources -/
 

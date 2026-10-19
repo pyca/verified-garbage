@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
-public import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Arm.Call
 import Mathlib.Tactic.SplitIfs
 
 /-!

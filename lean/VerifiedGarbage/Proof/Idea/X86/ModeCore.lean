@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.X86.Block
-public import VerifiedGarbage.Proof.Idea.X86.Ecb
-public import VerifiedGarbage.Proof.Idea.ModeBytes
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Ecb
+import VerifiedGarbage.Proof.Idea.ModeBytes
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Idea.X86.Modes
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Idea.X86.Invert
 
 /-!
 # IDEA's core for the modes on x86 (32-bit)

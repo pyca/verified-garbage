@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvViews
 
 /-! # Preservation of narrow arrays, wide arrays and scalar slots -/
 

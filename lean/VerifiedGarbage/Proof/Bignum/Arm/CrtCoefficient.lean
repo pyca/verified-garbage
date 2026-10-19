@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtDifference
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverse
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtInverseInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverse
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # The complete CRT recombination coefficient matches the signed RSA specification -/
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr6
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr8
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr9
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr9
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand1
 
 /-! # A candidate on ARMv7: after the round (`tail_vp`)
 

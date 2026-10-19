@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPss.Arm
-public import VerifiedGarbage.Impl.Pbkdf2.Stream.Arm
 
 /-!
 # RSAES-OAEP (RFC 8017 §7.1) on ARMv7

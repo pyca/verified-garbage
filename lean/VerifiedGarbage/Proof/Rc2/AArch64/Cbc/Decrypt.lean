@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Frame
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Steps
+import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # One CBC decryption step, retaining the original ciphertext -/
 

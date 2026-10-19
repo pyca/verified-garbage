@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAddCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAddCT
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAdd
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAdd
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Constant time of a wrapped-seed hash contribution -/
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Steps
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: signing with a candidate

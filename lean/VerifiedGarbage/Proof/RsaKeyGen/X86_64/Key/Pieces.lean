@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import VerifiedGarbage.Proof.Rsa.X86_64.CvLoad
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! ## State -/
 

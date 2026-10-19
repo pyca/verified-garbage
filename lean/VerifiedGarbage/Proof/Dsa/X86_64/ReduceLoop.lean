@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByte
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Mathlib.Tactic.Set
 
 /-! # The nonempty streaming reduction loop -/
 

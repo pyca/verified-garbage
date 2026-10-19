@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractGeometry
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractInput
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicBytes
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicBytes
 
 /-! # The shared verifier leakage fixes every immutable input byte -/
 

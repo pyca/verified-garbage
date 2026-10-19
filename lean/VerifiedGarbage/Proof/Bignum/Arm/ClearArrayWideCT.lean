@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferCT
+import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferCT
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Clearing an extended result array leaks only its public layout -/
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.RandomResult
+public import VerifiedGarbage.Spec.Dsa.RandomSign
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! One-step equations for the bounded randomized-signing loop. -/

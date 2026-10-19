@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Ocb.Contract
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ocb
+import VerifiedGarbage.Spec.Ocb.Contract
 
 /-!
 # AES-OCB on x86-64: the contracts the proofs are written against

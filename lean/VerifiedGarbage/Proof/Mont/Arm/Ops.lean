@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Csub
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.Arm.Loop
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Mont.Arm.Step
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the operations

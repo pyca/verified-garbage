@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
+public import VerifiedGarbage.Proof.AesOcb.Arm.Whole
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
+import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.AesOcb.Arm.Contract
 import VerifiedGarbage.Proof.Ocb.State
 
 /-!

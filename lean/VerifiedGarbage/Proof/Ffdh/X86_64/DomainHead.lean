@@ -1,6 +1,9 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Framework.Omega
 

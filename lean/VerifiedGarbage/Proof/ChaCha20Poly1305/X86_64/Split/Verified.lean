@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.FnCT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.SplitScratch
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: `Verified`

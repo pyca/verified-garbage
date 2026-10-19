@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Idea.Cbc
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Idea-CBC with its working space as an argument

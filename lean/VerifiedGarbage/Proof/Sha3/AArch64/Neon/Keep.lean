@@ -1,9 +1,31 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 
 @[expose] public section
 

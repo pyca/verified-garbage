@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyLayout
 
-public import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
-public import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
-public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
+import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
+import VerifiedGarbage.Proof.Dsa.X86.VerifySizedTiming
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
+import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Whole verification traces from common public arguments and domain values -/
 

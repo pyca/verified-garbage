@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivContractGeometry
+public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivABI
+import VerifiedGarbage.Proof.Rsa.X86.PrivABI
+import VerifiedGarbage.Proof.Rsa.X86.PrivEntryReady
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Shared private RSA preconditions establish the i686 wrapper inputs -/
 

@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
-public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Transfer public argument and trace agreement to the complete nonce sampler. -/
 @[expose] public section

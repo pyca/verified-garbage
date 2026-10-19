@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 
 /-!
 # ML-KEM on x86-64: key generation with 16-bit polynomials, the samples

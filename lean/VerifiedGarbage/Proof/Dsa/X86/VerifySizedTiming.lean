@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.OutputBytes
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeTiming
-public import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
-public import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.ShapeTiming
+import VerifiedGarbage.Proof.Dsa.X86.FailureTiming
+import VerifiedGarbage.Proof.Dsa.X86.BodyTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Complete public shape rejection and verification -/
 

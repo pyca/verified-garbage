@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseArgs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourScalarLoop
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseCore
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

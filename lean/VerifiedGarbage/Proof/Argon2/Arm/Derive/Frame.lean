@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Contract
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+public import VerifiedGarbage.Impl.Argon2.Arm.Derive
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 on ARMv7: the derivation's frames

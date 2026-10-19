@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

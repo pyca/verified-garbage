@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifySpec
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # Verification calls RSA, checks the padding, and returns the specified bit -/
 

@@ -1,7 +1,20 @@
 module
+public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Save
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Keys
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # TDEA-CMAC on x86-64: `vg_cmac_triple_des_init`, the key schedule

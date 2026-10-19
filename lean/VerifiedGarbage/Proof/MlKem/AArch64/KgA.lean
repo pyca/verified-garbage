@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on AArch64: `keygen`, the prologue and `G(d ‖ k)`

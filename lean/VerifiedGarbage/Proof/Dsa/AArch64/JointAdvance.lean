@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
+public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Advancing the row or column of the joint power table -/

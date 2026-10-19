@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Blowfish.AArch64
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Proof.Blowfish.Table
 import VerifiedGarbage.Proof.Blowfish.KeyTable
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Blowfish.AArch64.Batch
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Key expansion: the initial S-boxes and the keyed P-array

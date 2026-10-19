@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedVec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ## From `PairedRawNorm.lean` -/
 

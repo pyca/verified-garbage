@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.P256
 
-public import VerifiedGarbage.Proof.P256.Curve
+import VerifiedGarbage.Proof.P256.Curve
 import VerifiedGarbage.Proof.P256.Order
-public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.P256.Point
 
 /-!
 # P-256 has prime order

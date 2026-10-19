@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Mont.X86.Csub
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the operations

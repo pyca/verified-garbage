@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! Four independent load/BIT pairs, sharing one row-comparison mask. -/
 

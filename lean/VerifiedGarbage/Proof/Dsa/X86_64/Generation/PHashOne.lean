@@ -1,8 +1,21 @@
 module
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSeedHash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSeedHash
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashArgs
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Construct and store one p-candidate hash contribution in assembly -/
 

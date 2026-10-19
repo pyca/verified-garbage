@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.X86.FinishShort
 
-public import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
+import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-SIV on x86: finishing S2V

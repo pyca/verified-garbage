@@ -1,9 +1,9 @@
 module
 
 public import Batteries.Tactic.Init
-public import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Spec.RsaOaep
+import VerifiedGarbage.Proof.Mgf1.Bytes
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mgf1.Basic
 
 /-!
 # RSAES-OAEP: masking and unmasking `EM`, whatever the target

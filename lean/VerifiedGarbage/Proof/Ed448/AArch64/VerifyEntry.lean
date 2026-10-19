@@ -1,13 +1,17 @@
 module
 
-import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 public import VerifiedGarbage.Proof.Ed448.Formulas
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!

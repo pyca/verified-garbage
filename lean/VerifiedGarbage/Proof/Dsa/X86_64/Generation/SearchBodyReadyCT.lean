@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBodyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBody
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControlCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A completed p attempt returns a public status and next witness cursor -/

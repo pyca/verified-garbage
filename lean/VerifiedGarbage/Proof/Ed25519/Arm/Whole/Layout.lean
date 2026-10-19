@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.OffsetBelow
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Shared frame and call invariants for complete Arm Ed25519. -/
 

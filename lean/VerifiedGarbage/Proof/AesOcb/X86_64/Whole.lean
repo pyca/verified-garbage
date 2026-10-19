@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Pass
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-OCB on x86-64: the whole blocks (`whole`)

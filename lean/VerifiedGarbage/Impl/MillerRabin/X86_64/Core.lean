@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-! # Shared fixed-window Miller–Rabin computation
 

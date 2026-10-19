@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Seed.AArch64.Lanes
 
-public import VerifiedGarbage.Proof.Seed.AArch64.KeyLoad
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.Round
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Copying `G`'s outputs on AArch64

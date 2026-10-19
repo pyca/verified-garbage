@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Bind each complete seed to q hashing without resetting witness consumption -/
 

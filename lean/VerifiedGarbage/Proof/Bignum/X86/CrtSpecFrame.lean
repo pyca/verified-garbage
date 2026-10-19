@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPost
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Scratch work preserves the complete private RSA specification input -/
 

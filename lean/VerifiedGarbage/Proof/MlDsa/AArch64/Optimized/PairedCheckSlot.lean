@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

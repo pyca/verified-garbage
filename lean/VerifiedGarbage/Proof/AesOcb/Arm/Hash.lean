@@ -4,6 +4,13 @@ public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 import VerifiedGarbage.Proof.AesOcb.Arm.PadTo
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.Arm.Words
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on ARMv7: `HASH` (`hash`)

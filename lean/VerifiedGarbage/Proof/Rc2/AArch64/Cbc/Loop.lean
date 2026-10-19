@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Slice
 import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Correctness of the CBC loop on complete blocks -/
 

@@ -2,9 +2,10 @@ module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Load
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.X86_64.Load
+import Mathlib.Tactic.Set
 
 /-! # Preparing DSA arithmetic in a linked child workspace -/
 

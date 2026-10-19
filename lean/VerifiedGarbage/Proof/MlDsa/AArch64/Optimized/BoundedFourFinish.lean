@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `BoundedFourMasked.lean` -/
 

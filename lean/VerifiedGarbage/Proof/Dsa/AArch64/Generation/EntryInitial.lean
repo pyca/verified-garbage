@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! The public ABI establishes every input invariant of the native search. -/
 @[expose] public section

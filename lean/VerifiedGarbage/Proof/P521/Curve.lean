@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.P521
 import VerifiedGarbage.Proof.P521.Prime
-public import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # P-521 is a curve the proofs apply to

@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBoth
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # The paired failure cleanup depends only on the public accepted lengths -/
 @[expose] public section
