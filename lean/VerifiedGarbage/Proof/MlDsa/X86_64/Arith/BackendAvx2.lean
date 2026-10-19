@@ -65,6 +65,23 @@ import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomery
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.MontgomeryCore
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMul
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5CT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`

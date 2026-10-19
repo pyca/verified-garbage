@@ -198,6 +198,20 @@ meta import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
 meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+public import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveFailure
+public import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Minus
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
@@ -298,6 +312,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.ResultCall
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScanFieldCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleAddCT
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
