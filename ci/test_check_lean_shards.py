@@ -263,6 +263,26 @@ class Many(Project):
             self.assertEqual(shards.main(["closure", str(plan), "1"]), 0)
         self.assertEqual(out.getvalue().split(), sorted(p["targets"][0]))
 
+    @mock.patch.object(shards, "SHARD_OVERHEAD", 0.0)
+    def test_new_modules(self):
+        # Modules the last build lacks: a new sink, and a new module a
+        # changed sink imports, which the closure of its shard holds.
+        self.manifest["inputs"] = shards.inputs()
+        self.manifest["sources"] = {m: shards.digest(f) for m, f in shards.modules().items()}
+        self.manifest["times"] = {m: 400.0 for m in shards.modules()}
+        changed = self.SINKS[:20]
+        for m in changed:
+            (self.lean / f"{m.replace('.', '/')}.lean").write_text("-- changed\n")
+        (self.lean / "VerifiedGarbage/NewSink.lean").write_text("\n")
+        (self.lean / "VerifiedGarbage/NewDep.lean").write_text("\n")
+        (self.lean / "VerifiedGarbage/Sink0.lean").write_text("import VerifiedGarbage.NewDep\n")
+        p = shards.plan(self.manifest)
+        self.assertEqual(sorted(t for ts in p["targets"] for t in ts),
+                         sorted(changed + ["VerifiedGarbage.NewSink"]))
+        closure = shards.closures(shards.imports(shards.modules()))
+        i = next(i for i, ts in enumerate(p["targets"]) if "VerifiedGarbage.Sink0" in ts)
+        self.assertIn("VerifiedGarbage.NewDep", shards.needed(p["targets"][i], closure))
+
     def test_a_shard_per_work(self):
         # 2000 s of work: three shards (two would be slower).
         self.assertEqual(self.count(50), 3)
