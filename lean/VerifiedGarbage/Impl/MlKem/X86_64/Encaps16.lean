@@ -35,10 +35,10 @@ def oHB : Nat := K.oW + Sample4.oHB
 def hzero : List Instr := .mov32 .rax (.imm 0) :: zeroSt .rbx (oHS K)
 
 /-- The rest of the last 408 bytes of `pad(ek)`, after the `len` bytes of
-`ek`: zeros, and the suffix and the last bit of the padding. -/
-def padTail (len : Nat) : List Instr :=
+`ek`: zeros, and the suffix (SHA3's `0x06`, or `d`) and the last bit of the padding. -/
+def padTail (len : Nat) (d : Nat := 6) : List Instr :=
   .mov32 .rax (.imm 0) :: (List.range ((408 - len) / 8)).flatMap (fun j => [.store (at_ .rbx (oHB K + len + 8 * j)) .rax]) ++
-    setB (sc (oHB K + len)) 6 ++ setB (sc (oHB K + 407)) 0x80
+    setB (sc (oHB K + len)) d ++ setB (sc (oHB K + 407)) 0x80
 
 /-- Bytes `408 i` to `408 i + 407` of `pad(ek)` to `HB`. -/
 def hblk (i : Nat) : Prog isa :=
