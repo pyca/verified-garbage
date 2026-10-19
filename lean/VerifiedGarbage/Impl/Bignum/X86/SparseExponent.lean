@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86.PublicExponent
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+public import VerifiedGarbage.Impl.Mont.X86.Exponent
 
 /-! # Public RSA exponentiation that stops after the exponent's top bit
 
@@ -13,6 +14,9 @@ multiplications, rather than `exponentiate`'s 64 of each.
 @[expose] public section
 namespace VG.Impl.Bignum.X86.PublicContext
 open VG VG.X86 VG.Impl.Mont.X86
+
+/-- The public exponent, in two 32-bit words. -/
+def exponentOffset : Nat := 128
 
 /-- ZF is set exactly when the exponent's low bit is clear. -/
 def bitTest : List Instr :=

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Bignum.X86.ExponentRanges
+public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
 
 /-! # One iteration of the exponentiation that skips the products of clear bits -/

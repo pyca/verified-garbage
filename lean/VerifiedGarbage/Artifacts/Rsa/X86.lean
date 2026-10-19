@@ -59,7 +59,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["Public lengths select the limb width. Runtime-modulus Montgomery arithmetic \
       uses 32-bit limbs in the shared public scratch layout. The input acceptance mask is \
-      applied after a fixed 64-step exponentiation. Callee-saved registers reside in scratch."]
+      applied after the exponentiation, which is `vg_rsa_public_precomputed_checked`'s: it \
+      branches on each bit of the exponent and ends after its top bit. Callee-saved registers \
+      reside in scratch."]
     code := Impl.Bignum.X86.PublicFn.code
     verified := Proof.Bignum.X86.public_verified
     stack := 20 }]
