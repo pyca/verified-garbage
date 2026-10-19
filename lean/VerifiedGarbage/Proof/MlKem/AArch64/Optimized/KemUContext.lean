@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 
 /-! # Readonly data and retained errors survive ciphertext rows -/
 

@@ -18,12 +18,12 @@ def fullEntry (buf out : Nat) : List Instr := ptrTo .x3 .x28 out ++
   [.addImm .x .x2 .x19 buf,.movz .x .x4 256 0,.movz .x .x5 280 0,
    .movz .x .x9 3329 0,.movz .x .x10 15 0]
 
-theorem fullEntry_ok (s : State) {buf out : Nat} (hb : buf<4096) (ho : out<65536)
-    {B : Nat → Byte} (hp : Rej8.Env 280 B (s.gpr .x19+BitVec.ofNat 64 buf)
+theorem fullEntry_ok {w16 : Bool} (s : State) {buf out : Nat} (hb : buf<4096) (ho : out<65536)
+    {B : Nat → Byte} (hp : Rej8.EnvW w16 280 B (s.gpr .x19+BitVec.ofNat 64 buf)
       (s.gpr .x28+BitVec.ofNat 64 out) s) (hc : Rej8.Constants s) :
     WP isa (.block (fullEntry buf out)) s fun u =>
       Only [.x2,.x3,.x4,.x5,.x9,.x10] s u ∧
-      Rej8.Entry [] 280 B (s.gpr .x19+BitVec.ofNat 64 buf) (s.gpr .x28+BitVec.ofNat 64 out) u := by
+      Rej8.EntryW w16 [] 280 B (s.gpr .x19+BitVec.ofNat 64 buf) (s.gpr .x28+BitVec.ofNat 64 out) u := by
   have hw : WP isa (.block (fullEntry buf out)) s fun u =>
       Only [.x2,.x3,.x4,.x5,.x9,.x10] s u ∧
       u.gpr .x2=s.gpr .x19+BitVec.ofNat 64 buf ∧
@@ -49,31 +49,31 @@ theorem fullEntry_ok (s : State) {buf out : Nat} (hb : buf<4096) (ho : out<65536
   · exact ⟨by rw [hv]; exact hc.index,by rw [hv]; exact hc.mask,
       by simpa only [hv] using hc.q,by simpa only [hv] using hc.weights,
       by simpa only [hv] using hc.zero⟩
-  · simpa only [List.length_nil,coeffAddr,Nat.mul_zero,ptr_zero] using x3
+  · simpa only [List.length_nil,cAddr,Nat.mul_zero,ptr_zero] using x3
 
-
-def fullFinish : Prog isa := seqs [Impl.MlKem.AArch64.Rej8.rejLoop,
-  .block [.logic .and .x .x24 .x24 .x0],Rej8.zeroSuffix,
+def fullFinish (w16 : Bool := false) : Prog isa := seqs [Impl.MlKem.AArch64.Rej8.rejLoop w16,
+  .block [.logic .and .x .x24 .x24 .x0],Rej8.zeroSuffix w16,
   .block [.ldr .x .x22 .x19 1848,.ldr .x .x23 .x19 1856]]
 
 def fullFinishRegs : List Reg := [.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x22,.x23,.x24]
 
-structure FullFinishPost (B : Nat → Byte) (out : Addr) (flags s u : State) : Prop where
+structure FullFinishPostW (w16 : Bool) (B : Nat → Byte) (out : Addr) (flags s u : State) : Prop where
   keep : Keep fullFinishRegs s u
   frame : Frame [polyRegion out] s.mem u.mem
-  coeffs : CoeffsUpTo u.mem out (sampleAfter [] B 280).length (Sample.cv (sampleAfter [] B 280)) (fun _ => 0)
-  reduced : Reduced u.mem out
+  coeffs : CoeffsUpToW w16 u.mem out (sampleAfter [] B 280).length (Sample.cvW w16 (sampleAfter [] B 280))
+    (fun _ => 0)
+  reduced : ReducedW (cw w16) u.mem out
   status : u.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64 (if (sampleAfter [] B 280).length=256 then 1 else 0)
   flag22 : u.gpr .x22=flags.gpr .x22
   flag23 : u.gpr .x23=flags.gpr .x23
 
-theorem fullFinish_ok {s flags : State} {p out : Addr} {B : Nat → Byte}
-    (he : Rej8.Entry [] 280 B (p+400) out s)
+theorem fullFinish_ok {w16 : Bool} {s flags : State} {p out : Addr} {B : Nat → Byte}
+    (he : Rej8.EntryW w16 [] 280 B (p+400) out s)
     (hp : s.gpr .x19=p) (hf : Flags p flags s.mem)
     (hd : (flagR p).Disjoint (polyRegion out))
     (hr0 : InRegions (s.rd++s.wr) (p+1848) 8)
     (hr1 : InRegions (s.rd++s.wr) (p+1856) 8) :
-    WP isa fullFinish s (FullFinishPost B out flags s) := by
+    WP isa (fullFinish w16) s (FullFinishPostW w16 B out flags s) := by
   refine WP.seq (WP.mono (Rej8.segment_ok he (by decide) (by decide)) fun a ha => ?_)
   refine WP.seq (wp_and fun b hb eb => wp_nil ?_)
   refine WP.seq (WP.mono (Rej8.zeroSuffix_prefix (aP := out) (L := sampleAfter [] B 280)

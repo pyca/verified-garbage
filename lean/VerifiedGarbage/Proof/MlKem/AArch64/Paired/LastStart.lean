@@ -25,24 +25,24 @@ theorem SingleContext.frame {s t : State} {p out table : Addr} (h : SingleContex
     intro r hr; simp only [fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl; exact h.tableScratch; exact h.tableOut)
 
-def lastStartCode (sb ss a k off : Nat) : Prog isa :=
+def lastStartCode (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k))
   (.seq Impl.MlKem.AArch64.Paired.squeeze
-   (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (Impl.MlKem.AArch64.Paired.reject 400 off .x22)))
+   (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)))
 
 def lastStartRegs : List Reg := startRegs++[.x9,.x16]++
  [.x22,.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15]
 
-structure LastStartPost (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
+structure LastStartPostW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
  keep : Keep lastStartRegs s t
  frame : Frame (fullWrites p out) s.mem t.mem
  saved : Noise.Saved p s t.mem
  context : SingleContext p out table t
- coeffs : Rej8.Scalar.Coeffs t.mem out (sampleAfter [] B 168)
+ coeffs : Rej8.Scalar.CoeffsW w16 t.mem out (sampleAfter [] B 168)
  flag : (t.gpr .x22).toNat=if (sampleAfter [] B 168).length=256 then 1 else 0
  ptr : t.gpr .x19=p
 
-theorem lastStart_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
+theorem lastStart_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoff : off<65536)
     (hk : 0<k) (hk256 : k≤256)
     (hp : s.gpr .x28+BitVec.ofNat 64 ss=p) (hseed : s.gpr .x28+BitVec.ofNat 64 sb=seed)
@@ -50,12 +50,12 @@ theorem lastStart_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
     (hin : ∀j<4,InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (ctx : SingleContext p out table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table) :
-    WP isa (lastStartCode sb ss a k off) s
-      (LastStartPost (xofByte (seedBytes s.mem seed a k)) p out table s) := by
+    WP isa (lastStartCode sb ss a k off w16) s
+      (LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
   have combined := WP.mono_syms (start_ok (a := a) (b := a) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts)
-      (Impl.MlKem.AArch64.Paired.reject 400 off .x22)) u
-      (LastStartPost (xofByte (seedBytes s.mem seed a k)) p out table s))
+      (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) u
+      (LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s))
     (fun u ⟨ku,fu,svu,u19,_,_,bu,_⟩ sy => by
       have cu := ctx.frame ku.rd ku.wr (fu.mono (by simp [fullWrites]))
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by
@@ -79,7 +79,7 @@ theorem lastStart_ok {s : State} {p seed out table : Addr} {sb ss a k off : Nat}
         exact (fv.bytes hd (by change 504≤2^64; decide) hi).trans (bu.xof hk hk256 hi)
       have ready : Rej8.TableReady v out :=
         ⟨by rw [v16]; exact ctv.artifact,by rw [v16]; exact ctv.readable,by rw [v16]; exact ctv.tableOut⟩
-      have env := rejection_env (off := 400) (N := 168) (by decide) (by decide)
+      have env := rejection_envW (w16 := w16) (off := 400) (N := 168) (by decide) (by decide)
         ctv.scratch ctv.output ctv.apart stream (fun _ hm => ready.read hm)
         (fun _ hm => ready.artifact.vector hm) (fun _ hm => ready.disjoint hm)
       have svv := svu.frame fv (by

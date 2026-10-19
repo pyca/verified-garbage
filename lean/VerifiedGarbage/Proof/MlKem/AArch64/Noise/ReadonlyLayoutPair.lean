@@ -7,10 +7,12 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
+open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (cw)
 open VG.Proof.Sha3.AArch64.Neon
 
 
-theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
+theorem readonly_noisePair_layout {w16 : Bool} {s : State} {L : KemLay} (wf : L.Wf) (room : Room L) (kg : Bool)
     {B : Addr} {n : Nat} (hn : n+1<2*L.k) (hB : s.gpr .x28=B)
     (hc : Covers [⟨B,L.scl⟩] s.wr)
     (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves
@@ -20,13 +22,13 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
     (hfar : ∀r∈pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
       (B+BitVec.ofNat 64 (nttOff kg)), (Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWith L kg n) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith (Ntt16.Readonly.nttAtR w16) L kg n w16) s fun t =>
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (B+BitVec.ofNat 64 (nttOff kg))) s t ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg n))
+      PolyIsW (cw w16) t.mem (B+BitVec.ofNat 64 (outOff L kg n))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) n (transformed L kg n)) ∧
-      Spec.MlKem.PolyIs t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
+      PolyIsW (cw w16) t.mem (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (sampled s.mem (B+BitVec.ofNat 64 (seedOff kg)) (n+1) (transformed L kg (n+1))) := by
   have lim := layout_limits wf kg
   have fit0 := outOff_fits wf room kg (by omega : n<2*L.k)

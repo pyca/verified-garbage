@@ -9,12 +9,12 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
 namespace VG.Proof.MlKem.AArch64.Rej8
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-theorem iters_ok {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
-    {s₀ s : State} (hp : Env N B bP aP s₀) (hN : 0<N) (hm : N%4=0)
-    (h : Scalar.Inv initial N B bP aP s₀ 0 s) (hc : Constants s) :
-    WP isa (.loop body (.nonzero .x .x5)) s (Result initial N B aP s₀) := by
+theorem iters_ok {w16 : Bool} {initial : List Zq} {N : Nat} {B : Nat → Byte} {bP aP : Addr}
+    {s₀ s : State} (hp : EnvW w16 N B bP aP s₀) (hN : 0<N) (hm : N%4=0)
+    (h : Scalar.InvW w16 initial N B bP aP s₀ 0 s) (hc : Constants s) :
+    WP isa (.loop (body w16) (.nonzero .x .x5)) s (ResultW w16 initial N B aP s₀) := by
   refine WP.loop (M := isa)
-    (fun m u => ∃t,m=N-t ∧ t<N ∧ t%4=0 ∧ Scalar.Inv initial N B bP aP s₀ t u ∧ Constants u)
+    (fun m u => ∃t,m=N-t ∧ t<N ∧ t%4=0 ∧ Scalar.InvW w16 initial N B bP aP s₀ t u ∧ Constants u)
     ?_ N s ⟨0,by omega,hN,rfl,h,hc⟩
   rintro m u ⟨t,rfl,ht,htm,hi,hic⟩
   have ht4 : t+4≤N := by omega

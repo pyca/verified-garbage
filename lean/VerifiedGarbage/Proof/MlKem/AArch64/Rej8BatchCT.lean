@@ -20,9 +20,9 @@ theorem probe_ct : ConstantTime isa (fun _ => True)
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x2])
     (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem storeAdvance_ct : ConstantTime isa (fun _ => True)
-    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x3,.x7])) (.block (storeCode++advanceCode)) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x7])
+theorem storeAdvance_ct (w16 : Bool) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x3,.x7])) (.block (storeCode w16++advanceCode w16)) := by
+  cases w16 <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x7])
     (fun _ _ _ _ h => h) (by taint_decide)
 
 structure BatchPublic (s t : State) : Prop where
@@ -36,11 +36,11 @@ structure BatchPublic (s t : State) : Prop where
   x3 : s.gpr .x3=t.gpr .x3
   table : s.gpr .x16=t.gpr .x16
 
-theorem batch_relCT : RelCT isa BatchPublic (.block Impl.MlKem.AArch64.Rej8.rejEight)
+theorem batch_relCT (w16 : Bool) : RelCT isa BatchPublic (.block (Impl.MlKem.AArch64.Rej8.rejEight w16))
     (fun _ _ => True) := by
-  have he : (.block Impl.MlKem.AArch64.Rej8.rejEight : Prog isa)=
-      .block (probeCode++(storeCode++advanceCode)) := by
-    rfl
+  have he : (.block (Impl.MlKem.AArch64.Rej8.rejEight w16) : Prog isa)=
+      .block (probeCode++(storeCode w16++advanceCode w16)) := by
+    cases w16 <;> rfl
   rw [he]
   apply RelCT.block_append
   intro s t tr ur s' t' hp es et
@@ -57,7 +57,7 @@ theorem batch_relCT : RelCT isa BatchPublic (.block Impl.MlKem.AArch64.Rej8.rejE
       obtain ⟨_,rfl⟩ := Exec.det ep epa
       obtain ⟨_,rfl⟩ := Exec.det fp fpb
       have hm : maskAt s=maskAt t := congrArg acceptanceMask hp.candidates
-      have hrest := storeAdvance_ct a b tr₂ ur₂ s' t' trivial trivial
+      have hrest := storeAdvance_ct w16 a b tr₂ ur₂ s' t' trivial trivial
         ⟨ha.keep.sp.trans (hp.sp.trans hb.keep.sp.symm),fun r hr => by
           have hr' : r=.x3 ∨ r=.x7 := by
             simpa only [Taint.ofRegs,RegSet.mem_ofList,List.mem_cons,List.not_mem_nil,or_false] using hr

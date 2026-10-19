@@ -7,22 +7,22 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon
 
-structure StepReady (A B : Spec.Sha3.State) (L M : List Zq) (p a b c : Addr) (s : State) : Prop where
+structure StepReadyW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b c : Addr) (s : State) : Prop where
  context : Context p a b c s
  pointer : s.gpr .x19=p
  symbol : s.syms "VG_MLKEM_REJ_SHUFFLE"=c
  pair : PairAt s.mem p A B
  lenLeft : L.length≤256
  lenRight : M.length≤256
- left : Rej8.Scalar.Coeffs s.mem a L
- right : Rej8.Scalar.Coeffs s.mem b M
- saveLeft : checkpoint (p+1680) a L s.mem
- saveRight : checkpoint (p+1696) b M s.mem
+ left : Rej8.Scalar.CoeffsW w16 s.mem a L
+ right : Rej8.Scalar.CoeffsW w16 s.mem b M
+ saveLeft : checkpointW w16 (p+1680) a L s.mem
+ saveRight : checkpointW w16 (p+1696) b M s.mem
 
-theorem nextBlock_ready {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
- (h : StepReady A B L M p a b c s) :
+theorem nextBlock_ready {w16 : Bool} {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
+ (h : StepReadyW w16 A B L M p a b c s) :
  WP isa nextBlock s fun u=> Keep nextRegs s u ∧ u.gpr .x16=c ∧
-   BothReady L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
+   BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
      (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b u := by
  rcases h with ⟨ctx,hp,sym,pair,hl,hm,ca,cb,sa,sb⟩
  refine WP.mono_syms (nextBlock_ok hp ctx.scratch pair) fun u h hsym => ?_
@@ -46,8 +46,8 @@ theorem nextBlock_ready {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a
   · exact Offset.disjoint p (d:=off) (n:=16) (e:=1408) (k:=8) (by omega) (by omega) (by decide)
  have usa := checkpoint_frame sa precise (checkpoints (Or.inl rfl))
  have usb := checkpoint_frame sb precise (checkpoints (Or.inr rfl))
- have ea := cu.env ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
- have eb := cu.env ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
+ have ea := cu.envW (w16 := w16) ux (N:=56) (off:=400) (by decide) (by decide) (Or.inl rfl) (fun i hi=>ra.byte hi)
+ have eb := cu.envW (w16 := w16) ux (N:=56) (off:=904) (by decide) (by decide) (Or.inr rfl) (fun i hi=>rb.byte hi)
  have iw {o l : Nat} (ho : o+l≤2048) := Noise.inScratch cu.scratch ho (by decide)
  refine ⟨ku,ux,up,cu.scratch,cu.farA,cu.farB,cu.apart,?_,?_,?_⟩
  · exact ⟨by simpa only [up] using ea,cs,hl,ua,by rw [up]; exact usa,
@@ -57,14 +57,14 @@ theorem nextBlock_ready {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a
      by rw [up]; exact iw (by decide),by rw [up]; exact iw (by decide),
      by rw [up]; exact cu.farB.symm.sub_right (Offset.sub_base p (by decide))⟩
  · intro mask hm; rw [ux]; exact cu.tableScratch.sub_left (Rej8.table_sub c hm)
-theorem extraStep_relCT {s u : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
- (hs : StepReady A B L M p a b c s) (hu : StepReady A B L M p a b c u)
+theorem extraStep_relCT {w16 : Bool} {s u : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
+ (hs : StepReadyW w16 A B L M p a b c s) (hu : StepReadyW w16 A B L M p a b c u)
  (sp : s.sp=u.sp) :
- RelCT isa (fun x y=>x=s ∧ y=u) Impl.MlKem.AArch64.Paired.extraStep (fun _ _=>True) := by
+ RelCT isa (fun x y=>x=s ∧ y=u) (Impl.MlKem.AArch64.Paired.extraStep w16) (fun _ _=>True) := by
  have first : RelCT isa (fun x y=>x=s ∧ y=u) nextBlock
-     (fun x y=>BothReady L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
+     (fun x y=>BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
          (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b x ∧
-       BothReady L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
+       BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
          (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b y ∧ x.sp=y.sp ∧ x.gpr .x16=y.gpr .x16) := by
   intro x y tx ty x' y' h ex ey
   rcases h with ⟨hx,hy⟩
@@ -74,7 +74,7 @@ theorem extraStep_relCT {s u : State} {A B : Spec.Sha3.State} {L M : List Zq} {p
   exact ⟨nextBlock_ct s u tx ty x' y' trivial trivial
     (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact hs.pointer.trans hu.pointer.symm)) ex ey,
     px,py,kx.sp.trans (sp.trans ky.sp.symm),tx16.trans ty16.symm⟩
- have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq nextBlock extraBoth) (fun _ _=>True) := by
+ have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq nextBlock (extraBoth w16)) (fun _ _=>True) := by
   refine RelCT.seq first ?_
   intro x y tx ty x' y' h ex ey
   exact extraBoth_relCT h.1 h.2.1 h.2.2.1 h.2.2.2 x y tx ty x' y' ⟨rfl,rfl⟩ ex ey

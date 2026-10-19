@@ -576,7 +576,7 @@ theorem restN_ok {s₀ : State} (hp : Pre s₀) {len N : Nat} (hN : 3 * N ≤ le
   · rw [k₁₀.wr, wr₄, hp.wr]
     exact in_regions (List.mem_cons_self ..) (coeff_contains _ (show i < n from hi))
   · exact (hp.d_as.sub_right (sub_so s₀ (by omega))).symm
-  · rw [m₁₀, hl' i hi, ite_eq_left hi]
+  · show coeffAt _ _ _ = 0; rw [m₁₀, hl' i hi, ite_eq_left hi]
   · rw [h₁₀.get .x2, h₉.get .x2, h₈.get .x2, h₇.get .x2, h₆.get .x2, e₅, midA₄.x26]
     exact (ptr_zero _).symm
   · rw [h₁₀.get .x3, h₉.get .x3, h₈.get .x3, h₇.get .x3, e₆, h₅.get .x25, midA₄.x25]

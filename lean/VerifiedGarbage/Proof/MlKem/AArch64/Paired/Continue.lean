@@ -12,13 +12,13 @@ open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 def continueEntry (buf : Nat) : List Instr :=
  [.addImm .x .x2 .x19 buf,.movz .x .x5 56 0,.movz .x .x9 3329 0,.movz .x .x10 15 0]
 
-theorem continueEntry_ok (s : State) {buf : Nat} (hb : buf<4096)
+theorem continueEntry_ok {w16 : Bool} (s : State) {buf : Nat} (hb : buf<4096)
     {B : Nat → Byte} {L : List Zq} {aP : Addr}
-    (hp : Rej8.Env 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
-    (hl : L.length≤256) (hcoeff : Rej8.Scalar.Coeffs s.mem aP L)
-    (h3 : s.gpr .x3=coeffAddr aP L.length) (h4 : (s.gpr .x4).toNat=256-L.length) :
+    (hp : Rej8.EnvW w16 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
+    (hl : L.length≤256) (hcoeff : Rej8.Scalar.CoeffsW w16 s.mem aP L)
+    (h3 : s.gpr .x3=cAddr w16 aP L.length) (h4 : (s.gpr .x4).toNat=256-L.length) :
     WP isa (.block (continueEntry buf)) s fun u => Only [.x2,.x5,.x9,.x10] s u ∧
-      Rej8.Entry L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP u := by
+      Rej8.EntryW w16 L 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP u := by
   have hw : WP isa (.block (continueEntry buf)) s fun u =>
       Only [.x2,.x5,.x9,.x10] s u ∧ u.gpr .x2=s.gpr .x19+BitVec.ofNat 64 buf ∧
       (u.gpr .x5).toNat=56 ∧ (u.gpr .x9).toNat=q ∧ (u.gpr .x10).toNat=15 := by
@@ -38,16 +38,16 @@ theorem continueEntry_ok (s : State) {buf : Nat} (hb : buf<4096)
   · rw [hk.get .x3,h3]
   · rw [hk.get .x4,h4]
 
-theorem continue_ok (s : State) {buf : Nat} (hb : buf<4096)
+theorem continue_ok {w16 : Bool} (s : State) {buf : Nat} (hb : buf<4096)
     {B : Nat → Byte} {L : List Zq} {aP : Addr}
-    (hp : Rej8.Env 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
-    (hl : L.length≤256) (hcoeff : Rej8.Scalar.Coeffs s.mem aP L)
-    (h3 : s.gpr .x3=coeffAddr aP L.length) (h4 : (s.gpr .x4).toNat=256-L.length) :
-    WP isa (.seq (.block (continueEntry buf)) Impl.MlKem.AArch64.Rej8.rejLoop) s fun u =>
+    (hp : Rej8.EnvW w16 56 B (s.gpr .x19+BitVec.ofNat 64 buf) aP s) (hc : Rej8.Constants s)
+    (hl : L.length≤256) (hcoeff : Rej8.Scalar.CoeffsW w16 s.mem aP L)
+    (h3 : s.gpr .x3=cAddr w16 aP L.length) (h4 : (s.gpr .x4).toNat=256-L.length) :
+    WP isa (.seq (.block (continueEntry buf)) (Impl.MlKem.AArch64.Rej8.rejLoop w16)) s fun u =>
       Keep [.x0,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15] s u ∧
       Frame [polyRegion aP] s.mem u.mem ∧
-      Rej8.Scalar.Coeffs u.mem aP (sampleAfter L B 56) ∧
-      u.gpr .x3=coeffAddr aP (sampleAfter L B 56).length ∧
+      Rej8.Scalar.CoeffsW w16 u.mem aP (sampleAfter L B 56) ∧
+      u.gpr .x3=cAddr w16 aP (sampleAfter L B 56).length ∧
       (u.gpr .x4).toNat=256-(sampleAfter L B 56).length ∧
       (u.gpr .x0).toNat=if (sampleAfter L B 56).length=256 then 1 else 0 := by
   refine WP.seq (WP.mono (continueEntry_ok s hb hp hc hl hcoeff h3 h4) fun a ⟨ha,he⟩ => ?_)

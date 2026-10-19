@@ -42,15 +42,15 @@ def squeeze : Prog isa :=
  .loop (.seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
   (.block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++
    [.addImm .x .x20 .x20 168,.addImm .x .x21 .x21 168,.subImm .x .x22 .x22 1]))) (.nonzero .x .x22)
-def reject (buf out : Nat) (flag : Reg) : Prog isa :=
+def reject (buf out : Nat) (flag : Reg) (w16 : Bool := false) : Prog isa :=
  .seq (.block (ptrTo .x3 .x28 out ++ [.addImm .x .x2 .x19 buf,.movz .x .x4 256 0,
  .movz .x .x5 168 0,.movz .x .x9 3329 0,.movz .x .x10 15 0]))
- (.seq rejLoop (.block [mov flag .x0]))
+ (.seq (rejLoop w16) (.block [mov flag .x0]))
 def fullInit (sb ss a k : Nat) : List Instr :=
  [.str .x .x22 .x19 1848,.str .x .x23 .x19 1856] ++
  (init sb ss a a k).take 1 ++ (init sb ss a a k).drop 7 ++ [.movz .x .x22 5 0]
 
-def fullSample (L : KemLay) (kg : Bool) (a : Nat) : Prog isa :=
+def fullSample (L : KemLay) (kg : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
  let sb := if kg then KG.SB else KEM.SB
  let ss := if kg then KG.SS else KEM.SS
  let off := if kg then KG.AH else KEM.AH
@@ -60,53 +60,53 @@ def fullSample (L : KemLay) (kg : Bool) (a : Nat) : Prog isa :=
    [.addImm .x .x20 .x20 168,.subImm .x .x22 .x22 1]))) (.nonzero .x .x22),
  .block (rejConsts ++ [.movz .x .x9 0 0,.str .x .x9 .x19 1240] ++ ptrTo .x3 .x28 (off+1024*a) ++
  [.addImm .x .x2 .x19 400,.movz .x .x4 256 0,.movz .x .x5 280 0,.movz .x .x9 3329 0,.movz .x .x10 15 0]),
- rejLoop,
+ rejLoop w16,
  .block [.logic .and .x .x24 .x24 .x0],
  .ite (.zero .x .x4) (.block [])
-  (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 4,.subImm .x .x4 .x4 1]) (.nonzero .x .x4)),
+  (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 (if w16 then 2 else 4),.subImm .x .x4 .x4 1]) (.nonzero .x .x4)),
  .block [.ldr .x .x22 .x19 1848,.ldr .x .x23 .x19 1856]]
 
-def extraReject (buf slot : Nat) (flag : Reg) : Prog isa :=
+def extraReject (buf slot : Nat) (flag : Reg) (w16 : Bool := false) : Prog isa :=
  seqs [.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)],
  .ite (.zero .x .x4) (.block [.movz .x flag 1 0])
   (seqs [.block [.addImm .x .x2 .x19 buf,.movz .x .x5 56 0,.movz .x .x9 3329 0,.movz .x .x10 15 0],
-   rejLoop,.block [mov flag .x0,.str .x .x3 .x19 slot,.str .x .x4 .x19 (slot+8)]])]
-def extraStep : Prog isa :=
+   rejLoop w16,.block [mov flag .x0,.str .x .x3 .x19 slot,.str .x .x4 .x19 (slot+8)]])]
+def extraStep (w16 : Bool := false) : Prog isa :=
  seqs [.block [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 904],
  VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536,
  .block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++ rejConsts),
- extraReject 400 1680 .x22,extraReject 904 1696 .x23,
+ extraReject 400 1680 .x22 w16,extraReject 904 1696 .x23 w16,
  .block [.logic .and .x .x6 .x22 .x23]]
-def zeroExtra (slot : Nat) : Prog isa :=
+def zeroExtra (slot : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)])
  (.ite (.zero .x .x4) (.block [])
-  (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 4,.subImm .x .x4 .x4 1]) (.nonzero .x .x4)))
-def extraPair : Prog isa :=
- seqs [extraStep,.ite (.zero .x .x6) extraStep (.block []),
- .block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680,zeroExtra 1696]
+  (.loop (.block [.movz .x .x13 0 0,.str .w .x13 .x3 0,.addImm .x .x3 .x3 (if w16 then 2 else 4),.subImm .x .x4 .x4 1]) (.nonzero .x .x4)))
+def extraPair (w16 : Bool := false) : Prog isa :=
+ seqs [extraStep w16,.ite (.zero .x .x6) (extraStep w16) (.block []),
+ .block [.logic .and .x .x24 .x24 .x6],zeroExtra 1680 w16,zeroExtra 1696 w16]
 
-def pair (L : KemLay) (keygen : Bool) (a : Nat) : Prog isa :=
+def pair (L : KemLay) (keygen : Bool) (a : Nat) (w16 : Bool := false) : Prog isa :=
  let sb := if keygen then KG.SB else KEM.SB
  let ss := if keygen then KG.SS else KEM.SS
  let off := if keygen then KG.AH else KEM.AH
  seqs [.block (init sb ss a (a+1) L.k), squeeze, .block rejConsts,
-  reject 400 (off+1024*a) .x22,
+  reject 400 (off+1024*a) .x22 w16,
   .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-  reject 904 (off+1024*(a+1)) .x23,
+  reject 904 (off+1024*(a+1)) .x23 w16,
   .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
-  .ite (.zero .x .x6) extraPair (.block []),
+  .ite (.zero .x .x6) (extraPair w16) (.block []),
   .block ((saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
-def lastSample (L : KemLay) (keygen : Bool) : Prog isa :=
+def lastSample (L : KemLay) (keygen : Bool) (w16 : Bool := false) : Prog isa :=
  let sb := if keygen then KG.SB else KEM.SB
  let ss := if keygen then KG.SS else KEM.SS
  let off := if keygen then KG.AH else KEM.AH
  let a := L.k*L.k-1
  seqs [.block (init sb ss a a L.k),squeeze,.block rejConsts,
-  reject 400 (off+1024*a) .x22,
-  .ite (.zero .x .x22) (fullSample L keygen (L.k*L.k-1)) (.block []),
+  reject 400 (off+1024*a) .x22 w16,
+  .ite (.zero .x .x22) (fullSample L keygen (L.k*L.k-1) w16) (.block []),
   .block (saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]
-def matrix (L : KemLay) (kg : Bool) : Prog isa :=
- seqs (((List.range (L.k*L.k/2)).map fun i => pair L kg (2*i)) ++
-  (if L.k*L.k%2=1 then [lastSample L kg] else []))
+def matrix (L : KemLay) (kg : Bool) (w16 : Bool := false) : Prog isa :=
+ seqs (((List.range (L.k*L.k/2)).map fun i => pair L kg (2*i) w16) ++
+  (if L.k*L.k%2=1 then [lastSample L kg w16] else []))
 
 end VG.Impl.MlKem.AArch64.Paired

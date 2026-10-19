@@ -8,26 +8,26 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroTiming
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-theorem ZeroReady.frame {s u : State} {L : List Zq} {p : Addr} {slot : Nat} {rs : List Region}
-    (h : ZeroReady L slot p s) (hr : u.rd=s.rd) (hw : u.wr=s.wr) (hx : u.gpr .x19=s.gpr .x19)
+theorem ZeroReadyW.frame {w16 : Bool} {s u : State} {L : List Zq} {p : Addr} {slot : Nat} {rs : List Region}
+    (h : ZeroReadyW w16 L slot p s) (hr : u.rd=s.rd) (hw : u.wr=s.wr) (hx : u.gpr .x19=s.gpr .x19)
     (hf : Frame rs s.mem u.mem) (hd : ∀r∈rs,(polyRegion p).Disjoint r)
-    (hc : ∀r∈rs,(Region.mk (s.gpr .x19+BitVec.ofNat 64 slot) 16).Disjoint r) : ZeroReady L slot p u := by
+    (hc : ∀r∈rs,(Region.mk (s.gpr .x19+BitVec.ofNat 64 slot) 16).Disjoint r) : ZeroReadyW w16 L slot p u := by
   refine ⟨h.len,coeffs_frame h.coeffs h.len hf hd,?_,?_,?_,?_⟩
   · rw [hx]; exact checkpoint_frame h.saved hf hc
   · simpa only [hr,hw,hx] using h.read0
   · simpa only [hr,hw,hx] using h.read1
   · simpa only [hw] using h.writable
 
-theorem zeroBoth_relCT {s u : State} {a b : Addr} {L M : List Zq}
-    (sa : ZeroReady L 1680 a s) (sb : ZeroReady M 1696 b s)
-    (ua : ZeroReady L 1680 a u) (ub : ZeroReady M 1696 b u)
+theorem zeroBoth_relCT {w16 : Bool} {s u : State} {a b : Addr} {L M : List Zq}
+    (sa : ZeroReadyW w16 L 1680 a s) (sb : ZeroReadyW w16 M 1696 b s)
+    (ua : ZeroReadyW w16 L 1680 a u) (ub : ZeroReadyW w16 M 1696 b u)
     (hab : (polyRegion a).Disjoint (polyRegion b))
     (hcp : (Region.mk (s.gpr .x19+1696) 16).Disjoint (polyRegion a))
     (hsp : s.sp=u.sp) (hx : s.gpr .x19=u.gpr .x19) :
     RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (Impl.MlKem.AArch64.Paired.zeroExtra 1680) (Impl.MlKem.AArch64.Paired.zeroExtra 1696))
+      (.seq (Impl.MlKem.AArch64.Paired.zeroExtra 1680 w16) (Impl.MlKem.AArch64.Paired.zeroExtra 1696 w16))
       (fun _ _=>True) := by
-  let R := fun t v : State=>ZeroReady M 1696 b t ∧ ZeroReady M 1696 b v ∧
+  let R := fun t v : State=>ZeroReadyW w16 M 1696 b t ∧ ZeroReadyW w16 M 1696 b v ∧
     t.sp=v.sp ∧ t.gpr .x19=v.gpr .x19
   refine RelCT.seq (R:=R) ?_ ?_
   · intro t v tr ur t' v' h et ev

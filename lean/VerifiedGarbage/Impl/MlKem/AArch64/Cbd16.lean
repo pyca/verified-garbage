@@ -6,6 +6,11 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 Each lane computes the two signed differences plus two, in separate nibbles.
 The nibbles are interleaved and widened before canonical reduction modulo q.
+
+`code16` (`vg_mlkem16_cbd2`) writes 16-bit coefficients instead: the
+coefficient of a nibble `f ≤ 4` is `(f - 2) mod q`, whose low and high bytes
+two TBLs look up (`tables`), and ZIP1 and ZIP2 interleave into
+halfwords.
 -/
 
 @[expose] public section
@@ -36,5 +41,24 @@ def code : Prog isa :=
  .seq (.block (constant .v16 .s4 3329 ++ constant .v17 .s4 3327 ++
  constant .v18 .b16 0x55 ++ constant .v19 .b16 0x33 ++ constant .v20 .b16 0x22 ++ constant .v21 .b16 0x0f ++
  [.vop (.movi0 .v22),.movz .x .x10 8 0])) (.loop (.block body) (.nonzero .x .x10))
+
+/-- The tables of `code16`: in bytes `f ≤ 4` of each doubleword, the low (`v16`) and high
+(`v17`) bytes of `(f - 2) mod q`, which are `3327, 3328, 0, 1, 2`. -/
+def tables : List Instr :=
+ [.movz .x .x9 0x00FF 0,.movk .x .x9 0x0100 1,.movk .x .x9 0x0002 2,.vop (.dup .d2 .v16 .x9),
+ .movz .x .x9 0x0D0C 0,.vop (.dup .d2 .v17 .x9)]
+def grp16 (off : Nat) : List Instr :=
+ [.vop (.tbl .v5 .v16 .v4),.vop (.tbl .v6 .v17 .v4),.vop (.perm .zip1 .b16 .v7 .v5 .v6),
+ .vop (.perm .zip2 .b16 .v5 .v5 .v6),.strq .v7 .x1 off,.strq .v5 .x1 (off+16)]
+def half16 (off : Nat) (part : VPermOp) : List Instr :=
+ [.vop (.perm part .b16 .v4 .v2 .v3)] ++ grp16 off
+def body16 : List Instr :=
+ [.ldrq .v0 .x0 0] ++ prepare ++
+ half16 0 .zip1 ++ half16 32 .zip2 ++
+ [.addImm .x .x0 .x0 16,.addImm .x .x1 .x1 64,.subImm .x .x10 .x10 1]
+def code16 : Prog isa :=
+ .seq (.block (tables ++
+ constant .v18 .b16 0x55 ++ constant .v19 .b16 0x33 ++ constant .v20 .b16 0x22 ++ constant .v21 .b16 0x0f ++
+ [.movz .x .x10 8 0])) (.loop (.block body16) (.nonzero .x .x10))
 
 end VG.Impl.MlKem.AArch64.Cbd16

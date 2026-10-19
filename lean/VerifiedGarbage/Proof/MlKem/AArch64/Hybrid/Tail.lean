@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsRestUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem.KPke
 
@@ -9,9 +16,7 @@ import VerifiedGarbage.Proof.MlKem.KPke
 # The hashing encapsulation after the matrix
 
 `tailH_ok`: `H(ek)`, the first 32 bytes of the third state, into `HB`, and
-`G(m ‖ H(ek))` (`Hybrid.tailH`). `restH_ok`: noise, `u`, `v` and the
-epilogue (as `Encaps.fused_c_using_ok`, from the facts at the state they
-start in).
+`G(m ‖ H(ek))` (`Hybrid.tailH`), with `Â` stored with 16 bits (`w16`) or 32.
 -/
 
 @[expose] public section
@@ -39,22 +44,22 @@ theorem bytesAt_squeeze (m : Mem) (p : Addr) : bytesAt m p 32 = squeezeFrom 136 
     rw [Proof.Sha3.byteOf_stateAt _ _ (by omega)]
     simp only [bytesAt, List.getElem_map, List.getElem_range]
 
-/-- The facts the tail needs and leaves. -/
-structure AfterT (P : KemLay) (s₀ : State) (ρ : List Byte) (s : State) : Prop where
-  b : BInv P (enL P) s₀ s.mem ρ (P.k*P.k) s
+/-- The facts the tail needs and leaves, with `Â` stored with 16 bits (`w16`) or 32. -/
+structure AfterTW (w16 : Bool) (P : KemLay) (s₀ : State) (ρ : List Byte) (s : State) : Prop where
+  b : BInvW w16 P (enL P) s₀ s.mem ρ (P.k*P.k) s
   key : bytesAt s.mem (kA s₀ 2) 32 = (gE P s₀).1
   r : bytesAt s.mem (sA (enL P) s₀ RB) 32 = (gE P s₀).2
   m : bytesAt s.mem (sA (enL P) s₀ MB) 32 = mE s₀
 
-theorem tailH_ok (hash : FixedHash.HashFn)
+theorem tailH_ok {w16 : Bool} (hash : FixedHash.HashFn)
     (hG : FixedHash.HashCorrect hash .x28 ST WK 72 6 [⟨.x28,MB,32⟩,⟨.x28,HB,32⟩]
       [⟨.x26,0,32⟩,⟨.x28,RB,32⟩])
     {s₀ sB : State} (hp : Pre P (enL P) s₀) {ρ : List Byte}
-    (hB : BInv P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
+    (hB : BInvW w16 P (enL P) s₀ sB.mem ρ (P.k*P.k) sB)
     (hm : bytesAt sB.mem (sA (enL P) s₀ MB) 32 = mE s₀)
     (hst : stateAt sB.mem (kA s₀ (enL P).sc) =
       Spec.Sha3.absorb 136 (Spec.Sha3.pad 136 (BitVec.ofNat 8 6) (ekE P s₀))) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterT P s₀ ρ) := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.tailH hash) sB (AfterTW w16 P s₀ ρ) := by
   have hw := hp.wf
   -- `H(ek)`
   refine WP.seq (WP.mono (KeyGen.copy_ok (S := kA s₀ 4) (D := kA s₀ 4) (so := KEM.ST) (dO := HB)
@@ -136,8 +141,8 @@ theorem tailH_ok (hash : FixedHash.HashFn)
   refine ⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho
   · rw [k₄.cs _ (by decide) (by decide), x24₃]; exact hB.acc
-  · intro e he; exact reduced_frame f14 (farA e he) (hB.red e he)
-  · intro e he; rw [polyAt_frame f14 (farA e he)]; exact hB.res e he
+  · intro e he; exact reducedW_frame f14 (farA e he) (hB.red e he)
+  · intro e he; rw [polyAtW_frame f14 (farA e he)]; exact hB.res e he
   · rw [far34 (o := MB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hm
 
 end VG.Proof.MlKem.AArch64.Hybrid

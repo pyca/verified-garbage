@@ -50,12 +50,4 @@ theorem kgA1024_taint (c : Impl.Sha3.AArch64.Callee)
       (FixedHashCallers.kgAUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
   taint_decide_generic c := hole using hS
 
-theorem kgRest768_taint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
-    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (FixedHashCallers.kgRestUsing (fixedHash c) lay768) h).isSome=true := by
-  taint_decide_generic c := hole using hS
-theorem kgRest1024_taint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk (VectorSymbols.analysis restSymbols) (Proof.Sha3.AArch64.Callers.sums c)) :
-    ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (FixedHashCallers.kgRestUsing (fixedHash c) Impl.MlKem1024.AArch64.lay1024) h).isSome=true := by
-  taint_decide_generic c := hole using hS
 end VG.Proof.MlKem.AArch64.FixedHash

@@ -9,8 +9,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
+open VG.Spec.MlKem (PolyIsW)
+open VG.Proof.MlKem (cw)
 
-theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p a f g w : Addr}
+theorem readonly_noisePair_ok {w16 : Bool} {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p a f g w : Addr}
     (hn : n+1<256)
     (h0 : outOff L kg n <65536) (h1 : outOff L kg (n+1)<65536)
     (hp : s.gpr .x28+BitVec.ofNat 64 (if kg then KG.SS else KEM.SS)=p)
@@ -27,14 +29,14 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (ht0 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves f w)
     (ht1 : Ntt16.Readonly.TableReady s "VG_MLKEM_NTT16_ZETAS" Ntt16.tableHalves g w)
     (hfar : ∀r∈pairWrites p f g w,(Region.mk (s.syms "VG_MLKEM_NTT16_ZETAS") 512).Disjoint r) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWith L kg n) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith (Ntt16.Readonly.nttAtR w16) L kg n w16) s fun t =>
       Kept (pairWrites p f g w) s t ∧
-      Spec.MlKem.PolyIs t.mem f (sampled s.mem a n (transformed L kg n)) ∧
-      Spec.MlKem.PolyIs t.mem g (sampled s.mem a (n+1) (transformed L kg (n+1))) := by
+      PolyIsW (cw w16) t.mem f (sampled s.mem a n (transformed L kg n)) ∧
+      PolyIsW (cw w16) t.mem g (sampled s.mem a (n+1) (transformed L kg (n+1))) := by
   change WP isa (.seq (.block (Impl.MlKem.AArch64.Noise.noiseInit L kg n))
     (seqs [Impl.MlKem.AArch64.Noise.squeezePair,
-      outCodeWith Ntt16.Readonly.nttAtWith (outOff L kg n) (if kg then KG.NS else KEM.NS) 400 (transformed L kg n),
-      outCodeWith Ntt16.Readonly.nttAtWith (outOff L kg (n+1)) (if kg then KG.NS else KEM.NS) 528 (transformed L kg (n+1)),
+      outCodeWith (Ntt16.Readonly.nttAtR w16) (outOff L kg n) (if kg then KG.NS else KEM.NS) 400 (transformed L kg n) w16,
+      outCodeWith (Ntt16.Readonly.nttAtR w16) (outOff L kg (n+1)) (if kg then KG.NS else KEM.NS) 528 (transformed L kg (n+1)) w16,
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))])) s _
   refine WP.seq (WP.mono_syms (init_ok (by cases kg <;> decide) hn
     (by cases kg <;> decide) (by cases kg <;> decide) hp ha hin hwr hsv has hap
