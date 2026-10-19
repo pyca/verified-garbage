@@ -17,7 +17,7 @@ namespace VG.Proof.Sha3.X86_64.X4
 
 open VG VG.X86_64 VG.Impl.Sha3.X86_64.X4
 open VG.Spec.Sha3 (keccakF rnd RC)
-open VG.Proof.Sha3 (outState outState_eq foldl_succ)
+open VG.Proof.Sha3 (C outState outState_eq foldl_succ)
 
 /-- Where `permute4` reads and writes: the four states at `src`, the 800
 bytes at `oth`, and the table at `tbl`, none of which overlap, and the
@@ -92,6 +92,7 @@ structure LInv (s₀ : State) (src oth tbl : Addr) (A : Nat → KState) (r : Nat
   wr : s.wr = s₀.wr
   state : Lanes4 s.mem (cur src oth r) fun k => (List.range r).foldl rnd (A k)
   frame : Frame [⟨src, 800⟩, ⟨oth, 800⟩] s₀.mem s.mem
+  cols : ∀ x < 5, ∀ k < 4, q4 s (preg x) k = C ((List.range r).foldl rnd (A k)) x
 
 theorem end_beq (tbl : Addr) (r : Nat) (hr : r < 24) :
     (tbl + BitVec.ofNat 64 (32 * r) + 32 - (tbl + BitVec.ofNat 64 768) == 0) = decide (r + 1 = 24) := by
@@ -107,13 +108,14 @@ theorem round_step {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp 
       eval .ne s' = some (!decide (r + 1 = 24)) ∧ LInv s₀ src oth tbl A (r + 1) s' := by
   have he := hp.env r hr
   refine WP.mono (round_ok s _ _ _ _ (RC r) (by rw [hL.rd, hL.wr]; exact he) hL.rdi hL.rsi hL.rdx
-    hL.state fun k hk => by rw [la_rc]; exact hp.rc_frame hL.frame hr hk)
-    fun s' ⟨hl, hf, hrd, hwr, hdi, hsi, hdx, hg, hzf⟩ => ?_
+    hL.state (fun k hk => by rw [la_rc]; exact hp.rc_frame hL.frame hr hk) hL.cols)
+    fun s' ⟨hl, hf, hrd, hwr, hdi, hsi, hdx, hg, hzf, hc⟩ => ?_
   have hcx' : s.gpr .rcx = tbl + BitVec.ofNat 64 768 := by
     rw [hL.rest _ (by decide) (by decide) (by decide) (by decide), hcx]
   refine ⟨?_, by rw [hdi, cur_succ], by rw [hsi, nxt_succ],
     by rw [hdx, BitVec.add_assoc, show (32 : BitVec 64) = BitVec.ofNat 64 32 from rfl, ← BitVec.ofNat_add]; rfl,
-    fun g a b c d => by rw [hg g a b c d, hL.rest g a b c d], hrd.trans hL.rd, hwr.trans hL.wr, ?_, ?_⟩
+    fun g a b c d => by rw [hg g a b c d, hL.rest g a b c d], hrd.trans hL.rd, hwr.trans hL.wr, ?_, ?_,
+    fun x hx k hk => by rw [hc x hx k hk, foldl_succ, outState_eq]⟩
   · simp only [eval, hzf, hcx', Option.map_some, end_beq tbl r hr]
   · intro i hi k hk
     rw [cur_succ, hl i hi k hk]
@@ -140,12 +142,15 @@ theorem permute4M_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth
       Lanes4 s.mem src (fun k => keccakF (A k)) ∧ Frame [⟨src, 800⟩, ⟨oth, 800⟩] s₀.mem s.mem ∧
       s.rd = s₀.rd ∧ s.wr = s₀.wr ∧ s.gpr .rdx = tbl + BitVec.ofNat 64 768 ∧
       ∀ g, g ≠ .rax → g ≠ .rdx → s.gpr g = s₀.gpr g := by
-  have h₀ : LInv s₀ src oth tbl A 0 s₀ :=
-    ⟨by rw [hdi]; rfl, by rw [hsi]; rfl, by rw [hdx]; exact (BitVec.add_zero _).symm,
-      fun _ _ _ _ _ => rfl, rfl, rfl, by simpa [cur] using hA, Frame.refl _ _⟩
+  refine WP.seq (WP.mono (columns_ok s₀ src A ⟨hdi, fun i hi => in_append (hp.src_in i hi), hA⟩)
+    fun s₁ ⟨k₁, c₁⟩ => ?_)
+  have h₀ : LInv s₀ src oth tbl A 0 s₁ :=
+    ⟨by rw [k₁.gpr, hdi]; rfl, by rw [k₁.gpr, hsi]; rfl, by rw [k₁.gpr, hdx]; exact (BitVec.add_zero _).symm,
+      fun _ _ _ _ _ => by rw [k₁.gpr], k₁.rd, k₁.wr, by rw [k₁.mem]; simpa [cur] using hA,
+      by rw [k₁.mem]; exact Frame.refl _ _, fun x hx k hk => by rw [c₁ x hx k hk]; rfl⟩
   let Inv : Nat → State → Prop := fun n s => ∃ j, n = 12 - j ∧ j < 12 ∧ LInv s₀ src oth tbl A (2 * j) s
   refine WP.loop (M := isa) (Q := fun s => LInv s₀ src oth tbl A 24 s) Inv (fun n s ⟨j, hn, hj, hL⟩ => ?_)
-    12 s₀ ⟨0, rfl, by omega, h₀⟩ |>.mono fun s hL => ?_
+    12 s₁ ⟨0, rfl, by omega, h₀⟩ |>.mono fun s hL => ?_
   · refine WP.mono (body_ok hp hcx (by omega) hL) fun s' ⟨he, hl⟩ => ?_
     by_cases hlast : 2 * j + 2 = 24
     · exact .inl ⟨by show eval .ne s' = _; rw [he, hlast]; rfl, hlast ▸ hl⟩
