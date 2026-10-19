@@ -38,12 +38,12 @@ theorem readonly_noise_einv {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Roo
     exact ⟨reduced_frame kt.frame far (h.a i hi j hj).1,
       (polyAt_frame kt.frame far).trans (h.a i hi j hj).2⟩
   · intro j hj
-    have p := pt j (by omega)
+    have p : PolyIs _ _ _ := pt j (by omega)
     show PolyIs t.mem (sA L s₀ (yOff P j)) _
     simpa only [Noise.outOff,ite_eq_left hj,Bool.false_eq_true,ite_false,Noise.sampled,Noise.seedOff,
       Noise.transformed,decide_eq_true_eq.mpr hj,Bool.false_or,ite_true,h.r,encY,cbd] using p
   · intro j hj
-    have p := pt (P.k+j) (by omega)
+    have p : PolyIs _ _ _ := pt (P.k+j) (by omega)
     have hn : ¬P.k+j<P.k := by omega
     simpa only [Noise.outOff,ite_eq_right hn,Nat.add_sub_cancel_left,Noise.sampled,Noise.seedOff,
       Noise.transformed,decide_eq_false_iff_not.mpr hn,Bool.false_or,Bool.false_eq_true,ite_false,h.r,cbd] using p

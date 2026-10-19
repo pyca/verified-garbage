@@ -22,11 +22,11 @@ theorem readonly_noise_encode {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Roo
   refine WP.mono (Noise.readonly_noiseAll_tables hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   refine ⟨kt,noise_cinv hp hr h kt,?_,?_,fun _ hj => by omega,Frame.refl _ _⟩
   · intro j hj
-    have p := pt j (by omega)
+    have p : PolyIs _ _ _ := pt j (by omega)
     simpa only [Noise.outOff,ite_eq_left hj,ite_true,Noise.sampled,Noise.seedOff,Noise.transformed,
       Bool.true_or,h.sig,KPke.kgS,cbd] using p
   · intro j hj
-    have p := pt (P.k+j) (by omega)
+    have p : PolyIs _ _ _ := pt (P.k+j) (by omega)
     have hn : ¬P.k+j<P.k := by omega
     simpa only [Noise.outOff,ite_eq_right hn,Nat.add_sub_cancel_left,Noise.sampled,Noise.seedOff,
       Noise.transformed,Bool.true_or,ite_true,h.sig,KPke.kgE,cbd,KemLay.params] using p
