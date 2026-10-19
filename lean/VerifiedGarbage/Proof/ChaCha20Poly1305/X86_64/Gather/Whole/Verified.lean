@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.For
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: `Verified`

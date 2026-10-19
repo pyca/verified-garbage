@@ -5,10 +5,11 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the counted loops of the tails
 
-`Stitch.cntLoop r a` runs `r` and then `a` as many times as `rdi` says,
-counting `rdi` down to 0 (`cntLoop_ok`): for an invariant that `r` and `a`
-advance by one and keep `rdi`, and that `sub rdi, 1` keeps (`subRdi_ok`: it
-writes only `rdi` and the flags).
+`Stitch.cntLoopR d r a` runs `r` and then `a` as many times as `d` says,
+counting `d` down to 0 (`cntLoopR_ok`; `cntLoop_ok` for `cntLoop`, which
+counts in `rdi`): for an invariant that `r` and `a` advance by one and keep
+`d`, and that `sub d, 1` keeps (`subR_ok`: it writes only `d` and the
+flags).
 -/
 
 @[expose] public section
@@ -18,11 +19,11 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 
 set_option simprocs false in
-theorem subRdi_ok (s : State) :
-    WP isa (.block [.alu .sub .rdi (.imm 1)]) s fun s' =>
-      s'.gpr .rdi = s.gpr .rdi - 1 ∧ (∀ r, r ≠ .rdi → s'.gpr r = s.gpr r) ∧
+theorem subR_ok (c : Reg) (s : State) :
+    WP isa (.block [.alu .sub c (.imm 1)]) s fun s' =>
+      s'.gpr c = s.gpr c - 1 ∧ (∀ r, r ≠ c → s'.gpr r = s.gpr r) ∧
       s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.zf = some (s.gpr .rdi - 1 == 0) := by
+      s'.zf = some (s.gpr c - 1 == 0) := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags, State.setFlags,
     State.setReg, Option.bind_some, Option.some.injEq, exists_eq_left', ite_true]
@@ -66,24 +67,24 @@ theorem movReg_ok (d r₀ : Reg) (s : State) :
     State.setReg, Option.map_some, Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨by simp, fun r hr => by simp [hr], rfl, rfl, rfl, rfl, rfl⟩
 
-/-- `cntLoop r a` from `rdi = c` (`0 < c`): `c` runs of `r` and `a`, each
-advancing `Inv` by one and keeping `rdi`, with `rdi` 0 after. `Inv` must hold
-through writes of `rdi` and the flags alone. -/
-theorem cntLoop_ok {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop) {c : Nat} (hc : 0 < c)
+/-- `cntLoopR d r a` from `d = c` (`0 < c`): `c` runs of `r` and `a`, each
+advancing `Inv` by one and keeping `d`, with `d` 0 after. `Inv` must hold
+through writes of `d` and the flags alone. -/
+theorem cntLoopR_ok (d : Reg) {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop) {c : Nat} (hc : 0 < c)
     (hc64 : c < 2 ^ 64)
     (hstep : ∀ i, i < c → ∀ s, Inv i s → WP isa (.seq r (.block a)) s fun s' =>
-      Inv (i + 1) s' ∧ s'.gpr .rdi = s.gpr .rdi)
-    (hkeep : ∀ i s s', Inv i s → (∀ r, r ≠ .rdi → s'.gpr r = s.gpr r) → s'.xmm = s.xmm →
+      Inv (i + 1) s' ∧ s'.gpr d = s.gpr d)
+    (hkeep : ∀ i s s', Inv i s → (∀ r, r ≠ d → s'.gpr r = s.gpr r) → s'.xmm = s.xmm →
       s'.ymmHi = s.ymmHi → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → Inv i s')
-    {s : State} (h0 : Inv 0 s) (hr : s.gpr .rdi = BitVec.ofNat 64 c) :
-    WP isa (cntLoop r a) s fun s' => Inv c s' ∧ s'.gpr .rdi = 0 := by
+    {s : State} (h0 : Inv 0 s) (hr : s.gpr d = BitVec.ofNat 64 c) :
+    WP isa (cntLoopR d r a) s fun s' => Inv c s' ∧ s'.gpr d = 0 := by
   let J : Nat → State → Prop := fun n s =>
-    ∃ i, n = c - i ∧ i < c ∧ Inv i s ∧ s.gpr .rdi = BitVec.ofNat 64 (c - i)
+    ∃ i, n = c - i ∧ i < c ∧ Inv i s ∧ s.gpr d = BitVec.ofNat 64 (c - i)
   refine WP.loop (M := isa) J (fun n s ⟨i, hn, hi, hI, hd⟩ => ?_) c s ⟨0, by omega, hc, h0, by simpa using hr⟩
   refine WP.seq (WP.mono (hstep i hi s hI) fun s₁ ⟨h₁, d₁⟩ => ?_)
-  refine WP.mono (subRdi_ok s₁) fun s₂ ⟨d₂, g₂, x₂, y₂, m₂, rd₂, wr₂, z₂⟩ => ?_
+  refine WP.mono (subR_ok d s₁) fun s₂ ⟨d₂, g₂, x₂, y₂, m₂, rd₂, wr₂, z₂⟩ => ?_
   have I₂ := hkeep _ _ _ h₁ g₂ x₂ y₂ m₂ rd₂ wr₂
-  have e : s₁.gpr .rdi - 1 = BitVec.ofNat 64 (c - (i + 1)) := by
+  have e : s₁.gpr d - 1 = BitVec.ofNat 64 (c - (i + 1)) := by
     rw [d₁, hd, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega),
       Nat.sub_add_eq]
   have ez : (BitVec.ofNat 64 (c - (i + 1)) == 0) = decide (c - (i + 1) = 0) := by
@@ -100,6 +101,17 @@ theorem cntLoop_ok {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop
   by_cases hlast : i + 1 = c
   · refine .inl ⟨by simp [eval, z₂, hlast], hlast ▸ I₂, by rw [d₂, hlast, Nat.sub_self]; rfl⟩
   · exact .inr ⟨by simp [eval, z₂]; omega, c - (i + 1), by omega, i + 1, rfl, by omega, I₂, d₂⟩
+
+/-- `cntLoopR_ok` counting in `rdi`. -/
+theorem cntLoop_ok {r : Prog isa} {a : List Instr} (Inv : Nat → State → Prop) {c : Nat} (hc : 0 < c)
+    (hc64 : c < 2 ^ 64)
+    (hstep : ∀ i, i < c → ∀ s, Inv i s → WP isa (.seq r (.block a)) s fun s' =>
+      Inv (i + 1) s' ∧ s'.gpr .rdi = s.gpr .rdi)
+    (hkeep : ∀ i s s', Inv i s → (∀ r, r ≠ .rdi → s'.gpr r = s.gpr r) → s'.xmm = s.xmm →
+      s'.ymmHi = s.ymmHi → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → Inv i s')
+    {s : State} (h0 : Inv 0 s) (hr : s.gpr .rdi = BitVec.ofNat 64 c) :
+    WP isa (cntLoop r a) s fun s' => Inv c s' ∧ s'.gpr .rdi = 0 :=
+  cntLoopR_ok .rdi Inv hc hc64 hstep hkeep h0 hr
 
 /-- `roundsL r4 r0 k`, for an invariant `I n j` after `n` rounds of which
 the first absorbed `j` blocks at `q`, that writes of `rsi`, `rdi` and the
