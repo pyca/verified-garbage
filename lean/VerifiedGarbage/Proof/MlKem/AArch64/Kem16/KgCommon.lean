@@ -95,7 +95,8 @@ theorem EndInvW.frame {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64
 theorem rho_okW {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n : Nat} {s : State}
     (h : TLW P s₀ mB v n P.k s) :
     WP isa (.block (copy32 .x28 SB .x26 (384 * P.k) ++ copy32 .x28 SB .x27 (768 * P.k))) s fun s' =>
-      KB P s₀ s' ∧ EndInvW P s₀ mB v n s' := by
+      KB P s₀ s' ∧ EndInvW P s₀ mB v n s' ∧
+        Frame [R (kA s₀) 1 (384 * P.k) 32, R (kA s₀) 2 (768 * P.k) 32] s.mem s'.mem := by
   have hw := hp.wf
   have kb := h.c.kb
   rw [WP.block_append_iff]
@@ -117,10 +118,10 @@ theorem rho_okW {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n :
   have kbb := kba.frame kb' fb (by decide) fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact kb_disj hp (b := 2) (o := 768 * P.k) (l := 32) (by decide) (by kl) (.inl (by decide)) (by decide)
-  refine ⟨kbb, tla.frame hp kbb (kb'.get .x24) fb (fun r hr => by
+  refine ⟨kbb, ⟨tla.frame hp kbb (kb'.get .x24) fb (fun r hr => by
     rw [List.mem_singleton.mp hr]
     exact apart_R hp (b := 2) (o := 768 * P.k) (l := 32) (Nat.le_refl _) (by decide) (by kl) (by kl)
-      (by kl) (fun _ => by omega)), ?_, ?_⟩
+      (by kl) (fun _ => by omega)), ?_, ?_⟩, ?_⟩
   · rw [bytesAt_frame fb (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl)) (by decide), ba]
@@ -129,6 +130,7 @@ theorem rho_okW {s₀ : State} (hp : Pre P s₀) {mB : Mem} {v : BitVec 64} {n :
       rw [List.mem_singleton.mp hr]
       exact hp.args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl)) (by decide)]
     exact h.c.rho
+  · exact (fa.mono (by simp)).trans (fb.mono (by simp))
 
 theorem post_ofW {s₀ sB s' : State} (hB : BInvW true P s₀ (P.k * P.k) sB) (hD : DoneW P s₀ sB.mem (sB.gpr .x24) s') :
     (keyGenAArch64 P).post s₀ s' := by
