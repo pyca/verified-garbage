@@ -151,14 +151,24 @@ class Graph:
         return self.passed[mod]
 
 
-def shake(mods: list[str]) -> str:
-    """`lake shake`'s suggestions for `mods`, built first (Lake skips what is
-    up to date): shake reads their `.olean`s."""
+def graph_path(mod: str) -> pathlib.Path:
+    """The source of a module of the project."""
+    return LEAN / pathlib.Path(*mod.split(".")).with_suffix(".lean")
+
+
+def build_modules(mods: list[str]) -> None:
+    """Build `mods` (Lake skips what is up to date), or stop: shake reads
+    their `.olean`s."""
     progress(f"building {len(mods)} modules (what is up to date is skipped)")
     built = subprocess.run(["lake", "build", "--log-level=error", *("+" + m for m in mods)],
                            cwd=LEAN, capture_output=True, text=True)
     if built.returncode:
         raise SystemExit(f"the modules do not build; fix that first:\n{(built.stdout + built.stderr)[-3000:]}")
+
+
+def shake(mods: list[str]) -> str:
+    """`lake shake`'s suggestions for `mods`, built first."""
+    build_modules(mods)
     progress(f"lake shake on {len(mods)} modules")
     args = ["lake", "shake", "--force"]
     for m in mods:
@@ -456,6 +466,9 @@ def importers_losing(mod: str, x: str, graph: Graph, library: list[str]) -> dict
 
 
 EVALUATES = re.compile(r"#guard|#eval|run_cmd|materialize_|taint_decide|taint_summary")
+# Directories of files reviewed by hand (CLAUDE.md, "Adding a primitive"),
+# which `--fix` never edits.
+REVIEWED = ("Artifacts", "Generic", "Variants")
 
 
 def fix(found: list[str]) -> list[str]:
@@ -482,6 +495,10 @@ def fix(found: list[str]) -> list[str]:
         edits.setdefault(LEAN / pathlib.Path(*j.split(".")).with_suffix(".lean"), []).extend(("add", x) for x in sorted(need))
     done = []
     for path, ops in sorted(edits.items()):
+        if any(part in path.parts for part in REVIEWED):
+            # Registrations and variants are reviewed by hand: never edited
+            # here (the build then undoes what needed this edit).
+            continue
         lines = path.read_text().split("\n")
         imps = [k for k, l in enumerate(lines) if IMPORT.match(l.strip())]
         last = imps[-1] if imps else next(k for k, l in enumerate(lines) if l.strip() == "module")
