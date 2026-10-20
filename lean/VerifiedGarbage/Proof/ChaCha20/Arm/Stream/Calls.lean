@@ -9,8 +9,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
-import VerifiedGarbage.TCB.Arm.Isa
-import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Streaming ChaCha20 on ARMv7: the entry state and the calls

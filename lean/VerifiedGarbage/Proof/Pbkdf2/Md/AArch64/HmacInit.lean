@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Common
 public import VerifiedGarbage.Proof.Pbkdf2.MdKeys
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

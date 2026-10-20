@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 
 /-!

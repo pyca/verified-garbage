@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Wide
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

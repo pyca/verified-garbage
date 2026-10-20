@@ -30,7 +30,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.TCB.Axioms
 import Mathlib.Tactic.ToExpr
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.RegSet
 meta import Mathlib.Tactic.ToExpr
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet

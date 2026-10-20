@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 on x86-64 with AVX2 and AVX-512VL: the rounds with `vprold`

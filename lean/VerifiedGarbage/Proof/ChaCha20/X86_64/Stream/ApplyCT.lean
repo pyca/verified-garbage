@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Calls
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Streaming ChaCha20 on x86-64: `apply`, constant time

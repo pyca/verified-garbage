@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the blocks of Poly1305

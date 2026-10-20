@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCommon
 import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

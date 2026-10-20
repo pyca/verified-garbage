@@ -9,7 +9,6 @@ meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
 

@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Rounds
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Sym
 
 /-!
 # ChaCha20 on x86-64 with AVX2, the last bytes: the input states and the output

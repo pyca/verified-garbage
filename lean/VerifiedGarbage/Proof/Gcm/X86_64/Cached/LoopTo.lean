@@ -11,9 +11,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 
 /-! # Cached-key GCM groups with distinct input and output buffers -/
 

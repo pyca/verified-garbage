@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Out
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX2

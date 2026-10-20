@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Two
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the prologue with the last bytes' block

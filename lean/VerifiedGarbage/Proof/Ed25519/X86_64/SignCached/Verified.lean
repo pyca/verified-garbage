@@ -46,6 +46,8 @@ meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Body`. -/
 
