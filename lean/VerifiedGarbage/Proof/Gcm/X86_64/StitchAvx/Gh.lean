@@ -1,8 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
-import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the GHASH work

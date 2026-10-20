@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Chain
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Output
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.Written`. -/
 

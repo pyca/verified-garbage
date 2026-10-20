@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcPair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcValidTiming
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Exponent-validation traces depend only on the declared public exponent bytes -/
 

@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.Proof.Weierstrass.Booth
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
+public import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

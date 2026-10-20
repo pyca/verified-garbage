@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputePre
+public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Private intermediates and status slots survive the check's calls -/
 

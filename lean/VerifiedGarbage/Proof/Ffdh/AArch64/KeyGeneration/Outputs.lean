@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
 
 /-! # Zeros at the key-generation controller's outputs (AArch64) -/
 

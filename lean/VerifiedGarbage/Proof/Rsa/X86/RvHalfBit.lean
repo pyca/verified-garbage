@@ -1,6 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCount
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Recording whether the current exponent is even and counting its halvings -/
 

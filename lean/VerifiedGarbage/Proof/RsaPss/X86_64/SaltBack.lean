@@ -1,8 +1,13 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltBack
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! Public dispatch between fixed and inferred salt lengths. -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchInitCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSearchLoopCT
 
 /-! # The complete bounded native p search has a public trace -/
 

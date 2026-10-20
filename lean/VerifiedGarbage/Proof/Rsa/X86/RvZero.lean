@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoad
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # Initialize all recovery arrays, including their division carry words -/
 

@@ -1,9 +1,20 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Mid
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the blocks of a short text

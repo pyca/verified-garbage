@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # Joint exponentiation in the DSA parent workspace -/
 

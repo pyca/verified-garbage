@@ -1,39 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointContract
 import VerifiedGarbage.Proof.P521.X86_64.JointTiming
-meta import VerifiedGarbage.Proof.P521.X86_64.JointTiming
 import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
-meta import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.P521.X86_64.JointLayout
-meta import VerifiedGarbage.Proof.P521.X86_64.JointLayout
-import VerifiedGarbage.Proof.P521.X86_64.JointFrame
-meta import VerifiedGarbage.Proof.P521.X86_64.JointFrame
-import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
-meta import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Impl.P521.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Framework.LitShare
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.JointTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
+meta import VerifiedGarbage.Proof.P521.X86_64.JointLayout
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Impl.P521.X86_64.Joint
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 
 /-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
 

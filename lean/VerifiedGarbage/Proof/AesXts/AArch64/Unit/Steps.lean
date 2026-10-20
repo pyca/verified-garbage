@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.AesXts.AArch64.Steps
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Impl.AesXts.AArch64Unit
+public import VerifiedGarbage.Proof.AesXts.Unit
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.AesXts.AArch64.Steps
+import VerifiedGarbage.Proof.AesCbc.AArch64.Block
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES of data units on AArch64: the code between the calls

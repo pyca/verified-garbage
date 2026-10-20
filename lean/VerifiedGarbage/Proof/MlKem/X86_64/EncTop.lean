@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncRest
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt

@@ -1,7 +1,17 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Weierstrass
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowCall
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Dsa.X86.PowTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Traces of calls to shared IA-32 exponentiation -/
 

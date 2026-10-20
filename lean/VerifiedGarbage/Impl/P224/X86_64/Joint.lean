@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointDouble
 public import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 
 /-! The x86-64 P-224 joint multiplication layout, for public verification. -/
 

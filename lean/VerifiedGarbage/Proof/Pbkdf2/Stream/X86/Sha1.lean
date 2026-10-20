@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
+import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hashes
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Code
+public import VerifiedGarbage.Proof.Hmac.Generic.Common
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha1.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-1's streaming functions on x86 (32-bit), for every backend

@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawLoop
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: the shared round's stack footprint -/
 

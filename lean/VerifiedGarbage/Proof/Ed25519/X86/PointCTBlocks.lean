@@ -1,15 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+public import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
+public import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+meta import VerifiedGarbage.Impl.Ed25519.X86.PointEncode
+meta import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
+meta import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Constant time of the point arithmetic blocks

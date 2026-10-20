@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Domain
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Tree
-import Mathlib.Tactic.SplitIfs
-import Mathlib.Util.CompileInductive
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Impl.Mont.AArch64
-import VerifiedGarbage.Spec.Weierstrass.Mont
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 @[expose] public section

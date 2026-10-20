@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContractGeometry
 
 /-! # Resources supplied by the shared precomputed recovery signature -/
 

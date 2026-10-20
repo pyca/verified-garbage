@@ -1,9 +1,13 @@
 module
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksVerified
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
 
 /-! # Prepared-context BlocksTo contracts -/
 

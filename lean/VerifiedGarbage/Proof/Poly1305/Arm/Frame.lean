@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.Arm.Update
 public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-public import VerifiedGarbage.Proof.Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 /-!
 # Streaming Poly1305 on ARMv7, with its working space on the stack

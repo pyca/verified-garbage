@@ -3,17 +3,12 @@ module
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLay
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
 import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacTiming
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
 
 /-!

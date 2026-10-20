@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

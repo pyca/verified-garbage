@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import Mathlib.Logic.Function.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86 (32-bit): sequences of field operations

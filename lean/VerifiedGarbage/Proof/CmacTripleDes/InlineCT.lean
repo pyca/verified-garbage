@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Inline
 public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-!

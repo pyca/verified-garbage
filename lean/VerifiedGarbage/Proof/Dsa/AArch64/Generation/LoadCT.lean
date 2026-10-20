@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
 
 /-! Candidate loads disclose only source pointers and byte lengths. -/
 @[expose] public section

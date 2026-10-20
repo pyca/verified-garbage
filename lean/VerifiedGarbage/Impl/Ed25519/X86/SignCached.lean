@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
-public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Impl.Ed25519.X86.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
-import VerifiedGarbage.Spec.Ed25519.CachedSign
 
 /-! Complete cached-key Ed25519 signing on x86. The 256-byte frame holds
 outgoing cdecl arguments at 0..24, scalar at 32, prefix at 64, nonce at 96,

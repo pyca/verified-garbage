@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Block
 
-public import VerifiedGarbage.Proof.Seed.AArch64.KeyRounds
 import VerifiedGarbage.Proof.Seed.Memory
+import VerifiedGarbage.Proof.Seed.AArch64.KeyRound
+import VerifiedGarbage.Proof.Seed.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Seed.SboxLit
+import VerifiedGarbage.Proof.Framework.AArch64.Straight
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Loading the key on AArch64

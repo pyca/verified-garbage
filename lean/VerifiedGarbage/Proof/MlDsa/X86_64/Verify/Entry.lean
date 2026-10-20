@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
-import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: entry to a callee

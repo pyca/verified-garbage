@@ -2,8 +2,35 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBoth
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon

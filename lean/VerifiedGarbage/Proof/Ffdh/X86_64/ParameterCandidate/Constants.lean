@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Montgomery
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Montgomery
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
-import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-! # FFDH parameter candidates on x86-64: Montgomery encodings of 1 and −1 -/
 

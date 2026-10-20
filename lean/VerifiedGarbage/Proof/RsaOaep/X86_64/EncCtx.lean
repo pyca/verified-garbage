@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Spec.RsaOaep
+public import VerifiedGarbage.Spec.RsaPss.Contract
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP encryption on x86-64: the contract on the registers

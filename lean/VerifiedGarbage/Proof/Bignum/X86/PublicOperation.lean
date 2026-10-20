@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPost
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicCheckExponent
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicCheckExponent
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Complete checked public RSA body, including invalid-modulus rejection -/
 

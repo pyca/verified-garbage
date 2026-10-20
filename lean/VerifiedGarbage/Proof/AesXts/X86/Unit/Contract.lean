@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.AesXts.Unit
 public import VerifiedGarbage.Impl.AesXts.X86Unit
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Xts.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # XTS-AES of data units on x86 (32-bit): the contract the proofs are written against

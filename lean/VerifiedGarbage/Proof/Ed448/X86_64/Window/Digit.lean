@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
-import VerifiedGarbage.Proof.Ed448.Window
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
 public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Load each verification digit once for a register-resident scan. -/
 

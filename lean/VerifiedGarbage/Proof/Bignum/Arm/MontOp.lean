@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
+import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Compose fixed-index Montgomery products while preserving the RSA workspace -/
 

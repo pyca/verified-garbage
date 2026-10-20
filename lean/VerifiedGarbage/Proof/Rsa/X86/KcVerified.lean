@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcOperationTiming
-public import VerifiedGarbage.Proof.Rsa.X86.KcCorrect
+import VerifiedGarbage.Proof.Rsa.X86.KcOperationTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcCorrect
 
 /-! # Complete i686 certificates for RSA key validation -/
 

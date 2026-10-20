@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivShift
-public import VerifiedGarbage.Proof.Rsa.Arm.DivBit
+import VerifiedGarbage.Proof.Rsa.Arm.DivShift
+import VerifiedGarbage.Proof.Rsa.Arm.DivBit
 public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A native division iteration implements the shared arithmetic model -/
 

@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontContract
+import VerifiedGarbage.Proof.Bignum.Arm.MontContract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.Mont
 meta import VerifiedGarbage.Spec.Rsa.Mont
 public import VerifiedGarbage.TCB.Arm.Target
+public import Batteries.Logic
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Verified ARMv7 Montgomery multiplication against the shared RSA contract -/

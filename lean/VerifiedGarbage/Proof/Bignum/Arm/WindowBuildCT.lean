@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Bignum.Arm.SelectCT
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Building the table leaks only public addresses and counts -/
 

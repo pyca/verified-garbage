@@ -1,12 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
-public import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Impl.Gcm.X86.Pclmul
-public import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring.RingNF
-public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 @[expose] public section
 

@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
-public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 
 /-!

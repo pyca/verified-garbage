@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.KeySteps
-public import VerifiedGarbage.Proof.Cast5.Arm.Block
+import VerifiedGarbage.Proof.Cast5.Arm.Block
+public import VerifiedGarbage.Proof.Cast5.Arm.Run
+public import VerifiedGarbage.Proof.Cast5.Table
 
 /-!
 # CAST5 key expansion on ARMv7: a step

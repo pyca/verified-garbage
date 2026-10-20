@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderSave
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCopy
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! ## AdxHeaderRestore -/
 

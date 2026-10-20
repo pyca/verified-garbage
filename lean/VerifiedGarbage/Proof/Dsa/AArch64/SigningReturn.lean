@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInitialize
 import VerifiedGarbage.Proof.Dsa.AArch64.Failure
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.DomainWidths
 
 /-! # Both signing branches return the packed byte specification -/
 

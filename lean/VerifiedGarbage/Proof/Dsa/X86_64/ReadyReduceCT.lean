@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallReduceCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Streaming reduction timing in the persistent workspace -/
 

@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrWin
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrWin
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrWin
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's exponentiation

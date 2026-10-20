@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.StageFrame
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Body
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 import VerifiedGarbage.Proof.MillerRabin.X86_64.BoundaryCT
 
 /-!

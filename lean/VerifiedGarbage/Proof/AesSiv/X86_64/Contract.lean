@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-public import VerifiedGarbage.Impl.AesSiv.X86_64
 public import VerifiedGarbage.Spec.Siv
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-SIV on x86-64: `vg_aes_siv_init`'s contract for its proof

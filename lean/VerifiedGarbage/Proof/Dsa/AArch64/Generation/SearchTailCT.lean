@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControlCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchAdvance
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The controller tail determines whether the bounded p loop continues -/
 

@@ -1,17 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
-public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 public import VerifiedGarbage.Proof.Weierstrass.Unch
-public import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Tc
 public import VerifiedGarbage.Proof.Weierstrass.InvMask
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Divstep.WordBasic
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Mont.X86_64.Blocks
 
 /-!
 # Inversion by divsteps on x86-64: numbers of several words

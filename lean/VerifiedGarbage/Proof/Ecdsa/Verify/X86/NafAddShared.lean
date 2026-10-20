@@ -1,17 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.X86.Sse
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacAddTiming
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+import Mathlib.Tactic.Finiteness.Attr
+import Aesop.BuiltinRules
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Weierstrass.X86.JacAddTiming
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
 
 /-!
 # ECDSA verification on x86 (32-bit): the checks shared by the NAF's additions

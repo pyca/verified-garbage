@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Point operations and coordinate transfers used by the verification windows. -/
 

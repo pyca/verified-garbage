@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTimingStep
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 
 @[expose] public section
 

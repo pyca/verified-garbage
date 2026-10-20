@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Store
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Compute
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

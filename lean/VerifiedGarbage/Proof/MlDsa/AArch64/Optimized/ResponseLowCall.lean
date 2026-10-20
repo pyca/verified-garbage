@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVerified
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Spec.MlDsa.ResponseLow
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

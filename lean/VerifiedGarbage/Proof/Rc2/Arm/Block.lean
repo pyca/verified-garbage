@@ -2,12 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Rc2.Arm.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.Arm.Lit
 
 /-! # Verified RC2 block encryption and decryption -/
 

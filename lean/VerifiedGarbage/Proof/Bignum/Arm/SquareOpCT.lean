@@ -1,12 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Square
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SquareFinish
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOp
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareFinish
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The whole Montgomery square leaks only the width, as `montOp` does -/
 

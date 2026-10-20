@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcLoadTiming
-public import VerifiedGarbage.Proof.Rsa.X86.KcZero
+import VerifiedGarbage.Proof.Rsa.X86.KcLoadTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcZero
+import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Clearing the CRT workspace and importing all four integers has a public trace -/
 

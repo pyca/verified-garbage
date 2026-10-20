@@ -1,14 +1,21 @@
 module
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointAbi
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointCT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointLit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.LitShare
 
 /-! The joint implementation satisfies the unchanged shared verification contract. -/
 

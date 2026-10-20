@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-public import VerifiedGarbage.Proof.Bignum.Triangular
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Triangular
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Eight-limb decomposition of a triangular square. The decomposition
 uses the same target-independent triangular identities as the x86-64 tiles. -/

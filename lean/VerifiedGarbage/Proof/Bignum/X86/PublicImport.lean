@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Import the modulus and representative without changing the call header -/
 

@@ -1,10 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
-meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Inline
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Common
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Inline
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.CmacTripleDes.Words
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on x86: `vg_cmac_triple_des_stream_init`

@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotContract
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `DotCall.lean` -/
 

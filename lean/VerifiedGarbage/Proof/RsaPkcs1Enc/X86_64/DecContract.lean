@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Decrypt
-public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the contracts on the registers

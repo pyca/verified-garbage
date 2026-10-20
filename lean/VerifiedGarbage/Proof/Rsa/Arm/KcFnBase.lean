@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
-public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
-public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.KcBase
+public import VerifiedGarbage.Proof.Rsa.Arm.CvBase
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # The checks of an RSA key on ARMv7: the arguments
 

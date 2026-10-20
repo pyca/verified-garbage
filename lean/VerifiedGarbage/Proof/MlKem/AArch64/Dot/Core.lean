@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Setup
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Setup
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Loop
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

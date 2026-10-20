@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.ValidationTiming
-public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+import VerifiedGarbage.Proof.Dsa.X86.ValidationTiming
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
 
 /-! # Validation stages retain the public call layout -/
 

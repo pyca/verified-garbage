@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Flags
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Flags
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Loads
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 
 /-! # FFDH domain validation on x86-64: component ranges -/
 

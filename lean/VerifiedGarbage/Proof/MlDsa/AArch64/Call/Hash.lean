@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 import VerifiedGarbage.Proof.MlKem.KPke
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA on AArch64: `H`, SHAKE256

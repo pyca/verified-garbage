@@ -1,16 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+meta import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time of the Montgomery setup

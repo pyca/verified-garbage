@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ResumeTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraStepTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraStepTiming
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

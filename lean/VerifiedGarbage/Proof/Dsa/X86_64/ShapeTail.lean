@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeFinish
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.Masks
 
 /-! # Composition of domain masks, parity, and digest-prefix selection -/
 

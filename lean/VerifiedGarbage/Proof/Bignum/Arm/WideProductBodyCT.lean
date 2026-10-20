@@ -1,10 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+meta import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
+meta import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgsCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
+meta import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # A wide-product row hides its scalar and multiplicand values -/
 

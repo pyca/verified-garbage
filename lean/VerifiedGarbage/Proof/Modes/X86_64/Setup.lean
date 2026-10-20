@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.Modes.Counter
+public import VerifiedGarbage.Proof.Modes.X86_64.Core
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Counter
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CTR on x86-64: entry and exit

@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowState
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLowCheck
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedLow
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

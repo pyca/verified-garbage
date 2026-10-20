@@ -1,10 +1,31 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetry
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRetry
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Order.RelClasses
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Push
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Retry control reveals only the signer's low-word success bit and attempt budget. -/
 @[expose] public section

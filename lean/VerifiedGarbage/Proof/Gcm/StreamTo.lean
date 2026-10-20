@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Gcm.Ctr
 
-public import VerifiedGarbage.Proof.Gcm.Compose
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GCM streaming, out of place: whole blocks on the state

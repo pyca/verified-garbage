@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # The brainpoolP256r1 field prime is prime

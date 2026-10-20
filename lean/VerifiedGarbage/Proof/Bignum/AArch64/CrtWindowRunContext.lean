@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReadCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroupCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByteCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowFinishCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.CrtWindowFive
 

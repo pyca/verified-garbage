@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.PcCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64: the call

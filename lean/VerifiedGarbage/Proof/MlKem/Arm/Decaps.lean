@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
-public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+import VerifiedGarbage.Proof.MlKem.Arm.Loops
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on 32-bit ARM: decapsulation, correctness

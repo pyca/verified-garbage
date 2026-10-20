@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Table
+import VerifiedGarbage.Proof.Blowfish.Table
 public import VerifiedGarbage.Proof.Blowfish.KeySched
+public import VerifiedGarbage.Impl.Blowfish.Table
+public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Key expansion's facts about memory, on every target

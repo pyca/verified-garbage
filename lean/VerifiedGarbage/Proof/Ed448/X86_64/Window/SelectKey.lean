@@ -2,7 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Constant-time selection from the runtime projective table. -/
 

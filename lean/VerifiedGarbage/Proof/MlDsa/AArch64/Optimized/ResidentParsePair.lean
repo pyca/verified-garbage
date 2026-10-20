@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackMemory
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentParse
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

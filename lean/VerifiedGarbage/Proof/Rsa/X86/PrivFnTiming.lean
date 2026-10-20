@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
-public import VerifiedGarbage.Proof.Rsa.X86.PrivBodyTiming
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Rsa.X86.PrivBodyTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivNoSp
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
 /-! # Stack allocation and saved-register restoration reveal only public addresses -/
 

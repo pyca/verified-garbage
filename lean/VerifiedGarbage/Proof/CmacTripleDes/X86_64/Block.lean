@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Round
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA on x86-64: the passes and the block

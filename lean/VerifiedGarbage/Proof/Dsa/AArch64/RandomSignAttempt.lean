@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSample
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Execute one randomized signing attempt, including sampling and retries. -/
 @[expose] public section

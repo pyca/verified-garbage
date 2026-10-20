@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignLoopCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInitCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInitCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignLoopCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInitCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
 
 /-! Compose initialization, retries, and publication for valid subgroup moduli. -/
 @[expose] public section

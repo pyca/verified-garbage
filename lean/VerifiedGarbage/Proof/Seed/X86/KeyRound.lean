@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Seed.KeyRot
+import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 public import VerifiedGarbage.Proof.Seed.KeySchedule
-public import VerifiedGarbage.Proof.Aes.X86.Sbox
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Seed.X86.Lanes
+import VerifiedGarbage.Proof.Seed.X86.Prologue
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # A round of the key schedule on x86 (32-bit)

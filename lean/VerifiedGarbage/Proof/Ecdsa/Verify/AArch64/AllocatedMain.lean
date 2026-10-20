@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! The Jacobian verifier satisfies the existing complete verification postcondition. -/
 

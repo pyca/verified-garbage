@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

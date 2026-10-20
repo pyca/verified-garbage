@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.KeyLine
+import VerifiedGarbage.Proof.Cast5.X86.Round
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!
 # CAST5 key expansion on 32-bit x86: groups of four lines

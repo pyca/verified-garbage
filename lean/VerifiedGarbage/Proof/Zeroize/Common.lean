@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Zeroize
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! Zero prefixes, shared by the word and byte loops on every target. -/
 

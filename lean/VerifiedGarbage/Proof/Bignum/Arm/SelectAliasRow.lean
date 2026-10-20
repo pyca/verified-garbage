@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Select
+public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasBody
+import VerifiedGarbage.Proof.Bignum.Arm.SelectAliasBody
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and exact value of an in-place selection -/
 

@@ -1,12 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! ## AdxTri8Rows -/
 

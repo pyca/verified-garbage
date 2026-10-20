@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.FnCT
 import VerifiedGarbage.Proof.GcmSiv.Polyval
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # AES-GCM-SIV on ARMv7: `Verified`

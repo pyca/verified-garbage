@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # ML-KEM: Compress and Decompress without division, for every target

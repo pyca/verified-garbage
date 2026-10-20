@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
-import VerifiedGarbage.Proof.Mont.X86_64.Row
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 
 /-!

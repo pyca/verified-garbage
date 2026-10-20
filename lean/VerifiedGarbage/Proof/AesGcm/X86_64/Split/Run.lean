@@ -3,7 +3,13 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Body
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PreG
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-import VerifiedGarbage.Proof.Gcm.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Entry
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinish
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
 
 /-!
 # AES-GCM `seal_split` on x86-64: from the entry to the tag at `W`

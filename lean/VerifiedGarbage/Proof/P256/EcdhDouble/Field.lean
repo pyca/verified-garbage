@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.P256.EcdhDouble.Raw
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 
 @[expose] public section
 

@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.KeyMath
-public import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Rsa.KeyParts
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
-public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Rsa.Octets
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # `vg_rsa_crt_values` on 32-bit targets: the checks are `crtKey`
 

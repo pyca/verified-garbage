@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa
-import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Witness cursors name exact suffixes, not merely equal-length lists -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-! Sparse public double-scalar multiplication, reusing the proved point formulas. -/
 

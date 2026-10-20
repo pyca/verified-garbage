@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
-public import VerifiedGarbage.Proof.Rsa.X86.CvEntry
+import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.CvEntry
+import VerifiedGarbage.Proof.Rsa.X86.CvResources
 
 /-! # Install CRT caller resources while saving the callee-saved registers -/
 

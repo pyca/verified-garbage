@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import Mathlib.Order.RelClasses
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `recoverPrimes`: the number of tries

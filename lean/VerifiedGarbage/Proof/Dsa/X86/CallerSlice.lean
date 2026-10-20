@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Readable subcomponents of caller-owned packed buffers -/
 

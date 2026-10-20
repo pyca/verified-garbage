@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Seed.Arm.G8
 public import VerifiedGarbage.Proof.Seed.G8
-public import VerifiedGarbage.Proof.Framework.Arm.Linear
 public import VerifiedGarbage.Proof.Aes.Arm.Sbox
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # `g8` on ARMv7

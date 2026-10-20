@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Finite-field Diffie–Hellman: the contracts, on every target

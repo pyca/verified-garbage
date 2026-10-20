@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-OAEP on AArch64: MGF1 in constant time

@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Index
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Mask
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Parse
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Accept
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Composition of vector parsing, acceptance, horizontal sum and lookup index -/
 

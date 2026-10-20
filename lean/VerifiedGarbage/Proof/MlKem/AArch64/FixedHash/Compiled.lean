@@ -2,7 +2,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedule
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeCode
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Fusion
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

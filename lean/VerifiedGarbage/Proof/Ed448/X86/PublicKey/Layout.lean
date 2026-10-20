@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.Entry
-public import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit): the contract the proof is written against

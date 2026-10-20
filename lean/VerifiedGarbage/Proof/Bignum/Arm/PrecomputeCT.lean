@@ -1,11 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
-public import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
-public import VerifiedGarbage.Proof.Bignum.Arm.R2CT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Precompute
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.InitInverseCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+meta import VerifiedGarbage.Proof.Bignum.Arm.InverseArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Modulus precomputation reveals no modulus-dependent execution trace -/
 

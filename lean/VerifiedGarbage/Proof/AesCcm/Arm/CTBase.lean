@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Open
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+public import VerifiedGarbage.Proof.AesCcm.Arm.Args
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 
 /-!
 # AES-CCM on ARMv7: constant time, the invariants

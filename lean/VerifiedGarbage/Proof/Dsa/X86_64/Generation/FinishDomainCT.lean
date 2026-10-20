@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedValidateCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPack
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishDomain
+public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishDomain
 
 /-! # Compose domain packing with the final verified parameter check -/
 

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvValid
-public import VerifiedGarbage.Proof.Rsa.X86.CvFailure
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Rsa.X86.CvValid
+import VerifiedGarbage.Proof.Rsa.X86.CvFailure
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Both CRT modulus-validation branches satisfy the shared result definition -/
 

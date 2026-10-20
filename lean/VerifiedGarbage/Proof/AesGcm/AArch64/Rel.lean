@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: relating two runs

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The wrapper preserves its caller's return address -/
 

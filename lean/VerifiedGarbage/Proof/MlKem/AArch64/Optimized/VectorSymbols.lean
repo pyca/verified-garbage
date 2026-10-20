@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Vector taint tracking with public addresses of read-only tables
 

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStages
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverTailTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverTailTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 
 /-! # The verifier body relates even calls with inconsistent precomputed moduli -/
 

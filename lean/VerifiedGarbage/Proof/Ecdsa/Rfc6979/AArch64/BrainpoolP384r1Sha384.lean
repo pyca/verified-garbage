@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.BrainpoolP384r1
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP384r1Sha384
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
 
 /-!
 # Deterministic ECDSA over brainpoolP384r1 with HMAC-SHA-384 on AArch64

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # The native p-width branch matches the specification's guard -/
 

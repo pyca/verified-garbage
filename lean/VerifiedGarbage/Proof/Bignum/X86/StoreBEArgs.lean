@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.StoreBE
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Setting the source pointer for RSA integer export -/
 

@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillSegment
-public import VerifiedGarbage.Impl.Argon2.AArch64.AddressCache
 
 /-! Reset the address cache per segment and skip the two initialized cells. -/
 

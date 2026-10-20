@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtCoreTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtCoreTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtArithmeticTiming
+import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Acceptance checks and saved masks never affect private CRT control flow -/
 

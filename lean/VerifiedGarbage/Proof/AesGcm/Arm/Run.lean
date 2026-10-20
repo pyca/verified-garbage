@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Env
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Arm.Bytes
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # AES-GCM on ARMv7: running straight-line blocks

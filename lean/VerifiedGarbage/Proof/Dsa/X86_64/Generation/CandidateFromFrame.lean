@@ -1,7 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Candidate arithmetic and output storage from retained frame arguments -/

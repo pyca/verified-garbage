@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Zero
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448's complete operations on AArch64: the sponge's calls

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchSemantics
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStable
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # The p-search invariant retains its exact specification result -/
 

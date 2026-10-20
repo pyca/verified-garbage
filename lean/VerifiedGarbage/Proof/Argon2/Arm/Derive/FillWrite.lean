@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillPtr
-public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+public import VerifiedGarbage.Proof.Argon2.Matrix
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Argon2.Arm.Words
 
 /-!
 # Argon2 on ARMv7: writing the new block

@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.CachedJac
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 
 /-! The cached header and tail compute the same Jacobian addition formula. -/
 

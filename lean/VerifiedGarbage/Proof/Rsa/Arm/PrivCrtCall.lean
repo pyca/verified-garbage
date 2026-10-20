@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtPre
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Call the verified CRT into the private stack temporary -/
 

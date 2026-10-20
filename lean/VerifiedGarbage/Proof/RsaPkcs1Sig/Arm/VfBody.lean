@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfPost
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfTaint
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfTaint
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 
 /-!
 # RSASSA-PKCS1-v1_5 verification with a precomputed public key on ARMv7: the body

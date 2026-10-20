@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvPrepared
+import VerifiedGarbage.Proof.Rsa.X86.RvPrepared
 public import VerifiedGarbage.Proof.Rsa.X86.RvPrepareTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateLoopTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvFinishTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvFinishTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # The accepted recovery path leaks only the declared attempt count -/
 

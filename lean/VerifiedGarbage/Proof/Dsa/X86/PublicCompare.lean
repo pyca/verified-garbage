@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import VerifiedGarbage.Impl.Dsa.X86.Entry
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Comparisons used only for dispatch on public lengths -/
 

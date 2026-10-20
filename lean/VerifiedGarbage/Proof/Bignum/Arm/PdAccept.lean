@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompare
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompare
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Save the exact secret range-check result while preserving every public argument -/
 

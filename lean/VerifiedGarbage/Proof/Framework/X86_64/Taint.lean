@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
-public import VerifiedGarbage.Proof.Framework.RegSetOrder
-public import VerifiedGarbage.Proof.Framework.KernelList
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.X86_64.Masked
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import Batteries.Data.List.Basic
 
 /-!
 # Taint tracking for x86-64

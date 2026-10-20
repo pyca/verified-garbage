@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Recover the arithmetic base from the persistent frame -/
 

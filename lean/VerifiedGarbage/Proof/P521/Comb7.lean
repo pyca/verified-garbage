@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.P521.Point
-public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
+import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Impl.P521.CombTable7
+public import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # P-521: the 7-bit fixed-base comb's tables are right

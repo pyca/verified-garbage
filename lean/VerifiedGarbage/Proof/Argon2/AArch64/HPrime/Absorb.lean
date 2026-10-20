@@ -2,9 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Fixed
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: absorbing the length prefix or previous digest -/
 

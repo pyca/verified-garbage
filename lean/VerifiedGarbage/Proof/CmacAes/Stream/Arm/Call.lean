@@ -2,11 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CallF
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.Arm
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCT
+import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifySpec
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignBody
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncStep
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: the copies of `PS` and `M`

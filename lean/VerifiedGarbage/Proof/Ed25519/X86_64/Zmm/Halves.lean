@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The `zmm` comb: what the `ymm` lemmas say of the halves

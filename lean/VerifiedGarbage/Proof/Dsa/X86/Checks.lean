@@ -2,8 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Checks
 public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
 
 /-! # Correct masks for arbitrary-width DSA components -/
 

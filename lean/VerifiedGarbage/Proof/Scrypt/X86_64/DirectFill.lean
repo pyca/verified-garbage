@@ -1,13 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
-meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import Mathlib.Tactic.DefEqTransformations
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
+meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import Mathlib.Tactic.DefEqTransformations
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! Direct V-table filling, keeping the intermediate X in V[i]. -/
 

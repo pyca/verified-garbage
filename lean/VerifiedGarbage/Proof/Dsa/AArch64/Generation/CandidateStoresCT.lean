@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoreCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoreCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Save p and its exponent with public addressing -/
 

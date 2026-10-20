@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Contracts with and without a scratch buffer argument

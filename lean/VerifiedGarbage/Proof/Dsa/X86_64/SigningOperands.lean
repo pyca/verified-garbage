@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
 public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceBridge
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Loading packed signing inputs into the verified arithmetic interface -/
 

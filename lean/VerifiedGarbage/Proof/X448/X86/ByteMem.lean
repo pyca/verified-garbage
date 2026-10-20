@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.Mem
 
-public import VerifiedGarbage.Proof.X448.X86.Iter
-import VerifiedGarbage.Proof.X448.Bytes
-public import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Framework.BitByte
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): expanding scalar bytes

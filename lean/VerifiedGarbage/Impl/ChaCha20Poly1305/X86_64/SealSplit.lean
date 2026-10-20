@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512Split
 
 /-!

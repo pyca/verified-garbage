@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareRedc
-public import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareDiag
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareRow
+import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareDiag
+import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareRedc
+public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 
 /-!
 # The baseline Montgomery square (x86-64)

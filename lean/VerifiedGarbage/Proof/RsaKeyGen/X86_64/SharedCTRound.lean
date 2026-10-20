@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMid
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 
 /-! # Constant time of RSA's witness policy with the callable shared round -/
 

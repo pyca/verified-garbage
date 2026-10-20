@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
 import VerifiedGarbage.Proof.Bignum.Rectangular
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxRect8Embed -/
 

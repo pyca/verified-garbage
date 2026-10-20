@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
+public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Store bounded field limbs in a compact 32-byte buffer. -/
 

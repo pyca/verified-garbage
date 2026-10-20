@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpInit
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Montgomery exponentiation setup has a public trace -/
 

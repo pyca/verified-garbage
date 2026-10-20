@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
-import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

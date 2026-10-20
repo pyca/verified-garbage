@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 
 @[expose] public section
 

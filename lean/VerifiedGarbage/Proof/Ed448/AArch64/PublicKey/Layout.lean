@@ -1,8 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 import Mathlib.Tactic.SplitIfs

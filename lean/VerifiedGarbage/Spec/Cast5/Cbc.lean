@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Spec.Cast5
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # CAST5-CBC: the contracts, on every target

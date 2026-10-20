@@ -1,23 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
+import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Main
+import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA on x86-64: the proofs `Artifacts/Rsa/X86_64.lean` registers

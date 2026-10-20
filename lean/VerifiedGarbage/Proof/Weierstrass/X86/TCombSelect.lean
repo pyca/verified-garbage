@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Constant-time table selection for the x86 comb -/
 

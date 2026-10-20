@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Close
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint4
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # A candidate on ARMv7: trial division (`trial_vp`)
 

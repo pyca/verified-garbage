@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeGeneratorCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGenerator
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public accepted primes determine the generator-search plan -/

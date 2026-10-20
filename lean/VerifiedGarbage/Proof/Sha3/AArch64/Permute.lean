@@ -1,39 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Sha3.Lanes
-meta import VerifiedGarbage.Proof.Sha3.Lanes
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Sha3.AArch64
-meta import VerifiedGarbage.Impl.Sha3.AArch64
 public import VerifiedGarbage.Spec.Sha3.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha3.Lanes
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Impl.Sha3.AArch64
 meta import VerifiedGarbage.Spec.Sha3.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha3.Stream
-meta import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

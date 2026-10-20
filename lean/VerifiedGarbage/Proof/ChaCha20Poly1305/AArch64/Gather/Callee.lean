@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.SealGather
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: the function called

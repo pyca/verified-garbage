@@ -1,8 +1,27 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
+public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoop
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.DoubleLoop
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopBody
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Repeated doubling leaks only the public count and workspace shape -/
 

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
-public import VerifiedGarbage.Proof.Dsa.X86.CorePower
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
+import VerifiedGarbage.Proof.Dsa.X86.CorePower
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Fixed-iteration powers preserving validated DSA inputs -/
 

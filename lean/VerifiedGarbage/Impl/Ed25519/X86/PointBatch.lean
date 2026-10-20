@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.PointPowers
-import VerifiedGarbage.Impl.Ed25519.X86.PointAccumulate
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-! Rebuild a local batch while preserving the scalar accumulator. -/
 

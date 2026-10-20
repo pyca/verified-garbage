@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.WideMul`. -/
 

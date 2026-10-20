@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.TCB.X86_64.Gpr
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Deterministic ECDSA on x86-64: big-endian numbers

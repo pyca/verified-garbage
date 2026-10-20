@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Contract
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86: the arguments and the entry

@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Montgomery encoding and decoding for exponentiation -/
 

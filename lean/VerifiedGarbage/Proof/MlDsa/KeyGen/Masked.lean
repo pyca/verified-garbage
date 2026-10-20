@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA key generation: the samplers' results, and masked polynomials

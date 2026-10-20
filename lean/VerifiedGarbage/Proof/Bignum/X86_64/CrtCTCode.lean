@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_private_crt` on x86-64: constant time but for `n`

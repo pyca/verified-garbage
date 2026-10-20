@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMaskedCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMaskedCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Reconstruction and masked output hide both the result and acceptance -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.RandomSign
-public import VerifiedGarbage.Proof.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.Random
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bounds for randomized signing

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 import VerifiedGarbage.Proof.RsaKeyGen.KeyCheck
 import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Int.ModEq
 
 /-!
 # FFDH and RSA use the same Miller–Rabin round

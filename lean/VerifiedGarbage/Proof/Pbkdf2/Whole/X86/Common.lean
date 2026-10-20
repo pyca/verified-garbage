@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Calls
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the functions it calls, and its parts

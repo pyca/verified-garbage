@@ -1,7 +1,8 @@
 module
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecMac
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncPre
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCorrect
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the calls, on their own

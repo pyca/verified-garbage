@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
-public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Gcm.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: the functions called

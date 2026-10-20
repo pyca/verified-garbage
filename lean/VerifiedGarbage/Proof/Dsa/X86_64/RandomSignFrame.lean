@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEntry
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! Allocate the wrapper frame and locate the incoming stack arguments. -/
 @[expose] public section

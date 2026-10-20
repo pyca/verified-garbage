@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCT
-public import VerifiedGarbage.Proof.Dsa.RandomTrace
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The public sampling trace determines the next draw's declassified decision. -/
 @[expose] public section

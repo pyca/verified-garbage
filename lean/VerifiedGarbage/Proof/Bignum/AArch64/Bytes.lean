@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Double
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Multiword arithmetic on AArch64: big-endian bytes into words

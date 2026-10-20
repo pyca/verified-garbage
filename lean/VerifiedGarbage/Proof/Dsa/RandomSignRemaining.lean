@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.RandomResult
+public import VerifiedGarbage.Spec.Dsa.RandomSign
 
-public import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Relate the remaining signing attempts to the original randomized result. -/

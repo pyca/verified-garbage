@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
-public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 
 /-!
 # ML-KEM on x86-64: decapsulation with 16-bit polynomials, K-PKE.Decrypt

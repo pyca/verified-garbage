@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.PreparedVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Impl.Camellia.AArch64.Ctr
-public import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.AArch64.PreparedBody
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.CtrCipher
+import VerifiedGarbage.Proof.Camellia.AArch64.PreparedVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Camellia's core for the modes on AArch64

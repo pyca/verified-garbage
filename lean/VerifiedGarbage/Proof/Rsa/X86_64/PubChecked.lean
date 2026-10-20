@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Guarded
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PdVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 
 /-!
 # `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked` on x86-64

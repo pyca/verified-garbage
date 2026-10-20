@@ -2,10 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.P256.Linear.Words
 public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Mont.AArch64.Words
 
 @[expose] public section
 

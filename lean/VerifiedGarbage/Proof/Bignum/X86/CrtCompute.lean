@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtPowersFrame
-public import VerifiedGarbage.Proof.Bignum.X86.CrtCoefficientStage
+import VerifiedGarbage.Proof.Bignum.X86.CrtPowersFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtCoefficientStage
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRecombineStage
-public import VerifiedGarbage.Proof.Bignum.X86.SafePrime
+public import VerifiedGarbage.Proof.Bignum.X86.CrtBothPowers
+import VerifiedGarbage.Proof.Bignum.X86.SafePrime
 
 /-! # Complete private arithmetic for both accepted and rejected CRT components -/
 

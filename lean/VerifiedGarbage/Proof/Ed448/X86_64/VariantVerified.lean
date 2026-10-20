@@ -1,11 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
-meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyVerified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+meta import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+meta import VerifiedGarbage.Proof.Ed448.Ref
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 
 /-! The same scalar and verification contracts for every field backend. -/
 

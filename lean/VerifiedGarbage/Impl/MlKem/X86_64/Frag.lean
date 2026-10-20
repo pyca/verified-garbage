@@ -1,19 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
-public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
 public import VerifiedGarbage.Impl.MlKem.X86_64.SampleH
+public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16
 
 /-!
 # ML-KEM on x86-64: the pieces of the top-level functions

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Env
 
-public import VerifiedGarbage.Proof.X448.Arm.Iter
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: the final ladder swap

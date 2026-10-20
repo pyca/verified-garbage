@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrimeResultCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorFinishCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrimeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorFinishCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrimeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 
 /-! # Prime search composes with generator selection and final domain checking -/
 

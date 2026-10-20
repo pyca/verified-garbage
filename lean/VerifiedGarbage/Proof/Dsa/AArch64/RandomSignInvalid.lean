@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSaved
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepare
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Invalid moduli exit before sampling and publish zero consumption. -/
 @[expose] public section

@@ -1,6 +1,7 @@
 module
-
+public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Spec.Ffdh.Contract
+
 
 /-! # Complete FFDH generation control over refillable octet tapes
 

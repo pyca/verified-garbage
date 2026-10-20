@@ -1,12 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.R2
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.R2
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2Init
+import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.R2
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.R2Init
+meta import VerifiedGarbage.Proof.Bignum.Arm.R2Constants
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSA R-squared precomputation leaks only public workspace dimensions -/
 

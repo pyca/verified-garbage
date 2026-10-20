@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP512r1Sha512
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
 /-!
 # Deterministic ECDSA over brainpoolP512r1 with HMAC-SHA-512 on 32-bit ARM

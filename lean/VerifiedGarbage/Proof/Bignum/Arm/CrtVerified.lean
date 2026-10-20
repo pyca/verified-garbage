@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtContract
+import VerifiedGarbage.Proof.Bignum.Arm.CrtContract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # ARMv7 private CRT RSA is verified against the shared RSA contract -/
 

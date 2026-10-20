@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
 
 /-! # An RSA key on ARMv7: a word of an array set
 

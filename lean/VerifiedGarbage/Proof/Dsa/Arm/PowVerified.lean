@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Pow
-public import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

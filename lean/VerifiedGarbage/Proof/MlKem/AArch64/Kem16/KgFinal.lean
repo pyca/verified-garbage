@@ -1,14 +1,47 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgRows
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgRows
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.KernelRfl
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgRows
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # The 16-bit `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`
 

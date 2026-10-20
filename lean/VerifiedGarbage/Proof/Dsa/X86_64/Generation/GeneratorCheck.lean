@@ -1,8 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRange
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorResult
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorArguments
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRange
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Common frame binding for generator-input and generator-result checks -/

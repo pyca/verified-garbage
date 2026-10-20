@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
-public import VerifiedGarbage.Impl.Poly1305.X86_64.Ifma
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: straight-line code, quadword by quadword

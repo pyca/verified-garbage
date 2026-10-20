@@ -1,21 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Arm.Update
-meta import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 import VerifiedGarbage.Proof.MdStream.Arm.Words
-meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Sm3.Md
+import VerifiedGarbage.Proof.Sm3.Arm.Compress
+public import VerifiedGarbage.Proof.Sm3.Arm.Contract
+import VerifiedGarbage.Proof.Sm3.Arm.Lit
+public import VerifiedGarbage.Impl.Sm3.Arm.Stream
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.Arm.Update
+meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 meta import VerifiedGarbage.Proof.Sm3.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sm3.Arm.Compress
 meta import VerifiedGarbage.Proof.Sm3.Arm.Compress
-import VerifiedGarbage.Impl.Sm3.Arm.Stream
+meta import VerifiedGarbage.Proof.Sm3.Arm.Contract
+meta import VerifiedGarbage.Proof.Sm3.Arm.Lit
 meta import VerifiedGarbage.Impl.Sm3.Arm.Stream
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SM3 on ARMv7: `update` and `finalize`

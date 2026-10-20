@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBitCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHeadCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowScanCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # Windowed private RSA exponentiation hides the exponent, input, and modulus values -/
 

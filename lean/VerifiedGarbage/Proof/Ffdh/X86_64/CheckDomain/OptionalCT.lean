@@ -1,8 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QRangeCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.DividesCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.DividesCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QRangeCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.DividesCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: optional-order control flow -/
 

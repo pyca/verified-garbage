@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Covers
+public import Batteries.Data.List.Basic
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Inlining verified code, on any ISA

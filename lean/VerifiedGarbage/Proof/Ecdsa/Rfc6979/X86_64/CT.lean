@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Correct
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates

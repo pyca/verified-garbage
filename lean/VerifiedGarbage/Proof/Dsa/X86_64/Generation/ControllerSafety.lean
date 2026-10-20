@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Bounded seed, prime, and generator controllers inherit their bodies' safety -/
 

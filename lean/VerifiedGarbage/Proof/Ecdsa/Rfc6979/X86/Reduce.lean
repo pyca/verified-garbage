@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Words32
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Layout
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `h = bits2octets(digest)`

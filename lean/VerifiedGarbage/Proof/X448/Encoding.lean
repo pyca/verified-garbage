@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Pairs
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # X448: encoding pairs of limbs

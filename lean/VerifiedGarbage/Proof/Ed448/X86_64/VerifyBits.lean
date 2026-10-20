@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on x86-64: the bits of the scalars

@@ -5,6 +5,20 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # BLAKE2b on baseline x86-64: the variant's code and proofs

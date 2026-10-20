@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.KeyP
-public import VerifiedGarbage.Proof.Blowfish.KeySched
 import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
+import VerifiedGarbage.Proof.Blowfish.X86.Run
 
 /-!
 # Blowfish on x86 (32-bit): key expansion's 521 encryptions

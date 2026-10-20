@@ -1,32 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
-meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.TripleDes.X86.FbLit
-meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
-public import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
-meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 public import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+public import VerifiedGarbage.Impl.TripleDes.X86.Fb
+meta import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Spec.TripleDes.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+meta import VerifiedGarbage.Impl.TripleDes.X86.Fb
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit) meet their contracts

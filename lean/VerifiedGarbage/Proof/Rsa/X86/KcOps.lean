@@ -1,6 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcBase
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Rsa.X86.MulMod
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.KeyEq
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The checks of an RSA key on i686: the steps on `Stg`
 

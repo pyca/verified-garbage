@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Base
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Aes
+public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.GhBits
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: one batch

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Lay
-public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.Arm.Keccak
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 
 /-!
 # ML-DSA signing on ARMv7: calls of verified code

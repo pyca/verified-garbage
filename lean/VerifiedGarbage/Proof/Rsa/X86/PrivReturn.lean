@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The wrapper preserves its caller's return address -/
 

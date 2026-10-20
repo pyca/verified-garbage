@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
+import VerifiedGarbage.Proof.X448.AArch64.Weak.BitStep
 
 /-!
 # X448 on AArch64: the Montgomery ladder's iterations

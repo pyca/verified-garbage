@@ -1,15 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalf
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 
 /-! Memory and point invariant for the in-place P-256 doubling schedule. -/
 

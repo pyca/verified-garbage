@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Encode
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Re-encode the trailing digest in a separate buffer -/
 

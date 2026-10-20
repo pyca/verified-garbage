@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractGeometry
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
+import VerifiedGarbage.Proof.Rsa.Arm.PrivEntryReady
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Shared private RSA preconditions establish the native wrapper inputs -/
 

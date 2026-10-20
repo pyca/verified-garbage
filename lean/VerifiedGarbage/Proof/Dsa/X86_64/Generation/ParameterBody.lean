@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterInvariant
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterSemantics
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterSemantics
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAttempt
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
 
 /-! # Each native seed iteration advances the seed and witness tapes exactly -/
 

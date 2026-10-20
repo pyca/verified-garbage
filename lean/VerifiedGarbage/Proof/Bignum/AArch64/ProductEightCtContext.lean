@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCorrect
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSpill
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtLoop
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

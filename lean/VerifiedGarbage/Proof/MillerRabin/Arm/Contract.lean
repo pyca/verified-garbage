@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.MillerRabin
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Base
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The Miller–Rabin round on ARMv7: the contract its callers use

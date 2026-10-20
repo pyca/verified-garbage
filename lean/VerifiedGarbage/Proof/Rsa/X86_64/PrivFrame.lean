@@ -2,9 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.Rsa.X86_64.PrivChecked
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Set
+import Mathlib.Order.Defs.PartialOrder
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+import Mathlib.Data.Int.GCD
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the frame

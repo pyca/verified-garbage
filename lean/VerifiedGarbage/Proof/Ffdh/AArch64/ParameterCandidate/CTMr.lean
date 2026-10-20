@@ -1,11 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time of Miller–Rabin

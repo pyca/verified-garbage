@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Field
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: sums and differences

@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.LaneU
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
 
 /-!
 # RSA with AVX512_IFMA on x86-64: the steps with the look-ahead

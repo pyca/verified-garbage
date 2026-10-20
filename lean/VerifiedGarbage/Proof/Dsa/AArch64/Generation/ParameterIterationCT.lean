@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterTailCT
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterTailCT
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! A complete parameter-search iteration has a public trace. -/
 @[expose] public section

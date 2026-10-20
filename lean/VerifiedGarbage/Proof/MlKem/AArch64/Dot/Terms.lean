@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.FullTerm
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

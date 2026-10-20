@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignFrame
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Set
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the blocks around the encoding and the call

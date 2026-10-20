@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-! # Phase gates branch only on the public generation status -/
 

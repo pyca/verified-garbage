@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 public import VerifiedGarbage.Proof.Bignum.X86.CrtBodyFrame
-public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The complete CRT body preserves saved registers and the return address -/
 

@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.X86.Block
-public import VerifiedGarbage.Proof.Rc2.X86.KeyIO
 import VerifiedGarbage.Proof.Rc2.Word32
-import VerifiedGarbage.Proof.Rc2.X86.KeySteps
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

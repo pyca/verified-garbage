@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ecdsa.AArch64

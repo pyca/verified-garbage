@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
+import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.PowBody
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Calling shared DSA exponentiation with an explicit stack frame -/
 

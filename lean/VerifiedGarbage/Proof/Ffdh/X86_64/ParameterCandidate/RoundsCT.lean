@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBodyCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyLoopCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyLoopCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Rounds
 import VerifiedGarbage.Proof.Framework.Omega
 

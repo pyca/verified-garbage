@@ -1,6 +1,8 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Word
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Spec.Sha3 VG.Proof.Sha3

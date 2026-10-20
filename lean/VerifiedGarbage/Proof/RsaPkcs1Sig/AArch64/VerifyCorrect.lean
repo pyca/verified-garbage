@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: correctness

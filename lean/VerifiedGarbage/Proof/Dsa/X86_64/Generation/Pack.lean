@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackInto
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackInto
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Pack all three generated parameters into p || q || g -/
 

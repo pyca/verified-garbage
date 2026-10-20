@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScan
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentByteCT
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentByte
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The public buffer and prefix invariants of exponent validation -/
 

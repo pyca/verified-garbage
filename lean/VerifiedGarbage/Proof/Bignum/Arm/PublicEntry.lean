@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Save the checked public operation's output and workspace arguments -/
 

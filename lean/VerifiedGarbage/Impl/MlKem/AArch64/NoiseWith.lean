@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
-public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

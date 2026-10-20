@@ -1,13 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Window
-public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinLay
-public import VerifiedGarbage.Proof.Weierstrass.WinLay
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.Jac
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.Law3
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # The window method on x86 (32-bit): the table and the additions

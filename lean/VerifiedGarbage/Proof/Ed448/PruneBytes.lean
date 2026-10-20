@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Ed448.Prune
 

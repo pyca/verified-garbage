@@ -1,15 +1,23 @@
 module
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
+import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKgV
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
-import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEncV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_kpke_keygen`, verified

@@ -2,14 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheEntryFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheNeg
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The exact lookup environment preserves the point and its cached powers. -/
 

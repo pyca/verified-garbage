@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Lists
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # The 16-bit ciphertext component `v`
 

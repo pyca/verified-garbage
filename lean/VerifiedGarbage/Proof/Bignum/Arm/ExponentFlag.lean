@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-! # Branch on the proved public-exponent validity bit -/
 

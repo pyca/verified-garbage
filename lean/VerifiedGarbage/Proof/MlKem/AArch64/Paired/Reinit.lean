@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitCore
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Paired-noise prologue, including the register record -/
 @[expose] public section

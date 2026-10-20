@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.P192
 import VerifiedGarbage.Proof.P192.Prime
-public import VerifiedGarbage.Proof.P192.Point
 import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # P-192 is a curve the proofs apply to

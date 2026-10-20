@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
 import VerifiedGarbage.Proof.Weierstrass.Pow
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: powers

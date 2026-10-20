@@ -2,6 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Out
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint4
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Key3
+import VerifiedGarbage.Proof.Rsa.Arm.RvStore
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: the outputs written under the mask (`stores_vp`) -/
 

@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS16
-import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: four entries of a matrix with 16-bit coefficients at once

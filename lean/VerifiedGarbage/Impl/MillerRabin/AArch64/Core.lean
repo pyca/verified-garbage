@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
+public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
 /-! # Shared fixed-window Miller–Rabin computation
 

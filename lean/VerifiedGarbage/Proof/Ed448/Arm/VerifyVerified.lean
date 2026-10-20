@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
-meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
 meta import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ed448.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import VerifiedGarbage.Proof.Framework.Arm.Call
-meta import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 verification's equation on ARMv7: `Verified`

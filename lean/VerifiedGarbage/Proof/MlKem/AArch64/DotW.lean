@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Loop
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Setup
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's fused dot product of polynomials stored with 16 bits, on AArch64

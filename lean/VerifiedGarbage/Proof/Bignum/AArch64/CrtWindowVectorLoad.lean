@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorWord
 public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
-import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Four independent load/BIT pairs, sharing one row-comparison mask. -/
 

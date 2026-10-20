@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Montgomery products as functions on AArch64: the moduli

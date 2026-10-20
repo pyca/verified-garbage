@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
-public import Mathlib.Tactic.Module
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Module
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # Verification with windows: the arithmetic of the digits and the equation

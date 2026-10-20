@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Hmac.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # HMAC's `init` and `finalize` on x86, with their working space on the stack

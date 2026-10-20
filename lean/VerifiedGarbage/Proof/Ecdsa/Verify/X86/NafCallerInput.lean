@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.PublicValues
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulReady
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombInput
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 
 @[expose] public section
 

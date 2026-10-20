@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.AArch64.Row
+public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+public import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

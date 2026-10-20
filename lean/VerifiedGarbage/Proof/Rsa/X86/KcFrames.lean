@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcLoad
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Scratch frames preserve CRT input bytes and saved registers -/
 

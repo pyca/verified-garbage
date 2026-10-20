@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: carries

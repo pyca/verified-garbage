@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # Straight-line `EVEX.256` code, lane by lane

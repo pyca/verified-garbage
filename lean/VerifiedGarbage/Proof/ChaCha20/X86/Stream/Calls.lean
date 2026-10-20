@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.ChaCha20.X86.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): the entry state and the calls

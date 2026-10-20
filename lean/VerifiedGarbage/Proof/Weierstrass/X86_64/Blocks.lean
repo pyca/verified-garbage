@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 /-!
 # Short Weierstrass curves on x86-64: code as a sequence of blocks

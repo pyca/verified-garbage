@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
 
 /-! Reuse DSA's verified public exponentiation for generator construction. -/
 @[expose] public section

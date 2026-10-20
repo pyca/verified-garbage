@@ -1,15 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 meta import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming AES-CMAC on x86-64: `vg_cmac_aes_init`

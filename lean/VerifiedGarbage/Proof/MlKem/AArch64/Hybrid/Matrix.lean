@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # The paired matrix, hashing a message

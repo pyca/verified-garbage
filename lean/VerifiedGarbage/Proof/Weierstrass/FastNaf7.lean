@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
-public import VerifiedGarbage.Proof.Weierstrass.Window5
+import VerifiedGarbage.Proof.Weierstrass.Comb
 
 /-! Sparse signed seven-bit recoding of a public 256-bit scalar. -/
 

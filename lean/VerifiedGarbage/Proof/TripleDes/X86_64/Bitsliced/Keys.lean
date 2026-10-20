@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
 import VerifiedGarbage.Proof.TripleDes.Schedule
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # The keys of the three passes

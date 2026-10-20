@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Loop
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Tail
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Tail
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Consts
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombMul
 
 /-!
 # The `zmm` comb: the multiplication

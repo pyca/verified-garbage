@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Sm4.X86_64.Sbox
 public import VerifiedGarbage.Impl.Sm4.Lin
-import VerifiedGarbage.Impl.Aes.X86_64.Linear
 public import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 
 /-!

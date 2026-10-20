@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
 
 /-! Fixed-base multiplication with a comb of precomputed, cached multiples of the base point. -/
 

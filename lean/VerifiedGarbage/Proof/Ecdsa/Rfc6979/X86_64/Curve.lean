@@ -1,18 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
-public import VerifiedGarbage.Spec.Ecdsa.Generic
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 public import VerifiedGarbage.Impl.Sha256.X86_64.Stream
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # Deterministic ECDSA on x86-64: the curve

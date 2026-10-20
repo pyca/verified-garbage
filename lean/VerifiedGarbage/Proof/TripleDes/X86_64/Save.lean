@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86_64.Save
-public import VerifiedGarbage.Impl.TripleDes.X86_64.Block
 public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.RoundLit
 
 @[expose] public section
 

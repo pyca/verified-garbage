@@ -1,17 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
-meta import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
+import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Base.Main
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 meta import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Ed448 base-point multiplication on AArch64: `Verified`

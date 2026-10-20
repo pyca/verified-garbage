@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtEntry
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtEntry
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
+public import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+public import VerifiedGarbage.Proof.Bignum.CrtResult
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtMain
+import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # RSA with the CRT on AArch64: correctness

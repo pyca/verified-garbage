@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 
 /-!
 # Streaming TDEA-CMAC on AArch64: the code of `init`, `update` and `finalize`, inline

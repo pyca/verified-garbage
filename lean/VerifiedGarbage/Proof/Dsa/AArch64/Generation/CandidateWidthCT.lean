@@ -1,9 +1,37 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateWidth
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Push
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # The candidate-width guard has public addressing and a public decision -/
 

@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Ed25519.Bytes
 
 /-! The scalar bits, base-point multiplication, and canonical encoding compose. -/
 

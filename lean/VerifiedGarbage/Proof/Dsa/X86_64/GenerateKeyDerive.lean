@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Key generation's call of key derivation, with the sampled x -/
 

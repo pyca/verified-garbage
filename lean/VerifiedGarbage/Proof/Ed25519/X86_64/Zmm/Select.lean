@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-public import VerifiedGarbage.Proof.Framework.X86_64.ZVecKeep
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.Framework.X86_64.ZVecKeep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The `zmm` comb: the selection

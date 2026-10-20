@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
+import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
 import VerifiedGarbage.Proof.Rsa.KeyBounds
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # `vg_rsa_check_key` on AArch64: the phases of `main`

@@ -1,26 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveWrite
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveFailure
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckEffects
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveWrite
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveFailure
 import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
-import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Functional correctness of x86-64 DSA key derivation -/
 

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
+import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
 public import VerifiedGarbage.Proof.Dsa.X86.DispatchTiming
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeOperands
 
 /-! # Caller operands before and after public shape validation -/
 

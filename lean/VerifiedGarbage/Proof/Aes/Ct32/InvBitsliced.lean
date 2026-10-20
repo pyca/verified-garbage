@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Ct32.Layers
 public import VerifiedGarbage.Proof.Aes.InvRounds
+public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 
 /-!
 # Bitsliced AES on 32-bit words: the inverse round transformations

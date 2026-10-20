@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 public import VerifiedGarbage.Proof.Curve448.AArch64.Swap
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: chains of field operations

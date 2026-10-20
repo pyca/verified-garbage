@@ -1,17 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32CT
-public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 public import VerifiedGarbage.Proof.Gcm.X86.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86.GhashCT
-public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.AesGcm.X86.CT
 public import VerifiedGarbage.Impl.AesGcm.X86
-public import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Aes.X86.Variant
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: the calls

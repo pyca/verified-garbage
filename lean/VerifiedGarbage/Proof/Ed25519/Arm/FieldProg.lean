@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
-public import VerifiedGarbage.Proof.Framework.Arm.Call
-import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Arm.Call
 public import Mathlib.Logic.Function.Basic
 public import VerifiedGarbage.Proof.X25519.Arm.Slots
 public import VerifiedGarbage.Spec.Ed25519
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Compositional field programs and the extended Edwards formulas. -/
 

@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont3
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+public import VerifiedGarbage.Proof.Rsa.Arm.RvMont
+public import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Bignum.Arm.Precompute
+import VerifiedGarbage.Proof.Bignum.Arm.Setup
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: Montgomery multiplication's working space set up
 

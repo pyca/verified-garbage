@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
+import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpackPoly
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
+meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_unpack`

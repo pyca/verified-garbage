@@ -1,13 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
+import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT6
 meta import VerifiedGarbage.Proof.Bignum.CrtFrame
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpFin
+meta import VerifiedGarbage.Proof.Rsa.X86_64.RpMont
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: constant time, the factors

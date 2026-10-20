@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.MdStream.AArch64
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: common lemmas

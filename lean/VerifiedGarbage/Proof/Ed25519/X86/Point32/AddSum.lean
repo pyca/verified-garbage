@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+meta import VerifiedGarbage.Impl.Ed25519.X86.Point32
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The summaries of `vg_ed25519_r32_point_add` and `_add_affine` (see
 `X25519/X86/Field32/CallTaint`), which keep `esi`, the callers' loop counter. The comb calls

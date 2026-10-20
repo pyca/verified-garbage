@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointStore
+import VerifiedGarbage.Proof.Dsa.AArch64.JointStore
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointAdvance
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
 /-! # Construction of all sixteen joint exponentiation table entries -/
 

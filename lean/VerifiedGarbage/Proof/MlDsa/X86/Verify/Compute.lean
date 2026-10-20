@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Samp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ML-DSA verification on x86 (32-bit): what holds while computing `w′₁`

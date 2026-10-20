@@ -1,47 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `OptimizedPairedRestTiming.lean` -/
 

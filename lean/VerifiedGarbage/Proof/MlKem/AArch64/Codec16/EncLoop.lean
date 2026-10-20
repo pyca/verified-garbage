@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
 public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncBase
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # ML-KEM encoding eight coefficients at a time -/
 

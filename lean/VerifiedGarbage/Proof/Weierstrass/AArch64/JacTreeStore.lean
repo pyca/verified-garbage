@@ -1,14 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! Store the new table multiple and advance the public loop counters. -/
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
 
 /-! # Frames for construction of the joint exponentiation table -/
 

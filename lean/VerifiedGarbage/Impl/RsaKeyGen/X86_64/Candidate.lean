@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.X86_64
-public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
 

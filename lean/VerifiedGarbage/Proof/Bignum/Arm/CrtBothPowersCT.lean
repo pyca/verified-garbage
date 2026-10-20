@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerStageCT
 
 /-! # Both private powers have identical traces for independent secret keys -/
 

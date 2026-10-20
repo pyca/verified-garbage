@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Camellia.Ctr
-public import VerifiedGarbage.Spec.Cbc.Contract
 
 /-!
 # Camellia-CBC: the contracts, on every target

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

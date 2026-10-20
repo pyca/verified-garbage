@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Call
+public import VerifiedGarbage.Proof.AesXts.X86.Unit.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES of data units on x86: the arguments of each call

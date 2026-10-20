@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
-meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Encode
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Encoding and comparison disclose only public lengths and addresses -/
 

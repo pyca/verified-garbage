@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Slots
-import VerifiedGarbage.Proof.Framework.KernelList
+import Mathlib.Util.CompileInductive
 
 /-!
 # `Slots` operations for the kernel

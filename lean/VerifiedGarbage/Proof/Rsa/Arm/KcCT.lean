@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBody
-public import VerifiedGarbage.Proof.Rsa.Arm.KcTaint
-public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
+import VerifiedGarbage.Proof.Rsa.Arm.KcTaint
+import VerifiedGarbage.Proof.Rsa.Arm.DivCT
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-! # The checks of an RSA key on ARMv7: constant time
 

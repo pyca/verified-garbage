@@ -1,19 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubCode
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTChecked
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTMain
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public_precomputed_checked_ifma`: constant time

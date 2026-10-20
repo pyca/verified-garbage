@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductControl
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductControl
+import VerifiedGarbage.Proof.Bignum.Arm.CrtHeaderCopiesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyHeaderPointer
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCopyChildPointer
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 
 /-! # Factor-product setup hides both factors while exposing only public buffer geometry -/
 

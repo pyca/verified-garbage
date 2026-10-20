@@ -1,9 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.CtrAt
-import VerifiedGarbage.Proof.AesCcm.Arm.Callee
+import VerifiedGarbage.Proof.AesCcm.Arm.CtrAt
 public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Impl.AesCcm.Arm
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on ARMv7: the tag (`tag y`)

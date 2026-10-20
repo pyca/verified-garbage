@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Frag
 
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sign.Sign
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # ML-DSA signing on x86-64: the buffers of the function

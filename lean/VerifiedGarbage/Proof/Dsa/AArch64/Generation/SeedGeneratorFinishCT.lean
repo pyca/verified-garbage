@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorPlanCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccessCT
 
 /-! # Complete generator search, phase gate, packing, and validation timing -/
 

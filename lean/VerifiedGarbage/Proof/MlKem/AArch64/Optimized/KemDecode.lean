@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemDot
+import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 
 /-! # Decode a key vector into the consumed first matrix row -/
 

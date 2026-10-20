@@ -6,6 +6,12 @@ public import VerifiedGarbage.TCB.X86.Target
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Modes.Steps
+import VerifiedGarbage.Proof.Modes.X86.Ops
 
 /-!
 # A mode on x86 (32-bit), for any core: the whole function

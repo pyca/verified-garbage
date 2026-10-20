@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 
 /-!
 # PBKDF2-HMAC-SHA-512 (RFC 8018) on x86: the iteration and the whole derivation

@@ -1,9 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTPieces
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTPieces
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTTest
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.ShapeOk
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Result
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Tests
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTPieces
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTTest
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.ShapeOk
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Result
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Tests
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time of `main`

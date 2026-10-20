@@ -4,10 +4,12 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.KeyMain
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Key expansion meets its contract, with the working space as an argument -/
 

@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.Ranges
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Reduce
-public import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Reduce
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! # Complete native p-candidate reduction, retaining the quotient -/
 

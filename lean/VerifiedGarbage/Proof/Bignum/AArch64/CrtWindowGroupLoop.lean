@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedBatch
 import VerifiedGarbage.Proof.Bignum.CrtWindowPrefix
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! One five-byte group advances the public index and the exact exponent prefix. -/
 

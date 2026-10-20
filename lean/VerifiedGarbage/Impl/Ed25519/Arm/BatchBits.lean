@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+import VerifiedGarbage.Impl.Ed25519.Arm.Word
 
 /-! Expand a sixteen-bit scalar digit into the batch buffer. Only immediate
 shifts are needed; the table and loop addresses depend on public indices. -/

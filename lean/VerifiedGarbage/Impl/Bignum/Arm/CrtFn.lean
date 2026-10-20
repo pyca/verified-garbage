@@ -3,12 +3,10 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
-public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
-public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
 

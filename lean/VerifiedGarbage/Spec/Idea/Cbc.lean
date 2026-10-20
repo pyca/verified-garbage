@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Idea.Contract
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Spec.Idea
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # IDEA-CBC: the contracts, on every target

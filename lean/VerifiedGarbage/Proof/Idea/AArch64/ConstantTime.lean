@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.Lit
-meta import VerifiedGarbage.Proof.Idea.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
+public import VerifiedGarbage.Impl.Idea.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Idea.AArch64.Lit
+meta import VerifiedGarbage.Impl.Idea.AArch64
 
 /-! # Constant-time IDEA programs on AArch64
 

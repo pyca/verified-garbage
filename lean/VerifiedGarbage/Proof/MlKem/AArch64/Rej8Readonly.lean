@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
+public import VerifiedGarbage.Proof.MlKem.Mem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Rej8

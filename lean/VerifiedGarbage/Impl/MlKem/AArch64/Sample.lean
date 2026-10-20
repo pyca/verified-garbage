@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
 # ML-KEM on AArch64: `SampleNTT`

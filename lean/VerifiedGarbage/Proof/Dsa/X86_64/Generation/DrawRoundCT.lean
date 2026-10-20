@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRoundCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeSlice
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRoundCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
 
 /-! # Timing of a complete entropy draw and shared primality round -/
 

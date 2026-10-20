@@ -1,21 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Main
-meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Main
 public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Contract
-meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Contract
-public import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Lit
-meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Main
+meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.EcKey.AArch64.BrainpoolP384r1.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # brainpoolP384r1 public keys on AArch64: `Verified`

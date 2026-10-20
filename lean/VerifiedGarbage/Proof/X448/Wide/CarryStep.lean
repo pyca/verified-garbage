@@ -2,8 +2,10 @@ module
 
 import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 public import VerifiedGarbage.Proof.X448.Wide.Memory
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
 import VerifiedGarbage.Proof.X448.Wide.CarryRegs
+import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: one wide carry step and its optional interface conversion. -/
 

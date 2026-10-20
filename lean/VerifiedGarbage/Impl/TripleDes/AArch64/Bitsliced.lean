@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
+public import VerifiedGarbage.TCB.AArch64.Isa
 meta import VerifiedGarbage.Impl.TripleDes.BitsliceLayout
-public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 
 /-!

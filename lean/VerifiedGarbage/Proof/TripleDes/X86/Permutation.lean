@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Permutation
-public import VerifiedGarbage.Proof.TripleDes.X86.Linear
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

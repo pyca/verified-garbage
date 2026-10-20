@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedImport
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedImport
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
-public import VerifiedGarbage.Proof.Bignum.FrameOutside
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.FrameOutside
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Load the packed key while retaining the call header -/
 

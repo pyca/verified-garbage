@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Negate
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sqr
 
 /-!
 # X448 of the base point on AArch64: one step of the comb

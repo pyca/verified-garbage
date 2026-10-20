@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Saved private operand imports reveal no source bytes -/
 

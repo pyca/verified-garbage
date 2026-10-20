@@ -1,16 +1,32 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
-import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aFast
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aD3
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aStep
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2wAdd
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.WordStep
 meta import VerifiedGarbage.Proof.Bignum.WordStep
 
 /-!

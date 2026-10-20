@@ -1,23 +1,31 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import Mathlib.Data.Int.ModEq
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCall
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
+meta import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: constant time

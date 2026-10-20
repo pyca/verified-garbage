@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Spec.TripleDes
-meta import VerifiedGarbage.Spec.TripleDes
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # Stack safety and constant-time checks for the eight-block pipeline

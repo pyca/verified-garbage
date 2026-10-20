@@ -1,11 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpSq
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpSq
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the squarings

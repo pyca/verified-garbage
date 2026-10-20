@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ML-KEM on x86-64: the calls of the samplers with 16-bit coefficients

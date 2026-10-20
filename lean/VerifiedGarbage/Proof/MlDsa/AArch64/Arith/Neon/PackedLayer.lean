@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedTable
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

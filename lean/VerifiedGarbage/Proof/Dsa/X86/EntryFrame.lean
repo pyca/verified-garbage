@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.Pointer
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Dsa.X86.KeyPointers
-public import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.SavedFrame
+import VerifiedGarbage.Proof.Dsa.X86.HeaderFrame
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Precise header frames for packed-key pointer installation -/
 

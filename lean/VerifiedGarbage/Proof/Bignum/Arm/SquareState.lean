@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Impl.Bignum.Arm.Square
-public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareMath
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # What holds throughout an ARMv7 Montgomery square
 

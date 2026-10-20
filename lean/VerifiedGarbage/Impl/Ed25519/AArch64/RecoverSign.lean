@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
+public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldCheck
 
 /-! Check negative zero and choose the public sign of a decoded point. -/
 

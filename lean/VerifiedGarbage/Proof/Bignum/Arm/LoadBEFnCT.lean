@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBECT
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBECT
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+public import VerifiedGarbage.Impl.Bignum.Arm.LoadBEFn
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.LoadBECT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.LoadBEFn
+meta import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Shared-array import has public pointers and lengths -/
 

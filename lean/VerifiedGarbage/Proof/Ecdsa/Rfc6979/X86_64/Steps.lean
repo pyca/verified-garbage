@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Msg
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
-import VerifiedGarbage.Proof.Mont.X86_64.Row
 
 /-!
 # Deterministic ECDSA on x86-64: the steps on `K` and `V`

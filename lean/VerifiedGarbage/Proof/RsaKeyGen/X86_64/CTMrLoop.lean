@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
 meta import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's loop

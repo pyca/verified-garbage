@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
-import VerifiedGarbage.Proof.Gcm.Split
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on whole blocks, x86-64: after the first blocks

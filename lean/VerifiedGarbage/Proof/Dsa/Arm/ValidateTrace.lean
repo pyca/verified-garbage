@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
+import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # DSA on 32-bit ARM: the checks' traces

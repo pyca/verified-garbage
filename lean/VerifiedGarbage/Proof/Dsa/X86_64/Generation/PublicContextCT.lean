@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryLayoutCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! # Equal public ABI inputs determine the same complete generation plan -/
 

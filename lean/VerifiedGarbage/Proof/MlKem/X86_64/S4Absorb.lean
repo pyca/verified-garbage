@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the round constants and the padded seeds

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Taints
 
 /-! # Maximum stack depth of optimized prefixes and matrix sampling -/
 @[expose] public section

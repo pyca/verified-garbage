@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Batch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Storing to scratch slots

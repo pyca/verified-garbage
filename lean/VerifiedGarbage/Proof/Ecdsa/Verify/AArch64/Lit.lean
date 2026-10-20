@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-!
 # ECDSA verification over P-256 on AArch64: the code as a literal

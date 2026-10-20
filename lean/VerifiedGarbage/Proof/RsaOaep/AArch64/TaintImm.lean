@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # RSAES-OAEP on AArch64: code without its immediates

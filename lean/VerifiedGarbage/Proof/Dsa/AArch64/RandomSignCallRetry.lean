@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallResult
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 import VerifiedGarbage.Proof.Framework.Omega
 

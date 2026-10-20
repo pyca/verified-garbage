@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer in a register, on the stack, wiped after use (ARMv7)

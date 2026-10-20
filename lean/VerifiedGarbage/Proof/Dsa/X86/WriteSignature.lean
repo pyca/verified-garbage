@@ -1,6 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+import VerifiedGarbage.Proof.Dsa.X86.WriteScalar
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Both signature scalar writes preserve the acceptance mask -/
 

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Idea
 
-public import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # IDEA: subkeys read with 32-bit loads

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttemptCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkTake
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ChunkCheck
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSlice
 
 /-! # Public seed and witness cursors for the complete parameter search -/
 

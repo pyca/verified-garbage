@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.PublicOperation
-public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PublicInstalled
+import VerifiedGarbage.Proof.Bignum.X86.PublicOperation
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PublicResources
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 
 /-! # Functional correctness and cdecl preservation of checked public RSA -/
 

@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryArguments
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryDerived
+import VerifiedGarbage.Proof.Framework.AArch64.StackStore
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Complete ABI argument initialization before size dispatch -/
 

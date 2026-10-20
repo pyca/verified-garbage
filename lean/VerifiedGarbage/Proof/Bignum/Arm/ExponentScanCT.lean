@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentState
-meta import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentState
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Validation scans only public exponent bytes and public lengths -/
 

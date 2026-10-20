@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
-public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 /-!
 # Short Weierstrass curves on x86-64: windows in Jacobian coordinates

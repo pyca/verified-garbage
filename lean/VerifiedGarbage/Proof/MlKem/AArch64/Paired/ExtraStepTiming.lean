@@ -1,8 +1,14 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraStep
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraBothTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon

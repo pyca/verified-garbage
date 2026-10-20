@@ -1,7 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import VerifiedGarbage.Proof.Dsa.X86.Bytes
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Dsa.X86.Bytes
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Encoding arithmetic results into persistent DSA scratch -/
 

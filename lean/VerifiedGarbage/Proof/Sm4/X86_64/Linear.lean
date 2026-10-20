@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Camellia.X86_64.Linear
-public import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+public import VerifiedGarbage.Impl.Sm4.X86_64.Layers
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The linear layers of bitsliced SM4 on x86-64, by evaluation

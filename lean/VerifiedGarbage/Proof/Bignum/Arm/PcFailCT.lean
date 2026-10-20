@@ -1,10 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcFailArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSA rejection zeroing depends only on public buffer dimensions -/
 

@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
-meta import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.Mem16
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Cbd16Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+meta import VerifiedGarbage.Proof.MlKem.Mem16
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem16_cbd2_avx2`

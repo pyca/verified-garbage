@@ -1,9 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Contract
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealSplit
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM `seal_split` on x86-64: what its precondition gives, and its entry

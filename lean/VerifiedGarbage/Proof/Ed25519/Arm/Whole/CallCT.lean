@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

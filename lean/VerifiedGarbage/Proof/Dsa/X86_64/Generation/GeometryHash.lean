@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Concrete hash-contribution buffers for each supported parameter size -/
 

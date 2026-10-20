@@ -1,19 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.MlKem1024.AArch64.Args
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Args
-import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Args
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_encaps`

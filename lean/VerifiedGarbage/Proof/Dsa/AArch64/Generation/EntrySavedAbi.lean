@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedLink
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedLink
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! The generation phases preserve the saved AAPCS64 registers. -/
 @[expose] public section

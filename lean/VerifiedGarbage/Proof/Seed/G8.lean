@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.G16
+import VerifiedGarbage.Proof.Seed.G16
 public import VerifiedGarbage.Proof.Aes.Ct32.Bitsliced
 public import VerifiedGarbage.Impl.Seed.W32
+public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Seed.G
+public import VerifiedGarbage.Proof.Seed.Sbox
 
 /-!
 # G on eight words, bitsliced in 32-bit planes

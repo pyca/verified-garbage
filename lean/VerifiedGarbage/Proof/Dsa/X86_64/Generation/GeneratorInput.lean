@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
+import Mathlib.Tactic.ToAdditive
 
 /-! # Bind the current generator candidate to the reusable exponentiation parent -/
 

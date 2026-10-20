@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 @[expose] public section
 

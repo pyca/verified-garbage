@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.EcKey
+import VerifiedGarbage.Spec.Ecdsa
 
 /-!
 # ECDSA signature verification (FIPS 186-5)

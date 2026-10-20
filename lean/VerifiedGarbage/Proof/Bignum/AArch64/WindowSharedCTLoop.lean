@@ -1,11 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtContext
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedStep
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

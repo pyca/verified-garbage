@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
 public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 
 /-!
 Recover a candidate x-coordinate from y, before checking its square and sign.

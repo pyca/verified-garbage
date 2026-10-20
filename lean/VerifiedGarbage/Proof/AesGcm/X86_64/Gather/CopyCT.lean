@@ -1,13 +1,26 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of the whole function

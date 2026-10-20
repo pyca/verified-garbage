@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.KeyStore
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.X86_64.KeyRounds
 import VerifiedGarbage.Proof.Seed.X86_64.Batch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The key schedule's computation on x86-64

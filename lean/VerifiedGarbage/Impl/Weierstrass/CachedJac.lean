@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.Slots
 
-public import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 @[expose] public section
 

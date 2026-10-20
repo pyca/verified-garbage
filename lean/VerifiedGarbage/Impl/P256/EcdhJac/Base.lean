@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.P256.EcdhSelect
+public import VerifiedGarbage.Impl.Ecdh.AArch64
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+import VerifiedGarbage.Impl.AArch64Instrs
 
 /-! Secret-scalar width-five Jacobian/co-Z ECDH.
 All scans use fixed addresses and all control flow uses public counters. -/

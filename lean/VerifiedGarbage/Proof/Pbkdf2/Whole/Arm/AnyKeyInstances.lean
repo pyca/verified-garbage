@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeyEntry
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM: the instances

@@ -2,29 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Initial
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundFunction
-public import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Store
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Tail
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Word
-public import VerifiedGarbage.Proof.TripleDes.Schedule
-public import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
 
 /-!
 # Triple DES's core for the modes on AArch64: the registers across the call

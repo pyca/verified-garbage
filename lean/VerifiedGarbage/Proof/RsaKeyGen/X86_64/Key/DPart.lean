@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.DOdd
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Halve
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+import VerifiedGarbage.Proof.Rsa.X86_64.Inv
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## DEven -/
 

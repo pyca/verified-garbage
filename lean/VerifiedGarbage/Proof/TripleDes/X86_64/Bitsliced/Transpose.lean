@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # The transposition of the state, by evaluation

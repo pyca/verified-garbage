@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedKMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Code
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The complete candidate with the callable shared Miller–Rabin round -/
 

@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Secp256k1
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Secp256k1Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
+import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 
 /-!
 # Deterministic ECDSA over secp256k1 with HMAC-SHA-256 on AArch64

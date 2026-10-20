@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: narrowing words to bytes

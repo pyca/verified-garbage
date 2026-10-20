@@ -1,8 +1,22 @@
 module
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
+public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverReleaseArgs
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeCopy
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
 
 /-! # Digest copying and zero output use only public pointers and counters -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 
 /-!
 # Field operations with one fold, on small slots

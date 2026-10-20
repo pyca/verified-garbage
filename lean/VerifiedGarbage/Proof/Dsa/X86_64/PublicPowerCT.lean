@@ -1,16 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
+import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicPower
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of public exponentiation with secret bases -/
 

@@ -1,13 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHintRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

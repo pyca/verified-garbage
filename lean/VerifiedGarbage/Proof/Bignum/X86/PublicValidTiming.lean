@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicValidSetup
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSizedTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicValidSetup
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicSizedTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # A validated public modulus fixes the width-dispatch and arithmetic traces -/
 

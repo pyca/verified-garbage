@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControlsCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowPhaseCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The narrow exponentiation hides the factor, the reduced input and the exponent -/
 

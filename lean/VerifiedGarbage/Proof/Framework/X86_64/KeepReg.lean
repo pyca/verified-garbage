@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # Registers kept through SSE registers

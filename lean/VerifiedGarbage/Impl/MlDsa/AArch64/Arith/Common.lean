@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-DSA on AArch64: arithmetic modulo `q`

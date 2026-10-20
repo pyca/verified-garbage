@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The public NAF's table: loads and stores through a pointer and an offset

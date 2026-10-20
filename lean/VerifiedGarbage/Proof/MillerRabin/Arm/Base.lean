@@ -4,7 +4,11 @@ public import VerifiedGarbage.Impl.MillerRabin.Arm.Round
 public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
-public import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # The Miller–Rabin round on ARMv7: the public parameters and the stages
 

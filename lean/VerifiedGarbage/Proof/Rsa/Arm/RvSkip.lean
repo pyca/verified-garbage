@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvProd2
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the test of `M` (`skip_vp`), and the numbers (`numbers_vp`)
 

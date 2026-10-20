@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Proof.Bignum.X86.CheckedPrimePower
+public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtFactorFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtFactorFrame
 
 /-! # Both CRT factor residues are saved while all imported components remain available -/
 

@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Argon2.FillStep
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

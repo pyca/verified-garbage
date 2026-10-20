@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
 public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
-public import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
 
 /-!
 # ML-KEM on x86-64: NTT layers with AVX2

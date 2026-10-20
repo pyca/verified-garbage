@@ -2,7 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvSt
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.Arm.RvStage
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
 
 /-! # `vg_rsa_recover_primes` on ARMv7: more steps of the candidates as pieces
 

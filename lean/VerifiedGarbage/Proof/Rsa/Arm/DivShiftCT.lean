@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Shifting the secret division registers reveals only public dimensions -/
 

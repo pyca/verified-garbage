@@ -1,7 +1,31 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 
-public import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneTag
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+public import VerifiedGarbage.Proof.Gcm.Compose
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_seal`

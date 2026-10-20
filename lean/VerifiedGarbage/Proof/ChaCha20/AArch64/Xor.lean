@@ -1,26 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

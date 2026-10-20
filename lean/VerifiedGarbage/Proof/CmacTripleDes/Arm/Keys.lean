@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # DES's key schedule on 32-bit ARM

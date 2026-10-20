@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KcBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcDiv
+import VerifiedGarbage.Proof.Rsa.X86.KcDiv
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyBits
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Initial state for i686 RSA key validation -/
 

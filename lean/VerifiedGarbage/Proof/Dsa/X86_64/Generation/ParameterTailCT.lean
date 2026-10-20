@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 
 /-! # The outer search repeats exactly when a complete seed attempt requests retry -/
 

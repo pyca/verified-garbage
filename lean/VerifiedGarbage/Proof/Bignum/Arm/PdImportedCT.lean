@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdPrepareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PdImportCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckedCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdPrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdImportCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdCheckedCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
 /-! # Importing and applying a packed public key preserves input secrecy -/
 

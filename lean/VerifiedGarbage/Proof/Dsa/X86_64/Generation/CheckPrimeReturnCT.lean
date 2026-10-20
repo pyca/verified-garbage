@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 
 /-! # Return the native primality cursor and status to the persistent frame -/
 

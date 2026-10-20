@@ -4,10 +4,9 @@ public import VerifiedGarbage.Impl.P256.EcdhDouble
 import VerifiedGarbage.Proof.P256.EcdhDouble.WeakField
 public import VerifiedGarbage.Proof.P256.EcdhDouble.MacroField
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Arithmetic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 @[expose] public section
 

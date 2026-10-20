@@ -1,8 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoopCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Timing of complete native generator selection from an input tape -/
 

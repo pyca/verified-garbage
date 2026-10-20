@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The checks of an RSA key on ARMv7: the state between the steps
 

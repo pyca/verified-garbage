@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Layout
-public import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Bignum.Layout
 
 /-!
 # Multiword arithmetic: octets, words and the RSA specification

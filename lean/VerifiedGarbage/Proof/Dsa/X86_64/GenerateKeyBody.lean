@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyFinish
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheckStep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySampled
+import VerifiedGarbage.Proof.Dsa.Derive
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's body: entry, the domain check, generation, the finish -/
 

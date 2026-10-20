@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlDsa
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
-public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 
 @[expose] public section
 

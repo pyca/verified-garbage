@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
-public import VerifiedGarbage.Proof.Mont.X86_64.Chain
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Consecutive output stores establish the next field operation's register cache. -/
 

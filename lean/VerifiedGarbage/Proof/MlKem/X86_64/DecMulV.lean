@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
-import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_decrypt_mul` and `vg_mlkem1024_decrypt_mul`, verified

@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytes
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # EMSA-PKCS1-v1_5 encoding on ARMv7: correctness

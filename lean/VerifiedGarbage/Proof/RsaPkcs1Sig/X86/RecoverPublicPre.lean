@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCallArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The precomputed public call is safe after the signature-length check -/
 

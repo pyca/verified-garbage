@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PreparePrime
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Factor preparation preserves the base and secret exponent -/
 

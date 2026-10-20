@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
-public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # An RSA key from its primes on AArch64: the pieces of `d`

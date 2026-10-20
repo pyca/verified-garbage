@@ -2,7 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLane
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! ## `PairedLowHf2` -/
 

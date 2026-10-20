@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Front
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # ECDSA verification on 32-bit ARM: `u` and `v`

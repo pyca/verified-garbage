@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
-public import VerifiedGarbage.Spec.BrainpoolP256r1
 
 /-! # brainpoolP256r1 signing on x86-64, using the general complete-addition ladder -/
 

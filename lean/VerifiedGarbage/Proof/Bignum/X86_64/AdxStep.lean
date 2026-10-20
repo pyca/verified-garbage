@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Multiword arithmetic on x86-64: the steps of the BMI2/ADX multiplication

@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContractGeometry
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignABI
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignABI
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryReady
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Shared private RSA preconditions establish the i686 wrapper inputs -/
 

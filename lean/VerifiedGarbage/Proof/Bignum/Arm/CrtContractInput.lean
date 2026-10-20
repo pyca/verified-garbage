@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFn
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Impl.Bignum.Arm.R2
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Native private-CRT arguments satisfy the shared API's buffer contract -/
 

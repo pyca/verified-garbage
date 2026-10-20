@@ -1,6 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMont4
+public import VerifiedGarbage.Proof.Rsa.Arm.RvMM
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `R mod n` and `n - R mod n` (`mont_vp`)
 

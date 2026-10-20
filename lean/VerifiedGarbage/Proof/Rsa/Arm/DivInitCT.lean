@@ -1,12 +1,31 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivInit
-public import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.Arm.Div
+meta import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Rsa.Arm.DivArgsCT
+meta import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+meta import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Division initialization uses only public lengths and pointers -/
 

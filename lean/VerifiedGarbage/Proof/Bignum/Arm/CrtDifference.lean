@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtDifference
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # Exact residue subtraction for CRT recombination -/
 

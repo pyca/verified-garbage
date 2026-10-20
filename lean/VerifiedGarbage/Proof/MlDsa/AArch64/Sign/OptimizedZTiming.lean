@@ -1,25 +1,23 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.MlDsa.ResponseZ
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Spec.MlDsa.ResponseZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

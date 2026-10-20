@@ -1,11 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumns
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Bignum.Square
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

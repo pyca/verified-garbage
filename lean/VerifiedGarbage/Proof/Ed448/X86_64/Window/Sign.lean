@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.Window
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import VerifiedGarbage.Proof.X448.X86_64.Setup
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Conditional point negation for balanced window digits. -/
 

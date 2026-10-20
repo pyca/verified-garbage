@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: key generation

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcValidCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFailCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcValidCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcFailCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Public modulus validation selects two proved timing-safe branches -/
 

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Concrete
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Scalar
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! `forward` keeps every word a block leaves in memory, for every block the
 interpreter runs: a load whose word a register already holds becomes a copy of

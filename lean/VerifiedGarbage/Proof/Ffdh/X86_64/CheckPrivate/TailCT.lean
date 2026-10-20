@@ -1,8 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.R2CT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Tail
+public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.R2CT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Tail
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Tactic.TermCongr
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH private-key validation on x86-64: the key-consistency check is constant time -/
 

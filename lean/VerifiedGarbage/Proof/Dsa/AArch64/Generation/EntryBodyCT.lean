@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DispatchCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryReady
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryReady
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DispatchCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryReady
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Initialize public frame arguments and dispatch the complete generator. -/
 @[expose] public section

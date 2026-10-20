@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Simd
 
 /-!
 # ML-KEM on AArch64: storing decompressed coefficients

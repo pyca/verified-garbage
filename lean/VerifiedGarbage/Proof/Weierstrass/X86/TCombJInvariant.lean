@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Spec.X25519
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
-public import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 @[expose] public section
 

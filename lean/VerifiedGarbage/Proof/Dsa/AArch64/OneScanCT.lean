@@ -1,15 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
 import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
-meta import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.OneScan
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Fixed-trace subgroup result checks -/
 @[expose] public section

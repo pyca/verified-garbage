@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native-word subtraction in the RSA key workspace -/
 

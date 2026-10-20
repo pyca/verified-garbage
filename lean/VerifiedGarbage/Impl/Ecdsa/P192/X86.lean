@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86
-public import VerifiedGarbage.Spec.P192
 
 /-! # ECDSA over P-192 on x86 (32-bit): three-word field elements and scalars -/
 

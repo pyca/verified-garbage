@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.Common
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: the sampling functions' SHAKE

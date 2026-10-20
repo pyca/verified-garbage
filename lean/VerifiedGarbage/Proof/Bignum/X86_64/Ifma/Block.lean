@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lane
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a step on the machine

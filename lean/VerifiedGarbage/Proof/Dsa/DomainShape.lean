@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Digest
-public import VerifiedGarbage.Proof.RsaPss.Params
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Actual modulus widths, independently of zero padding -/
 

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Ops
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # The four-lane operations with SVE2: `op_ok` for `Op.codeFor` -/
 

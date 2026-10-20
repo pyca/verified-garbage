@@ -1,10 +1,27 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Workspace-array initialization has no dependence on the stored value -/
 

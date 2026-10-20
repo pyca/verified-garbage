@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Sub
 public import VerifiedGarbage.Proof.Bignum.Arm.Mac
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact subtraction and borrow on ARMv7 -/
 

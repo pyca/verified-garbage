@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.MlDsa.DecideAt
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Call
+public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.MlDsa.DecideAt
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 
 /-!
 # ML-DSA key generation on x86-64: what holds throughout, and pieces

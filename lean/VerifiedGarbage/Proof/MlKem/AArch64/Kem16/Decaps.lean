@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
@@ -11,13 +15,14 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
+import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The 16-bit decapsulation is correct
 

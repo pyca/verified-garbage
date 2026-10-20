@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
 
 /-! Shape the final L/8 bytes of the concatenated hash contributions. -/

@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Env
-public import VerifiedGarbage.Proof.Dsa.Arm.Leaves
-public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
+import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Impl.Dsa.Arm.Entry
+public import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # DSA on 32-bit ARM: the traces of the entry, the dispatch and the exit

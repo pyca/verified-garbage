@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Group
 public import VerifiedGarbage.Proof.Camellia.X86.Keys
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Camellia ECB on x86 (32-bit): the whole function

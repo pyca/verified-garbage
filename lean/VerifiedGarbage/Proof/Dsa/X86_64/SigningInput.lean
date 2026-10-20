@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SignBody
 public import VerifiedGarbage.Proof.Dsa.X86_64.InitializedFields
 public import VerifiedGarbage.Proof.Dsa.X86_64.SourceSlices
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
+public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSign
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # External input layout for the complete DSA signing program -/
 

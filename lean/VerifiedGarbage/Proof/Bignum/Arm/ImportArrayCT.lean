@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportArray
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
+meta import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSA array import has public addresses and byte count -/
 

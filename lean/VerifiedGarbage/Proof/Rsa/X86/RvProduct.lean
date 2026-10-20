@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvProductCore
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+import VerifiedGarbage.Proof.Rsa.X86.RvProductCount
+import VerifiedGarbage.Proof.Rsa.X86.RvSetTop
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # Setting up and computing the exact exponent product -/
 

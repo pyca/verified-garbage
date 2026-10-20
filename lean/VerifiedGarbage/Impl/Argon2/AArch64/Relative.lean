@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! # Argon2's squared mapping into an eligible reference window
 

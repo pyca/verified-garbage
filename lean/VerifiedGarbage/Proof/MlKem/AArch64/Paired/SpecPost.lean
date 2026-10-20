@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Result
 
 /-! # Paired sampler outcomes stated using the existing public specification -/
 @[expose] public section

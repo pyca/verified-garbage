@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.FailureStep
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Complete public-domain rejection zeroization and termination -/
 

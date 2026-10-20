@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubStep
-public import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Packed-word subtraction: workspace and arithmetic invariant -/
 

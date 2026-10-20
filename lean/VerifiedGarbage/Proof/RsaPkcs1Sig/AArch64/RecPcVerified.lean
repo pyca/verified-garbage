@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverVerified
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCT
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: `Verified`

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.Slots
 public import VerifiedGarbage.Proof.Framework.NativeHintOps
-public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! Executable x86 taint operations, separated from their soundness proofs. -/
 

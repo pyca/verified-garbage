@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Sbox
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # One S-box of an AdvSIMD round, and the exchange of the halves

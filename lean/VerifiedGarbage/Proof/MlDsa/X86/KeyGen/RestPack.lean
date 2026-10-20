@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestBase
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA key generation on x86 (32-bit): `s₁ ‖ s₂` packed, and `ŝ₁`

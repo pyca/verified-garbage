@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Symbol preservation through lists of sequential operations -/
 

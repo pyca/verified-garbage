@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Divstep.Tc
-public import VerifiedGarbage.Proof.X25519.Field
-public import VerifiedGarbage.Proof.Ed25519.Word64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.X25519
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Group.Int.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # The inversion modulo `p` on AArch64: the numbers
 

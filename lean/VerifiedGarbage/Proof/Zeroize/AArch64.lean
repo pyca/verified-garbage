@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.AArch64
-meta import VerifiedGarbage.Impl.Zeroize.AArch64
 public import VerifiedGarbage.Proof.Zeroize.Common
-meta import VerifiedGarbage.Proof.Zeroize.Common
-public import VerifiedGarbage.Proof.Ct.AArch64
-meta import VerifiedGarbage.Proof.Ct.AArch64
 public import VerifiedGarbage.Spec.Zeroize.Contract
+import VerifiedGarbage.Proof.Ct.AArch64
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Zeroize.AArch64
+meta import VerifiedGarbage.Proof.Zeroize.Common
 meta import VerifiedGarbage.Spec.Zeroize.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ct.AArch64
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

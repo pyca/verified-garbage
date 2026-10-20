@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key, with 16-bit polynomials

@@ -1,11 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Square
+import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareState
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Bignum.Arm.Square
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Two runs of a square leak the same trace: the pieces
 

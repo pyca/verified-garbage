@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorSearch
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
 
 /-! # Native seed attempts and the complete finite parameter search -/
 

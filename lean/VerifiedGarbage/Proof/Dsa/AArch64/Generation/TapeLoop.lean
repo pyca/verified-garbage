@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 /-! # Termination of native seed and generator tape searches -/
 

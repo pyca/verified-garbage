@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
-public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 

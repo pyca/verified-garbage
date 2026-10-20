@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.TapeLoop
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Tape bookkeeping accesses only public stack addresses -/
 

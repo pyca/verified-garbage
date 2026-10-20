@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.P256.VerifyRegisters
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! Internal register and memory frames for allocated arithmetic.
 

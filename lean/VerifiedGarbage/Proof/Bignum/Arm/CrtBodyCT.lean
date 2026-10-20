@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyInput
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBody
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFailCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFailCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The private RSA body's only branch depends on the public modulus -/
 

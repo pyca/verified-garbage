@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 
-public import VerifiedGarbage.Impl.Ed448.X86_64.Window
-import VerifiedGarbage.Impl.Ed448.Wnaf
 
 /-! Public width-five recoding into byte digits in unused verification scratch. -/
 

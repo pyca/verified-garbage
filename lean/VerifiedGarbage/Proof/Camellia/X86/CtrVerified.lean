@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
+import VerifiedGarbage.Proof.Modes.X86.Ctr
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Camellia.X86.CtrLit
+public import VerifiedGarbage.Impl.Camellia.X86.Ctr
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
 meta import VerifiedGarbage.Proof.Camellia.CtrScratch
-public import VerifiedGarbage.Proof.Camellia.X86.CtrLit
+meta import VerifiedGarbage.Proof.Modes.X86.Ctr
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Camellia.X86.CtrLit
-public import VerifiedGarbage.Proof.Modes.X86.Ctr
-import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.Camellia.X86.Ctr
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 
 @[expose] public section
 

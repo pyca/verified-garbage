@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TapeLoop
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeState
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ChunkTake
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Complete native tape iteration, including exhaustion and retry -/
 

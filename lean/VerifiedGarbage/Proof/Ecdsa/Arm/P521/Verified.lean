@@ -1,19 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
-public import VerifiedGarbage.Proof.P521.Point
-meta import VerifiedGarbage.Proof.P521.Point
+import VerifiedGarbage.Proof.P521.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+public import VerifiedGarbage.Impl.Ecdsa.P521.Arm
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Contract
+meta import VerifiedGarbage.Proof.P521.Point
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.Law
+meta import VerifiedGarbage.Spec.Ecdsa.P521
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.P521.Arm
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDSA over P-521 on 32-bit ARM: `Verified`

@@ -1,7 +1,7 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedule
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

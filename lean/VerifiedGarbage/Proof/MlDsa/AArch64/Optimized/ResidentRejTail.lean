@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
 
 /-! ## From `ResidentRejTailFrame.lean` -/
 

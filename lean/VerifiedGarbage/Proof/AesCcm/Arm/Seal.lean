@@ -3,6 +3,13 @@ module
 public import VerifiedGarbage.Proof.AesCcm.Arm.Args
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesCcm.Arm.Mac
+import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on ARMv7: `vg_aes_ccm_seal`

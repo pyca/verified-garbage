@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Idea.Key
+public import VerifiedGarbage.Spec.Idea
 
-public import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # IDEA: word arithmetic the implementations share

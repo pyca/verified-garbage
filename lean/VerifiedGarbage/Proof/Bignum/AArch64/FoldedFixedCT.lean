@@ -1,12 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFixed
-meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedFixed
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import Mathlib.Tactic.Push
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.FoldedPublic

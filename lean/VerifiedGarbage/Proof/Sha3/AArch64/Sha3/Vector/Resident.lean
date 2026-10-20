@@ -1,25 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentMath
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBoundary
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 

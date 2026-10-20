@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayArgs
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayArgs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Prepare public native pointers for modular subtraction -/
 

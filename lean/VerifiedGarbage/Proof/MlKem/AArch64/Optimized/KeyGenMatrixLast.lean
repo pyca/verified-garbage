@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The odd final matrix entry in key generation -/
 @[expose] public section

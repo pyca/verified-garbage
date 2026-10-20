@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTail
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
 
 /-! The round completion policy retains the prepared modulus for retries. -/
 @[expose] public section

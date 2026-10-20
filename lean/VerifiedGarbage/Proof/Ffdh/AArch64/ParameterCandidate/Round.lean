@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
-public import VerifiedGarbage.Proof.Ffdh.MillerRabin
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Ffdh.MillerRabin
 
 /-!
 # An FFDH parameter candidate on AArch64: a round

@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Reuse the shared preservation contract between RSA arithmetic operations -/
 

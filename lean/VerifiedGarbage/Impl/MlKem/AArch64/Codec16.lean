@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-! # Eight ML-KEM coefficients encoded or decoded per iteration -/
 

@@ -1,7 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInputs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInputs
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # The public ABI establishes the complete native generator entry invariant -/
 

@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 public import VerifiedGarbage.Proof.RsaOaep.Encode
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+import VerifiedGarbage.Proof.RsaOaep.X86_64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+import VerifiedGarbage.Proof.RsaOaep.Decode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!

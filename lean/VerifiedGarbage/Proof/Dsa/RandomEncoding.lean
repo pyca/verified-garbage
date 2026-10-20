@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.Random
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-public import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import Std.Data.DTreeMap.Internal.Operations
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Connect the existing byte scan to the sampler's mathematical draw width. -/
 @[expose] public section

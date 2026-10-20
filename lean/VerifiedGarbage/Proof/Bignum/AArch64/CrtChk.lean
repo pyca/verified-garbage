@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtP
 public import VerifiedGarbage.Proof.Bignum.CrtKey
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtFix
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # RSA with the CRT on AArch64: the checks

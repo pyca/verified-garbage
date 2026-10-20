@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH exchange on x86-64: the arithmetic stages -/
 

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.HashCalls
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecFns
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecD
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: `DH = SHA256(D)`

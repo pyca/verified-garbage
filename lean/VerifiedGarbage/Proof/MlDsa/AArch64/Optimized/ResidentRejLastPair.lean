@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Call
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFive
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentRejPair.lean` -/
 

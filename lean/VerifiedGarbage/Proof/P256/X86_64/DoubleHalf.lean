@@ -4,10 +4,6 @@ public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalf
 public import VerifiedGarbage.Proof.P256.X86_64.HalfField
 public import VerifiedGarbage.Proof.Weierstrass.Jac
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! The in-place halving schedule computes the usual Jacobian double. -/
 

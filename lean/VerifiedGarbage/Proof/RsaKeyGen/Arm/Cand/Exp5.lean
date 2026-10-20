@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp4
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Loads
 
 /-! # A candidate on ARMv7: `sigMasks` and `powWord` as a piece (`St.psigPow`) -/
 

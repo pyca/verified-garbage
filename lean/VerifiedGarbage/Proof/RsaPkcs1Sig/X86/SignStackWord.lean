@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Copying cdecl arguments into the local outgoing call area -/
 

@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Add
-public import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
-public import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.X86_64.AddCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Add
+import VerifiedGarbage.Proof.Dsa.X86_64.Multiply
+import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
+import VerifiedGarbage.Proof.Dsa.X86_64.Power
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Retaining public result bindings across arithmetic calls -/
 

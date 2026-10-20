@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchStatus
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # The p search advances exactly one counter and one hash stride -/
 

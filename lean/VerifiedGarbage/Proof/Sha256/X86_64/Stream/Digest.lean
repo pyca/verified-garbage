@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 import VerifiedGarbage.Proof.Sha256.Digest
-meta import VerifiedGarbage.Proof.Sha256.Digest
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha256.Digest
 meta import VerifiedGarbage.Proof.MdStream.Prefix
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-224 on x86-64: `finalize224`

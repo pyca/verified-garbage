@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetupCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetupCT
 import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetupCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceLoopCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInit
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceSetup
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of complete DSA streaming reduction, including empty inputs -/
 

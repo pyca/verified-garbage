@@ -2,9 +2,18 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-! Complete scalar reduction, including preservation of the AAPCS64 ABI. -/
 

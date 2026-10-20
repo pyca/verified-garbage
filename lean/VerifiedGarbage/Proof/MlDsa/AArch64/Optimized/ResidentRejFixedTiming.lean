@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejTwo
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejFour
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 @[expose] public section

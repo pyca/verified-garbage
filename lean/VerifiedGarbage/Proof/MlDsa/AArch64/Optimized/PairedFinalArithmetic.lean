@@ -1,12 +1,18 @@
 module
 
-public import Mathlib.Data.Fintype.Fin
-public import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedScaleBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
+import Mathlib.Tactic.FinCases
+import Mathlib.Data.Fintype.Basic
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `PairedScaleRun.lean` -/
 

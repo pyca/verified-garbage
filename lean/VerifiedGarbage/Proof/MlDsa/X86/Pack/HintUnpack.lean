@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
-meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 public import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 meta import VerifiedGarbage.Impl.MlDsa.X86.Pack.Hint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the setup

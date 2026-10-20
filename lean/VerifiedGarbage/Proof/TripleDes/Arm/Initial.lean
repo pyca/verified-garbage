@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.Arm.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Core
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.Arm.Permutation
+import VerifiedGarbage.Proof.TripleDes.Core
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

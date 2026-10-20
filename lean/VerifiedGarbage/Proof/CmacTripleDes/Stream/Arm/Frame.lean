@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Implies
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on ARMv7, with its working space on the stack

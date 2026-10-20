@@ -2,10 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareCrossCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Square
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
+import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareCrossCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
+meta import VerifiedGarbage.Proof.Bignum.Arm.ShiftLeftCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.Row
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The square's doubling, squares of words and reduction leak only the width -/
 

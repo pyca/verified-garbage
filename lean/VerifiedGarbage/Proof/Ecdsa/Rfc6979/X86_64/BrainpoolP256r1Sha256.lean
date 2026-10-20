@@ -1,16 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # Deterministic ECDSA over brainpoolP256r1 with HMAC-SHA-256 on x86-64

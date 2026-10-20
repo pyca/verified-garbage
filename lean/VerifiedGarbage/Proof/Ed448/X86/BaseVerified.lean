@@ -1,6 +1,13 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import VerifiedGarbage.Proof.Framework.X86.Inline
 
-public import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): `Verified`

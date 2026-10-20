@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.GenerateKey
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Key generation's straight-line pieces: only the stack pointer is public in them -/
 

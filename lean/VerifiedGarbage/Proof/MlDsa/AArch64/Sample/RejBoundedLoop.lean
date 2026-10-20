@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_rej_bounded_poly`

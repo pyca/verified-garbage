@@ -1,13 +1,20 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+import VerifiedGarbage.Impl.Sha3.AArch64
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: where everything is

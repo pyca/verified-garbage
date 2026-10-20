@@ -1,13 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.BranchCT
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Correct
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Start
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Correct
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.BranchCT
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Start
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Correct
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # The key search's timing depends on its public descriptor and statuses (AArch64) -/
 

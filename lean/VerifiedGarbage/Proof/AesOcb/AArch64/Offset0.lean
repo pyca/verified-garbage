@@ -1,8 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceBlock
 public import VerifiedGarbage.Proof.Ocb.Stretch
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Spec.Gcm
+public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ocb.Bytes
 
 /-!

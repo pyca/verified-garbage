@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.X448.AArch64.Tail
-import VerifiedGarbage.Proof.X448.Wide.TailBounds
-public import VerifiedGarbage.Proof.X448.Wide.UnpackRegs
 public import VerifiedGarbage.Proof.X448.Wide.Word
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: a one-word carry step after wide reduction. -/
 

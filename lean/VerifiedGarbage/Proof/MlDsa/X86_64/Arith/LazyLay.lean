@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

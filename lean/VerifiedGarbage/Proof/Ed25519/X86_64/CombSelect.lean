@@ -1,24 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
-public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-public import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Proof.X25519.X86_64.Bits
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The comb's constant-time selection, from the tables in the static

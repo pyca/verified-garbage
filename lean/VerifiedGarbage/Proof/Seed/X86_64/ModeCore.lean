@@ -2,13 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
-public import VerifiedGarbage.Proof.Modes.X86_64.Words
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
-public import VerifiedGarbage.Proof.Seed.X86_64.Lit
 public import VerifiedGarbage.Impl.Seed.X86_64.Modes
-public import VerifiedGarbage.Spec.Seed.Cbc
 public import VerifiedGarbage.Proof.Seed.ModeBytes
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # SEED's core for the modes on x86-64

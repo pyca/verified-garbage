@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCore
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCore
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

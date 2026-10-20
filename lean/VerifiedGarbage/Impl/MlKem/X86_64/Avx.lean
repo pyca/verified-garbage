@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 
 /-!
 # ML-KEM on x86-64: SSE2 code as AVX2 code

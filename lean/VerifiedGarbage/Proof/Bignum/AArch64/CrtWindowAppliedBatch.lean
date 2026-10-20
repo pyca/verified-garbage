@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadGroup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroup
 import Mathlib.Data.Int.ModEq
 
 /-! A complete five-byte group contributes exactly its 40 exponent bits. -/

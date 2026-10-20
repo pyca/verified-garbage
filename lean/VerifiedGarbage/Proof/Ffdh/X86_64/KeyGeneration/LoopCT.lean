@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Branch
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LeafCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Branch
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LeafCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # The key search's loop leaks its public points alone -/
 

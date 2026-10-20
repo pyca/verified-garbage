@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquareTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # One candidate has a value-independent trace -/
 

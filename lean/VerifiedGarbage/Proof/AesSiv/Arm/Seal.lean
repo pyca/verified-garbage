@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Start
+import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
+import VerifiedGarbage.Proof.AesSiv.Arm.FinishLong
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_encrypt`

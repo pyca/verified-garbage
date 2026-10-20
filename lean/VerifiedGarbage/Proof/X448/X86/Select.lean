@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Swap
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): selecting the canonical representative

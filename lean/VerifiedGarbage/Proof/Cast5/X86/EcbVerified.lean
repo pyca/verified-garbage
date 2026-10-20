@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Ecb
-meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
 public import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.X86.Ecb
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Spec.Cast5.Contract
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # CAST5 ECB on 32-bit x86: verified against the shared contracts

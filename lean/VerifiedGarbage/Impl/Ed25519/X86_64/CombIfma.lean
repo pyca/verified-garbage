@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-!
 # Ed25519: base-point multiplication with a comb, with AVX512_IFMA

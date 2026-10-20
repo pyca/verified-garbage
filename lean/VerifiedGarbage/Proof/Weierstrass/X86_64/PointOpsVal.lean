@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsWrap
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 public import VerifiedGarbage.Proof.Weierstrass.JacMul
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.PointOps
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Ecdsa.X86_64
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 
 /-!
 # Point operations as functions on x86-64: what their bodies compute

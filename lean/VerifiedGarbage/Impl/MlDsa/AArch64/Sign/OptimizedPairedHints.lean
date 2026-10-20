@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHints
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedHintFinish
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
 
 @[expose] public section
 

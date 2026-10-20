@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchFinishCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoop
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchStart
 
 /-! # Complete native parameter generation has the specified public-tape leakage -/
 

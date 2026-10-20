@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 @[expose] public section

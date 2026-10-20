@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+import VerifiedGarbage.Proof.AesCcm.AArch64.Blocks
+import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-CCM on AArch64: the MAC encrypted (`tag y`)

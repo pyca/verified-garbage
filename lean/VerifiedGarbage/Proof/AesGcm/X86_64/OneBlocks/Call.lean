@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
 
 /-!
 # AES-GCM on x86-64: calling `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`

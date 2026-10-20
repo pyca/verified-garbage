@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! The aligned reduction and general fallback share the same arithmetic result. -/
 

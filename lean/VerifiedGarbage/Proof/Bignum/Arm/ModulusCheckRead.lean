@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Read the leading byte and parity byte of an RSA modulus -/
 

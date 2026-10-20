@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedSubgroupResultCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
 
 /-! # Status inspection preserves the seed phase inputs -/
 

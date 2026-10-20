@@ -1,13 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+public import VerifiedGarbage.Impl.AesXts.X86_64Unit
+public import VerifiedGarbage.Proof.AesXts.Unit
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
 import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Contract
 
 /-!
 # XTS-AES of data units on x86-64: the code between the calls

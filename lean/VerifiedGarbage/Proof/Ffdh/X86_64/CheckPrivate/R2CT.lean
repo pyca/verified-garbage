@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH private-key validation on x86-64: public precomputation -/
 

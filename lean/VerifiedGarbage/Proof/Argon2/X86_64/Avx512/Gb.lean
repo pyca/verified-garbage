@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
 public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx512
+public import VerifiedGarbage.Proof.Argon2.PermuteRows
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Argon2 on x86-64 with AVX-512: P on both halves of four registers

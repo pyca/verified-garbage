@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Impl.Mont.Arm.Context
 public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Mont.Arm.Context
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: constant time

@@ -1,15 +1,36 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetupCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.Generation.Layout
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.ProbablePrime
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
+meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetupCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetupCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeLoopCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeLoopCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Timing of the complete native probable-prime operation. -/
 @[expose] public section

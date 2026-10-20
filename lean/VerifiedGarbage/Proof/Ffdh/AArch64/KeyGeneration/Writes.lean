@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Data
+public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
 
 /-! # The key-generation controller's writes of its own words (AArch64)
 

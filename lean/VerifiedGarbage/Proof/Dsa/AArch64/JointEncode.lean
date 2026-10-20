@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointAdvance
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Encoding the two bases of joint DSA exponentiation -/

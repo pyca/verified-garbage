@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareMasks
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareCount
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvSquareMasks
+import VerifiedGarbage.Proof.Rsa.X86.RvSquareCount
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # A masked squaring step of prime recovery -/
 

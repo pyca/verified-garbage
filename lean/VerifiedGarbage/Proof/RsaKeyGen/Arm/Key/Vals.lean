@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Inv
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
-public import VerifiedGarbage.Proof.Rsa.Arm.RvProd
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.KeyInv
+import VerifiedGarbage.Proof.Rsa.Arm.RvProd
 
 /-! # An RSA key on ARMv7: the numbers the body computes
 

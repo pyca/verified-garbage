@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 meta import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # PBKDF2-HMAC-SHA-256 on x86 (32-bit), the whole derivation, for every backend

@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.ShiftRight
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A runtime-length in-place one-bit right shift
 

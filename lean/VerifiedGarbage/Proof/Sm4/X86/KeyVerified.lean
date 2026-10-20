@@ -1,11 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.KeyEk
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Sm4.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 meta import VerifiedGarbage.Proof.Sm4.X86.KeyEk
-public import VerifiedGarbage.Proof.Sm4.X86.Verified
-meta import VerifiedGarbage.Proof.Sm4.X86.Verified
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # The SM4 key schedule on x86 (32-bit) meets its contracts

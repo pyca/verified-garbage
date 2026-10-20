@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
-public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA: fields of a little-endian word, and subtraction modulo `q`

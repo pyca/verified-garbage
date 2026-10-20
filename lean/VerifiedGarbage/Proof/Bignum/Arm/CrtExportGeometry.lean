@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.ByteWords
 
 /-! # Export the wide reconstruction using the original output buffer and acceptance bit -/
 

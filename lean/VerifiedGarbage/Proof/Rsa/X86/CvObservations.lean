@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
 
 /-! # The shared CRT contract exposes call geometry and modulus bytes -/
 

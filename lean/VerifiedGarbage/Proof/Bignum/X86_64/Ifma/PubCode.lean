@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
+public import VerifiedGarbage.Proof.Bignum.Amm52
+public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCode
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedChecked
 
 /-! # `vg_rsa_public_precomputed_checked_ifma`: correctness -/
 

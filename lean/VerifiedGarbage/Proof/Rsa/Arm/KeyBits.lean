@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.KeyBits32
+import VerifiedGarbage.Proof.Rsa.KeyBits32
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
-public import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
+import VerifiedGarbage.Proof.Rsa.Arm.ShiftRight
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The operations on the arrays of the working space: halving, low bits and slots -/
 

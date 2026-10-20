@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.VRest
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.PrfUsing
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Noise
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.URow
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # The 16-bit encryption
 

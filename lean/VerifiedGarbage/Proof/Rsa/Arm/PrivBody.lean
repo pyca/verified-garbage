@@ -1,6 +1,13 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheck
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheck
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckFrame
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
 
 /-! # The complete private-operation body satisfies the shared RSA outcome -/
 

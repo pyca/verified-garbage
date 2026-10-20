@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Mont.Arm
+public import VerifiedGarbage.Proof.Mont.Arm.Words
 
-public import VerifiedGarbage.Proof.Mont.Arm.Row
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Mont.Arm.Row
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: the loop of the multiplication

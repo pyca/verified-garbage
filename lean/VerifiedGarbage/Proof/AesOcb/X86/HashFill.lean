@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Ocb.Spec
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Nonce
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import VerifiedGarbage.Proof.AesOcb.X86.Blk
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-OCB on x86: filling the buffer of `HASH` (`hashFill`)

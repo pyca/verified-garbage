@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Initialize all CRT arrays, including their division carry words -/
 

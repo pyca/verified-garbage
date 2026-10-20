@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryState
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! The public ABI establishes every input invariant of the native search. -/
 @[expose] public section

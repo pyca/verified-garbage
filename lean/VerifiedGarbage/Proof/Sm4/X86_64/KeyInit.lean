@@ -1,6 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.X86_64.Round
 
-public import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
+import VerifiedGarbage.Proof.Sm4.X86_64.Group
+import VerifiedGarbage.Proof.Sm4.X86_64.Keys
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+import VerifiedGarbage.Proof.Sm4.Layout
 import VerifiedGarbage.Proof.Sm4.Planes
 
 /-!

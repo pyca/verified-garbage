@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
 # Shared pieces for RSA key checking on x86-64

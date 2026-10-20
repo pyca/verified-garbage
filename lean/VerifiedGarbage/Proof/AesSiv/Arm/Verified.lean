@@ -5,7 +5,12 @@ import VerifiedGarbage.Proof.AesSiv.Arm.CTInit
 public import VerifiedGarbage.Proof.AesSiv.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.AesSiv.Arm.Open
+import VerifiedGarbage.Proof.AesSiv.Arm.Seal
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on ARMv7: `Verified`

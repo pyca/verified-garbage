@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Store
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # One continued rejection stream and its checkpoint -/
 

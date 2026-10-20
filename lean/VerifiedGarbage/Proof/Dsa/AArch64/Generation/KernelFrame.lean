@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The callable round retains every constant needed for the next witness. -/

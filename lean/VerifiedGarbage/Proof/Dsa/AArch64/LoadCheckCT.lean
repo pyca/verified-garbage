@@ -1,19 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RangeMask
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Load
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Loading a checked operand and returning its secret mask -/
 

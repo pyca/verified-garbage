@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigest
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Encode
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Address the recovered digest and load its public encoding parameters -/
 

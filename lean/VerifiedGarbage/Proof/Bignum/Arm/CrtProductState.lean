@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtProduct
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProduct
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Inputs for exact CRT factor-product validation -/
 

@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.OneShot
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShot
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # One-shot Merkle–Damgård digests on x86-64: constant time

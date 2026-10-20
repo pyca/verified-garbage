@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 
-public import VerifiedGarbage.Proof.MlKem.Arm.RowSum
-meta import VerifiedGarbage.Proof.MlKem.Arm.RowSum
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashTop
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-768 on 32-bit ARM: the hash routine in constant time

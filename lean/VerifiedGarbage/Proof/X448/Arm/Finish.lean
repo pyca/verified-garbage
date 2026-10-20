@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Env
+public import VerifiedGarbage.Proof.X448.Arm.Save
+public import VerifiedGarbage.Spec.X448.Contract
 
 import VerifiedGarbage.Proof.X448.Arm.Restore
-public import VerifiedGarbage.Proof.X448.Arm.Setup
 import VerifiedGarbage.Proof.X448.Arm.Output
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.X448.Arm.Call
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: the result and restored registers

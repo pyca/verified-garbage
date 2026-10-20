@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Streaming Merkle–Damgård hash functions: prefixes of the digest

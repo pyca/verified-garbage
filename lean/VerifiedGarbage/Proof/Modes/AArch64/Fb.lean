@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Proof.Modes.AArch64.Setup
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # OFB and CFB on AArch64, for any core: the whole function

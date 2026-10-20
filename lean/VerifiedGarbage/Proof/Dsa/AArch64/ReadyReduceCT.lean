@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallReduceCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
 
 /-! # Streaming reduction timing in the persistent workspace -/
 

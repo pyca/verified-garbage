@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
 /-! Public lookup of the cached Z² and Z³ belonging to an odd multiple. -/
 

@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.CallFacts
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
+public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.ControlMemory
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The attempt's arguments (AArch64) -/
 

@@ -1,13 +1,14 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
-import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the vector sampling

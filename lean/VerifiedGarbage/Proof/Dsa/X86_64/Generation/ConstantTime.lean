@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Spec.Dsa.Generate
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInnerCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInnerCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 
 /-! # The complete parameter-generation ABI satisfies its declared public leak -/
 

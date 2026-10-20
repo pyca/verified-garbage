@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Determine the segment's address mode from public variant, pass and slice.
 The mask in `x6` is one for independent addressing and zero otherwise.

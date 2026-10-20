@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
-public import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The CRT workspace fits the existing shared RSA scratch contract -/
 

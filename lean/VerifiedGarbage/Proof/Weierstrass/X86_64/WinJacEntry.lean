@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Window5
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacDbls
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The Jacobian window method on x86-64: the entry of a digit

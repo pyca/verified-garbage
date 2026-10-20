@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Divides
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Divides
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Range
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
 
 /-! # FFDH domain validation on x86-64: the optional subgroup order -/
 

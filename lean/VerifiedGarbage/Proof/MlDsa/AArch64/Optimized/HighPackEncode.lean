@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
+public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackDigits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

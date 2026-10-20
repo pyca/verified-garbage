@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Zeroing the padded nonce, with an exact memory frame. -/
 @[expose] public section

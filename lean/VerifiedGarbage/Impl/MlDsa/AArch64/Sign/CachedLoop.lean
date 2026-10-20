@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedInitialization
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedOutput
 
 @[expose] public section
 

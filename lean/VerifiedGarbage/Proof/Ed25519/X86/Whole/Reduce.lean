@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 @[expose] public section
 

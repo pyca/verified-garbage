@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Sign
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: where everything is

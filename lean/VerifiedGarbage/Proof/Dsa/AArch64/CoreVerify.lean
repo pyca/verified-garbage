@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Modulus
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyJoint
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyJoint
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Correctness of the complete DSA verification core -/
 

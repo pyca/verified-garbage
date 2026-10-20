@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskSetup
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskSetup
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvStore
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Mask
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH on x86-64: the complete masked scalar store -/
 

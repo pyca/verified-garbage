@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
 public import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # A rate-136 sponge of a message, one block before each `x3` call

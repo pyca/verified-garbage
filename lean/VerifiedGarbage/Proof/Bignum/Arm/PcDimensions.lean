@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # The shared RSA scratch requirement fits the ARMv7 workspace -/
 

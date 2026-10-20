@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficient
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtDifferenceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverseCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtDifferenceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtTimesInverseCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Complete CRT coefficient computation hides all private data -/
 

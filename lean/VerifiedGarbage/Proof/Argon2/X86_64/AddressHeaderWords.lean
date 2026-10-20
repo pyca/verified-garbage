@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.AddressHeader
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.BlockStore`. -/
 

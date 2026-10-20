@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
 public import VerifiedGarbage.Proof.Rsa.KeyCheckMath
+public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
+import VerifiedGarbage.Proof.Rsa.Arm.KcOps
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
 
 /-! # The checks of an RSA key on ARMv7: the checks after the division of `n` by `p`
 

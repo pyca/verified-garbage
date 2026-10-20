@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 
 @[expose] public section
 

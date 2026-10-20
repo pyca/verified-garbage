@@ -1,11 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.RoundTail
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTail
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTail
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.RoundTail
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrRound
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The primality completion policy branches only on the public round result -/
 

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.X86.CopyArray
+public import VerifiedGarbage.Impl.Bignum.X86.CopyArray
+import VerifiedGarbage.Proof.Bignum.X86.CopyArray
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Slot-local transfers preserve every disjoint CRT component -/
 

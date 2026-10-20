@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 public import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.Sha512.Arm.Word64
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_sample_ntt`, correctness

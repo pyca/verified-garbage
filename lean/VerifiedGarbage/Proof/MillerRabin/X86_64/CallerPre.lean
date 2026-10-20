@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
-import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # The caller provides the shared round's workspace and stack -/
 

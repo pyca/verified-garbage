@@ -1,12 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
-meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
-meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
-public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES on whole blocks with the Armv8 Cryptographic Extension

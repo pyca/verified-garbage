@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Bytes
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen32
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+import VerifiedGarbage.Proof.Weierstrass.BytesLen32
+import VerifiedGarbage.Proof.Weierstrass.Words
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # DSA on 32-bit ARM: big-endian components

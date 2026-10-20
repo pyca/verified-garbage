@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
-meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizes
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.WidthChoiceCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CTBlocks
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizes
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScanField
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of both public width scans and size selection -/
 

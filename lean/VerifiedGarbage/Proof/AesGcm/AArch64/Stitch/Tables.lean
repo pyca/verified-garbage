@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tbl
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
+import VerifiedGarbage.Proof.AesGcm.AArch64.OneEntry
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64, interleaved: the code that writes the table of keys

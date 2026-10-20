@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
-public import VerifiedGarbage.Proof.Rsa.X86.RvFailure
+import VerifiedGarbage.Proof.Rsa.X86.RvFailure
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Recovery and refusal for a selected public modulus width -/
 

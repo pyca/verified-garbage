@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Bank
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

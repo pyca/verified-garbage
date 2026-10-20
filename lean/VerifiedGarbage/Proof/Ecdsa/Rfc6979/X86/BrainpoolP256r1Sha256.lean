@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.BrainpoolP256r1Sha256
-import VerifiedGarbage.Proof.X25519.X86.Column
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 

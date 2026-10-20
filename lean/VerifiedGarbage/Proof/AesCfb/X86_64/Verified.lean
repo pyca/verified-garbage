@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Impl.AesCfb.X86_64
+public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Call
+public import VerifiedGarbage.Proof.AesCfb.Spec
+public import VerifiedGarbage.Spec.Cfb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
-public import VerifiedGarbage.Proof.AesCfb.X86_64.Body
+import VerifiedGarbage.Proof.AesCfb.X86_64.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-!
 # AES-CFB128 on x86-64: `Verified`

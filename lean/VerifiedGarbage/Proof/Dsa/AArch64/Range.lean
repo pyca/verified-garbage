@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
+import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
 import VerifiedGarbage.Proof.Dsa.AArch64.LoadRange
-import VerifiedGarbage.Proof.Dsa.AArch64.MaskContext
-import VerifiedGarbage.Proof.Dsa.AArch64.CallHeader
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # DSA range validation through the parent calling convention -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallGeometry
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallGeometry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Establish the supplied-nonce contract at the wrapper's call boundary. -/
 @[expose] public section

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 
 /-!
 # ML-KEM on x86-64: the polynomial primitives, inline

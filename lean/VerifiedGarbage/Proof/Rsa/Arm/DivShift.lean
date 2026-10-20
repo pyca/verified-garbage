@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
+import VerifiedGarbage.Proof.Rsa.Arm.DivShiftArray
+import VerifiedGarbage.Proof.Rsa.Arm.DivArgs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Shift the quotient's high bit into the extended remainder -/
 

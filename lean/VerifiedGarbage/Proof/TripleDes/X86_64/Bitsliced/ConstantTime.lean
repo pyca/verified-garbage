@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.Bitsliced
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
 
 /-!
 # Constant time

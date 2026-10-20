@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 public import VerifiedGarbage.Impl.P256.VerifySparse
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

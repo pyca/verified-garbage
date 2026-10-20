@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.SampleLoop
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
-import VerifiedGarbage.Proof.MlKem.KPke
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on AArch64: `SampleNTT` up to its loop

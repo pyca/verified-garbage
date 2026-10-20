@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
 public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Reading stage outputs and retaining other persistent intermediates -/
 

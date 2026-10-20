@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
-meta import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.X86.Unit.Dec
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES of data units on x86: constant time

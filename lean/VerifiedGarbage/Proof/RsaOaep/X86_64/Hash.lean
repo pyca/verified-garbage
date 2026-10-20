@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP on x86-64: calling the streaming hash functions

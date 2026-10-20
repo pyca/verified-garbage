@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombZmm
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 
 /-! X25519(k, 9) with Ed25519's fixed-base comb and the map (Z + Y)/(Z - Y).
 The expanded scalar is clamped as in RFC 7748 before the comb reads it. -/

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86.Isa
 
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

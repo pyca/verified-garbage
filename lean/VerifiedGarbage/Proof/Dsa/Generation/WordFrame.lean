@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Words
+meta import Lean.Elab.Tactic.Omega.Frontend
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Unchanged frame words imply unchanged frame bytes -/
 

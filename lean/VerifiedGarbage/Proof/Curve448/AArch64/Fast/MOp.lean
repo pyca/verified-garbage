@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Word
 public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-!
 # Product accumulation, for any list of steps

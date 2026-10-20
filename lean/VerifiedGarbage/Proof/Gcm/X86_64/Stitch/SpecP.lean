@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 public import VerifiedGarbage.Spec.Gcm.Precomputed
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved loops with the powers of the hash subkey in the key context

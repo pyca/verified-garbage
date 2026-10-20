@@ -2,7 +2,6 @@ module
 
 import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!

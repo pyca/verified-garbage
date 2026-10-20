@@ -3,11 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
 import VerifiedGarbage.Proof.MlDsa.Round.Ones
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintNorm
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLoop
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResponseHintOnes.lean` -/
 

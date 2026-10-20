@@ -1,17 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.SpecConv
-public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
+meta import VerifiedGarbage.TCB.Arm.Target
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified

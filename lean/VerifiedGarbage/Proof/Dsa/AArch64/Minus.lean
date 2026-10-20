@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
+import VerifiedGarbage.Proof.Dsa.AArch64.MinusCore
 public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusHead
+public import VerifiedGarbage.Proof.Dsa.AArch64.MinusStep
 
 /-! # Modulus-minus constants in a linked DSA workspace -/
 

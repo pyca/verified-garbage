@@ -1,6 +1,9 @@
 module
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.ExponentWords
 
-public import VerifiedGarbage.Proof.Bignum.ExponentWords
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm

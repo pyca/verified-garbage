@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawRange
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawCopy
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Isolate the draw prefix before the acceptance branch. -/
 @[expose] public section

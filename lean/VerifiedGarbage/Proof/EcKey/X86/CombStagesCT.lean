@@ -1,19 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.EcKey.X86.CombMain
-meta import VerifiedGarbage.Proof.EcKey.X86.CombMain
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.EcKey.X86.Main
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.List.Forall2
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+meta import VerifiedGarbage.Proof.EcKey.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Data.List.Forall2
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-! # Constant-time public-key stages around the comb -/
 

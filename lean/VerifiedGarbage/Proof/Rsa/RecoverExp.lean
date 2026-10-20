@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # Recovering the prime factors: exponentiation in Montgomery form, and masks

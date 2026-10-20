@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Contract
 public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+import VerifiedGarbage.Proof.Bignum.X86_64.Template
 
 /-! # The key search's instructions and the stack it uses -/
 

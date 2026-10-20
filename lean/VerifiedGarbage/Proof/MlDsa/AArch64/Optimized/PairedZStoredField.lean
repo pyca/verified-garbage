@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
+public import VerifiedGarbage.Spec.MlDsa.PairedResponse
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckOutput
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCoordinates
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRawField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemoryCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 
 /-! ## From `PairedZUnused.lean` -/
 

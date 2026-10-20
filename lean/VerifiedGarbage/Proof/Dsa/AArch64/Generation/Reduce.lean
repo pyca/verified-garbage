@@ -1,9 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subtract
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
-public import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Subtract
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Increment
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Native remainder subtraction and increment implement p reduction -/
 

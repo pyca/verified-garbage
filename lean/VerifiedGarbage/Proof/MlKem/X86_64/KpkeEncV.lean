@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
+import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDecV
-public import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Mul16V
-import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-meta import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_kpke_encrypt`, verified

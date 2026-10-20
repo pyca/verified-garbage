@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTrial
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Reuse RSA's trial-division timing proof with the smaller DSA workspace. -/
 @[expose] public section

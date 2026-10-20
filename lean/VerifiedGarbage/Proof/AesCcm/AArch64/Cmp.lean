@@ -1,7 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on AArch64: checking a received tag (`cmp`, `mask`)

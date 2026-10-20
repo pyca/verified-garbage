@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 
-public import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
 
 /-! # RC2 block rounds on baseline x86
 

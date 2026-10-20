@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Permutation
 
 /-!
 # Into and out of the bitsliced state, for 64 blocks

@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Last
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Last
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Idx
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: pass 2

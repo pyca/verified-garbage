@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareCT
-import VerifiedGarbage.Proof.Gcm.Powers
+public import VerifiedGarbage.Proof.Gcm.Poly
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH: the powers and the field

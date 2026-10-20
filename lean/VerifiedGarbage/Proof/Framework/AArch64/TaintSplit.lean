@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-import VerifiedGarbage.Proof.Framework.KernelList
+import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 
 /-!
 # AArch64 taint tracking with statics: code without what the analysis does not read, in pieces

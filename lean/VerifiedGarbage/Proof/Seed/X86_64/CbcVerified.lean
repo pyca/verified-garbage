@@ -1,25 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Seed.CbcScratch
-meta import VerifiedGarbage.Proof.Seed.CbcScratch
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+meta import VerifiedGarbage.Proof.Seed.CbcScratch
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Seed.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SEED-CBC on x86-64 meets its contracts

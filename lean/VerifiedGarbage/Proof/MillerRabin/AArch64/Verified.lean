@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.MillerRabin
 
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CT
 
 /-! # Shared Miller–Rabin callable verified against its merged contract -/
