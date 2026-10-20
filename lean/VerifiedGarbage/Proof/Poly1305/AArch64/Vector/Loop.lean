@@ -5,6 +5,8 @@ import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
 import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Step
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup and the loop

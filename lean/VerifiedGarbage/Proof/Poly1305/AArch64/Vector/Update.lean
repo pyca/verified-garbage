@@ -22,6 +22,10 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lit
 meta import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Poly1305.Pair
+meta import VerifiedGarbage.Proof.Poly1305.Pair
 
 /-!
 # Poly1305 on AArch64: `update`, with AdvSIMD
