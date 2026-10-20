@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

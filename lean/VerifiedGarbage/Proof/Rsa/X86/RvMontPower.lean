@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Rsa.X86.DivCount
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PlainSimp
 

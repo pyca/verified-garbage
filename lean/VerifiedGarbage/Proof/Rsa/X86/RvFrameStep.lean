@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 

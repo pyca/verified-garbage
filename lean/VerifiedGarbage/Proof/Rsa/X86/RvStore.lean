@@ -6,10 +6,6 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.X86.InvParts
 import VerifiedGarbage.Proof.Bignum.X86.ExportTruncated
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
-import VerifiedGarbage.Proof.Bignum.ByteWords
-import VerifiedGarbage.Proof.Bignum.ReadPrefix
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
-import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Rsa.X86.KeySelect
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs

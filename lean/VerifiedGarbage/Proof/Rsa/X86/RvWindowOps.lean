@@ -4,10 +4,8 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 public import VerifiedGarbage.Proof.Mont.X86.WindowShift
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
-import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The window operations on the recovery workspace

@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
-public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
+import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 
 /-! # RSA prime recovery at a width read at run time (i686)
 

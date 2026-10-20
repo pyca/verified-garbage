@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
-import VerifiedGarbage.Proof.Framework.X86.Call
-import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Resources supplied by the shared prime-recovery cdecl contract -/

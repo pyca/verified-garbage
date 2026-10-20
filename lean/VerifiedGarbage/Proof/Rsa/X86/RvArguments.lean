@@ -5,7 +5,6 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 

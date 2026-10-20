@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTimingState
-import VerifiedGarbage.Proof.Rsa.X86.RvMont
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked

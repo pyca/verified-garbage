@@ -2,16 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.RvResult
-public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeRest
-import VerifiedGarbage.Proof.Rsa.X86.RvPair
 import VerifiedGarbage.Proof.Rsa.X86.RvSized
 import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
 import VerifiedGarbage.Proof.Rsa.X86.RvPublicFacts
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Both branches after the modulus check leak only the declared attempt count
 

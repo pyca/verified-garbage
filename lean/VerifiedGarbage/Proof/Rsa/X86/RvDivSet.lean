@@ -24,8 +24,8 @@ open VG.Proof.Rsa.X86.Keys
 /-- The word above narrow array `j`'s number zeroed, through a pointer to the array. -/
 theorem zeroAbove_ok {s : State} {B : Addr} {Z len N : Nat}
     (h : VG.Proof.Rsa.X86.KeyRt.RtWs nar s B Z len N) {j : Nat} (hj : j < N) :
-    WP isa (.block (arrPtr nar .eax j .edx ++ [.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 8),
-        .mov .ecx (.imm 0), .store (at_ .eax 0) .ecx])) s fun t =>
+    WP isa (.block (arrPtr nar .eax j .edx ++ ([.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 8),
+        .mov .ecx (.imm 0), .store (at_ .eax 0) .ecx] : List Instr))) s fun t =>
       VG.Proof.Rsa.X86.KeyRt.RtWs nar t B Z len N ∧ Keep B (kw len) [j] [] s.mem t.mem ∧
       num t.mem B (kw len) j = num s.mem B (kw len) j ∧
       w32 t.mem B (arr (kw len) j + 4 * kw len) = 0 ∧ Keeps [.eax, .ecx, .edx] s t := by

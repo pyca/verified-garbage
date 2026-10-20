@@ -3,12 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
-import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
-import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega

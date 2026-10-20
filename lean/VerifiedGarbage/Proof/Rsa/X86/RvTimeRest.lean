@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimePrepare
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTimingState
-public import VerifiedGarbage.Proof.Rsa.X86.RvPrepared
+import VerifiedGarbage.Proof.Rsa.X86.RvPrepared
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeSearch
 import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
@@ -10,6 +9,11 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFinishY
 import VerifiedGarbage.Proof.Rsa.X86.RvFactors
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
+public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
+public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
+public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
+public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
 
 /-! # The recovery after the size checks leaks only the declared attempt count
 

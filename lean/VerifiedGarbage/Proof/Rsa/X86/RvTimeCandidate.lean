@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvTimeBase
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateData
 import VerifiedGarbage.Proof.Rsa.X86.RvTimeCheck
-import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
-import VerifiedGarbage.Proof.Rsa.X86.RvWindowExp
-import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
-import VerifiedGarbage.Proof.Rsa.X86.RvWindowLoop
 import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 

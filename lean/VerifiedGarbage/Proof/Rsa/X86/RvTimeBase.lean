@@ -1,18 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 public import VerifiedGarbage.Proof.Rsa.X86.RvTaint
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Rsa.X86.RvArguments
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
-import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
-import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import Mathlib.Algebra.Group.Nat.Defs
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 
 /-! # What the timing of prime recovery at a run-time width checks its pieces from
 

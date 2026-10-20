@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The candidate search leaks only public data
 

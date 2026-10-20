@@ -8,8 +8,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvFrameStep
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.RvViews
 import VerifiedGarbage.Proof.Rsa.X86.RvFrames
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
-import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A Montgomery multiplication advances the tracked recovery stage

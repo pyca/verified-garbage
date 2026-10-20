@@ -7,7 +7,6 @@ public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Frame
 import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Scalar
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp

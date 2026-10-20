@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.RtCall
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Impl.Rsa.X86.RecoverRt
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The arguments of recovery's calls of `vg_rsa_mont_mul_at`
 

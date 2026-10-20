@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 public import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 
 /-! # The halvings and the Montgomery setup leak only public data
 
