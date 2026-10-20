@@ -5,7 +5,7 @@ public meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public meta import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate

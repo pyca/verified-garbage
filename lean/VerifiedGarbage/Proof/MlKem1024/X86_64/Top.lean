@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 public import VerifiedGarbage.Spec.MlKem.EncapsH

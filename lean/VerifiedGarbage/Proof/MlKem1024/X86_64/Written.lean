@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 
 /-!
 # ML-KEM-1024 on x86-64: what the top-level functions write of `scratch`
