@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.MillerRabin.X86.CallSetup
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.MillerRabin.Word32
 public import VerifiedGarbage.Proof.MillerRabin.X86.MontFrame
-import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! # The round's multiplication operation reuses its prepared modulus -/
 

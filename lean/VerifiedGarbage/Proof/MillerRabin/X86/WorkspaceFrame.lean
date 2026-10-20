@@ -26,6 +26,17 @@ theorem WorkspaceFrame.mono {g : Geometry} {rs rs' : List (Nat × Nat)} {m m' : 
     (a : WorkspaceFrame g rs m m') (included : ∀ r ∈ rs, r ∈ rs') :
     WorkspaceFrame g rs' m m' := fun i hi hr => a i hi fun r mem => hr r (included r mem)
 
+theorem WorkspaceFrame.cover {g : Geometry} {rs rs' : List (Nat × Nat)} {m m' : Mem}
+    (a : WorkspaceFrame g rs m m')
+    (included : ∀ r ∈ rs, ∃ R ∈ rs', R.1 ≤ r.1 ∧ r.1 + r.2 ≤ R.1 + R.2) :
+    WorkspaceFrame g rs' m m' := by
+  intro i hi outside
+  apply a i hi
+  intro r mem
+  obtain ⟨R, known, lower, upper⟩ := included r mem
+  have := outside R known
+  omega
+
 theorem WorkspaceFrame.of_outs {g : Geometry} {rs : List (Nat × Nat)} {m m' : Mem}
     (nowrap : g.W.toNat + g.L ≤ 2 ^ 32) (a : Outs g.W rs m m') :
     WorkspaceFrame g rs m m' := by

@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Mont.X86.Compact.Arithmetic
 public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.MillerRabin.X86.Modulus
-import VerifiedGarbage.TCB.X86.Target
 
 /-! # The callable Montgomery postcondition gives the round's exact product -/
 
