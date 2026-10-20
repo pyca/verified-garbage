@@ -20,7 +20,7 @@ open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
 def bodyWrites (g : CallGeometry) : List Region :=
-  [⟨off g.B 16, g.Z - 16⟩, g.buffer 0, g.buffer 2]
+  [⟨off g.B 16, g.Z - 16⟩, g.buffer 0, g.buffer 2, VG.X86.below g.sp 40]
 
 theorem storeFrame_body {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) (i : Fin 2)
     {j : Nat} (hj : j < nArr)
