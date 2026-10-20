@@ -19,6 +19,9 @@ namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86
 open VG.Impl.Rsa.X86.RecoverRt
 
+theorem nilCheck : (VG.Taint.check taint τA (.block []) (VG.Taint.hintOf taint τA (.block []))).isSome = true := by
+  taint_decide
+
 theorem numbersCheck : (VG.Taint.check taint τA numbers (VG.Taint.hintOf taint τA numbers)).isSome = true := by
   taint_decide
 

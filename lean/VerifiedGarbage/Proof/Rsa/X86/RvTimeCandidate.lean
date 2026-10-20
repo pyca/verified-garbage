@@ -157,4 +157,196 @@ theorem tableStep_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {A B AW BW V
       have eq2 := pub_trace pg (tableCopyCheck i hi) hu hv e2 f2
       rw [eq1, eq2]
 
+section
+variable {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen)
+
+/-- The facts the table's construction needs of a candidate's Montgomery form. -/
+theorem CandidateData.montFacts :
+    candMontA C.A C.V g.n m mBase = m ∧ candMontA C.A C.V g.n m aO = 2 ^ (64 * g.n) % m ∧
+      candMontA C.A C.V g.n m mG = (C.V sCand + 2) * 2 ^ (64 * g.n) % m ∧
+      (m * upd C.V sCnt 0 sInv + 1) % 2 ^ 32 = 0 := by
+  refine ⟨?_, ?_, ?_, by rw [upd_ne _ _ (by decide)]; exact C.inverse⟩
+  · simp only [candMontA]; rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]; exact C.value
+  · simp only [candMontA]; rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]; exact C.one
+  · simp only [candMontA]; rw [upd_ne _ _ (by decide), upd_self]
+
+theorem tableSteps_trace (pg : PubG g) :
+    ∀ k ≤ 14, ∀ s t, TI g C.s0 (candMontA C.A C.V g.n m) (upd C.AW wRc (alignedExp g (C.AW wR) eLen dLen))
+        (upd C.V sCnt 0) liveExp slotsExp m (C.V sCand + 2) 0 s →
+      TI g D.s0 (candMontA D.A D.V g.n m) (upd D.AW wRc (alignedExp g (D.AW wR) eLen dLen))
+        (upd D.V sCnt 0) liveExp slotsExp m (D.V sCand + 2) 0 t →
+      ∀ {tr ur : List Leak} {sf tf : State},
+        Exec isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) s tr sf →
+        Exec isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) t ur tf → tr = ur := by
+  have positive : 0 < m := by have := C.large; omega
+  obtain ⟨vC, oC, bC, iC⟩ := C.montFacts
+  obtain ⟨vD, oD, bD, iD⟩ := D.montFacts
+  intro k hk
+  induction k with
+  | zero =>
+    intro s t hs ht tr ur sf tf es et
+    unfold TI at hs ht
+    exact pub_trace pg nilCheck hs ht es et
+  | succ k ih =>
+    intro s t hs ht tr ur sf tf es et
+    cases es with
+    | @seq _ _ _ u _ _ _ e1 e2 =>
+      cases et with
+      | @seq _ _ _ v _ _ _ f1 f2 =>
+        have eq1 := ih (by omega) s t hs ht e1 f1
+        have hu := wp_result (tableSteps_ok liveExp_table (by decide) (by decide) (by decide) vC C.bound iC
+          C.odd positive bC k (by omega) s hs) e1
+        have hv := wp_result (tableSteps_ok liveExp_table (by decide) (by decide) (by decide) vD C.bound iD
+          D.odd positive bD k (by omega) t ht) f1
+        have eq2 := tableStep_trace pg (by omega) liveExp_table (by decide) (by decide) (by decide)
+          hu vC C.bound iC positive bC hv vD C.bound iD positive bD e2 f2
+        rw [eq1, eq2]
+
+theorem table_relCT (pg : PubG g) :
+    RelCT isa (fun s t => C.Mont s ∧ D.Mont t) VG.Impl.Rsa.X86.RecoverRt.table
+      (fun s t => C.Table s ∧ D.Table t) := by
+  have positive : 0 < m := by have := C.large; omega
+  obtain ⟨_, oC, bC, _⟩ := C.montFacts
+  obtain ⟨_, oD, bD, _⟩ := D.montFacts
+  refine stage_relCT (fun s t _ _ _ _ ⟨hs, ht⟩ es et => ?_)
+    (fun s hs => candTable_ok hs C.value C.bound C.inverse C.odd C.one positive)
+    (fun t ht => candTable_ok ht D.value D.bound D.inverse D.odd D.one positive)
+  cases es with
+  | @seq _ _ _ u _ _ _ e1 e2 =>
+    cases et with
+    | @seq _ _ _ v _ _ _ f1 f2 =>
+      have eq1 := pub_trace pg tableStartCheck hs ht e1 f1
+      have hu := wp_result (tableInit_ok hs liveExp_table (by decide) (by decide) oC bC) e1
+      have hv := wp_result (tableInit_ok ht liveExp_table (by decide) (by decide) oD bD) f1
+      have eq2 := tableSteps_trace C D pg 14 (by decide) u v hu hv e2 f2
+      exact ⟨by rw [eq1, eq2], trivial⟩
+
+/-- The window loop's facts of a candidate. -/
+theorem CandidateData.windowFacts :
+    (∀ j < 16, tableA (candMontA C.A C.V g.n m) g.n m (C.V sCand + 2) 16 j =
+      (C.V sCand + 2) ^ j * 2 ^ (64 * g.n) % m) ∧
+    tableA (candMontA C.A C.V g.n m) g.n m (C.V sCand + 2) 16 mBase = m := by
+  refine ⟨fun j hj => by simp only [tableA, hj, ↓reduceIte], ?_⟩
+  simp only [tableA, show ¬ mBase < 16 by decide, ↓reduceIte, candMontA]
+  rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]; exact C.value
+
+end
+
+theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW' V V' : Nat → Nat}
+    {m b b' E E' c i : Nat}
+    (h : WI g s0 T AW V m b E c i s) (tA : ∀ j < 16, T j = b ^ j * 2 ^ (64 * g.n) % m) (vA : T mBase = m)
+    (iA : (m * V sInv + 1) % 2 ^ 32 = 0)
+    (j : WI g t0 T' AW' V' m b' E' c i t) (tB : ∀ j < 16, T' j = b' ^ j * 2 ^ (64 * g.n) % m)
+    (vB : T' mBase = m) (iB : (m * V' sInv + 1) % 2 ^ 32 = 0)
+    (bound : m < 2 ^ (64 * g.n)) (odd : m % 2 = 1) (positive : 0 < m)
+    {tr ur : List Leak} {sf tf : State}
+    (es : Exec isa VG.Impl.Rsa.X86.RecoverRt.windowBody s tr sf)
+    (et : Exec isa VG.Impl.Rsa.X86.RecoverRt.windowBody t ur tf) : tr = ur := by
+  have hP : 0 < 2 ^ (32 * g.W) := Nat.two_pow_pos _
+  have vbA : ∀ y, upd T mY y mBase = m := fun y => by rw [upd_ne _ _ (by decide)]; exact vA
+  have vbB : ∀ y, upd T' mY y mBase = m := fun y => by rw [upd_ne _ _ (by decide)]; exact vB
+  have viA : (m * upd V sCnt (c - i) sInv + 1) % 2 ^ 32 = 0 := by rw [upd_ne _ _ (by decide)]; exact iA
+  have viB : (m * upd V' sCnt (c - i) sInv + 1) % 2 ^ 32 = 0 := by rw [upd_ne _ _ (by decide)]; exact iB
+  unfold WI at h j
+  have sq := fun {s' t' : State} {tr' ur' : List Leak} {sf' tf' : State} (p₁ : MulPre g mY mY mY s')
+      (p₂ : MulPre g mY mY mY t') (e : Exec isa (VG.Impl.Rsa.X86.RecoverRt.mmul mY mY mY) s' tr' sf')
+      (f : Exec isa (VG.Impl.Rsa.X86.RecoverRt.mmul mY mY mY) t' ur' tf') =>
+    (mmul_relCT pg (by decide) (by decide) (by decide) (by decide) mulArgs_mY_mY_mYCheck
+      ⟨_, clrTop_mYCheck⟩ _ _ _ _ _ _ ⟨p₁, p₂⟩ e f).1
+  cases es with
+  | @seq _ _ _ s1 _ _ _ e1 er =>
+  cases et with
+  | @seq _ _ _ t1 _ _ _ f1 fr =>
+  have q1 := sq (h.mulYPre (by decide) (by decide) (by decide) (by decide) (vbA _) bound viA positive
+    liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) (j.mulYPre (by decide) (by decide) (by decide) (by decide)
+    (vbB _) bound viB positive liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) e1 f1
+  have h1 := wp_result (h.squareY (by decide) (by decide) (by decide) (vbA _) bound viA odd positive
+    liveWin_apart (upd_self _ _ _)) e1
+  have j1 := wp_result (j.squareY (by decide) (by decide) (by decide) (vbB _) bound viB odd positive
+    liveWin_apart (upd_self _ _ _)) f1
+  simp only [upd_twice] at h1 j1
+  cases er with
+  | @seq _ _ _ s2 _ _ _ e2 er =>
+  cases fr with
+  | @seq _ _ _ t2 _ _ _ f2 fr =>
+  have q2 := sq (h1.mulYPre (by decide) (by decide) (by decide) (by decide) (vbA _) bound viA positive
+    liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) (j1.mulYPre (by decide) (by decide) (by decide) (by decide)
+    (vbB _) bound viB positive liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) e2 f2
+  have h2 := wp_result (h1.squareY (by decide) (by decide) (by decide) (vbA _) bound viA odd positive
+    liveWin_apart (upd_self _ _ _)) e2
+  have j2 := wp_result (j1.squareY (by decide) (by decide) (by decide) (vbB _) bound viB odd positive
+    liveWin_apart (upd_self _ _ _)) f2
+  simp only [upd_twice] at h2 j2
+  cases er with
+  | @seq _ _ _ s3 _ _ _ e3 er =>
+  cases fr with
+  | @seq _ _ _ t3 _ _ _ f3 fr =>
+  have q3 := sq (h2.mulYPre (by decide) (by decide) (by decide) (by decide) (vbA _) bound viA positive
+    liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) (j2.mulYPre (by decide) (by decide) (by decide) (by decide)
+    (vbB _) bound viB positive liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) e3 f3
+  have h3 := wp_result (h2.squareY (by decide) (by decide) (by decide) (vbA _) bound viA odd positive
+    liveWin_apart (upd_self _ _ _)) e3
+  have j3 := wp_result (j2.squareY (by decide) (by decide) (by decide) (vbB _) bound viB odd positive
+    liveWin_apart (upd_self _ _ _)) f3
+  simp only [upd_twice] at h3 j3
+  cases er with
+  | @seq _ _ _ s4 _ _ _ e4 er =>
+  cases fr with
+  | @seq _ _ _ t4 _ _ _ f4 fr =>
+  have q4 := sq (h3.mulYPre (by decide) (by decide) (by decide) (by decide) (vbA _) bound viA positive
+    liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) (j3.mulYPre (by decide) (by decide) (by decide) (by decide)
+    (vbB _) bound viB positive liveWin_apart (upd_self _ _ _) (upd_self _ _ _)) e4 f4
+  have h4 := wp_result (h3.squareY (by decide) (by decide) (by decide) (vbA _) bound viA odd positive
+    liveWin_apart (upd_self _ _ _)) e4
+  have j4 := wp_result (j3.squareY (by decide) (by decide) (by decide) (vbB _) bound viB odd positive
+    liveWin_apart (upd_self _ _ _)) f4
+  simp only [upd_twice] at h4 j4
+  cases er with
+  | @seq _ _ _ s5 _ _ _ e5 er =>
+  cases fr with
+  | @seq _ _ _ t5 _ _ _ f5 fr =>
+  have q5 := pub_trace pg windowNextCheck h4 j4 e5 f5
+  have h5 := wp_result (windowNext_ok h4 (by decide) (by decide) (Nat.mod_lt _ hP)) e5
+  have j5 := wp_result (windowNext_ok j4 (by decide) (by decide) (Nat.mod_lt _ hP)) f5
+  have smallA : E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W) < 16 := by
+    rw [Nat.div_lt_iff_lt_mul hP]
+    have := Nat.mod_lt (E * 16 ^ i) hP
+    omega
+  have smallB : E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W) < 16 := by
+    rw [Nat.div_lt_iff_lt_mul hP]
+    have := Nat.mod_lt (E' * 16 ^ i) hP
+    omega
+  cases er with
+  | @seq _ _ _ s6 _ _ _ e6 e7 =>
+  cases fr with
+  | @seq _ _ _ t6 _ _ _ f6 f7 =>
+  have entryA : upd T mY (((((b ^ (E * 16 ^ i / 2 ^ (32 * g.W))) ^ 2) ^ 2) ^ 2) ^ 2 * 2 ^ (64 * g.n) % m)
+      (E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) =
+      b ^ (E * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) * 2 ^ (64 * g.n) % m := by
+    rw [upd_ne _ _ (by unfold mY; omega)]
+    exact tA _ smallA
+  have entryB : upd T' mY (((((b' ^ (E' * 16 ^ i / 2 ^ (32 * g.W))) ^ 2) ^ 2) ^ 2) ^ 2 * 2 ^ (64 * g.n) % m)
+      (E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) =
+      b' ^ (E' * 16 ^ i % 2 ^ (32 * g.W) * 16 / 2 ^ (32 * g.W)) * 2 ^ (64 * g.n) % m := by
+    rw [upd_ne _ _ (by unfold mY; omega)]
+    exact tB _ smallB
+  have q6 := (mmul_relCT pg (by decide) (by decide) (by decide) (by decide) mulArgs_mY_mY_mXmCheck
+    ⟨_, clrTop_mYCheck⟩ _ _ _ _ _ _
+    ⟨h5.mulYPre (b := mXm) (by decide) (by decide) (by decide) (by decide)
+      (by rw [upd_ne _ _ (by decide)]; exact vbA _) bound (by rw [upd_ne _ _ (by decide)]; exact viA) positive
+      (by decide) (by rw [upd_ne _ _ (by decide), upd_self]) (by rw [upd_self]; exact entryA),
+     j5.mulYPre (b := mXm) (by decide) (by decide) (by decide) (by decide)
+      (by rw [upd_ne _ _ (by decide)]; exact vbB _) bound (by rw [upd_ne _ _ (by decide)]; exact viB) positive
+      (by decide) (by rw [upd_ne _ _ (by decide), upd_self]) (by rw [upd_self]; exact entryB)⟩ e6 f6).1
+  have h6 := wp_result (h5.mulY (b := mXm) (by decide) (by decide) (by decide) (by decide)
+    (by rw [upd_ne _ _ (by decide)]; exact vbA _) bound
+    (by rw [upd_ne _ _ (by decide)]; exact viA) odd positive (by decide) (by decide)
+    (by rw [upd_ne _ _ (by decide), upd_self]) (by rw [upd_self]; exact entryA)) e6
+  have j6 := wp_result (j5.mulY (b := mXm) (by decide) (by decide) (by decide) (by decide)
+    (by rw [upd_ne _ _ (by decide)]; exact vbB _) bound
+    (by rw [upd_ne _ _ (by decide)]; exact viB) odd positive (by decide) (by decide)
+    (by rw [upd_ne _ _ (by decide), upd_self]) (by rw [upd_self]; exact entryB)) f6
+  have q7 := pub_trace pg cntNextCheck h6 j6 e7 f7
+  rw [q1, q2, q3, q4, q5, q6, q7]
+
 end VG.Proof.Rsa.X86.Recover
