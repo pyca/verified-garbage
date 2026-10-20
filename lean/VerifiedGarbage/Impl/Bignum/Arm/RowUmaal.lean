@@ -25,8 +25,13 @@ leaving the input word in `r2` and the accumulator's in `r5`. -/
 def rowStepU (k : Nat) : List Instr :=
   [.ldr .r2 .r12 k, .ldr .r3 .r0 k, .mov .r5 (.reg .r3), .umaal .r3 .r11 .r2 .r9, .str .r3 .r0 k]
 
-/-- Two steps, at the pointers and a word above them, then the advance. -/
-def rowBodyU : List Instr := rowStepU 0 ++ rowStepU 4 ++ rowAdvance2
+/-- The first word of a pair does not need its old accumulator in `r5`. -/
+def rowFirstU : List Instr :=
+  [.ldr .r2 .r12 0, .ldr .r3 .r0 0, .umaal .r3 .r11 .r2 .r9, .str .r3 .r0 0]
+
+/-- Two steps, at the pointers and a word above them, then the advance.
+Only the second accumulator word is needed by `rowUEnd`. -/
+def rowBodyU : List Instr := rowFirstU ++ rowStepU 4 ++ rowAdvance2
 
 /-- The scalar `r1 | r10 << 16` into `r9`. -/
 def rowUJoin : List Instr := [.dp .orr .r9 .r1 (.shifted .r10 .lsl 16)]

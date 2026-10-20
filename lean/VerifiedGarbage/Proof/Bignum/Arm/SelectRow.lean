@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
 
 import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.Arm.SelectWord
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Termination and exact value of a runtime-length selection -/
 
@@ -21,8 +23,10 @@ theorem selectRow_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
     (hcount : s.gpr .lr = BitVec.ofNat 32 n) (hc : (s.gpr .r11).toNat ≤ 1) :
     WP isa selectRow s (SelectInv s base o a b n n) := by
   let inv := fun k t => ∃ i, i + k = n ∧ 0 < k ∧ SelectInv s base o a b n i t
-  unfold selectRow
-  refine WP.loop (M := isa) inv ?_ n s ?_
+  rw [selectRow, WP.seq_iff]
+  refine WP.mono (selectMask_ok s) ?_
+  rintro u ⟨mask, keep⟩
+  refine WP.loop (M := isa) inv ?_ n u ?_
   · intro k t h
     obtain ⟨i, hik, hk, hi⟩ := h
     refine WP.mono (selectBody_ok ctx hi (by omega) hc) ?_
@@ -37,11 +41,14 @@ theorem selectRow_ok (s : State) {base : BitVec 32} {size o a b n : Nat}
       change some (!u.z) = some true
       simp only [hz, he, decide_false, Bool.not_false]
   · refine ⟨0, by omega, hn, ?_⟩
-    refine ⟨by omega, ?_, ?_, ?_, ?_, Outside.refl _ _ _ _, ?_, Rest.refl _ _⟩
-    · simpa only [Nat.mul_zero, Nat.add_zero] using hp0
-    · simpa only [Nat.mul_zero, Nat.add_zero] using hp10
-    · simpa only [Nat.mul_zero, Nat.add_zero] using hp12
-    · simpa only [Nat.sub_zero] using hcount
-    · simp only [val32, ite_self]
+    refine ⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+      (show Rest [.r4] s u from ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩).mono (by simp [selectLoopClobbers])⟩
+    · simpa only [Nat.mul_zero, Nat.add_zero] using (keep.regs .r0 (by simp)).trans hp0
+    · simpa only [Nat.mul_zero, Nat.add_zero] using (keep.regs .r10 (by simp)).trans hp10
+    · simpa only [Nat.mul_zero, Nat.add_zero] using (keep.regs .r12 (by simp)).trans hp12
+    · simpa only [Nat.sub_zero] using (keep.regs .lr (by simp)).trans hcount
+    · rw [keep.mem]; exact Outside.refl _ _ _ _
+    · rw [keep.mem]; simp only [val32, ite_self]
+    · rw [keep.regs .r11 (by simp)]; exact mask
 
 end VG.Proof.Bignum.Arm

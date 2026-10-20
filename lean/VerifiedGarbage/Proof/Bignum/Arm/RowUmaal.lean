@@ -369,6 +369,32 @@ theorem rowUEnd_exec (n : State) : execBlock isa rowUEnd n = some (endState n, [
 
 /-! ## The pair loops -/
 
+/-- A step overwrites the saved accumulator before using it. -/
+theorem rowFirstU_exec (n : State)
+    (hr : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r12 + BitVec.ofNat 32 0)) 4)
+    (hw : InRegions n.wr (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)) 4) :
+    execBlock isa rowFirstU n = some ((stepNew 0 n).setReg .r5 (n.gpr .r5),
+      [.addr (State.addr (n.gpr .r12 + BitVec.ofNat 32 0)), .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)),
+        .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 0))]) := by
+  have hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 0)) 4 := by
+    obtain ⟨R, hR, hc⟩ := hw; exact ⟨R, List.mem_append_right _ hR, hc⟩
+  simp only [rowFirstU, execBlock, isa, exec,
+    show (0 < 4096) = True by decide, ↓reduceIte, State.load32, State.store32,
+    gpr_setReg, reduceCtorEq, rd_setReg, wr_setReg, mem_setReg, hr, hr0, hw, Option.map_some, addrs,
+    List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+  congr 2
+  simp only [stepNew, State.setReg]
+  congr 1
+  funext r
+  cases r <;> simp [inW, accW]
+
+theorem stepNew_set5 (k : Nat) (n : State) (v : BitVec 32) :
+    stepNew k (n.setReg .r5 v) = stepNew k n := by
+  simp only [stepNew, inW, accW, reduceCtorEq, ↓reduceIte, State.setReg]
+  congr 1
+  funext r
+  cases r <;> rfl
+
 /-- `rowU`'s state `n` and `row`'s `o` in its pair loop: equal but in the
 registers `row`'s step leaves values in that `rowU` has only once
 `rowUEnd` has run, and in the flags. -/
@@ -416,15 +442,23 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
     g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   have o₁rd : o₁.rd = o.rd := nf₀.rd
   have o₁wr : o₁.wr = o.wr := nf₀.wr
-  have n0 := rowStepU_exec (k := 0) (by decide) n (by rw [← r12, ← ag.rd, ← ag.wr]; exact rd₀)
-    (by rw [← r0, ← ag.wr]; exact wr₀)
-  have n4 := rowStepU_exec (k := 4) (by decide) (stepNew 0 n)
-    (by
+  have nr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r12 + 0)) 4 := by
+    rw [← r12, ← ag.rd, ← ag.wr]; exact rd₀
+  have nw0 : InRegions n.wr (State.addr (n.gpr .r0 + 0)) 4 := by
+    rw [← r0, ← ag.wr]; exact wr₀
+  have nr4 : InRegions ((stepNew 0 n).rd ++ (stepNew 0 n).wr)
+      (State.addr ((stepNew 0 n).gpr .r12 + 4#32)) 4 := by
       simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, rd_setReg, wr_setReg]
-      rw [← r12, ← ag.rd, ← ag.wr, ← o₁r12, ← o₁rd, ← o₁wr]; exact rd₄)
-    (by
+      rw [← r12, ← ag.rd, ← ag.wr, ← o₁r12, ← o₁rd, ← o₁wr]; exact rd₄
+  have nw4 : InRegions (stepNew 0 n).wr
+      (State.addr ((stepNew 0 n).gpr .r0 + 4#32)) 4 := by
       simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, wr_setReg]
-      rw [← r0, ← ag.wr, ← o₁r0, ← o₁wr]; exact wr₄)
+      rw [← r0, ← ag.wr, ← o₁r0, ← o₁wr]; exact wr₄
+  have n0 := rowFirstU_exec n nr0 nw0
+  have n4 := rowStepU_exec (k := 4) (by decide) ((stepNew 0 n).setReg .r5 (n.gpr .r5))
+    (by simpa only [rd_setReg, wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nr4)
+    (by simpa only [wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nw4)
+  rw [stepNew_set5] at n4
   refine ⟨Exec.block_iff.mpr ?_, ?_⟩
   · rw [rowBodyU, execBlock_append, execBlock_append, n0]
     simp only [Option.bind_some, n4, Option.map_some, advState_exec]
