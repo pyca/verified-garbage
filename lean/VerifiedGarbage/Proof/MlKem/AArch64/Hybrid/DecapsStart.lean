@@ -4,9 +4,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
 import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
-import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.CopyN
 meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 public import Aesop.BuiltinRules

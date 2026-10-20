@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 
 /-!
