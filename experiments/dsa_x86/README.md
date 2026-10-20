@@ -72,3 +72,8 @@ widths temporarily borrow 16 unused modulus-padding bytes and restore them;
 the algebraic tests assert that padding's frame property explicitly. Compare
 its native speed and symbol sizes against `dwprsctfvz4` before selecting a
 production design. No new RSA implementation is introduced by this variant.
+
+Focused follow-up: `q` also windows the padded 192-bit (3-word) exponent in the
+160-bit subgroup-prime test. Workflow inputs can restrict the random API timing
+to one parameter width and raise its sample count. The installer instruments
+only the disposable benchmark copy; ordinary library behavior is unchanged.

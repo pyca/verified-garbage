@@ -3,7 +3,7 @@ import json, math, os, pathlib, shutil, statistics, subprocess, sys
 root=pathlib.Path.cwd(); out=root/'prototype-results';out.mkdir(exist_ok=True)
 assert 'i686' in subprocess.check_output(['rustc','-vV'],text=True), 'Native i686 required'
 (out/'machine.txt').write_text(subprocess.check_output(['rustc','-vV'],text=True)+subprocess.check_output(['openssl','version','-a'],text=True)+pathlib.Path('/proc/cpuinfo').read_text().split('\n\n')[0])
-originals={p:(root/p).read_bytes() for p in ['src/asm/x86/dsa.rs','src/dsa/parameters/tests.rs','src/dsa/tests.rs']}
+originals={p:(root/p).read_bytes() for p in ['src/asm/x86/dsa.rs','src/dsa/parameters/tests.rs','src/dsa/tests.rs','bench/benches/primitives/dsa_parameters.rs']}
 (root/'.unproven-dsa-experiment').touch()
 env=os.environ.copy();env['CARGO_TARGET_DIR']=str(root/'bench-target');env['VG_BENCHES']='dsa'
 variants=['baseline','d','w','dw','dwp','dwpr2','dwpr4','dwpr8','dwpr0']
@@ -74,7 +74,7 @@ if env.get('PROTOTYPE_PARAMETERS')=='1':
     for mode in parameter_modes:
         filt='^dsa_generate_parameters/openssl/' if mode=='baseline' else '^dsa_generate_parameters/verified-garbage/'
         run([str(out/mode),'--bench',filt,'--warm-up-time','0.1','--measurement-time','0.3','--sample-size','10','--noplot'],mode+'-random-parameters.log',{'VG_BENCHES':'dsa_parameters','CRITERION_HOME':str(out/'parameters'/mode)})
-    lines=['','Complete random parameter generation (10 samples; search variance applies):','| Variant | Workload | median ms |','|---|---|---:|']
+    lines=['',f"Complete random parameter generation ({env.get('VG_DSA_PARAM_SAMPLES','10')} samples; search variance applies):",'| Variant | Workload | median ms |','|---|---|---:|']
     for mode in parameter_modes:
         for p in sorted((out/'parameters'/mode).rglob('new/estimates.json')):
             key='/'.join(p.relative_to(out/'parameters'/mode).parts[:-2])

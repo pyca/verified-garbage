@@ -313,6 +313,7 @@ def main (args : List String) : IO Unit := do
   let fs := if mode == "abi" then Prototype.widths.map (fun (n,e) =>
     ("proto_dsa_abi_pow_" ++ toString n ++ "_" ++ toString e, Prototype.abiWrapper n e)) else Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
   let json := fs.map fun (name, p) =>
+    let p := if mode.contains 'q' then Prototype.replace [(exponentiate 3 6, Prototype.window 3 6 true)] p else p
     let p := if mode.contains 'z' then Prototype.replace
       ([(16,32),(32,64),(48,96)].map fun (n,e) => (Prototype.window n e true, Prototype.wideWindow n e 6)) p else p
     let p := if mode.contains 'f' then Prototype.replace ([3,4,16,32,48].map fun n => (contextSeed n, Prototype.fastSeed n)) p else p

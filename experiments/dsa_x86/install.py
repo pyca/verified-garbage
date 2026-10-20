@@ -40,3 +40,9 @@ test.write_text(t)
 
 with (root/'src/dsa/tests.rs').open('a') as f:
     f.write('\n'+(root/'experiments/dsa_x86/power_tests.rs').read_text())
+
+# Narrow/repeat the real parameter API comparison without changing the library.
+bench=root/'bench/benches/primitives/dsa_parameters.rs'
+b=bench.read_text().replace('group.sample_size(10);', 'group.sample_size(std::env::var("VG_DSA_PARAM_SAMPLES").ok().and_then(|s| s.parse().ok()).unwrap_or(10));')
+b=b.replace('for bits in [1024, 2048, 3072] {', 'for bits in [1024, 2048, 3072] {\n        if let Ok(s) = std::env::var("VG_DSA_PARAM_BITS") { if !s.is_empty() && s.parse::<usize>().unwrap() != bits { continue; } }')
+bench.write_text(b)
