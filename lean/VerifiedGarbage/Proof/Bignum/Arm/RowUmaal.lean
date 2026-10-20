@@ -367,6 +367,86 @@ theorem rowUEnd_exec (n : State) : execBlock isa rowUEnd n = some (endState n, [
     Option.map_some, addrs, List.map_nil, List.append_nil]
   rfl
 
+/-- The product with the old accumulator, without the propagated carry. -/
+def latencyProduct (k : Nat) (n : State) : Nat :=
+  (inW k n).toNat * (n.gpr .r9).toNat + (accW k n).toNat
+
+/-- Carry propagation after an independently computed long product agrees
+with the original multiply-accumulate. -/
+theorem latency_value (k : Nat) (n : State) :
+    let v := latencyProduct k n
+    let lo := BitVec.ofNat 32 v
+    let hi := BitVec.ofNat 32 (v / 2 ^ 32)
+    lo + n.gpr .r11 = BitVec.ofNat 32 (stepSum k (n.gpr .r9) n) ∧
+      hi + (if 2 ^ 32 ≤ lo.toNat + (n.gpr .r11).toNat then 1 else 0 : BitVec 32) =
+        BitVec.ofNat 32 (stepSum k (n.gpr .r9) n / 2 ^ 32) := by
+  dsimp only
+  have bound := mac_bound (inW k n) (n.gpr .r9) (accW k n) (n.gpr .r11)
+  have bv : latencyProduct k n < 2 ^ 64 := by
+    dsimp only [latencyProduct]
+    omega
+  have repr : (BitVec.ofNat 32 (latencyProduct k n)).toNat +
+      (BitVec.ofNat 32 (latencyProduct k n / 2 ^ 32)).toNat * 2 ^ 32 = latencyProduct k n := by
+    simp only [BitVec.toNat_ofNat]
+    omega
+  have fit : (BitVec.ofNat 32 (latencyProduct k n)).toNat +
+      (BitVec.ofNat 32 (latencyProduct k n / 2 ^ 32)).toNat * 2 ^ 32 + (n.gpr .r11).toNat < 2 ^ 64 := by
+    rw [repr]
+    dsimp only [latencyProduct]
+    omega
+  have sum : (BitVec.ofNat 32 (latencyProduct k n)).toNat +
+      (BitVec.ofNat 32 (latencyProduct k n / 2 ^ 32)).toNat * 2 ^ 32 + (n.gpr .r11).toNat =
+      stepSum k (n.gpr .r9) n := by
+    rw [repr]
+    dsimp only [latencyProduct, stepSum]
+    omega
+  have h := add_word_value (BitVec.ofNat 32 (latencyProduct k n))
+    (BitVec.ofNat 32 (latencyProduct k n / 2 ^ 32)) (n.gpr .r11) fit
+  rw [sum] at h
+  exact ⟨toNat_lo h, toNat_hi h⟩
+
+/-- Only the product's high word and addition flags differ from `stepNew`;
+`rowUEnd` restores that temporary register, and the loop advance sets flags. -/
+def latencyState (k : Nat) (save : Bool) (n : State) : State :=
+  let r := (stepNew k n).setReg .r7 (BitVec.ofNat 32 (latencyProduct k n / 2 ^ 32))
+  let r := if save then r else r.setReg .r5 (n.gpr .r5)
+  addFlags r (BitVec.ofNat 32 (latencyProduct k n)) (n.gpr .r11)
+
+/-- One word with independent multiplication and ALU carry propagation. -/
+theorem rowLatencyStep_exec {k : Nat} (hk : k < 4096) (save : Bool) (n : State)
+    (hr : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r12 + BitVec.ofNat 32 k)) 4)
+    (hw : InRegions n.wr (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)) 4) :
+    execBlock isa (rowLatencyStep k save) n = some (latencyState k save n,
+      [.addr (State.addr (n.gpr .r12 + BitVec.ofNat 32 k)), .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)),
+        .addr (State.addr (n.gpr .r0 + BitVec.ofNat 32 k))]) := by
+  have hr0 : InRegions (n.rd ++ n.wr) (State.addr (n.gpr .r0 + BitVec.ofNat 32 k)) 4 := by
+    obtain ⟨R, hR, hc⟩ := hw; exact ⟨R, List.mem_append_right _ hR, hc⟩
+  obtain ⟨low, high⟩ := latency_value k n
+  have hz (x : BitVec 32) : x + (0 : BitVec 32) = x := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add]
+    change x.toNat % 2 ^ 32 = x.toNat
+    exact Nat.mod_eq_of_lt x.isLt
+  cases save <;>
+    simp only [rowLatencyStep, List.cons_append, List.nil_append, Bool.false_eq_true, ↓reduceIte,
+      execBlock, isa, exec, hk, show encodable (0 : BitVec 32) = true from rfl,
+      show (0 : BitVec 32).toNat = 0 from rfl, Nat.add_zero, decide_eq_true_eq,
+      State.load32, State.store32, Op2.eval, gpr_setReg, reduceCtorEq,
+      rd_setReg, wr_setReg, mem_setReg, c_setReg, addFlags, hr, hr0, hw, Option.map_some, addrs,
+      List.map_cons, List.map_nil, List.append_nil]
+  all_goals
+    congr 2
+    simp only [latencyState, stepNew, latencyProduct, inW, accW, addFlags, State.setReg,
+      Bool.false_eq_true, ↓reduceIte]
+    congr 1
+    funext r
+    cases r <;> simp only [reduceCtorEq, ↓reduceIte]
+    all_goals first
+      | exact low
+      | (rw [hz]; exact high)
+      | exact congrArg (n.mem.writeW _) low
+      | rfl
+
 /-! ## The pair loops -/
 
 /-- A step overwrites the saved accumulator before using it. -/
@@ -411,13 +491,27 @@ theorem agree_endState (n : State) : Agree (endState n) n := by
   refine ⟨fun r h2 h4 h6 h7 h9 => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
   simp only [endState, gpr_setReg, h2, h4, h6, h7, h9, ↓reduceIte]
 
+/-- The pair's independently multiplied words followed by its advance. -/
+def latencyBodyState (n : State) : State :=
+  advState (latencyState 4 true (latencyState 0 false n))
+
+/-- The row's compatibility epilogue removes the multiplication temporary
+and the advance has replaced all addition flags. -/
+theorem latencyBody_end (n : State) :
+    endState (latencyBodyState n) = endState (advState (stepNew 4 (stepNew 0 n))) := by
+  simp only [latencyBodyState, latencyState, endState, advState, stepNew, latencyProduct,
+    inW, accW, addFlags, subFlags, State.setReg, Bool.false_eq_true, ↓reduceIte]
+  congr 1
+  funext r
+  cases r <;> rfl
+
 /-- One iteration of `rowU`'s pair loop from a state agreeing with `row`'s
 ends in a state from which `rowUEnd` gives the one `row`'s ends in. -/
 theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o n)
     (h1 : o.gpr .r1 = x &&& mask16) (h10 : o.gpr .r10 = x >>> 16) (h9 : o.gpr .r9 = mask16)
     (hx : n.gpr .r9 = x) (h : Exec isa rowBody2 o t o') :
-    Exec isa (.block rowBodyU) n t (advState (stepNew 4 (stepNew 0 n))) ∧
-      endState (advState (stepNew 4 (stepNew 0 n))) = o' := by
+    Exec isa (.block rowBodyU) n t (latencyBodyState n) ∧
+      endState (latencyBodyState n) = o' := by
   unfold rowBody2 at h
   obtain ⟨o₁, t₀, r, e₀, h₁, rfl⟩ := seq_inv h
   obtain ⟨o₂, t₄, ta, e₄, ea, rfl⟩ := seq_inv h₁
@@ -454,17 +548,17 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
       (State.addr ((stepNew 0 n).gpr .r0 + 4#32)) 4 := by
       simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, wr_setReg]
       rw [← r0, ← ag.wr, ← o₁r0, ← o₁wr]; exact wr₄
-  have n0 := rowFirstU_exec n nr0 nw0
-  have n4 := rowStepU_exec (k := 4) (by decide) ((stepNew 0 n).setReg .r5 (n.gpr .r5))
-    (by simpa only [rd_setReg, wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nr4)
-    (by simpa only [wr_setReg, gpr_setReg, reduceCtorEq, ↓reduceIte] using nw4)
-  rw [stepNew_set5] at n4
+  have n0 := rowLatencyStep_exec (k := 0) (by decide) false n nr0 nw0
+  have n4 := rowLatencyStep_exec (k := 4) (by decide) true (latencyState 0 false n)
+    (by simpa only [latencyState, Bool.false_eq_true, ↓reduceIte, addFlags, rd_setReg, wr_setReg, gpr_setReg, reduceCtorEq] using nr4)
+    (by simpa only [latencyState, Bool.false_eq_true, ↓reduceIte, addFlags, wr_setReg, gpr_setReg, reduceCtorEq] using nw4)
   refine ⟨Exec.block_iff.mpr ?_, ?_⟩
   · rw [rowBodyU, execBlock_append, execBlock_append, n0]
     simp only [Option.bind_some, n4, Option.map_some, advState_exec]
-    simp only [stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, o₁r0, o₁r12, r0, r12, List.append_nil,
+    simp only [latencyState, latencyBodyState, addFlags, stepNew, gpr_setReg, reduceCtorEq, ↓reduceIte, o₁r0, o₁r12, r0, r12, List.append_nil,
       List.cons_append, List.nil_append]
-  · have kept : ∀ r, r ≠ .r2 → r ≠ .r4 → r ≠ .r6 → r ≠ .r7 → r ≠ .r9 → o.gpr r = n.gpr r := ag.gpr
+  · rw [latencyBody_end]
+    have kept : ∀ r, r ≠ .r2 → r ≠ .r4 → r ≠ .r6 → r ≠ .r7 → r ≠ .r9 → o.gpr r = n.gpr r := ag.gpr
     have r1 := kept .r1 (by decide) (by decide) (by decide) (by decide) (by decide)
     have r8 := kept .r8 (by decide) (by decide) (by decide) (by decide) (by decide)
     have r10 := kept .r10 (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -484,10 +578,10 @@ theorem body_sim {o n o' : State} {t : List Leak} {x : BitVec 32} (ag : Agree o 
       gpr_setReg, reduceCtorEq, ↓reduceIte, stepNew, stepOld, rlr]
 
 theorem body_keeps {n : State} :
-    (advState (stepNew 4 (stepNew 0 n))).gpr .r1 = n.gpr .r1 ∧
-      (advState (stepNew 4 (stepNew 0 n))).gpr .r10 = n.gpr .r10 ∧
-      (advState (stepNew 4 (stepNew 0 n))).gpr .r9 = n.gpr .r9 := by
-  simp only [advState, stepNew, subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte, and_self]
+    (latencyBodyState n).gpr .r1 = n.gpr .r1 ∧
+      (latencyBodyState n).gpr .r10 = n.gpr .r10 ∧
+      (latencyBodyState n).gpr .r9 = n.gpr .r9 := by
+  simp only [latencyBodyState, latencyState, addFlags, advState, stepNew, subFlags, gpr_setReg, reduceCtorEq, ↓reduceIte, and_self]
 
 /-- `rowU`'s pair loop runs as `row`'s, but for the registers `rowUEnd`
 sets as `row`'s steps leave them. -/

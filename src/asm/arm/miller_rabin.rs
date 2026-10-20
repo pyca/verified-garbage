@@ -3086,12 +3086,18 @@ orr r9, r1, r10, lsl #16
 210:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -3156,12 +3162,18 @@ orr r9, r1, r10, lsl #16
 215:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -3833,12 +3845,18 @@ orr r9, r1, r10, lsl #16
 244:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -3974,12 +3992,18 @@ orr r9, r1, r10, lsl #16
 252:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -4816,12 +4840,18 @@ orr r9, r1, r10, lsl #16
 280:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -4886,12 +4916,18 @@ orr r9, r1, r10, lsl #16
 285:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -5267,12 +5303,18 @@ orr r9, r1, r10, lsl #16
 2100:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
@@ -5408,12 +5450,18 @@ orr r9, r1, r10, lsl #16
 2108:
 ldr r2, [r12, #0]
 ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #0]
 ldr r2, [r12, #4]
 ldr r3, [r0, #4]
 mov r5, r3
-umaal r3, r11, r2, r9
+mov r7, #0
+umaal r3, r7, r2, r9
+adds r3, r3, r11
+adc r11, r7, #0
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8

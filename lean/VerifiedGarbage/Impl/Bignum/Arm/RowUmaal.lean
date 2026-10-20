@@ -29,9 +29,18 @@ def rowStepU (k : Nat) : List Instr :=
 def rowFirstU : List Instr :=
   [.ldr .r2 .r12 0, .ldr .r3 .r0 0, .umaal .r3 .r11 .r2 .r9, .str .r3 .r0 0]
 
+/-- Form the product independently of the previous carry, then propagate
+that carry with integer additions. Consecutive long multiplies can overlap.
+Only the pair's last word retains its accumulator for `rowUEnd`. -/
+def rowLatencyStep (k : Nat) (save : Bool) : List Instr :=
+  [.ldr .r2 .r12 k, .ldr .r3 .r0 k] ++
+    (if save then [.mov .r5 (.reg .r3)] else []) ++
+    [.mov .r7 (.imm 0), .umaal .r3 .r7 .r2 .r9,
+      .adds .r3 .r3 (.reg .r11), .adc .r11 .r7 (.imm 0), .str .r3 .r0 k]
+
 /-- Two steps, at the pointers and a word above them, then the advance.
 Only the second accumulator word is needed by `rowUEnd`. -/
-def rowBodyU : List Instr := rowFirstU ++ rowStepU 4 ++ rowAdvance2
+def rowBodyU : List Instr := rowLatencyStep 0 false ++ rowLatencyStep 4 true ++ rowAdvance2
 
 /-- The scalar `r1 | r10 << 16` into `r9`. -/
 def rowUJoin : List Instr := [.dp .orr .r9 .r1 (.shifted .r10 .lsl 16)]
