@@ -421,13 +421,18 @@ def plan(manifest: dict) -> dict:
     for i, shard in enumerate(shards):
         for m in sorted(shard):
             owner.setdefault(m, i)
-    return {
+    out = {
         "stale": len(stale),
         "work": round(work),
         "loads": [round(t) for t in estimates],
         "targets": [sorted(t) for t in targets],
         "owner": owner,
     }
+    # The modules whose sources differ from the last build's, whatever its
+    # inputs: what `check_lean_public_imports.py` checks.
+    if sources:
+        out["edited"] = sorted(m for m, f in mods.items() if sources.get(m) != digest(f))
+    return out
 
 
 def shard_index(p: dict, name: str) -> int:
