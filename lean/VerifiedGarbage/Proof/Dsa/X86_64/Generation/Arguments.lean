@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
-public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
 /-! # Exact values and memory effects of native argument transfers -/
 

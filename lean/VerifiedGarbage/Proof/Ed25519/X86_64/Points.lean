@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
-public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 
 /-! Exact extended-coordinate operations and the slots they preserve. -/
 

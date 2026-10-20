@@ -1,13 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
-meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+meta import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopHash
+import VerifiedGarbage.Proof.Sha3.Spec
+meta import VerifiedGarbage.Proof.MlKem.X86.TopHash
+meta import VerifiedGarbage.Proof.Sha3.Spec
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the seeds

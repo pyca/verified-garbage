@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 
-public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
 
 /-! # The complete native FFDH parameter-search controller
 

@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Bits
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Bits
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Merged from `Proof.Ed25519.X86_64.BitByte`. -/
 

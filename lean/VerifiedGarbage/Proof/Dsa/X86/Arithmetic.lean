@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
-public import VerifiedGarbage.Proof.Mont.X86.ContextMul
-public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-public import VerifiedGarbage.Proof.Dsa.X86.Reduce
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Dsa.X86.Reduce
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Products and sums of ordinary DSA residues -/
 

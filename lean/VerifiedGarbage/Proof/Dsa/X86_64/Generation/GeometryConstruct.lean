@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryHash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+public import VerifiedGarbage.Proof.Dsa.Encoding
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 
 /-! # Concrete p-candidate construction plan for each accepted subgroup candidate -/
 

@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.AArch64.CT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Enc
 meta import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
-public import VerifiedGarbage.Proof.AesXts.AArch64.CT
 meta import VerifiedGarbage.Proof.AesXts.AArch64.CT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

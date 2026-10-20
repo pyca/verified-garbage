@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
+import VerifiedGarbage.Proof.Bignum.Arm.WindowState
+import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One exponent bit of the windowed exponentiation
 

@@ -1,15 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -114,11 +109,12 @@ def short : StitchName → Bool
   | .vaesAvx512 => true
   | _ => false
 
-/-- Whether `seal_split` takes a TLS record's whole groups at `src` and at
-`dst` in one pass of the loop on 256-bit registers (`SealSplit.prefixN`). -/
-def onePass : StitchName → Bool
-  | .vaes => true
-  | _ => false
+/-- The loop with which `seal_split` takes a TLS record's whole groups at
+`src` and at `dst` in one pass (`SealSplit.prefixN`), if any. -/
+def onePass : StitchName → Option OnePassName
+  | .vaes => some .r
+  | .vaesAvx512 => some .z
+  | _ => none
 
 end StitchName
 

@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 /-! # Shape a seed digest into DSA's subgroup-prime candidate -/
 

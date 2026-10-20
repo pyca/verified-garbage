@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterRun
 import Mathlib.Tactic.SplitIfs
 

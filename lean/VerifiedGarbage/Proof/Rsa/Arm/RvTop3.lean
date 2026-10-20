@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvTop2
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the body's start (`in_x`)
 

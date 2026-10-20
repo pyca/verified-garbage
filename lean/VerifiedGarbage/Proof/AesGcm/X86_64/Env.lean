@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on x86-64: where everything is

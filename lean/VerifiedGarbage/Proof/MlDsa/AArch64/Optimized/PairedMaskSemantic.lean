@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckFlags
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSource
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 
 /-! ## From `PairedPassFlags.lean` -/
 

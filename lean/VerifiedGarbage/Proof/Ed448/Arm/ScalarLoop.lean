@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarStep
-import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: the loops

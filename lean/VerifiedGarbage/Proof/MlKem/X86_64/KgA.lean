@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: key generation, `G` and the matrix

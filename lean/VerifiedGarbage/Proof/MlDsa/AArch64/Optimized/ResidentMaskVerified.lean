@@ -5,7 +5,6 @@ public import VerifiedGarbage.Spec.MlDsa.ResidentMask
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-! ## From `ResidentMaskContract.lean` -/
 

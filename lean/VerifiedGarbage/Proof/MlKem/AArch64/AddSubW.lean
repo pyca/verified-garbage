@@ -1,18 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
-# Sums and differences of polynomials stored with 16 bits, on AArch64
+# Sums of polynomials stored with 16 bits, on AArch64
 
 `accW op` is proven once for any step `op` that computes a function `F` of
 two coefficients less than `q` in halfwords (`HOpSpec`): `haddOp` computes
-`(a + b) mod q` and `hsubOp` `(a + q - b) mod q`, and `accW_ok` writes
-`G f g` to `f` for the `G` whose coefficients `F` computes (`addW_ok`,
-`subW_ok`).
+`(a + b) mod q`, and `accW_ok` writes `G f g` to `f` for the `G` whose
+coefficients `F` computes (`addW_ok`).
 -/
 
 @[expose] public section
@@ -85,24 +88,6 @@ theorem haddOp_spec : HOpSpec haddOp fun a b => (a + b) % 3329 := by
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
   refine hcsub_ok (by rw [h₁.get .v16]; exact hq) l₁ (fun e he => by have := hA e he; have := hB e he; omega)
     fun s₂ h₂ l₂ => k s₂ ((h₁.chg.trans h₂).mono) l₂
-
-theorem hsubOp_spec : HOpSpec hsubOp fun a b => (a + 3329 - b) % 3329 := by
-  intro is s Q A B hA hB lA lB hq k
-  simp only [hsubOp, List.cons_append, List.nil_append]
-  refine wp_vop (d := .v2) rfl fun s₁ h₁ => wp_vop (d := .v2) rfl fun s₂ h₂ => ?_
-  have l₂ : HLanes (s₂.v .v2) fun e => A e + 3329 - B e := by
-    have l₁ : HLanes (s₁.v .v2) fun e => (A e + 2 ^ 16 - B e) % 2 ^ 16 := by
-      rw [h₁.v]
-      refine hlanes_map2 lA lB fun e he => ?_
-      have := hA e he; have := hB e he
-      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]; omega
-    rw [h₂.v]
-    refine hlanes_map2 l₁ (by rw [h₁.get .v16]; exact hq) fun e he => ?_
-    have := hA e he; have := hB e he
-    simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  refine hcsub_ok (by rw [h₂.get .v16, h₁.get .v16]; exact hq) l₂
-    (fun e he => by have := hA e he; have := hB e he; omega)
-    fun s₃ h₃ l₃ => k s₃ (((h₁.chg.trans h₂.chg).trans h₃).mono) l₃
 
 end
 
@@ -239,15 +224,5 @@ theorem addW_ok {s : State} (hd : AccData s) :
       have : (R[i]!).val < 3329 := Fin.isLt _
       have hq : q = 3329 := rfl
       rw [add_get _ _ hi, val_add, condSub]; split <;> omega) (by decide +kernel) hd
-
-theorem subW_ok {s : State} (hd : AccData s) :
-    WP isa subW s fun s' => Keep accClob s s' ∧ Frame [⟨s.gpr .x0, 512⟩] s.mem s'.mem ∧
-      PolyIsW 16 s'.mem (s.gpr .x0) (sub (polyAtW 16 s.mem (s.gpr .x0)) (polyAtW 16 s.mem (s.gpr .x1))) :=
-  accW_ok hsubOp_spec (fun a _ b _ => Nat.mod_lt _ (by decide))
-    (fun P R i hi => by
-      have : (P[i]!).val < 3329 := Fin.isLt _
-      have : (R[i]!).val < 3329 := Fin.isLt _
-      have hq : q = 3329 := rfl
-      rw [sub_get _ _ hi, val_sub, condSub]; split <;> omega) (by decide +kernel) hd
 
 end VG.Proof.MlKem.AArch64.AddSubW

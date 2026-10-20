@@ -1,11 +1,20 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # An FFDH parameter candidate on AArch64: drawing a witness

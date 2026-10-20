@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Passing a pointer into the wrapper's local frame as a cdecl argument -/
 

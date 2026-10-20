@@ -1,15 +1,39 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.X25519.X86_64.Setup
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
+meta import VerifiedGarbage.Spec.Ed25519.Contract
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+meta import VerifiedGarbage.Proof.X25519.X86_64.Finish
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.MulAddMain`. -/
 

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # Lemmas for x86-64 registration files

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # In-place masked selection for modular exponentiation -/
 

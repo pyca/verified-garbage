@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
 public import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.Ed448.AArch64.Chain
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 scalar arithmetic on AArch64: one word

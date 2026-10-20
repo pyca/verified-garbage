@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvStoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvStoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvStore
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Both masked recovery exports share a value-independent trace -/
 

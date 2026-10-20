@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCTData
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Constants
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 
 /-! # FFDH parameter generation on x86-64: timing of Montgomery constants -/
 

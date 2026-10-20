@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
+import VerifiedGarbage.Impl.Ed25519.Arm.Word
 
 /-! Fixed workspace addresses for the packed verification points. -/
 

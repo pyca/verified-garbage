@@ -2,10 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Finish
 public import VerifiedGarbage.Proof.X448.X86_64.InvCall
-public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X448.X86_64.Iter
+import VerifiedGarbage.Proof.X448.X86_64.Bits
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X448 on x86-64: the whole function

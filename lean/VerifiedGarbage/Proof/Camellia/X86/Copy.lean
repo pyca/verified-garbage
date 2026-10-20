@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Camellia.X86.Ecb
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Camellia.X86.Crypt8
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.X86.Core
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying blocks on x86 (32-bit)

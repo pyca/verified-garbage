@@ -1,6 +1,19 @@
 module
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.AesSiv.AArch64
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Siv
 
-public import VerifiedGarbage.Proof.AesSiv.AArch64.CmacOf
+import VerifiedGarbage.Proof.AesSiv.AArch64.Env
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesSiv.AArch64.CmacOf
 
 /-!
 # AES-SIV on AArch64: a step of S2V over the associated data

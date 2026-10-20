@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 
 /-!
 # Deterministic ECDSA on AArch64: signing with a candidate

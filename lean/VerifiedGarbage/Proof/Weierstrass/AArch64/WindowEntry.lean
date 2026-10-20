@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The window method on AArch64: the entry of a digit
@@ -260,7 +262,7 @@ theorem winEntryR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL
       · exact combClob_mem (by simp)
       · simp [combClob]
       · exact combClob_mem (by simp)
-      · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_append_left _ hr))
+      · exact maskRegs_combClob hr
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp [combClob, clob]
     · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

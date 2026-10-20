@@ -2,10 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKey
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.CT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
-public import VerifiedGarbage.Proof.Hmac.AnyKey
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Proof.Hmac.Scratch
+import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # HMAC's `init` for a key of any length on 32-bit ARM: constant time, and in a frame of its own

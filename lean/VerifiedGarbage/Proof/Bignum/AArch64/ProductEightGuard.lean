@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightCall
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont
-import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
-public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCorrect
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 
 @[expose] public section
 

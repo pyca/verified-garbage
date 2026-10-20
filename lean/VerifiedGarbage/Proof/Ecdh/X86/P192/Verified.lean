@@ -1,21 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
-meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
-public import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
-meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.EcKey.P192
+public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
+public import VerifiedGarbage.Impl.Ecdh.P192.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdh.X86.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Spec.EcKey.P192
+meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Verified
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdh.X86.P192.Lit
+meta import VerifiedGarbage.Impl.Ecdh.P192.X86
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ECDH over P-192 on x86 (32-bit): `Verified`

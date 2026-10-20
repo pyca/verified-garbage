@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.CT
-public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
+import VerifiedGarbage.Proof.AesXts.AArch64.Unit.CT
+import VerifiedGarbage.Proof.AesXts.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
+public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
+public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Contract
+public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.AArch64.CT
 
 /-!
 # XTS-AES of data units on AArch64: `Verified`

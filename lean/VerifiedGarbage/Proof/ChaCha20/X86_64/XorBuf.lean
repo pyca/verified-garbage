@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # XORing keystream from a buffer into the data, eight bytes at a time

@@ -92,16 +92,29 @@ def normTbl (inv : Prog isa) : Prog isa :=
   .seq (seqRange (fun i => backStep K (8 - i)) 7) <| .seq (backOne K) <|
   .block ((List.range 8).flatMap fun i => setConst K.M.n (K.tblPt (i + 1)).z K.one)
 
-/-- A pair of Jacobian doublings, `a` into `b` and back, then the count in
+/-- `R = 2R` into `D`: the doubling's field program by `fprogB`, or the
+block `dd` gives (`Option`'s first, for `R` into `D`). -/
+def dblRD (dd : Option (Prog isa × Prog isa)) : Prog isa :=
+  match dd with
+  | some d => d.1
+  | none => fprogB K.M (double K K.R K.D)
+
+/-- `D = 2D` into `R`, as `dblRD`. -/
+def dblDR (dd : Option (Prog isa × Prog isa)) : Prog isa :=
+  match dd with
+  | some d => d.2
+  | none => fprogB K.M (double K K.D K.R)
+
+/-- A pair of Jacobian doublings, `R` into `D` and back, then the count in
 the high half of `x19` less one, into `x2`, as `dbl2`. -/
-def jacPairOn (a b : Pt) : Prog isa :=
-  .seq (fprogB K.M (double K a b)) <| .seq (fprogB K.M (double K b a)) <|
+def jacPair (dd : Option (Prog isa × Prog isa)) : Prog isa :=
+  .seq (dblRD K dd) <| .seq (dblDR K dd) <|
   .block [.movz .x .x2 1 2, .sub .x .x19 .x19 .x2, .lsr .x .x2 .x19 32]
 
 /-- `R = 16 R` in Jacobian coordinates: two pairs of doublings between `R`
 and `D`. -/
-def quadJ : Prog isa :=
-  .seq (.block [.movz .x .x2 2 2, .add .x .x19 .x19 .x2]) (.loop (jacPairOn K K.R K.D) (.nonzero .x .x2))
+def quadJ (dd : Option (Prog isa × Prog isa) := none) : Prog isa :=
+  .seq (.block [.movz .x .x2 2 2, .add .x .x19 .x19 .x2]) (.loop (jacPair K dd) (.nonzero .x .x2))
 
 /-- After the Jacobian addition into `D`: `D = R` where `E` is `O`, then
 `R = E` where `R` is `O`, else `D` (the masks of `Z ≠ 0`, `nzMask`, in
@@ -109,19 +122,26 @@ def quadJ : Prog isa :=
 def selSum : List Instr :=
   nzMask K.M.n K.E.z ++ selPt K.M.n K.D K.R K.D ++ nzMask K.M.n K.R.z ++ selPt K.M.n K.R K.E K.D
 
-/-- `R = R + E` for an affine `E`, by the mixed addition, unless `R` and `E`
-are equal but not `O`. -/
-def sumJ : Prog isa :=
-  .seq (fprogB K.M (maddJ K.S K.R K.E K.D)) (.block (selSum K))
+/-- `D = R + E` by the mixed addition: its field program by `fprogB`, or the
+block `ma` gives. -/
+def maddRD (ma : Option (Prog isa)) : Prog isa :=
+  match ma with
+  | some m => m
+  | none => fprogB K.M (maddJ K.S K.R K.E K.D)
+
+/-- `R = R + E` for an affine `E`, by the mixed addition (`maddRD`), unless
+`R` and `E` are equal but not `O`. -/
+def sumJ (ma : Option (Prog isa) := none) : Prog isa :=
+  .seq (maddRD K ma) (.block (selSum K))
 
 /-- The entry of digit `x19` into `E`, its `y` negated for a negative digit. -/
 def entry : List Instr := digit K.bits ++ select K ++ negY K.M K.neg K.zero K.E.y K.bits
 
 /-- Iteration `j = x19 - 1 ≥ 1`: `R = 16 R + [d_j]P` in Jacobian coordinates;
 then `x4 = x19 - 1`, zero after the iteration of digit 1. -/
-def stepJ : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (quadJ K) <| .seq (.block (entry K)) <|
-  .seq (sumJ K) (.block [.subImm .x .x4 .x19 1])
+def stepJ (dd : Option (Prog isa × Prog isa) := none) (ma : Option (Prog isa) := none) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (quadJ K dd) <| .seq (.block (entry K)) <|
+  .seq (sumJ K ma) (.block [.subImm .x .x4 .x19 1])
 
 /-- `R` from Jacobian into projective coordinates `(XZ : Y : Z³)` (through
 `D`), with `Y` Montgomery's one where `Z` (so `Z³`) is zero. -/
@@ -132,16 +152,18 @@ def toProjR : Prog isa :=
 /-- The last iteration, `j = 0` (with `x19 = 1`): `R = 16 R` in Jacobian
 coordinates, `R` into projective coordinates, and its sum with the entry
 (affine, so projective too) by the complete formulas. -/
-def stepLast (pa : Option (String × Nat) := none) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (quadJ K) <| .seq (toProjR K) <| .seq (.block (entry K)) <|
+def stepLast (pa : Option (String × Nat) := none) (dd : Option (Prog isa × Prog isa) := none) :
+    Prog isa :=
+  .seq (.block [decCounter]) <| .seq (quadJ K dd) <| .seq (toProjR K) <| .seq (.block (entry K)) <|
   .seq (addP K.M K.S K.R K.E K.D pa) (.block (copyPt K.M.n K.R K.D))
 
 /-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
 `k + offset J` at `K.bits` (`J ≥ 2`), with `inv` leaving `R.z^(p-2)` in
-`E.x`. -/
-def windowJ (inv : Prog isa) (pa : Option (String × Nat) := none) : Prog isa :=
+`E.x`. The doublings are `dd`'s blocks if given, the mixed additions `ma`'s. -/
+def windowJ (inv : Prog isa) (pa : Option (String × Nat) := none) (dd : Option (Prog isa × Prog isa) := none)
+    (ma : Option (Prog isa) := none) : Prog isa :=
   .seq (build K pa) <| .seq (normTbl K inv) <| .seq (.block (init K)) <|
-  .seq (.loop (stepJ K) (.nonzero .x .x4)) (stepLast K pa)
+  .seq (.loop (stepJ K dd ma) (.nonzero .x .x4)) (stepLast K pa dd)
 
 end WinCfg
 

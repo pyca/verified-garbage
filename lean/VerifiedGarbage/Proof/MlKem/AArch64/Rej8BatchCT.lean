@@ -1,12 +1,23 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Vector rejection leaks only its public matrix candidates and cursors -/
 

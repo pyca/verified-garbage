@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Core
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on ARMv7

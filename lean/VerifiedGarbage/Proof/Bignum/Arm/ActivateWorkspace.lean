@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ActivateWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
 /-! # Switching workspaces refreshes the saved base without touching their contents -/
 

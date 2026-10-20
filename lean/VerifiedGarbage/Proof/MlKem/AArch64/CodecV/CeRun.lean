@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: `ceLoop`
@@ -79,15 +80,15 @@ theorem vloop_ok {w : Width} (hw : WOk w) {G n : Nat} {K : State → Prop} {setu
     {s₀ : State} (hn : 256 / (w.c * G) = n) (hn0 : 0 < n) (hG : w.nb * G * n = 32 * w.d)
     (hmul : w.mul < 2 ^ 32) (hmask : 2 ^ w.d - 1 < 2 ^ 32)
     (hset : ∀ s, WP isa (.block setup) s fun t => GFr s t ∧
-      (∀ r, r ≠ .v20 → r ≠ .v21 → t.v r = s.v r) ∧ K t)
+      (∀ r, r ≠ .v20 → r ≠ .v21 → r ≠ .v22 → t.v r = s.v r) ∧ K t)
     (hK : ∀ s t, t.v = s.v → K s → K t)
     (hstep : ∀ k < n, ∀ s, VInv w G K s₀ k s →
       WP isa (.block body) s fun t => VInv w G K s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ n)) :
-    WP isa (ceLoop w.d w.mul n setup body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
+    WP isa (ceLoop w n setup body) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
       bytesAt s'.mem (oP s₀) (32 * w.d) = Spec.MlKem.compressEncode w.d (P s₀) := by
   refine WP.seq ?_
   simp only [List.append_assoc]
-  refine wp_dupW hmul fun s1 g1 v1 l16 => wp_dupW (c := 262080) (by decide) fun s2 g2 v2 l17 =>
+  refine wp_dupW hmul fun s1 g1 v1 l16 => wp_dupW (c := w.add) (by have := hw.add_lt; omega) fun s2 g2 v2 l17 =>
     wp_dupW hmask fun s3 g3 v3 l18 => ?_
   rw [WP.block_append_iff]
   refine WP.mono (hset s3) fun s4 ⟨g4, v4, k4⟩ => ?_
@@ -97,7 +98,7 @@ theorem vloop_ok {w : Width} (hw : WOk w) {G n : Nat} {K : State → Prop} {setu
   have g : ∀ r, r ≠ .x9 → r ≠ .x11 → s5.gpr r = s₀.gpr r := fun r h9 h11 => by
     rw [h5.gpr r (by simpa using h11), g4.gpr r h9, g3.gpr r h9, g2.gpr r h9, g1.gpr r h9]
   have m5 : s5.mem = s₀.mem := by rw [h5.mem, g4.mem, g3.mem, g2.mem, g1.mem]
-  have vv : ∀ r, r ≠ .v20 → r ≠ .v21 → s5.v r = s3.v r := fun r a b => by rw [v5, v4 r a b]
+  have vv : ∀ r, r ≠ .v20 → r ≠ .v21 → r ≠ .v22 → s5.v r = s3.v r := fun r a b c => by rw [v5, v4 r a b c]
   have h0 : VInv w G K s₀ 0 s5 := by
     refine ⟨by rw [h5.rd, g4.rd, g3.rd, g2.rd, g1.rd], by rw [h5.wr, g4.wr, g3.wr, g2.wr, g1.wr],
       by rw [h5.sp, g4.sp, g3.sp, g2.sp, g1.sp], ?_, ?_, ?_, ⟨?_, ?_, ?_⟩, hK _ _ v5 k4, ?_, ?_⟩
@@ -105,10 +106,10 @@ theorem vloop_ok {w : Width} (hw : WOk w) {G n : Nat} {K : State → Prop} {setu
     · rw [g .x2 (by decide) (by decide), Nat.mul_zero, ptr_zero]
     · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * G); omega), hn,
         Nat.sub_zero]
-    · rw [vv _ (by decide) (by decide), v3 _ (by decide), v2 _ (by decide)]
-      exact l16.congr fun _ _ => hw.mul
-    · rw [vv _ (by decide) (by decide), v3 _ (by decide)]; exact l17
-    · rw [vv _ (by decide) (by decide)]; exact l18
+    · rw [vv _ (by decide) (by decide) (by decide), v3 _ (by decide), v2 _ (by decide)]
+      exact l16
+    · rw [vv _ (by decide) (by decide) (by decide), v3 _ (by decide)]; exact l17
+    · rw [vv _ (by decide) (by decide) (by decide)]; exact l18
     · rw [m5, Nat.mul_zero]; exact BytesUpTo.zero _
     · rw [m5]; exact Frame.refl _ _
   refine WP.mono (count_loop hn0 (VInv w G K s₀) hstep h0) fun s' h => ⟨h.rd, h.wr, h.sp, ?_⟩

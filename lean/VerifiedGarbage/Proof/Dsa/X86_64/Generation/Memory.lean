@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # Preserve the hash frame while writing an external candidate buffer -/
 

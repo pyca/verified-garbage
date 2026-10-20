@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Compress
-meta import VerifiedGarbage.Proof.Argon2.Arm.Compress
-public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Argon2.Arm.Compress
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+public import VerifiedGarbage.Impl.Argon2.Arm.Compress
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.Arm.Compress
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Argon2.Contract
-meta import VerifiedGarbage.Spec.Argon2.Contract
+meta import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+meta import VerifiedGarbage.Impl.Argon2.Arm.Compress
+meta import VerifiedGarbage.Proof.Argon2.Arm.Mix
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Argon2 compression on ARMv7: verified

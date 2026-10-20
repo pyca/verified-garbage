@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedFields
 public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSpec
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerify
 
 /-! # External input layout for the complete DSA verification program -/
 

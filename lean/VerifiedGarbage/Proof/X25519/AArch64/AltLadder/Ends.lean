@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
+public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
 
 /-! # The `_alt` ladder's first iteration and its last three
 

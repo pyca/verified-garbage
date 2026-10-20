@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionMath
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Timing
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Timing
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
-meta import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Timing
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The dedicated P-521 square meets the existing Montgomery square contract. -/
 

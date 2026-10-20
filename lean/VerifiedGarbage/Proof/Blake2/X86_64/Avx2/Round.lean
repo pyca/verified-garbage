@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 public import VerifiedGarbage.Proof.Blake2.Lanes
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx2
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Gb
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # BLAKE2b on x86-64 with AVX2: a round

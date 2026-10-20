@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesCbc.X86.CT
+public import VerifiedGarbage.Impl.AesCbc.X86
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Spec.Cbc.Contract
+import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CBC on x86: `Verified`

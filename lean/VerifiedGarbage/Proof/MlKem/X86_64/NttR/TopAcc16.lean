@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
-public import VerifiedGarbage.Proof.MlKem.PolyW
+public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
+public import VerifiedGarbage.Spec.MlKem.Kpke16
+import VerifiedGarbage.Proof.MlKem.PolyW
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, of `u16`s

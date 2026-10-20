@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize both Montgomery values used by binary RSA exponentiation -/
 

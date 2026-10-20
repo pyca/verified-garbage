@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Generation
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Native FFDH generation controllers: initialization and entropy refills -/
 

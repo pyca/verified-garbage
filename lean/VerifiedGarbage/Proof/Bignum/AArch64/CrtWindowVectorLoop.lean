@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorTile
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Preserve the selected prefix and table context across SIMD tiles. -/
 

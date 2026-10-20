@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIGeometry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputPlan
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Canonical persistent arguments obtained from the public ABI -/
 

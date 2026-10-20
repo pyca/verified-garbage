@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Run
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Cond
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM `seal_split` on x86-64 with AVX-512: the short path

@@ -1,10 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtPRanges
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Algebra.GroupWithZero.Basic
 
 /-!
 # RSA with the CRT on x86-64: `p`'s phase

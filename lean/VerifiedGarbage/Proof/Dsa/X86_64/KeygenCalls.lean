@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.Calls
+import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
 /-! # The domain check and key derivation with call-based arithmetic backends -/
 

@@ -1,10 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
+public import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: correctness

@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.SignLayout
 
-public import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
-public import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
-public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
-public import VerifiedGarbage.Proof.Dsa.X86.SigningOperation
+import VerifiedGarbage.Proof.Dsa.X86.LayoutAgreement
+import VerifiedGarbage.Proof.Dsa.X86.SignSizedTiming
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
+import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Whole signing traces from common public arguments and domain values -/
 

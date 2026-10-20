@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferCopy
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.OmegaLit
-import VerifiedGarbage.Spec.Hmac
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 
 /-! Fixed word-sized XORs have the same byte-level effect as MGF1's byte loop. -/
 

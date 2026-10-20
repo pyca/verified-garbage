@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of loading and adding DSA scalars -/
 

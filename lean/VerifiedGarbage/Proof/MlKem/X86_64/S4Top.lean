@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, correctness
@@ -87,11 +88,11 @@ theorem end_ok {X : Mem → Prop} {s : State} (h : PCW w16 X σ 4 s) :
 
 /-- Everything after the prologue, the round constants and the padded seeds. -/
 theorem body_ok {fast : Bool} {s : State} (h : SqInvW w16 σ 0 s) :
-    WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabBuild)
+    WP isa (.seq (squeezes 0 3 fast) (.seq (.block tabAddr)
       (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (.seq (run1 3 w16) (tail4 fast w16))))))) s fun s' =>
       (sample4KW w16).post σ s' ∧ gprPreserved σ s' := by
   refine WP.seq (WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) (sqT_of h)) fun _ ⟨q₃, _⟩ =>
-    WP.seq (WP.mono (p1_zero_ok hp q₃) fun _ p₀ => ?_))
+    WP.seq (WP.mono (p1_zero_ok q₃) fun _ p₀ => ?_))
   refine WP.seq (WP.mono (run1_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (run1_ok hp (by decide) p₂) fun _ p₃ =>
       WP.seq (WP.mono (run1_ok hp (by decide) p₃) fun _ p₄ => ?_))))

@@ -1,25 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
-meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
-import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-meta import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Spec.RsaPkcs1Sig
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSteps
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCT
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCorrect
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Spec.RsaPkcs1Sig
 
 /-!
 # RSAES-OAEP decryption on x86-64: constant time

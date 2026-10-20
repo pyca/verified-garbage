@@ -2,8 +2,7 @@ module
 
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash`, verified

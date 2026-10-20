@@ -4,16 +4,20 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Key.Permutation
 import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
 import VerifiedGarbage.Proof.TripleDes.Arm.Word
 import VerifiedGarbage.Proof.Rc2.Arm.KeySteps
 import VerifiedGarbage.Proof.TripleDes.Arm.Key.Rotation
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 public import VerifiedGarbage.Proof.TripleDes.KeyMemory
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## `Load` -/
 

@@ -3,12 +3,12 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsStage
 import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MdStream.AArch64
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 
 /-! Merged from `Proof.Argon2.AArch64.AddressHeaderCorrect`. -/
 

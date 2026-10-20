@@ -1,15 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicPowerCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicPowerCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicPowerCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
-import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
-meta import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Load
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Public exponent bytes across Montgomery setup and input loading -/
 

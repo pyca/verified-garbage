@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.Arm.Inverse
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `inverse` on ARMv7 is constant time: its addresses and branches depend only on `r7`–`r9` -/
 

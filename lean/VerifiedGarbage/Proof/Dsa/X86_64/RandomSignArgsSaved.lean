@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallLayout
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! Map the wrapper's saved arguments to the supplied-nonce signing ABI. -/
 @[expose] public section

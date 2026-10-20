@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
-public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
-public import VerifiedGarbage.Proof.Weierstrass.Pow
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+public import VerifiedGarbage.Proof.Divstep.TcS
+public import Mathlib.Tactic.LinearCombination
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import Aesop.BuiltinRules
 
 /-!
 # Inversion by divsteps on x86-64: a batch

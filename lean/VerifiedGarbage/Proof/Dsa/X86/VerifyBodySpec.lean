@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyBody
+import VerifiedGarbage.Proof.Dsa.X86.VerifyBody
 public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
 /-! # The post-shape verifier returns the packed-byte specification result -/
 

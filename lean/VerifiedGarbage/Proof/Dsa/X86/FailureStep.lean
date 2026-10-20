@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
-public import VerifiedGarbage.Proof.Dsa.X86.Bytes
 public import VerifiedGarbage.Proof.Zeroize.Common
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Impl.Dsa.X86.Bytes
 
 /-! # A byte step of public-domain rejection zeroization -/
 

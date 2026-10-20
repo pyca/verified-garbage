@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Lay
-import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 
 /-!
 # ML-DSA verification on AArch64: the prologue, the hint and `z`

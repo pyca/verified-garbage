@@ -3,12 +3,8 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMont
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquareDispatch
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 
 /-! ## AdxTiledSquareMont -/
 

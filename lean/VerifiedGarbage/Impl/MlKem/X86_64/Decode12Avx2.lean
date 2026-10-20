@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 
 /-!

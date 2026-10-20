@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Montgomery arithmetic on x86-64: P-384's reduction with BMI2

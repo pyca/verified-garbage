@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFn
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontFn
+import VerifiedGarbage.Proof.Bignum.Arm.MontFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Bignum.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # The shared RSA Montgomery contract under AAPCS -/
 

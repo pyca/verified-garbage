@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessRange
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessMont
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessMont
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
 import VerifiedGarbage.Proof.Ffdh.MillerRabin
 import VerifiedGarbage.Proof.Framework.Omega
 

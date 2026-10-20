@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Converting the powers of a key context, two at a time

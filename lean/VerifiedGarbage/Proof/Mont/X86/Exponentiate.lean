@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.ExponentBody
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
-public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentLoop
+import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Complete runtime-modulus exponentiation on 32-bit x86 -/
 

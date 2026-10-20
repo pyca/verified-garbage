@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyInput
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApply
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInput
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # Workspace resources and acceptance mask ready for packed-key output -/
 

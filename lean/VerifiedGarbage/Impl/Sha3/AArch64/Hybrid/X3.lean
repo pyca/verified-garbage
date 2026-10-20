@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.Round
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
 public import VerifiedGarbage.Spec.Sha3.X3
 

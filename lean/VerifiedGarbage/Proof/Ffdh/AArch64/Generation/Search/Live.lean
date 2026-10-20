@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
+public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Ffdh.GenerationTape
 
 /-! # What keeps the parameter search's loop state (AArch64), and where the search goes -/
 

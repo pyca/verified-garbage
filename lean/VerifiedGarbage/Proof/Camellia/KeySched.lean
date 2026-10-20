@@ -2,8 +2,12 @@ module
 
 import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Words
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Camellia.KeyOrder
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The key schedule on 64-bit halves

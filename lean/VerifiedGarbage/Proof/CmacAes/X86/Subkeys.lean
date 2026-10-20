@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.CmacAes.X86.Save
 public import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

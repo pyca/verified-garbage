@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyR1CT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimalityCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeArguments
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeArguments
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Only the argument-bearing frame words are public at a primality call -/

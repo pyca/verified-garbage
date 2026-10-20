@@ -1,7 +1,8 @@
 module
-
-public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
+
 
 /-!
 # ML-DSA: when verification fails

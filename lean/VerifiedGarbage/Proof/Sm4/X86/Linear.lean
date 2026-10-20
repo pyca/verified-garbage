@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 public import VerifiedGarbage.Proof.Framework.X86.Linear
-public import VerifiedGarbage.Proof.Sm4.X86.LayersLit
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+public import VerifiedGarbage.Impl.Sm4.X86.Layers
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # The linear layers of bitsliced SM4 on x86 (32-bit), by evaluation

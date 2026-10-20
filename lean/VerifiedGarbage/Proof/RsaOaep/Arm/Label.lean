@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSAES-OAEP on ARMv7: the label's hash

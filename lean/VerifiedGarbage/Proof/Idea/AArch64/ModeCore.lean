@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
-public import VerifiedGarbage.Proof.Idea.ModeBytes
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Impl.Idea.AArch64.Modes
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Proof.Idea.AArch64.Block
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Idea.ModeBytes
+import VerifiedGarbage.Proof.Idea.AArch64.Ecb
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.AArch64.Lit
 
 /-!
 # IDEA's core for the modes on AArch64

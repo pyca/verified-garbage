@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming AES-CMAC with its working space as an argument

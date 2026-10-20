@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublishValue
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinish
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublishValue
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Convert a completed retry loop into the public signature and consumption outputs. -/
 @[expose] public section

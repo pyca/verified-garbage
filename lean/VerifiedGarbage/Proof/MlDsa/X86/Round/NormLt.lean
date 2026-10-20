@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Common
 meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_norm_lt`

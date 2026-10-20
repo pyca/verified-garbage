@@ -67,6 +67,19 @@ class Score(unittest.TestCase):
         self.assertEqual(name, "7")
         self.assertEqual((b["stale"], n["stale"]), (4, 3))
 
+    def test_a_run_with_private_imports(self):
+        # The hub B imports its modules privately and X and Y import B
+        # privately: a change to B3 rebuilds B, which reads it, and nothing
+        # that imports B.
+        built = {"B3": 300.0, "B": 300.0, "X": 300.0, "Y": 300.0}
+        vis = {m: ([], []) for m in self.base}
+        [_, (_, b, n)] = closure.score(self.base, self.base, self.times, [("7", built)], new_vis=vis)
+        self.assertEqual((b["stale"], n["stale"]), (4, 2))
+        # B passing its modules on: X and Y read B3 again.
+        vis["B"] = (hub("B", 20)["B"], [])
+        [_, (_, b, n)] = closure.score(self.base, self.base, self.times, [("7", built)], new_vis=vis)
+        self.assertEqual(n["stale"], 4)
+
     def test_unchanged_imports_change_nothing(self):
         built = {"A1": 300.0, "A": 300.0, "X": 300.0}
         for _, b, n in closure.score(self.base, self.base, self.times, [("7", built)]):
@@ -115,6 +128,7 @@ class ImportsAt(unittest.TestCase):
                     "VerifiedGarbage.B": [],
                     "VerifiedGarbageTest.T": ["VerifiedGarbage.B"],
                 })
+                self.assertEqual(closure.visibilities_at("HEAD")["VerifiedGarbage.A"], None)
 
 
 class Merges(unittest.TestCase):

@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CT
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
 /-! # FFDH parameter generation on x86-64: verify every shared arithmetic backend -/
 

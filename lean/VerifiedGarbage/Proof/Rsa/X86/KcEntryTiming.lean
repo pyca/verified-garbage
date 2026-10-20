@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcPair
-public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Saving and restoring registers has a trace fixed by public addresses -/
 

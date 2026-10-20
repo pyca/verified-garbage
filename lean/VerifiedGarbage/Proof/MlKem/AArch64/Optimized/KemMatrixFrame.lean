@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Restore
 
 /-! # Paired matrix writes preserve the encryption caller and prior entries -/
 @[expose] public section

@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Init
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Initialization only exposes its public pointer, bit count and u32 generator -/
 

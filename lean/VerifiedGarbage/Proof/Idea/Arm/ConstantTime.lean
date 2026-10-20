@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Lit
-meta import VerifiedGarbage.Proof.Idea.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Idea.Arm.Lit
+public import VerifiedGarbage.Impl.Idea.Arm
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Idea.Arm.Lit
+meta import VerifiedGarbage.Impl.Idea.Arm
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time IDEA programs on ARMv7
 

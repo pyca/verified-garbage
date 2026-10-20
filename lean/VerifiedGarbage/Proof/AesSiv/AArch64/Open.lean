@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Seal
 import VerifiedGarbage.Proof.AesSiv.Mask
+import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-SIV on AArch64: the end of `vg_aes_siv_decrypt`

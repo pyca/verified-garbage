@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleReduceCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 
 /-! # Timing of adding the two reduced signing scalars -/
 

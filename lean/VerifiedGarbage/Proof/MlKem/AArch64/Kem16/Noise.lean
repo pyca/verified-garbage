@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
 
 /-! # The 16-bit encryption noise
 
@@ -23,7 +27,7 @@ def ErrorsW (P : KemLay) (L : Layout) (s₀ : State) (rv : List Byte) (s : State
 theorem noiseW_einv {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (ht : Optimized.TransformTables s)
     {kC co : Nat} {mE mB : Mem} {v : BitVec 64} {rv mv : List Byte}
     (h : EInvW true P L s₀ kC co mE mB v rv mv 0 0 s) :
-    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P false true) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P false) s fun t =>
       Kept (Noise.allWrites P false (kA s₀ L.sc)) s t ∧
       EInvW true P L s₀ kC co t.mem mB v rv mv P.k 0 t ∧ ErrorsW P L s₀ rv t := by
   have hw := hp.wf
@@ -31,7 +35,7 @@ theorem noiseW_einv {s₀ s : State} (hp : Pre P L s₀) (hr : Noise.Room P) (ht
   have hc : Covers [⟨kA s₀ L.sc,P.scl⟩] s.wr := by
     have hh := cov_w hp h.kb ⟨hp.scw,hp.scb⟩ (o := 0) (l := P.scl) (by rw [hp.scl]; omega)
     simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables (w16 := true) hw hr false h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
+  refine WP.mono (Noise.readonly_noiseAll_tables hw hr false h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   have keepB : ∀o l, o+l≤SS → o+l≤P.scl-1024*P.k →
       (Spec.Sha3.bytesAt t.mem (sA L s₀ o) l=Spec.Sha3.bytesAt s.mem (sA L s₀ o) l) := by
     intro o l ho ht

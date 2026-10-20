@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPush
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyScope
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # Stack entry preserves all source bytes and provides the three scratch subworkspaces -/
 

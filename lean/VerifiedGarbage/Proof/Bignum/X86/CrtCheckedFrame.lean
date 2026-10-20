@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtCheckedCompute
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # The CRT body writes around the saved cdecl register block -/
 

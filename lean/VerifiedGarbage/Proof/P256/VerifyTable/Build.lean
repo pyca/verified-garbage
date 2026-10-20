@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.P256.VerifyTable.Copies
 public import VerifiedGarbage.Proof.P256.VerifyTable.StoreInv
 import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 
 /-! The co-Z table's build on the field invariant: the environment after each
 phase, as a function of the one before it. -/

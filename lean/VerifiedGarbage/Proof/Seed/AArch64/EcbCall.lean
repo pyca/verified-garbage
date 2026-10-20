@@ -1,11 +1,33 @@
 module
+public import VerifiedGarbage.Impl.Seed.AArch64.Modes
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.Seed.AArch64.Frame
-meta import VerifiedGarbage.Proof.Seed.AArch64.Frame
-public import VerifiedGarbage.Proof.Seed.AArch64.Link
-meta import VerifiedGarbage.Proof.Seed.AArch64.Link
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Seed.AArch64.Verified
+import VerifiedGarbage.Proof.Seed.ModeBytes
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.Seed.AArch64.Modes
+meta import VerifiedGarbage.Proof.Seed.Scratch
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Depth
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Seed.AArch64.Verified
+meta import VerifiedGarbage.Proof.Seed.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # SEED ECB on AArch64: calls of the blocks functions

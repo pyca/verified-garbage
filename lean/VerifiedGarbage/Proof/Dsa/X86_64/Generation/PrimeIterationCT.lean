@@ -1,11 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRoundCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRoundCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
+meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRoundCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The guarded primality iteration reveals only the public tape and round -/
 

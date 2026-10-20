@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64.Base
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 
 /-! # DSA with the shared AArch64 Montgomery arithmetic backend
 

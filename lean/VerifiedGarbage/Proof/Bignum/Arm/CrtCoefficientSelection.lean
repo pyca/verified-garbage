@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficient
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportQResidue
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 
 /-! # Preserve coefficient preconditions through workspace selection and residue import -/
 

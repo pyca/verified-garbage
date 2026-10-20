@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyCTReduce
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyWide
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time of `main`

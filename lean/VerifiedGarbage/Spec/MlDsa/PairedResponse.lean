@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.MlDsa.ResponseLow
 public import VerifiedGarbage.Spec.MlDsa.ResponseHint
 
 @[expose] public section

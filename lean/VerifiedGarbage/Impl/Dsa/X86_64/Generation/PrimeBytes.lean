@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Load
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
 
 /-! # Test a candidate directly from its preserved big-endian byte buffer -/

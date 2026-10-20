@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointEqual
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldProg
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Compare points exactly as the reviewed verification equation does. -/
 

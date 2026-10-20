@@ -1,39 +1,43 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
+import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Spec.MlKem.EncapsH
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
+public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
+import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Calls
-public import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-public import VerifiedGarbage.Spec.MlKem.EncapsH
 meta import VerifiedGarbage.Spec.MlKem.EncapsH
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
+import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+public import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFrag16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h` and `vg_mlkem1024_decaps`
@@ -67,6 +71,19 @@ theorem ekWf1024 : Ek.EkWf kem1024 := by kem_wf ecWf1024
 
 theorem ek16FWf1024 : EkF16.Ek16FWf kem1024w := by kem_wf ec16Wf1024.toEcWfB
 theorem ek16HWf1024 : EkF16.Ek16HWf kem1024w := by kem_wf ek16FWf1024
+theorem djFWf1024 : DjF16.DjFWf kem1024w := by kem_wf dc16Wf1024
+theorem djHWf1024 : DjF16.DjHWf kem1024w := by kem_wf djFWf1024
+
+/-- The taint checks of the pieces of the decapsulation hashing `z ‖ c` in the fragments. -/
+theorem djtWf1024 : DjF16.DjTWf kem1024w where
+  rbpIn := by decide
+  zT := ⟨_, by taint_decide⟩
+  jT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by rw [show Encaps.nb kem1024w.L = 4 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  kT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
 
 /-- The taint checks of the fused encapsulation's pieces, with 16-bit polynomials. -/
 theorem ekt16Wf1024 : EkF16.EkT16Wf kem1024w where
@@ -196,8 +213,8 @@ theorem decapsImp1024 : (decapsK kem1024).Implies (Spec.MlKem1024.decapsContract
 
 theorem decaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (decaps1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
-  decapsSel_verified kpke1024 v dc16Wf1024 dcWf1024 calls1024 decapsImp1024
-    (fun _ c S => by s16_ctl v c S kpke1024)
+  decapsSel_verified kpke1024 v djHWf1024 djtWf1024 dcWf1024 calls1024 decapsImp1024
+    (fun _ c b S B => by ek16_ctl v c b S B kpke1024)
     (by s4_ctl v; all_goals first | exact ce1024_ctl _ | exact dd1024_ctl _)
 
 end VG.Proof.MlKem1024.X86_64

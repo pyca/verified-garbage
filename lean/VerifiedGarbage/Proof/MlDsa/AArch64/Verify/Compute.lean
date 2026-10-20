@@ -1,16 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp4
 import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA verification on AArch64: `w′₁`, row by row

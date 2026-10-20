@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.P256.EcdhJac
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

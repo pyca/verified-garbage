@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 
 /-! # Constant-time encapsulation with paired matrix sampling -/
 @[expose] public section

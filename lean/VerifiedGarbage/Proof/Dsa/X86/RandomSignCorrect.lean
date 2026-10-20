@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomBody
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomBody
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The randomized signer meets its contract (x86)

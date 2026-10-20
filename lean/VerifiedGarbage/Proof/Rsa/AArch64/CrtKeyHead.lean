@@ -1,11 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.AArch64.CvHead
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
-public import VerifiedGarbage.Impl.Rsa.AArch64.CheckCrtKey
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Compact CRT-key validation workspace

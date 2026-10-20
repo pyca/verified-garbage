@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PreparePrime
-public import VerifiedGarbage.Proof.Bignum.X86.SanitizeModulus
+import VerifiedGarbage.Proof.Bignum.X86.SanitizeModulus
 public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Preparation always establishes a safe odd Montgomery modulus -/
 

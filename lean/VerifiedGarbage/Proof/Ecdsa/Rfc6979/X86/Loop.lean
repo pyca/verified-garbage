@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the candidates

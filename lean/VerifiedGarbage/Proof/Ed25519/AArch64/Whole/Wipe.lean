@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

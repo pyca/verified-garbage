@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH on AArch64: what the loops need and do

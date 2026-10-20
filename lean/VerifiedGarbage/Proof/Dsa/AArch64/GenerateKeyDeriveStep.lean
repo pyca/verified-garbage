@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyGenerate
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyGenerate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheckStep
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Derive the key and restore the generation controller's state -/
 

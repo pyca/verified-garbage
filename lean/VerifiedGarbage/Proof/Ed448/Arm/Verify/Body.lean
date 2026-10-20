@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
+public import VerifiedGarbage.Impl.Ed448.Arm.Verify
+public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Layout
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 verification on ARMv7: the challenge, the equation, and the body

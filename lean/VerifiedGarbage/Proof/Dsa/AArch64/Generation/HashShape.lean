@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashValue
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashValue
 public import VerifiedGarbage.Proof.Dsa.Generation.PCandidate
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The stored hash suffix determines exactly the specified p candidate -/
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImportStep
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Imports change only component slots and preserve every source byte -/
 

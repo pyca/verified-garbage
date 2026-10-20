@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
-meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
-public import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
-meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-meta import VerifiedGarbage.Proof.Ed25519.Recode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Base.Lit
 
 /-! Public pointers survive the secret fixed-base arithmetic. -/
 

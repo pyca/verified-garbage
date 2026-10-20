@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Impl.AesXts.AArch64
-public import VerifiedGarbage.Impl.AesCbc.AArch64
 
 /-!
 # XTS-AES of whole data units: AArch64 implementation

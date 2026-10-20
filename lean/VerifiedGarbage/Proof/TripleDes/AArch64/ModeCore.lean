@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Pre
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 /-!
 # Triple DES's core for the modes on AArch64

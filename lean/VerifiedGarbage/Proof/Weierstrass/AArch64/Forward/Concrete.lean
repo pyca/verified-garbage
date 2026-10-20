@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Run
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Certificate
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The abstract interpreter over concrete words: every operation is evaluated,
 so the domain is sound with no certificate. Two environments are `Equiv` when

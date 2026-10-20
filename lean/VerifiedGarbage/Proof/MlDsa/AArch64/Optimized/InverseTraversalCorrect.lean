@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalChecked
-public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
 
 /-! ## From `InverseTraversalSpec.lean` -/
 

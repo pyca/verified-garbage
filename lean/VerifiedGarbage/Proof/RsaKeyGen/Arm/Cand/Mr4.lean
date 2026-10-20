@@ -2,6 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr3
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Math
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 
 /-! # A candidate on ARMv7: the witness (`witnessFix_vp`)
 

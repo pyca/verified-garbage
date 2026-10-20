@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
-meta import VerifiedGarbage.Proof.Aes.Arm.Group
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.Arm.Target
-meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Aes.Arm.Keys
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.Arm.Group
+meta import VerifiedGarbage.Spec.Gcm.Contract
+meta import VerifiedGarbage.Proof.Aes.Arm.Keys
 meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES counter mode on ARMv7: the whole function

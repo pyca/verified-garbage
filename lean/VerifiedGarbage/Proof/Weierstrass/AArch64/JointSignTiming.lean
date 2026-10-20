@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedLookupTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

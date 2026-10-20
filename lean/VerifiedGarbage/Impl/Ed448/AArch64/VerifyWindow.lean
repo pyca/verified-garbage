@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification's equation on AArch64, by a comb and 4-bit windows

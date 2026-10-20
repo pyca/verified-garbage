@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.BitWrite
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
-import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.Arm.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the scalar's bits

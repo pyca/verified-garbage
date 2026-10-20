@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: timing of scans before arithmetic workspace setup -/
 

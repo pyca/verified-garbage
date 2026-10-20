@@ -1,10 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModArray
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModBuffersCT
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.SubModBuffersCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SubModArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 
 /-! # Complete array subtraction has no secret-dependent addresses or branches -/
 

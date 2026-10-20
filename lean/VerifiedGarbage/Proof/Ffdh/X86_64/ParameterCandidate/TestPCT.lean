@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicyCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicyCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseReturnCT
+meta import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of the complete p phase -/
 

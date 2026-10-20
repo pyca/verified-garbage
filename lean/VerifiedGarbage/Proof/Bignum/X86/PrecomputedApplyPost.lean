@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyInput
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyInput
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedAcceptance
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # A well-formed stored key yields the shared checked-public RSA result -/
 

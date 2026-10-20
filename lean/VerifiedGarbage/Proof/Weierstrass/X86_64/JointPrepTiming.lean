@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointPrep
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafPrep
 
 @[expose] public section
 

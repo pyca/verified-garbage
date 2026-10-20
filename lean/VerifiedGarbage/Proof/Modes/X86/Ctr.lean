@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Modes.CtrStep
+public import VerifiedGarbage.Impl.Modes.Ctr
+import VerifiedGarbage.Proof.Modes.CtrStep
 
 @[expose] public section
 

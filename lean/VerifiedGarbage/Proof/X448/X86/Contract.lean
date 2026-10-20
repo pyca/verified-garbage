@@ -1,11 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.X448.X86.Instr
-public import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): the contract the proof is written against

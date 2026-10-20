@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Scalar tails branch only on candidates derived from the public seed -/
 

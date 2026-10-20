@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA: octet strings, and the checked private operation from its parts

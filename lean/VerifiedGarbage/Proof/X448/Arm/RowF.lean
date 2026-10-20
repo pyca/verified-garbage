@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.RowMem
 
-public import VerifiedGarbage.Proof.X448.Arm.Row
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.RowPass
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on ARMv7: one row of the field functions' multiplication

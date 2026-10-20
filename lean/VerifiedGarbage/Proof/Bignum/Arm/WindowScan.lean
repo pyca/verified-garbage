@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuild
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.WindowState
+import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
+import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Selecting `T[digit]` and applying a window -/
 

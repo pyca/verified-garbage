@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Frag
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
 
 @[expose] public section
 

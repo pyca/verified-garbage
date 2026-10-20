@@ -1,8 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputPlan
-public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputZero
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Normalize every search outcome to the public output and status convention -/
 

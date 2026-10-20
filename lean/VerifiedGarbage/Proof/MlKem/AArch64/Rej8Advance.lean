@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
 public import VerifiedGarbage.Proof.MlKem.CoeffW
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Output and input advancement after stable vector compaction -/
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
 import VerifiedGarbage.Proof.X448.BaseAdd
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # X448 of the base point on AArch64: the addition's environment is `addPt`

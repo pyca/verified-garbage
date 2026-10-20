@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Contract
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.WriteScalar
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Byte-string postconditions for masked DSA signature release -/
 

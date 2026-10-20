@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
 
 /-!
 # AES-GCM on x86-64, with its working space on the stack

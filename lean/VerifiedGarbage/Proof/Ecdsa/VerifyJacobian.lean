@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Ecdh.Exchange
+public import VerifiedGarbage.Spec.Ecdsa.Verify
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! Verification can compare a Jacobian X against the square of its Z coordinate. -/
 

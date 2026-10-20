@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReductionExponent
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReductionExponent
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Double
 
 /-! # The byte-to-integer bridge for p-candidate arithmetic -/
 

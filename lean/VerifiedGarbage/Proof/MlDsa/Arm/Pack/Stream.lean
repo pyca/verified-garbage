@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Encode
-public import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: streaming fields through `r3`

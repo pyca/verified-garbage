@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernel
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.FillKernelMatrix`. -/
 

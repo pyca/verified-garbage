@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Ctr32
 public import VerifiedGarbage.Spec.Cbc.Contract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Ctr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.Linter.Style
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CTR's result, for any block cipher and target

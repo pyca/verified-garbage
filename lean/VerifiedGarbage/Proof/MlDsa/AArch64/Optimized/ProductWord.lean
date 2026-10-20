@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Accept the computed generator exactly when it is greater than one -/

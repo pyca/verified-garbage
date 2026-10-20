@@ -1,26 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PrivateKeyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreSignCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerifyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SignCompute
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of validation and signing/verification together -/
 

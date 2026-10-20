@@ -1,39 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Camellia.AArch64.Link
-meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
-public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
-meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import VerifiedGarbage.Proof.Camellia.AArch64.Link
+import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
-meta import VerifiedGarbage.Proof.Camellia.CtrScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Camellia.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Camellia.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Camellia.CtrScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.AArch64.Xor
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Camellia-CTR on AArch64 meets its contracts

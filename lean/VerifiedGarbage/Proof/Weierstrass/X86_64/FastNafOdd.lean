@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafState
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafShift
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafChoose
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! An odd digit advances by the window width; all skipped digits are zero. -/
 

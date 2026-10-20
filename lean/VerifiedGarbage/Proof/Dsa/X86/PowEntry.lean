@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PowCore
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.X86.Pow
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # IA-32 shared DSA exponentiation: register spills -/
 

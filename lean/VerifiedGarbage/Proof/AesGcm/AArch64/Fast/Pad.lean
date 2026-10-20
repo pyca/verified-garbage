@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: padded blocks

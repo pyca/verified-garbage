@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Entry
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Saving and restoring the x86 callee-saved registers -/
 

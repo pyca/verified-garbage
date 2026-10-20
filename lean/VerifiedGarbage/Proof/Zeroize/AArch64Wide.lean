@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
-meta import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 public import VerifiedGarbage.Proof.Zeroize.AArch64
+import VerifiedGarbage.Proof.Ct.AArch64
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 meta import VerifiedGarbage.Proof.Zeroize.AArch64
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ct.AArch64
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Layout
+import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 
 /-! Copy the significant bytes and consume the complete witness draw. -/
 @[expose] public section

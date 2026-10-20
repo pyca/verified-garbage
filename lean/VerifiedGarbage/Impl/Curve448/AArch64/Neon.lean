@@ -1,6 +1,7 @@
 module
-
+public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Impl.X448.AArch64.Common
+
 
 /-!
 # Two Curve448 field multiplications in AdvSIMD

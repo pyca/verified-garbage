@@ -2,8 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.StagesCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Correct
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.StagesCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Correct
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH key generation on x86-64: constant time under the shared contract -/
 

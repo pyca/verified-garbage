@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyInstances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyVerified
 
 /-! # i686 public PKCS #1 signature operations -/
 

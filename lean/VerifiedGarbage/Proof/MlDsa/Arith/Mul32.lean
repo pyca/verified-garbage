@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlDsa
 
-public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-!
 # ML-DSA: products modulo `q` with 32-bit multiplications, for every target

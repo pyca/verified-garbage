@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Caller
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Save the prepared round caller in Montgomery-one padding -/
 

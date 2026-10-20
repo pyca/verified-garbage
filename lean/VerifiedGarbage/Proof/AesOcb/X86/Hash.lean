@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.HashChunk
+public import VerifiedGarbage.Proof.AesOcb.X86.Blk
 import VerifiedGarbage.Proof.AesOcb.X86.PadTo
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: `HASH` (`hash`)

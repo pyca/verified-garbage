@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipe
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Cast5.X86.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Sign
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+meta import VerifiedGarbage.Proof.Cast5.X86.Run
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Taint checks for argument setup, clearing, and register restoration -/
 

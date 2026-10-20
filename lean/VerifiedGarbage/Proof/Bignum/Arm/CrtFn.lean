@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSaved
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyScope
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSaved
+import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Callable ARMv7 private RSA preserves AAPCS and implements the shared result -/
 

@@ -1,4 +1,8 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
 public import VerifiedGarbage.Proof.Bignum.X86.SparseLoop
 public import VerifiedGarbage.Proof.Bignum.MontRepresentation

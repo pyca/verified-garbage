@@ -2,9 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
-import VerifiedGarbage.Proof.X448.BaseAdd
 public import Mathlib.Tactic.Abel
-import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # Ed448 verification on AArch64: the equation, by the group law

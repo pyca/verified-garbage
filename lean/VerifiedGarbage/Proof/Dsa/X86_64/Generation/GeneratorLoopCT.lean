@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchTailCT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorIterationCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Timing and termination of the complete generator tape search loop -/

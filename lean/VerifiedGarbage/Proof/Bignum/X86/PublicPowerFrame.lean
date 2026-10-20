@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPower
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # The public-power kernel preserves saved arguments and acceptance -/
 

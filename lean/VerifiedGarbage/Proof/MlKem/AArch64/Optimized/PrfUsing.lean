@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! # PRF/CBD composition with a replaceable verified 33-byte SHAKE256 -/
 @[expose] public section
@@ -20,10 +21,10 @@ def PrfHashValid (hash : Prog isa) : Prop :=
   Kept (STr .x28 ST s :: WKr .x28 WK s :: below s.sp 16 :: [preg s ⟨.x28,PB,128⟩]) s t ∧
   Outs s t.mem 136 (absorb 136 (pad 136 (BitVec.ofNat 8 31) (bytesAt s.mem (s.gpr .x28+BitVec.ofNat 64 RB) 33))) 0 [⟨.x28,PB,128⟩]
 
-theorem prfCbd_using_ok {w16 : Bool} (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : State} (hp : Pre P L s₀) {N off : Nat} (hN : N < 256) (ho : PO P off) {s : State}
+theorem prfCbd_using_ok (hash : Prog isa) (valid : PrfHashValid hash) {s₀ : State} (hp : Pre P L s₀) {N off : Nat} (hN : N < 256) (ho : PO P off) {s : State}
     (hk : KB P L s₀ s) {rv : List Byte} (hr : bytesAt s.mem (sA L s₀ RB) 32 = rv) :
-    WP isa (Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off w16) s fun s' => KB P L s₀ s' ∧
-      Frame (pcW L s₀ off) s.mem s'.mem ∧ PolyIsW (cw w16) s'.mem (sA L s₀ off) (cbd rv N) ∧
+    WP isa (Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off) s fun s' => KB P L s₀ s' ∧
+      Frame (pcW L s₀ off) s.mem s'.mem ∧ PolyIsW (cw true) s'.mem (sA L s₀ off) (cbd rv N) ∧
       s'.gpr .x24 = s.gpr .x24 := by
   have fo := ho.le
   have hsl : ∀ {o l : Nat}, o + l ≤ SV P + 48 → o + l ≤ L.len L.sc := hp.fs
@@ -101,7 +102,7 @@ def PrfValidW (P : KemLay) (L : Layout) (prf : Nat→Nat→Prog isa) : Prop :=
    PolyIsW 16 t.mem (sA L s₀ off) (cbd rv N) ∧ t.gpr .x24=s.gpr .x24
 
 theorem prf_using_validW {hash : Prog isa} (valid : PrfHashValid hash) :
-    PrfValidW P L (fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off true) :=
-  fun {_} hp {_ _} hn ho {_} hk {_} hr=>prfCbd_using_ok (w16 := true) hash valid hp hn ho hk hr
+    PrfValidW P L (fun N off => Impl.MlKem.AArch64.Optimized.prfCbdUsing hash N off) :=
+  fun {_} hp {_ _} hn ho {_} hk {_} hr=>prfCbd_using_ok hash valid hp hn ho hk hr
 
 end VG.Proof.MlKem.AArch64.Kem

@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
-public import VerifiedGarbage.Spec.TripleDes
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # DES S-box machine-code correctness

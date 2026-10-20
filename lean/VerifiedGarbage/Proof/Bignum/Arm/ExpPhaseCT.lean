@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpInitCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStepCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Complete RSA exponentiation reveals no input-dependent trace -/
 

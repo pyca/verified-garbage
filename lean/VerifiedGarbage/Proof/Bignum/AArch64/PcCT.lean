@@ -1,13 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: constant time but for `n`

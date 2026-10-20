@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.Store
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Save
 public import VerifiedGarbage.Proof.TripleDes.X86_64.WordState
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Word
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
 

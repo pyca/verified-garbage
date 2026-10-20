@@ -1,49 +1,41 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
-meta import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
-import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
-public import VerifiedGarbage.Proof.Framework.Mem
-meta import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
-meta import VerifiedGarbage.Impl.Argon2.X86_64.FillSetup
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Argon2.Dimensions
-meta import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
-import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
-public import VerifiedGarbage.Proof.Argon2.Matrix
-meta import VerifiedGarbage.Proof.Argon2.Matrix
+public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
-meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
-meta import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
-public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
-meta import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitSteps
+meta import VerifiedGarbage.Proof.Argon2.MemoryInit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitClear
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
-import VerifiedGarbage.Proof.Blake2.Stream
-meta import VerifiedGarbage.Proof.Blake2.Stream
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Argon2.X86_64.MemoryInitBlock`. -/
 

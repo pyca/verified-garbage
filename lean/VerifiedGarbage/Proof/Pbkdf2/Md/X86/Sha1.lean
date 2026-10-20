@@ -1,15 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
 public import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha1.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
+meta import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha1.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC-SHA-1 and PBKDF2-HMAC-SHA-1 over the compression function on x86 (32-bit), for every backend

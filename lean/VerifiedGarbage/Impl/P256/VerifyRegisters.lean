@@ -216,8 +216,11 @@ structure Alloc where
 def nextUse (uses : Array (List Nat)) (v idx : Nat) : Nat :=
   ((uses[v]!).find? (· >= idx)).getD 999999
 
+/-- The scratch words spills go to: by default `7104` to `7679`. -/
+def spillArea : List Nat := (List.range 72).map (fun i => 7104+8*i)
+
 def available (regs : List Reg) (uses : Array (List Nat)) (idx : Nat)
-    (held : List Nat) (s : Alloc) : Option (Reg × Alloc) := do
+    (held : List Nat) (s : Alloc) (spill : List Nat := spillArea) : Option (Reg × Alloc) := do
   if let some r := regs.find? (fun r => (get r s.physical).isNone) then return (r,s)
   let choices := regs.filter (fun r => !(get r s.physical).any held.contains)
   let first ← choices.head?
@@ -228,11 +231,12 @@ def available (regs : List Reg) (uses : Array (List Nat)) (idx : Nat)
   let mut s := {s with physical := s.physical.filter (fun p => p.1 != chosen)}
   if nextUse uses value idx != 999999 && (get value s.backing).isNone then
     let used := (s.backing.filter (fun p => nextUse uses p.1 idx != 999999)).map Prod.snd
-    let off ← ((List.range 72).map (fun i => 7104+8*i)).find? (fun off => !used.contains off)
+    let off ← spill.find? (fun off => !used.contains off)
     s := {s with backing := put value off s.backing, reversed := .str .x chosen .x0 off :: s.reversed}
   return (chosen,s)
 
-def allocate (initial regs : List Reg) (items : List Item) (values : Nat) : Option (List Instr) := do
+def allocate (initial regs : List Reg) (items : List Item) (values : Nat)
+    (spill : List Nat := spillArea) : Option (List Instr) := do
   let xs := items.toArray
   let mut uses := Array.replicate values ([] : List Nat)
   for idx in (List.range xs.size).reverse do
@@ -244,7 +248,7 @@ def allocate (initial regs : List Reg) (items : List Item) (values : Nat) : Opti
     for v in held do
       if !(s.physical.any (fun p => p.2 == v)) then
         let off ← get v s.backing
-        let (r,t) ← available regs uses idx held s
+        let (r,t) ← available regs uses idx held s spill
         s := {t with physical := put r v t.physical, reversed := .ldr .x r .x0 off :: t.reversed}
     let old := (0,Reg.x0) :: s.physical.map (fun (r,v) => (v,r))
     let mut dst := none
@@ -254,7 +258,7 @@ def allocate (initial regs : List Reg) (items : List Item) (values : Nat) : Opti
         let src ← get source old
         if nextUse uses source (idx+1) == 999999 then r := src
         else
-          let (chosen,t) ← available regs uses idx held s
+          let (chosen,t) ← available regs uses idx held s spill
           r := chosen
           s := {t with reversed := .logic .orr .x r src src :: t.reversed}
       else
@@ -263,7 +267,7 @@ def allocate (initial regs : List Reg) (items : List Item) (values : Nat) : Opti
           | some v => nextUse uses v (idx+1) == 999999
         if let some chosen := dead then r := chosen
         else
-          let (chosen,t) ← available regs uses idx held s
+          let (chosen,t) ← available regs uses idx held s spill
           r := chosen
           s := t
       dst := some r

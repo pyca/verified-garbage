@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Pack
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PackPart
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 
 /-! # Copy generated components using only public addresses and lengths -/
 

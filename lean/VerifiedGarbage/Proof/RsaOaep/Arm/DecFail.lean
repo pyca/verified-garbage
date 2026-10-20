@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecChk
+public import VerifiedGarbage.Proof.RsaOaep.Decode
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSAES-OAEP decryption on ARMv7: when `k` is too short

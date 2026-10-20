@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedTail
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
-public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 
 /-! # RSA candidate checks with a shared Miller–Rabin kernel -/
 

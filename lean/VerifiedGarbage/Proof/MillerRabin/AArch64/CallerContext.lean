@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Prepared arithmetic survives saving the round's caller -/

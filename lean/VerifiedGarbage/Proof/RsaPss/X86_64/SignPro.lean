@@ -2,8 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.SignFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+import Mathlib.Tactic.Set
+import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-!
 # RSASSA-PSS signing on x86-64: the prologue

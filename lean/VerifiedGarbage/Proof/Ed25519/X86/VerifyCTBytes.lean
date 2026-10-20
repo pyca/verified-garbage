@@ -4,11 +4,9 @@ public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 

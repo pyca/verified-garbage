@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The SHA-3 sponge on x86-64, with its working space on the stack

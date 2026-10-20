@@ -1,15 +1,25 @@
 module
 
-import VerifiedGarbage.Proof.Rc4.Arm.Contract
-meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
+public import VerifiedGarbage.Proof.Rc4.Arm.Contract
 import VerifiedGarbage.Proof.Rc4.Arm.Lit
-meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
-public import VerifiedGarbage.Proof.Rc4.Arm.Apply
-meta import VerifiedGarbage.Proof.Rc4.Arm.Apply
+import VerifiedGarbage.Proof.Rc4.Arm.Apply
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Rc4.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rc4.Arm.Contract
+meta import VerifiedGarbage.Proof.Rc4.Arm.Lit
+meta import VerifiedGarbage.Proof.Rc4.Arm.Apply
 meta import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Impl.Rc4.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RC4 on ARMv7: constant time
 

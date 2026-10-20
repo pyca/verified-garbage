@@ -1,6 +1,9 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Initial
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialOneTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Memory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem

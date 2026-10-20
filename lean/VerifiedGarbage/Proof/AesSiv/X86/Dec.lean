@@ -2,6 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.X86.Enc
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesSiv.X86.Finish
+import VerifiedGarbage.Proof.AesSiv.X86.FinishLong
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on x86: `vg_aes_siv_decrypt`

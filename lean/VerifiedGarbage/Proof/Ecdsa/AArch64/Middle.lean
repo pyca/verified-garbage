@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-!
 # ECDSA on AArch64: `x`, `r`, `k R mod n` and the checks of `d`, `k`, `r`

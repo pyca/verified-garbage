@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W
-public import VerifiedGarbage.Proof.MlKem.CoeffW
+import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Loop
+public import VerifiedGarbage.Proof.MlKem.Mem16
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Calling `vg_mlkem16_cbd2` -/
 
@@ -39,17 +42,15 @@ theorem covers_prefix {b : Addr} {l l' : Nat} {X : List Region} (hl : l ≤ l') 
   rw [List.mem_singleton.mp hr] at hc
   exact h a n ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
 
-/-- `cbdCall w16`: `SamplePolyCBD₂` of the 128 bytes at `b` into the polynomial at `f`, with
-16-bit coefficients (`w16`) or 32-bit ones. -/
-theorem cbdW_call {w16 : Bool} {s : State} {b f : Addr} (h0 : s.gpr .x0 = b) (h1 : s.gpr .x1 = f)
+/-- `cbdCall`: `SamplePolyCBD₂` of the 128 bytes at `b` into the polynomial at `f`, with
+16-bit coefficients. -/
+theorem cbdW_call {s : State} {b f : Addr} (h0 : s.gpr .x0 = b) (h1 : s.gpr .x1 = f)
     (hd : Region.Disjoint ⟨b, 128⟩ ⟨f, 1024⟩) (hc : Covers [⟨b, 128⟩, ⟨f, 1024⟩] (s.rd ++ s.wr))
     (hw : Covers [⟨f, 1024⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨f, 1024⟩] s s' →
-      PolyIsW (cw w16) s'.mem f (samplePolyCBD 2 (bytesAt s.mem b 128)) → Q s') :
-    WP isa (Noise.cbdCall w16) s Q := by
-  cases w16
-  · exact cbd2_call h0 h1 hd hc hw hQ
-  · refine cbd16_call h0 h1 (hd.sub_right (Region.sub_prefix (by decide : 512 ≤ 1024)))
+      PolyIsW (cw true) s'.mem f (samplePolyCBD 2 (bytesAt s.mem b 128)) → Q s') :
+    WP isa Noise.cbdCall s Q := by
+  refine cbd16_call h0 h1 (hd.sub_right (Region.sub_prefix (by decide : 512 ≤ 1024)))
       (Covers.cons (Covers.head hc) (covers_prefix (by decide : 512 ≤ 1024) (Covers.tail hc)))
       (covers_prefix (by decide : 512 ≤ 1024) hw)
       fun s' k p => hQ s' (Kept.sub k fun r hr => ⟨_, List.mem_singleton_self _, by

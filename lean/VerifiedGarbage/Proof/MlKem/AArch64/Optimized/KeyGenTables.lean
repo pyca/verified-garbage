@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenRow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
 
 /-! # Readonly gamma data through the fused key-generation rows -/
 

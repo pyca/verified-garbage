@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Entry
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Select
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Halves
 import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Digits
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The `zmm` comb: an addition in each half

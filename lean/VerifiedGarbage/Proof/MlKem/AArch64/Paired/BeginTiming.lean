@@ -2,10 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The initial paired matrix parse observes only the public seed -/
 @[expose] public section

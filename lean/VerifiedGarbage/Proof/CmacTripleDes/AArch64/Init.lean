@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Block
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Keys
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # TDEA-CMAC on AArch64: `vg_cmac_triple_des_init`

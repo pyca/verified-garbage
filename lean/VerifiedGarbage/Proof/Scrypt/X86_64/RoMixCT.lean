@@ -1,32 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
 public import VerifiedGarbage.Proof.Scrypt.RoMix
-meta import VerifiedGarbage.Proof.Scrypt.RoMix
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
-meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
-public import Mathlib.Tactic.Set
-meta import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import Mathlib.Tactic.DefEqTransformations
-meta import Mathlib.Tactic.DefEqTransformations
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Scrypt.Contract
-meta import VerifiedGarbage.Spec.Scrypt.Contract
-import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import all Init.Data.Nat.Power2.Basic
 import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
+import Mathlib.Tactic.DefEqTransformations
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+meta import VerifiedGarbage.Proof.Scrypt.RoMix
+meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMix
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Common
+meta import Init.Data.Nat.Power2.Basic
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
+meta import Mathlib.Tactic.DefEqTransformations
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptROMix on x86-64: the precondition and the calls

@@ -1,6 +1,9 @@
 module
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 
-public import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
 
 /-! # Shared bounded comparisons for ARMv7 RSA modulus validation -/
 

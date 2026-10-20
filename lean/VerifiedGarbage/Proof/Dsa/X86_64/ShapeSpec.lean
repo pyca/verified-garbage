@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.DomainWidths
 
 /-! # Public shape acceptance and early rejection in the DSA specification -/
 

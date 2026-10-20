@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep
-public import VerifiedGarbage.Proof.RsaPss.Encoding
+public import VerifiedGarbage.Proof.Mgf1.Basic
+import VerifiedGarbage.Proof.RsaPss.Encoding
 
 /-!
 # EME-OAEP: decoding inverts encoding, and decodes nothing else

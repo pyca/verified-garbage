@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestBase
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestPack
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.RestPack
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.X86.Pack
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the rows of `t`

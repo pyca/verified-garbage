@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.LoadBE
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Set pointers for RSA byte reversal -/
 

@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.Rsa.KeyMath
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.Group.Int.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes: `d` by an exact division

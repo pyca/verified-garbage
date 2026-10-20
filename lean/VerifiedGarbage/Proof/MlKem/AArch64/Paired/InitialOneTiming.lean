@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.InitialOne
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

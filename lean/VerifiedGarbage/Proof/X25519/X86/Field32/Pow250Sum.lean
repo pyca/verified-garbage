@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+public import VerifiedGarbage.Impl.X25519.X86.Field32
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
+meta import VerifiedGarbage.Impl.X25519.X86.Field32
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The summary of `vg_gf25519_r32_pow250` (see `Field32/CallTaint`). -/
 

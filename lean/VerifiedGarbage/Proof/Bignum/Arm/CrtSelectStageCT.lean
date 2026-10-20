@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Workspace selection preserves independent secret state in paired executions -/
 

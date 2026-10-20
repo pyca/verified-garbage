@@ -1,10 +1,22 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Pre
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Fwd
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Inv
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Fwd
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Inv
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Pre
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Fwd
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Inv
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 
 @[expose] public section

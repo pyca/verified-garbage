@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
 public import VerifiedGarbage.Impl.Weierstrass.X86.CachedJac
-public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-! Constant-time five-bit variable-base multiplication on 32-bit x86.
 

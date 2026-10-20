@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # Exact wide multiplication terminates after the public number of source words -/
 

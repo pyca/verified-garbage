@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Divstep.PackedDef
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-public import VerifiedGarbage.Proof.Divstep.PackedShl
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Divstep.PackedShl
+import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Data.Finset.Attr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Inversion by divsteps on AArch64: packed divsteps

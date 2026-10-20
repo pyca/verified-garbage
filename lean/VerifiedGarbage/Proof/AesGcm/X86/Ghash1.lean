@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Loops
-meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.X86.Env
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+meta import VerifiedGarbage.Proof.Aes.X86.VariantProof
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on x86: calling `vg_ghash` from the pieces

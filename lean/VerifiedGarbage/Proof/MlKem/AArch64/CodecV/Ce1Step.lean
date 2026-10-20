@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `ce1Body`
@@ -66,7 +73,7 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
     (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega))
     fun s2 ⟨c2, l4, l5, l6, l7⟩ => ?_
   rw [WP.block_append_iff]
-  have cs2 : CConsts 1 s2 := (h.cs.chg c1).chg c2
+  have cs2 : CConsts width1 s2 := (h.cs.chg c1).chg c2
   refine WP.mono (ce1Math_ok cs2 (X := X) (fun i _ => val_lt _)
     (Lanes.chg c2 (by decide) l0)
     ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega)
@@ -94,7 +101,7 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
   refine ⟨⟨by rw [o.rd, h5.rd, o4.rd, c3.rd, c2.rd, c1.rd, h.rd], by rw [o.wr, h5.wr, o4.wr, w3, h.wr],
     by rw [o.sp, h5.sp, o4.sp, c3.sp, c2.sp, c1.sp, h.sp], t0, t2, t11, ?_, trivial, ?_, ?_⟩,
     by rw [show 256 / (width1.c * 4) = 8 from rfl] at tc; exact tc⟩
-  · have cs3 : CConsts 1 s3 := cs2.chg c3
+  · have cs3 : CConsts width1 s3 := cs2.chg c3
     have hv : t.v = s3.v := by rw [v, v5, v4]
     exact ⟨by rw [hv]; exact cs3.m, by rw [hv]; exact cs3.a, by rw [hv]; exact cs3.k⟩
   · rw [o.mem, h5.mem, o4.mem, m3, show width1.nb * 4 * (k + 1) = 4 * k + 4 by simp [width1]; omega]
@@ -112,7 +119,7 @@ theorem step1 {s₀ : State} (hp : Pre width1 s₀) {k : Nat} (hk : k < 8) {s : 
     simp only [byte8, C_cf width1_ok]
     rw [show 8 * (4 * k + j) = 32 * k + 8 * j by omega]
     simp only [show ∀ e, 32 * k + 8 * j + e = 32 * k + (8 * j + e) from fun e => by omega]
-    have b := fun i => cf_lt 1 (X i)
+    have b : ∀ i, cf width1 (X i) < 2 ^ 1 := fun i => cf_lt width1 (X i)
     have := b (8 * j); have := b (8 * j + 1); have := b (8 * j + 2); have := b (8 * j + 3)
     have := b (8 * j + 4); have := b (8 * j + 5); have := b (8 * j + 6); have := b (8 * j + 7)
     exact (Nat.mod_eq_of_lt (by simp only [X] at *; omega)).symm

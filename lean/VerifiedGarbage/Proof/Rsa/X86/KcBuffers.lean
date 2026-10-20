@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcResources
+import VerifiedGarbage.Proof.Rsa.X86.KcResources
 
 /-! # Readable input buffers and bounds supplied by the key-check signatures -/
 

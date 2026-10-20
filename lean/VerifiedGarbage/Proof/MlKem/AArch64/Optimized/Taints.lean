@@ -3,11 +3,17 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Public-address checks for the optimized code surrounding matrix generation -/
 @[expose] public section

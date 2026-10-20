@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarly
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.InvAllocated
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Divstep.Alg
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatch
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

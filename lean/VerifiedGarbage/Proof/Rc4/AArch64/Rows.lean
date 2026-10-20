@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Group
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Memory
 
 /-!
 # The table in memory, rotated

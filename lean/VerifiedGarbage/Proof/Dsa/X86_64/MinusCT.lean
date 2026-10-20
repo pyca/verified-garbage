@@ -1,13 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.MinusCore
+public import VerifiedGarbage.Proof.Dsa.X86_64.Product
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+import VerifiedGarbage.Proof.Dsa.X86_64.Minus
+import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.FinishCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.MinusCore
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Product
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Minus
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CallFinishCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of modulus-minus constants used in DSA validation -/
 

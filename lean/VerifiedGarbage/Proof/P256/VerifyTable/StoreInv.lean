@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.P256.VerifyTable.Field
-public import VerifiedGarbage.Proof.P256.VerifyTable.Store
+public import VerifiedGarbage.Impl.P256.VerifyTable
+import VerifiedGarbage.Proof.P256.VerifyTable.Store
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-! A co-Z table entry's stores in the field invariant: entry `m`'s point and
 cache slots take the values of `E` and the powers of its `Z`. -/

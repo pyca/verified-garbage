@@ -1,16 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Contract
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Order.RelClasses
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Order.RelClasses
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!

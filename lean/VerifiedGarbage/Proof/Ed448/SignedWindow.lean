@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.SignedWindow
-public import VerifiedGarbage.Proof.Ed448.Window
-import VerifiedGarbage.Proof.Ed448.VerifyEq
+public import VerifiedGarbage.Proof.X448.BaseTable
+import VerifiedGarbage.Proof.Ed448.Window
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Balanced five-bit recoding, including all 456 input bits. -/
 

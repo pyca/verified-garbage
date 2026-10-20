@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
 
 /-! # Preserve parser constants through scalar wrappers and rejection loops -/
 

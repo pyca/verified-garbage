@@ -1,8 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Math
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Math
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Tail
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 
 /-! # FFDH private-key validation on x86-64: full main computation -/
 

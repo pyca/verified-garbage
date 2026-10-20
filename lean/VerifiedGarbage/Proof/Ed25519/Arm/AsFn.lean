@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldOn
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Ed25519 on ARMv7: field code as a function

@@ -1,14 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
 import VerifiedGarbage.Proof.MlKem.Arm.Add
-meta import VerifiedGarbage.Proof.MlKem.Arm.Add
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_simple_bit_pack`

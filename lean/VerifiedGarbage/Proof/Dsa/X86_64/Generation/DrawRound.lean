@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRound
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawBuffer
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRoundHeader
+import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
 
 /-! # One consumed draw, the shared round, and DSA's next loop state -/
 

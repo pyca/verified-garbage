@@ -1,21 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Common
-meta import VerifiedGarbage.Proof.MlKem.X86.Common
 public import VerifiedGarbage.Proof.MlKem.EkCheck
-meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem.X86.CheckEk
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Impl.MlKem.X86.CheckEk
-public import VerifiedGarbage.Proof.MlKem.X86.TopKem
 meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86 (32-bit): the encapsulation key check

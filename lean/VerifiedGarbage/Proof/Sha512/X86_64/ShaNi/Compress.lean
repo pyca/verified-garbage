@@ -1,21 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
-meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Spec
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-512 compression function on x86-64 with the SHA512 extension

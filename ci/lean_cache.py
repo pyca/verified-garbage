@@ -41,14 +41,19 @@ has its own index and `files.tar`). `pack --reuse .lake/mathlib-ltar` copies
 matching module archives into the published cache, repacking missing or
 changed modules. The published format stays `.lake/ltar`.
 
+`bundle lean .lake/ltar .lake/mathlib-ltar` publishes those existing caches
+without installing Lean or expanding module outputs: it combines their
+indexes and `files.tar` archives, and streams the indexed `.ltar` files in
+one tar, with `files.tar` first. Inputs must have disjoint, nonempty indexes
+and all indexed archives. It leaves both source caches unchanged.
+
 `unpack` extracts such a tar from stdin into the Lean project. `tar`
 extracts `files.tar` in the background, as `restore` does: its files are
 most of the files, each small, and `tarfile` would create them one at a
 time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
-the next arrives. In a tar from before `files.tar`, whose other files are
-members of their own, it writes each in its place. The outputs come out
-byte for byte as they were packed; the `.trace` keeps everything Lake reads (the dependency hash,
+the next arrives. The outputs come out byte for byte as they were packed;
+the `.trace` keeps everything Lake reads (the dependency hash,
 the outputs' hashes and the build's messages, with the profile
 `ci/lean_profile.py` reads), without the record of the build's inputs that
 Lake writes only for people to read.
@@ -58,6 +63,7 @@ tmpfs, when there is one), so they never reach the disk, and removes them.
 """
 
 import argparse
+import io
 import json
 import os
 import shutil
@@ -192,6 +198,50 @@ def pack(lean, roots, jobs, level, tool, out, reuse=None):
                     str(LTAR)], stdout=out, check=True)
 
 
+def bundle(lean, archive_dirs, out):
+    """Publish existing caches without unpacking or repacking any module.
+
+    The caches must cover disjoint modules. GNU tar concatenates their
+    uncompressed files.tar archives without extracting the small files.
+    Only indexed modules are included; leftover archives are ignored.
+    """
+    index, archives = {}, []
+    for directory in archive_dirs:
+        source = lean / directory
+        entries = json.loads((source / INDEX).read_text())
+        if not entries:
+            raise ValueError(f"Empty module cache: {directory}")
+        if not (source / FILES).is_file():
+            raise FileNotFoundError(source / FILES)
+        for rel, key in entries.items():
+            if Path(rel).is_absolute() or ".." in Path(rel).parts:
+                raise ValueError(f"Invalid module archive path: {rel}")
+            if rel in index:
+                raise ValueError(f"Overlapping module caches: {rel}")
+            archive = source / (rel + ".ltar")
+            if not archive.is_file():
+                raise FileNotFoundError(archive)
+            index[rel] = key
+            archives.append((rel, archive))
+    # Validate all inputs before writing anything to stdout. The temporary
+    # file holds only miscellaneous files, never expanded module outputs.
+    with tempfile.TemporaryDirectory(prefix="lean-cache-bundle-") as tmp:
+        files = Path(tmp) / FILES
+        shutil.copyfile(lean / archive_dirs[0] / FILES, files)
+        for directory in archive_dirs[1:]:
+            subprocess.run(["tar", "--concatenate", "--file", str(files),
+                            str(lean / directory / FILES)], check=True)
+        with tarfile.open(fileobj=out, mode="w|", dereference=True) as tar:
+            tar.add(files, arcname=str(LTAR / FILES))
+            data = json.dumps(index, sort_keys=True).encode()
+            member = tarfile.TarInfo(str(LTAR / INDEX))
+            member.size = len(data)
+            tar.addfile(member, io.BytesIO(data))
+            for rel, archive in sorted(archives):
+                tar.add(archive, arcname=str(LTAR / (rel + ".ltar")))
+    print(f"Bundled {len(archives)} modules", file=sys.stderr)
+
+
 def store(lean, roots, jobs, level, tool, archive_dir=LTAR, reuse=None):
     paths = other_files(lean, roots, update(lean, roots, jobs, level, tool, archive_dir, reuse))
     subprocess.run(["tar", "-C", str(lean), "-cf", str(lean / archive_dir / FILES), "--no-recursion",
@@ -291,10 +341,7 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
             for member in tar:
                 rel = Path(member.name)
                 if rel.parts[:2] != LTAR.parts:
-                    # The tar from before `files.tar`, until the published
-                    # cache is replaced.
-                    tar.extract(member, lean, set_attrs=True, filter=without_owner)
-                    continue
+                    raise ValueError(f"Unexpected cache entry: {member.name}")
                 if rel == LTAR / FILES and member.isfile() and files is None:
                     with open(stage / FILES, "wb") as f:
                         shutil.copyfileobj(tar.extractfile(member), f)
@@ -330,11 +377,6 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
     print(f"Unpacked {count} modules", file=sys.stderr)
 
 
-def without_owner(member, path):
-    """`tar --no-same-owner` (see `extract`)."""
-    return tarfile.tar_filter(member, path).replace(uid=None, gid=None, uname=None, gname=None)
-
-
 def tmp_dir():
     """Memory, when there is a tmpfs, rather than the disk."""
     return "/dev/shm" if os.path.isdir("/dev/shm") else None
@@ -348,6 +390,9 @@ def main(argv=None):
     p.add_argument("roots", nargs="+", type=Path, help="directories to pack, relative to it")
     p.add_argument("--reuse", type=Path,
                    help="reuse matching module archives from this directory, relative to lean")
+    b = sub.add_parser("bundle", help="combine existing module caches into a tar on stdout")
+    b.add_argument("lean", type=Path, help="the Lean project (lean/)")
+    b.add_argument("archive_dirs", nargs="+", type=Path, help="cache directories relative to it")
     st = sub.add_parser("store", help="update `.lake/ltar`, with a tar of the other files in it")
     st.add_argument("lean", type=Path, help="the Lean project (lean/)")
     st.add_argument("roots", nargs="+", type=Path, help="directories to store, relative to it")
@@ -378,6 +423,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.command == "pack":
         pack(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, sys.stdout.buffer, args.reuse)
+    elif args.command == "bundle":
+        bundle(args.lean.resolve(), args.archive_dirs, sys.stdout.buffer)
     elif args.command == "store":
         store(args.lean.resolve(), args.roots, args.jobs, args.level, args.leantar, args.archive_dir)
     elif args.command == "restore":

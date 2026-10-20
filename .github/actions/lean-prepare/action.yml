@@ -23,14 +23,14 @@ inputs:
 
 outputs:
   cache-hit:
-    description: Whether the build was restored from exactly `key` (not from a build in the old format).
+    description: Whether the build was restored from exactly `key`.
     value: ${{ steps.lean-build.outputs.cache-hit == 'true' || steps.lean-build-again.outputs.cache-hit == 'true' }}
   cache-primary-key:
     description: The key to save the build under (`key`).
     value: ${{ steps.lean-build.outputs.cache-primary-key }}
   cache-matched-key:
     description: The key of the build restored, if any (empty if none was).
-    value: ${{ steps.lean-build.outputs.cache-matched-key || steps.lean-build-again.outputs.cache-matched-key || steps.lean-build-old.outputs.cache-matched-key }}
+    value: ${{ steps.lean-build.outputs.cache-matched-key || steps.lean-build-again.outputs.cache-matched-key }}
 
 runs:
   using: composite
@@ -132,17 +132,6 @@ runs:
         path: lean/.lake/ltar
         key: ${{ inputs.key }}
         restore-keys: ${{ inputs.restore-keys }}
-    # Until main has saved a build of its own in archives, its last build
-    # in the old format (`lean/.lake/build` as it is), rather than none.
-    # Not a hit: main then saves this build in archives.
-    - name: Restore this project's build in the old format
-      id: lean-build-old
-      if: ${{ steps.lean-build.outputs.cache-matched-key == '' && steps.lean-build-again.outputs.cache-matched-key == '' }}
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: lean/.lake/build
-        key: ${{ inputs.key }}
-        restore-keys: ${{ inputs.restore-keys }}
     - uses: ./.github/actions/lean-setup
       id: lean-setup
     # With the toolchain's `leantar`, so after `lean-setup`. The archives
@@ -158,3 +147,12 @@ runs:
         mods: ${{ steps.lean-setup.outputs.mods }}
         cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
         cache-key: ${{ steps.lean-setup.outputs.cache-key }}
+    # Saved with the next project build, so publishing can fetch the exact
+    # dependency cache without installing Lean to parse the imports again.
+    - name: Record the dependency cache key
+      shell: bash
+      env:
+        KEY: ${{ steps.lean-setup.outputs.cache-key }}
+      run: |
+        mkdir -p lean/.lake/ltar
+        printf '%s\n' "$KEY" > lean/.lake/ltar/mathlib-cache-key

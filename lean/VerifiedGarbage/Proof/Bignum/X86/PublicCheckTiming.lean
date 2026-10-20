@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicValidTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Exponent acceptance chooses between two traces using only public bytes -/
 

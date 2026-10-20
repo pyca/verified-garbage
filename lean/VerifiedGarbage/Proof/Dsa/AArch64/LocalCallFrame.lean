@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Framing arithmetic calls whose result is a local scratch buffer -/
 

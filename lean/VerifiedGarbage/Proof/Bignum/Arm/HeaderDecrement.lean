@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.HeaderControl
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Decrement a fixed-offset public loop counter -/
 

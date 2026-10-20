@@ -6,9 +6,6 @@ import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.Ed25519.Arm.Field
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Spill
 
 @[expose] public section
 

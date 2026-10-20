@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Lit
-meta import VerifiedGarbage.Proof.X25519.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.X25519.Arm.Lit
+public import VerifiedGarbage.Impl.X25519.Arm
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.X25519.Arm.Lit
+meta import VerifiedGarbage.Impl.X25519.Arm
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X25519 on 32-bit ARM: constant time

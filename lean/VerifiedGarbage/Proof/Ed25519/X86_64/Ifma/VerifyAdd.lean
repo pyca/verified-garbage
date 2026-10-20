@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombStage
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombSelect
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed25519 verification with AVX512_IFMA: adding a table entry in the lanes

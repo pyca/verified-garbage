@@ -1,13 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
 public import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+meta import VerifiedGarbage.Proof.Rsa.Ranges
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-! Montgomery initialization has a public trace for full and padded candidates. -/
 @[expose] public section

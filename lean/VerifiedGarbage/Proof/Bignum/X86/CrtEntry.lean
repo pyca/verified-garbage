@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSave
-public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Establishing the arithmetic workspace while preserving the caller ABI -/
 

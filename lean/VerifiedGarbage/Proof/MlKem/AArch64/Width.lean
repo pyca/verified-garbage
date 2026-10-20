@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Compress
+public import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # ML-KEM on AArch64: the widths of compression
@@ -20,30 +22,32 @@ namespace VG.Proof.MlKem.AArch64
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Spec.MlKem
 
-/-- A width of `compressWidths`, `c` digits of `d` bits per `nb` bytes. -/
+/-- A width of compression, `c` digits of `d` bits per `nb` bytes, whose `Compress_d` is
+`((x · mul + add) >> 19) mod 2ᵈ` (`cmp`). -/
 structure WOk (w : Width) : Prop where
-  mem : w.d ∈ compressWidths
+  cmp : ∀ x : Zq, compress w.d x = (x.val * w.mul + w.add) / 2 ^ 19 % 2 ^ w.d
+  mul_le : w.mul ≤ 322542
+  add_lt : w.add < 2 ^ 19
   dc : w.d * w.c = 8 * w.nb
   cG : w.c * (256 / w.c) = 256
   bytes : w.nb * (256 / w.c) = 32 * w.d
-  mul : w.mul = compressMul w.d
   c_pos : 0 < w.c
   c_le : w.c ≤ 8
   nb_pos : 0 < w.nb
-  nb_le : w.nb ≤ 5
+  nb_le : w.nb ≤ 11
   d_pos : 0 < w.d
-  d_le : w.d ≤ 10
+  d_le : w.d ≤ 11
   G_pos : 0 < 256 / w.c
   G_le : 256 / w.c ≤ 128
 
-theorem width1_ok : WOk width1 := ⟨by decide, rfl, rfl, rfl, rfl, by decide, by decide, by decide,
-  by decide, by decide, by decide, by decide, by decide⟩
+theorem width1_ok : WOk width1 := ⟨compress_eq (d := 1) (by decide), by decide, by decide, rfl, rfl, rfl,
+  by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
 
-theorem width4_ok : WOk width4 := ⟨by decide, rfl, rfl, rfl, rfl, by decide, by decide, by decide,
-  by decide, by decide, by decide, by decide, by decide⟩
+theorem width4_ok : WOk width4 := ⟨compress_eq (d := 4) (by decide), by decide, by decide, rfl, rfl, rfl,
+  by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
 
-theorem width10_ok : WOk width10 := ⟨by decide, rfl, rfl, rfl, rfl, by decide, by decide, by decide,
-  by decide, by decide, by decide, by decide, by decide⟩
+theorem width10_ok : WOk width10 := ⟨compress_eq (d := 10) (by decide), by decide, by decide, rfl, rfl, rfl,
+  by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
 
 /-- The digits of the first `e + 1` values of `f`. -/
 theorem digits_range_succ (w : Nat) (f : Nat → Nat) (e : Nat) :

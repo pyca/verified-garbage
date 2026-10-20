@@ -3,9 +3,14 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Keccak
 import VerifiedGarbage.Proof.MlKem.KPke
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: SHAKE256 through the sponge functions

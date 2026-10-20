@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
-public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+public import VerifiedGarbage.Proof.Weierstrass.X86.PowerChain
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # P-256 scalar inversion: a fixed prefix and the existing suffix loop -/
 

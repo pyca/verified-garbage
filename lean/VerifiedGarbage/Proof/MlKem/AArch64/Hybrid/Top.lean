@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.MatrixTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Correct
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
-import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # The hashing encapsulation's contract and constant time
@@ -45,12 +50,13 @@ def encapsAArch64S (P : KemLay) : Contract AArch64.isa where
   post := (encapsAArch64 P).post
   pub := (encapsAArch64 P).pub
 
-theorem preS {s : State} (h : (encapsAArch64S P).pre s) : (encapsAArch64 P).pre s ∧ Stk128 P s := by
+theorem preS {s : State} (h : (encapsAArch64S P).pre s) : (encapsAArch64 P).pre s ∧ Stk128 P (enL P) s := by
   obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp128, k0, k1, k2, k3, k4⟩ := h
   have sub : Region.Sub ⟨s.sp - 16, 16⟩ (frame s.sp) := below_sub (by decide) (by decide)
   refine ⟨⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, by omega,
     k0.sub_left sub, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub, k4.sub_left sub⟩, sp128, ?_⟩
   intro b hb
+  have hb : b < 5 := hb
   rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl
   · exact k0
   · exact k1
@@ -83,25 +89,28 @@ theorem entryS_tables {base : Contract isa} {s : State} (h : (entryContractS bas
 /-- The first phase, with what the matrix needs. -/
 theorem prefixH {w16 : Bool} {s₀ : State} (hp : Pre P (enL P) s₀) (tables : Tables s₀) (ts : TStk s₀) :
     WP isa (Impl.MlKem.AArch64.Hybrid.startH P) s₀ fun t =>
-      HInvW w16 P s₀ t.mem (rhoE P s₀) (ekE P s₀) 0 0 t ∧ MT3 P s₀ t := by
+      HInvW w16 P (enL P) (ekM P) s₀ t.mem (rhoE P s₀) (ekE P s₀) 0 0 t ∧ MT3 P (enL P) s₀ t := by
   refine WP.mono_syms (WP.tablesDepth (startH_ok hp) tables
     (by unfold Impl.MlKem.AArch64.Hybrid.startH; exact Nat.zero_le _)) fun t ⟨hA, ta⟩ sy => ?_
   have tsA : TStk t := ts.of sy (by rw [hA.kb.sp])
-  exact ⟨⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero⟩,
+  exact ⟨⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [hstate_zero]; exact hA.zero,
+      by rw [ekM_base]; exact hA.kb.ro 0 (show 0 < 2 by decide)⟩,
     matrix_table_of_kb hp hA.kb ta, by rw [← hA.kb.sp]; exact tsA.shuffle⟩
 
-theorem kemH_relCT {w16 : Bool} {σ τ : State} {ρ : List Byte} {start rest : Prog isa}
-    (hp : Pre P (enL P) σ) (hq : Pre P (enL P) τ) (hk : Stk128 P σ) (hk' : Stk128 P τ)
-    (sm : Same P σ τ) (ptr : ∀i<4,kA σ ((enL P).slot i)=kA τ ((enL P).slot i)) (ho : HashOk P)
-    (habs : ∀ blk, 136 * blk < P.ekLen → ∃ h, (taint.check (Taint.ofRegs [.x25, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock P blk)) h).isSome = true)
+theorem kemH_relCT {w16 : Bool} {L : Layout} {M : Msg} {σ τ : State} {ρ Eσ Eτ : List Byte}
+    {start rest : Prog isa}
+    (hp : Pre P L σ) (hq : Pre P L τ) (hk : Stk128 P L σ) (hk' : Stk128 P L τ)
+    (hM : MsgOk P L M σ) (hM' : MsgOk P L M τ)
+    (sm : Same L M σ τ) (ptr : ∀i<4,kA σ (L.slot i)=kA τ (L.slot i)) (ho : HashOk P M.S)
+    (habs : ∀ blk, 136 * blk < M.S.len → ∃ h, (taint.check (Taint.ofRegs [M.S.r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock M.S blk)) h).isSome = true)
     (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE"=τ.syms "VG_MLKEM_REJ_SHUFFLE")
     (symbols : ∀name∈restSymbols,σ.syms name=τ.syms name)
-    (as : WP isa start σ (fun s=>HInvW w16 P σ s.mem ρ (ekE P σ) 0 0 s ∧ MT3 P σ s))
-    (au : WP isa start τ (fun s=>HInvW w16 P τ s.mem ρ (ekE P τ) 0 0 s ∧ MT3 P τ s))
+    (as : WP isa start σ (fun s=>HInvW w16 P L M σ s.mem ρ Eσ 0 0 s ∧ MT3 P L σ s))
+    (au : WP isa start τ (fun s=>HInvW w16 P L M τ s.mem ρ Eτ 0 0 s ∧ MT3 P L τ s))
     (ac : RelCT isa (fun s u=>s=σ ∧ u=τ) start (fun _ _=>True))
     (hc : ∃h,((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) rest h).isSome=true) :
-    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Hybrid.matrixH P w16) rest))
+    RelCT isa (fun s u=>s=σ ∧ u=τ) (.seq start (.seq (Impl.MlKem.AArch64.Hybrid.matrixH P M.S w16) rest))
       (fun _ _=>True) := by
   intro s u tr ur t v h et eu
   rcases h with ⟨hs,hu⟩; subst s; subst u
@@ -112,7 +121,7 @@ theorem kemH_relCT {w16 : Bool} {σ τ : State} {ρ : List Byte} {start rest : P
   have hu := Paired.exec_post au fa
   obtain ⟨sB,tc,td,rfl,ec,ed⟩ := Paired.seq_parts eb
   obtain ⟨uB,uc,ud,rfl,fc,fd⟩ := Paired.seq_parts fb
-  have bm := matrixH_relCT hp hq hk hk' sm ho habs _ _ _ _ _ _
+  have bm := matrixH_relCT hp hq hk hk' hM hM' sm ho habs _ _ _ _ _ _
     ⟨hs.1,hu.1,hs.2,hu.2,by rw [Exec.syms ea,Exec.syms fa]; exact shuffle⟩ ec fc
   have beq := bm.1
   have bs := bm.2.1.b

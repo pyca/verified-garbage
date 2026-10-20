@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocalArgument
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocalArgument
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Installing successive cdecl arguments preserves every earlier word -/
 

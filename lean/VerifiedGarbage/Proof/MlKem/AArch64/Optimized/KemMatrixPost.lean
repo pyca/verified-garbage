@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixFrame
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrixFrame
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastSpecPost
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
 
 /-! # Advance the encryption matrix invariant by pairs and the odd final entry -/
 @[expose] public section

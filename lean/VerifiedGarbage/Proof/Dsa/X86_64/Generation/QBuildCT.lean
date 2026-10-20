@@ -1,13 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.TCB.Registration
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.LabelCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.TCB.Registration
 
 /-! # Subgroup-candidate hashing and shaping have public traces -/
 

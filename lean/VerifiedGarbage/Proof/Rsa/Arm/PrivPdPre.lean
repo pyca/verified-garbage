@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The re-exponentiation call satisfies the shared buffer contract -/
 

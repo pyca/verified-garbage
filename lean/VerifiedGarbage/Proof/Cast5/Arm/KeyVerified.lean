@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Key
-meta import VerifiedGarbage.Proof.Cast5.Arm.Key
-public import VerifiedGarbage.Proof.Cast5.Arm.Lit
-meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.TaintSym
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+import VerifiedGarbage.Proof.Framework.Arm.TaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Cast5.Arm.Lit
+import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Cast5.Arm.Round
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Cast5.Arm.Key
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintSym
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Cast5.Contract
+meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
+meta import VerifiedGarbage.Proof.Cast5.Table
+meta import VerifiedGarbage.Proof.Cast5.Arm.Round
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # CAST5 key expansion on ARMv7: verified

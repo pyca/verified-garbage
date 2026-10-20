@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
-public import VerifiedGarbage.Proof.Dsa.StreamBytes
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.StreamBytes
 
 /-! # Functional correctness and termination of streaming reduction -/
 

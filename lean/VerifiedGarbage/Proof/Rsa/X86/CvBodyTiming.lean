@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvBody
+public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvModulusTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvFailureTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvModulusTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvFailureTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvValidTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # CRT branches reveal only the declared public modulus -/
 

@@ -1,9 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArithmeticCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArithmeticCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
 
 /-! Complete candidate and generator-exponent arithmetic has a public trace. -/
 @[expose] public section

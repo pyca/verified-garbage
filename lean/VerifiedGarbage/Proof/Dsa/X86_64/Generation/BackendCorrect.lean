@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashVariants
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundCode
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashVariants
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundCode
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashCode
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryDepth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Correct
 
 /-! # Functional correctness for the existing hash and primality backends -/
 

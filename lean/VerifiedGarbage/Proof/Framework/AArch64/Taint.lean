@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.RegSet
-public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Taint tracking for AArch64

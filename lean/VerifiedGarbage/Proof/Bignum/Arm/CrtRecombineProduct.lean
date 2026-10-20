@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombine
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadAfterProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadAfterProduct
+import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
 
 /-! # Multiplying h and q establishes the final CRT addition precondition -/
 

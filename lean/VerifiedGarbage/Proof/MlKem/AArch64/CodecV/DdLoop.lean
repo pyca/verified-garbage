@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: the loop of the vector decompression
@@ -83,7 +84,7 @@ theorem dtail_ok {w : Width} {Ng : Nat} {s₀ : State} {k : Nat} (hk : k < 256 /
 theorem dloop_ok {w : Width} (hw : WOk w) {Ng n : Nat} {K : State → Prop} {setup body : List Instr}
     {s₀ : State} (hn : 256 / (w.c * Ng) = n) (hn0 : 0 < n) (hG : w.c * Ng * n = 256)
     (hset : ∀ s, WP isa (.block setup) s fun t => GFr s t ∧
-      (∀ r, r ≠ .v18 → r ≠ .v19 → r ≠ .v20 → r ≠ .v21 → t.v r = s.v r) ∧ K t)
+      (∀ r, r ≠ .v18 → r ≠ .v19 → r ≠ .v20 → r ≠ .v21 → r ≠ .v22 → r ≠ .v23 → t.v r = s.v r) ∧ K t)
     (hK : ∀ s t, t.v = s.v → K s → K t)
     (hstep : ∀ k < n, ∀ s, DInv w Ng K s₀ k s →
       WP isa (.block body) s fun t => DInv w Ng K s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ n)) :
@@ -110,8 +111,8 @@ theorem dloop_ok {w : Width} (hw : WOk w) {Ng n : Nat} {K : State → Prop} {set
     · rw [g .x3 (by decide) (by decide), Nat.mul_zero]; exact (ptr_zero _).symm
     · rw [e5, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := Nat.div_le_self 256 (w.c * Ng); omega), hn,
         Nat.sub_zero]
-    · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide), v2 _ (by decide)]; exact l16
-    · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide)]; exact l17
+    · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), v2 _ (by decide)]; exact l16
+    · rw [v5, v4 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact l17
     · rw [m5, Nat.mul_zero]; exact CoeffsUpTo.zero _
     · rw [m5]; exact Frame.refl _ _
   refine WP.mono (count_loop hn0 (DInv w Ng K s₀) hstep h0) fun s' h => ⟨h.rd, h.wr, h.sp, ?_⟩

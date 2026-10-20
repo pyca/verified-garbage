@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
-import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 
 /-! # Public exponent pointers for joint DSA verification -/
 

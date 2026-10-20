@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtImportFrame
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+import VerifiedGarbage.Proof.Bignum.X86.CrtImportStep
+import VerifiedGarbage.Proof.Bignum.X86.CrtSlotFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # All private CRT byte slices are imported without changing the call header -/
 

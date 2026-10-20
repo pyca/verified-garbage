@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallMont
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallMont
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightCall
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallCT
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCall
 
 @[expose] public section
 

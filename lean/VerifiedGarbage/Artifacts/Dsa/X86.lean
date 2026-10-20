@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Verified
 public import VerifiedGarbage.Proof.Dsa.X86.RandomSignInstance
 public import VerifiedGarbage.Proof.Framework.Registration
 

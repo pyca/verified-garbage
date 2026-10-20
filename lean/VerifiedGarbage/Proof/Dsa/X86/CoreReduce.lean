@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStreamSource
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreStreamSource
+import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.Stream
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Complete big-endian reduction call -/
 

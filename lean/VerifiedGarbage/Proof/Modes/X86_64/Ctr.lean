@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.Group
 public import VerifiedGarbage.TCB.X86_64.Target
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CTR on x86-64, for any core: the whole function

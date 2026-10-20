@@ -4,13 +4,36 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailO
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail3O
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailK
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail3O
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+meta import VerifiedGarbage.Proof.Framework.ContractPost
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `bulk` is constant time

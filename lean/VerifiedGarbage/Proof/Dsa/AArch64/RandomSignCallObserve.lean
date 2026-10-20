@@ -5,6 +5,11 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetryCT
 import VerifiedGarbage.Proof.Dsa.AArch64.CallFinishCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallValue
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignArgsSaved
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Observe call-boundary data without constraining the private nonce or digest. -/
 @[expose] public section

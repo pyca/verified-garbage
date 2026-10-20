@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 
 @[expose] public section
 

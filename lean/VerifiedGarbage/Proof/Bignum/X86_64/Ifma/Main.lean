@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Branch
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the computation

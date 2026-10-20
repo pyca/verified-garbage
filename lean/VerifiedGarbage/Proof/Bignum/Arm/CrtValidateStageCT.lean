@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationStagesCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationStagesCT
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The complete private key validation leaks no secret validation result -/
 

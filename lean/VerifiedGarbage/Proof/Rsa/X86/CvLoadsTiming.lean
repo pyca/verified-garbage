@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvLoadTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvZero
+import VerifiedGarbage.Proof.Rsa.X86.CvLoadTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvZero
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Clearing the CRT workspace and importing all four integers has a public trace -/
 

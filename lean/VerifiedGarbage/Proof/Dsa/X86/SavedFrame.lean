@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
 /-! # Saved ABI registers survive arithmetic and signature release -/
 

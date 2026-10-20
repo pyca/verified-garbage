@@ -1,10 +1,16 @@
 module
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `[v]Q` by the public NAF, in the verifier's slots
@@ -198,9 +204,10 @@ theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : La
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
+    {dd : Option (Prog isa)} (hD : PubNaf.NafDblOk (winQ c) c.C base size dd)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', NafMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
-    WP isa (.seq (PubNaf.prep (winQ c) (c.sl V)) (.seq (PubNaf.window (winQ c)) rest)) s R := by
+    WP isa (.seq (PubNaf.prep (winQ c) (c.sl V)) (.seq (PubNaf.window (winQ c) dd) rest)) s R := by
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by have := hc.p_ge; omega_arith)
   have hk : sv c base s V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   apply WP.seq
@@ -209,7 +216,7 @@ theorem pubNafMul_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : La
   refine WP.seq (WP.mono (PubNaf.window_ok (nafLayQ hc hn4 hn6) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hO hn17 hP hs₂ hM₂ hF₂
-    z₂ hk)
+    z₂ hk hD)
     fun s₃ ⟨sc₃, k₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃
   exact ⟨sc₃, k₃.rd.trans rd₂, k₃.wr.trans wr₂, by rw [List.append_assoc]; exact U₂.trans U₃, M₃, L₃, R₃⟩

@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
-meta import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.OddCheck
 meta import VerifiedGarbage.Proof.Dsa.Layout
 meta import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of the final-byte reads in public domain checks -/
 

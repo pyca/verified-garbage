@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Load
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Montgomery
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Residue
-public import VerifiedGarbage.Impl.Rsa.X86_64.Keys
 
 /-! # One FFDH parameter candidate on x86-64
 

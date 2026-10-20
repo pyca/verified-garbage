@@ -1,10 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Reduce
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.R2CT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.R2CT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Ffdh.X86_64.SetupModCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Reduce
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupModCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: public reduction workspace -/
 

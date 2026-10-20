@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSample
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! Execute one randomized signing attempt, including sampling and retries. -/
 @[expose] public section

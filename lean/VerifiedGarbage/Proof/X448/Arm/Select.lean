@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Swap
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: selecting the canonical representative

@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.ScratchP
 public import VerifiedGarbage.Spec.Gcm.Powers8
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.AesGcm.Scratch
-public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
+import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Scratch contracts and locality for the `*_with_powers` functions
 

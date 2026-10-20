@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time, the context

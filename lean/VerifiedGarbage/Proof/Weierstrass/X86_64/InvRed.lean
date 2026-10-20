@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
-public import VerifiedGarbage.Proof.Divstep.TcS
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+import VerifiedGarbage.Proof.Divstep.TcS
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Divstep.Alg
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import Aesop.BuiltinRules
 
 /-!
 # Inversion by divsteps on x86-64: the reduction of the coefficients

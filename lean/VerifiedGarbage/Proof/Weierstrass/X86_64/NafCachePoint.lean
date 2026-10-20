@@ -1,15 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafPoint
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCache
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-! A public cache lookup preserves the point and its Z²/Z³ relationships. -/
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
 public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+public import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-!
 # `vg_rsa_public_precomputed_checked` on x86-64

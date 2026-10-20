@@ -1,14 +1,46 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgOps
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenNoise
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenFinish
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
 
 /-! # The 16-bit key generation is correct
 
@@ -243,12 +275,12 @@ theorem noise_cinvW {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P)
 
 theorem readonly_noise_encodeW {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (ht : Optimized.TransformTables s)
     {mB : Mem} {v : BitVec 64} (h : CInvW P s₀ mB v s) :
-    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P true true) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noiseAllWith Ntt16.Readonly.nttAtWithW P true) s fun t =>
       Kept (Noise.allWrites P true (kA s₀ 3)) s t ∧ EncodeInvW P s₀ mB t.mem v 0 t := by
   have hc : Covers [⟨kA s₀ 3,P.scl⟩] s.wr := by
     have hh := cov_w hp h.kb (b := 3) (o := 0) (l := P.scl) (by decide) (by kl)
     simpa only [R,ptr_zero] using hh
-  refine WP.mono (Noise.readonly_noiseAll_tables (w16 := true) hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
+  refine WP.mono (Noise.readonly_noiseAll_tables hp.wf hr true h.kb.x28 hc ht) fun t ⟨kt,pt⟩ => ?_
   refine ⟨kt,noise_cinvW hp hr h kt,?_,?_,fun _ hj => by omega,Frame.refl _ _⟩
   · intro j hj
     have p : PolyIsW 16 _ _ _ := pt j (by omega)

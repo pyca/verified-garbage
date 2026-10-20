@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Chunk
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Loop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): a chunk of the loop

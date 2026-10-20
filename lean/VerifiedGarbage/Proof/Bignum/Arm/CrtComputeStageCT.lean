@@ -1,9 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeSelection
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowersCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtComputeSelection
+import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowersCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStageCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The complete private computation has a secret-independent trace -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Cfb8
-import VerifiedGarbage.Spec.Aes
 
 /-!
 # CFB8's result, for any block cipher and target

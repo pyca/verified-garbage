@@ -1,9 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the slots

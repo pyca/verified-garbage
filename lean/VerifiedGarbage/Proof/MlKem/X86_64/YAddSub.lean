@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
 meta import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: addition and subtraction with AVX2, which the K-PKE functions inline

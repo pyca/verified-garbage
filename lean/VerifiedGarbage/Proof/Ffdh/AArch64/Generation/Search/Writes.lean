@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Live
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
+import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The parameter search's writes of its own words, and zeros at `out` (AArch64)
 

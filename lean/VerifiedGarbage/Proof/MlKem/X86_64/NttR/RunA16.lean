@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
-public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
-public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.StLit
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, pass A of `u16`s

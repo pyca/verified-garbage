@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.Spec.Sha512
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # 64-bit words as pairs of 32-bit halves

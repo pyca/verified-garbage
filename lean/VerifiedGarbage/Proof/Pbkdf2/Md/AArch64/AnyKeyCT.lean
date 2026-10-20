@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKey
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

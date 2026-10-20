@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
+import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductState
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Factor multiplication preserves the inputs to product validation -/
 

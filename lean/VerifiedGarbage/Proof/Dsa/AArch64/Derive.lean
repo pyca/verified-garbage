@@ -2,24 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveEntry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveFailure
-import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
-import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveFailure
 import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
-import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningShape
-import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
 import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
 import VerifiedGarbage.Proof.Dsa.AArch64.Result
 import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Functional correctness of AArch64 DSA key derivation -/
 

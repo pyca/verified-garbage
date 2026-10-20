@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Sha256.Md
-meta import VerifiedGarbage.Proof.Sha256.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming SHA-256 on x86-64: `update` and `finalize`

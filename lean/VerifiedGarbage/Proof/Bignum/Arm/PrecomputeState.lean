@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Precompute
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
+import VerifiedGarbage.Proof.Bignum.Arm.ImportModulus
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 
 /-! # Public workspace shape and per-execution RSA precomputation invariants -/
 

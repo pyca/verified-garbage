@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Clearing a Montgomery result's two extra key-array words -/
 

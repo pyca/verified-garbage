@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-KEM on AArch64: the lanes of the vector codecs
@@ -71,14 +70,12 @@ theorem eval_shift {s : State} {op : VShiftOp} {a : VArr} {d n : VReg} {sh : Nat
   simp only [VOp.eval, h, ite_true]
 
 /-- `Compress_d` of the lanes of `v`. -/
-theorem cmpV_ok {s : State} {v : VReg} {d : Nat} (hd : d ∈ compressWidths)
-    (h16 : Lanes (s.v .v16) fun _ => compressMul d) (h17 : Lanes (s.v .v17) fun _ => compressAdd)
+theorem cmpV_ok {s : State} {v : VReg} {d M A : Nat} (hM : M ≤ 322542) (hA : A < 2 ^ 19)
+    (h16 : Lanes (s.v .v16) fun _ => M) (h17 : Lanes (s.v .v17) fun _ => A)
     (h18 : Lanes (s.v .v18) fun _ => 2 ^ d - 1) (hv17 : v ≠ .v17) (hv18 : v ≠ .v18)
     {f : Nat → Nat} (hx : Lanes (s.v v) f) (hf : ∀ e < 4, f e < 3329) :
     WP isa (.block (cmpV v)) s fun t => VChg [v] s t ∧
-      Lanes (t.v v) fun e => (f e * compressMul d + compressAdd) / 2 ^ 19 % 2 ^ d := by
-  have hM : compressMul d ≤ 161271 := by
-    rcases mem_compressWidths hd with rfl | rfl | rfl <;> decide
+      Lanes (t.v v) fun e => (f e * M + A) / 2 ^ 19 % 2 ^ d := by
   unfold cmpV
   refine wp_vop rfl fun s1 h1 => wp_vop rfl fun s2 h2 =>
     wp_vop (eval_shift (by decide)) fun s3 h3 => wp_vop rfl fun s4 h4 => wp_nil ⟨?_, ?_⟩
@@ -94,11 +91,11 @@ theorem cmpV_ok {s : State} {v : VReg} {d : Nat} (hd : d ∈ compressWidths)
   rw [h4.v]
   refine l4.congr fun e he => ?_
   have := hf e he
-  have hm : f e * compressMul d < 2 ^ 31 :=
+  have hm : f e * M < 2 ^ 31 :=
     Nat.lt_of_le_of_lt (Nat.mul_le_mul (Nat.le_of_lt this) hM) (by decide)
-  have h1 : f e * compressMul d < 2 ^ 32 := by omega
+  have h1 : f e * M < 2 ^ 32 := by omega
   rw [Nat.mod_eq_of_lt h1]
-  have h2 : f e * compressMul d + compressAdd < 2 ^ 32 := by unfold compressAdd; omega
+  have h2 : f e * M + A < 2 ^ 32 := by omega
   rw [Nat.mod_eq_of_lt h2]
 
 /-- The lanes of `x` and `y`, less than `2ᵇ`, in pairs. -/

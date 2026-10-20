@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
-public import VerifiedGarbage.Impl.Aes.AArch64.Aese
 public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
 

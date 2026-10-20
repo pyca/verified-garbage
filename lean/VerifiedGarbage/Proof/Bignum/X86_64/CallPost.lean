@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSA's postconditions do not read the return address below `rsp`

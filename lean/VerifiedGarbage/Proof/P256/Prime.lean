@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.P256
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # The P-256 field prime `p` and group order `n` are prime

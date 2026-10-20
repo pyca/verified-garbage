@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedEnd
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 
 /-! # Montgomery setup and RSA's shared Miller–Rabin witness loop -/
 

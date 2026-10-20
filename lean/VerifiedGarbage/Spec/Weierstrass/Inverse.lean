@@ -1,15 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Spec.P384
-public import VerifiedGarbage.Spec.P192
-public import VerifiedGarbage.Spec.P224
-public import VerifiedGarbage.Spec.P256
-public import VerifiedGarbage.Spec.Secp256k1
-public import VerifiedGarbage.Spec.P521
-public import VerifiedGarbage.Spec.BrainpoolP256r1
-public import VerifiedGarbage.Spec.BrainpoolP384r1
-public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # Inverses modulo a curve's prime and order, in its working space, as functions

@@ -1,11 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 public import VerifiedGarbage.Spec.P256
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 /-! Quotient estimate shared by the fixed small P-256 linear combinations. -/
 

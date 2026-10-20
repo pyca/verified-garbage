@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 
 /-!
 # AES-GCM-SIV: x86-64 implementation

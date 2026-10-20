@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-! Block identities shared by vector NTT implementations. -/
 

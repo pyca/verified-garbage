@@ -58,11 +58,14 @@ def highRegs : List Reg := accRegs.drop 6
 /-- The accumulator's words `i` to `i + 6`, which row `i` adds to. -/
 def rowRegs (i : Nat) : List Reg := (accRegs.drop i).take 7
 
-/-- The product `[a] [b]` into `accRegs`: cleared, then six rows, each from
-one word of `[a]` loaded into `x1`. -/
-def prod : List Instr :=
+/-- The product `[a] [b]` into `accRegs`, `[a]` at `rb + o`: cleared, then
+six rows, each from one word of `[a]` loaded into `x1`. -/
+def prodAt (rb : Reg) (o : Nat) : List Instr :=
   zeros accRegs ++ (List.range 6).flatMap fun i =>
-    .ldr .x .x1 ra (8 * i) :: row ra .x1 (rowRegs i) (bRegs384.map fun r => .gen (.reg r))
+    .ldr .x .x1 rb (8 * i + o) :: row rb .x1 (rowRegs i) (bRegs384.map fun r => .gen (.reg r))
+
+/-- The product, `[a]` at `ra`. -/
+def prod : List Instr := prodAt ra 0
 
 /-- `x16 = 0xffffffff00000001` and `x17 = 0x00000000ffffffff`, the low words
 of `2^384 - p`, from `x7 = 0`. -/

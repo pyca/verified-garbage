@@ -1,9 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CTData
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptRun
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallEntry
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptRun
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallEntry
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # An attempt leaks only the domain and its status
 

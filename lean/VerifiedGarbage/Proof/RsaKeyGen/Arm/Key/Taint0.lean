@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
-meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # An RSA key on ARMv7: the shared pieces the taint analysis checks
 

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sym
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sym
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, the run of its terms

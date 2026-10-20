@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.FinishCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.AddCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Add
-public import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
-public import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.AArch64.AddCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Add
+import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
+import VerifiedGarbage.Proof.Dsa.AArch64.Reduce
+import VerifiedGarbage.Proof.Dsa.AArch64.Power
 
 /-! # Retaining public result bindings across arithmetic calls -/
 

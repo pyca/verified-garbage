@@ -1,49 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.Poly
-meta import VerifiedGarbage.Proof.Gcm.Poly
-public import VerifiedGarbage.Proof.Gcm.Powers
-meta import VerifiedGarbage.Proof.Gcm.Powers
+import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Spec.Gcm.Prepared
-meta import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-meta import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
-public import Mathlib.Tactic.LinearCombination
-meta import Mathlib.Tactic.LinearCombination
-public import Mathlib.Tactic.Ring.RingNF
-meta import Mathlib.Tactic.Ring.RingNF
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.Poly
+meta import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import VerifiedGarbage.Spec.Gcm
-meta import VerifiedGarbage.Spec.Gcm
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Gcm.Contract
-meta import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 -- Formerly the module `VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Blocks`.
 

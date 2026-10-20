@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Both RSA integer imports have traces fixed by public call geometry -/
 

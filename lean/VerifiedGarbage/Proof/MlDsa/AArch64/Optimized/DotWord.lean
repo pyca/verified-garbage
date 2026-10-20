@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductWord
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

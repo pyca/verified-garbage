@@ -1,6 +1,13 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRelease
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Re-encoding and masked release preserve the public operation's meaning -/
 

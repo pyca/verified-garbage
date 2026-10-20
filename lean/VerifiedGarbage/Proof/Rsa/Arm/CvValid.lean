@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvFinish
+import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # `vg_rsa_crt_values` on ARMv7: a valid modulus (`valid_ok`) -/
 

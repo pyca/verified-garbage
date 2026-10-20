@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces of the checks

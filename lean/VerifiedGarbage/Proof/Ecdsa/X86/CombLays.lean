@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Stages
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 
 /-! # Layout and table facts for the x86 fixed-base comb -/
 

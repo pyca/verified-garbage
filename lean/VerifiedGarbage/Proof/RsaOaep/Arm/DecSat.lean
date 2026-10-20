@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the contract is satisfiable

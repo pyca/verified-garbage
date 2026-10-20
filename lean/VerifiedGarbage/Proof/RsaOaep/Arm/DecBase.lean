@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.Label
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP decryption on ARMv7: where everything is

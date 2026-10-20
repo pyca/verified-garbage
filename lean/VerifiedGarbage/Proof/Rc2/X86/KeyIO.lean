@@ -4,9 +4,15 @@ public import VerifiedGarbage.Proof.Rc2.X86.Save
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
 public import VerifiedGarbage.Proof.Rc2.Expansion
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rc2.Memory32
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
+import VerifiedGarbage.Impl.Rc2.X86.Lookup
+import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 @[expose] public section
 

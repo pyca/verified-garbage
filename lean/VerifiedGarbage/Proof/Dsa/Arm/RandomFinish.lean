@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # The randomized signer's exit (32-bit ARM)

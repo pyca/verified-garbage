@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFreshCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFreshCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFreshCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInput
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Load the selected generator candidate from the persistent frame and evaluate it -/
 

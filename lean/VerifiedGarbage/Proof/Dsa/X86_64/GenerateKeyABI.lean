@@ -2,9 +2,17 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.Generate
 public import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
-public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The key-generation ABI, its inputs and its frame
 

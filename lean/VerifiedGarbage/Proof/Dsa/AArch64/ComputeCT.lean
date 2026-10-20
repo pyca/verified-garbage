@@ -1,27 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerifyCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerifyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
-meta import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
+public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreSignCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CoreVerifyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyCompute
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
-meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.RsaPss
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of validation and signing/verification together -/
 

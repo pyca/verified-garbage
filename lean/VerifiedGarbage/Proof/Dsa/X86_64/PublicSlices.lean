@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Equality of public domain slices does not equate private key material -/
 

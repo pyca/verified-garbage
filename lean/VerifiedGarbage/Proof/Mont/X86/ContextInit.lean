@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
-public import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-public import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Mont.X86.PowerTwo
+import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Constructing the runtime Montgomery context -/
 

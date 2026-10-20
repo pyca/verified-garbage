@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.P256.Prime
-public import VerifiedGarbage.Proof.P256.Point
-public import VerifiedGarbage.Proof.Weierstrass.Group
-public import VerifiedGarbage.Proof.Weierstrass.Cubic
+public import VerifiedGarbage.Proof.Weierstrass.Complete
+public import VerifiedGarbage.Spec.P256
+import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Weierstrass.Group
+import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-!
 # P-256 is a curve the proofs apply to

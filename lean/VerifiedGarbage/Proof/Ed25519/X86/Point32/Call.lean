@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Fn
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Calls of `vg_ed25519_r32_point_add` on x86 (32-bit)

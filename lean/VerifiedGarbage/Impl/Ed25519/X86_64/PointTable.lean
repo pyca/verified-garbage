@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.X25519.X86_64
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointLoop
 
 /-! Moving points between the arithmetic workspace and bounded tables. -/
 

@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Load
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A GCM batch using cached AES round keys -/
 

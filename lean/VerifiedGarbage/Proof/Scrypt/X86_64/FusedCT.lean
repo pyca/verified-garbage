@@ -1,7 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
-meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+import Mathlib.Tactic.DefEqTransformations
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInvariant
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+meta import Mathlib.Tactic.DefEqTransformations
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

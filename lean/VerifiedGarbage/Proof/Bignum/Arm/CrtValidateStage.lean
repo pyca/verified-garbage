@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadQStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStage
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact acceptance and imported factors for the private RSA computation -/
 

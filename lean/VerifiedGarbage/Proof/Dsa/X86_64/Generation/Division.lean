@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.Div
-public import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
 
 /-! # Reuse native long division for DSA parameter generation
 

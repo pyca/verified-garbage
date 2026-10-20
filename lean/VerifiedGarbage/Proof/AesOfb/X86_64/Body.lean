@@ -1,11 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.AesOfb.Spec
-meta import VerifiedGarbage.Proof.AesOfb.Spec
 public import VerifiedGarbage.Proof.AesCbc.X86_64.CT
-meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 public import VerifiedGarbage.Impl.AesOfb.X86_64
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesOfb.Spec
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 meta import VerifiedGarbage.Impl.AesOfb.X86_64
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OFB on x86-64: one block, and constant time

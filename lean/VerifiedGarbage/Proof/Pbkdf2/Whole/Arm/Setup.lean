@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Key
 import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: HMAC's states for the key, and the salt

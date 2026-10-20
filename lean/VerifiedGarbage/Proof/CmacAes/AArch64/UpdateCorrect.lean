@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateLoop
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CMAC on AArch64: `vg_cmac_aes_update` is correct

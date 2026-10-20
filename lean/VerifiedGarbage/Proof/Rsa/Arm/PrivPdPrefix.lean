@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyRetained
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivStoreTemporary
+import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyRetained
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
+import VerifiedGarbage.Proof.Rsa.Arm.PrivStoreTemporary
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Prepare all six stack arguments for the public re-exponentiation check -/
 

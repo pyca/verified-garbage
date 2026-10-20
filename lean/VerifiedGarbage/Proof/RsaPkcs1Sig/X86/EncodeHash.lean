@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeDispatch
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeChecks
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeWrite
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Encode a digest for a selected public hash function -/
 

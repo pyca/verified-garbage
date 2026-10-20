@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Implies
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Verified
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on x86-64, with its working space on the stack

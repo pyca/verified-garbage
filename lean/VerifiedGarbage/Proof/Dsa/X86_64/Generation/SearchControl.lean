@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Search
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # Native counter and seed-offset progression for the bounded search -/
 

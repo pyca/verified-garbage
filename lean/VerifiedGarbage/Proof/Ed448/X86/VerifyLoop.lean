@@ -2,10 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Ed448.X86.VerifyField
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyBits
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.X86.Env
 import VerifiedGarbage.Proof.X448.X86.Counters
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): `[S]B + [k](-A)`

@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.AArch64.ParameterCandidate
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # An FFDH parameter candidate on AArch64: the public data, the entry

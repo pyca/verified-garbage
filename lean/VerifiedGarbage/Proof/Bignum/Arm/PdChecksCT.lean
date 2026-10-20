@@ -1,12 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckState
+public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
-public import VerifiedGarbage.Proof.Bignum.Arm.PdOddCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.PdOddCT
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 
 /-! # Precomputation validation performs the same checks for every public key -/
 

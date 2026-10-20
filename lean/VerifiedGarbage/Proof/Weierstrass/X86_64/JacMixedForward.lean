@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 
-public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AVX-512 VAES counter mode: the counter blocks and the data

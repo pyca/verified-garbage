@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
 
 /-! # The complete paired key-generation matrix satisfies the existing invariant -/
 @[expose] public section

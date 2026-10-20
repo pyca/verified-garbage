@@ -1,6 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.Recover
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A power-of-two modulus for the exact product of the key exponents -/
 

@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.Env
+public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 
-public import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
-public import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
+import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
+import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # DSA on 32-bit ARM: signing is constant time

@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86.Blake2b
-public import VerifiedGarbage.Proof.Argon2.HPrime
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.Argon2.X86.HPrime
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Blake2.X86.Blake2b
+public import VerifiedGarbage.Proof.Blake2.X86.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Blake2.X86.LitB
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
 
 @[expose] public section
 

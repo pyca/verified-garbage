@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Seed.X86_64.G16
+public import VerifiedGarbage.Proof.Seed.X86_64.Steps
 
-public import VerifiedGarbage.Proof.Seed.X86_64.Swap
+import VerifiedGarbage.Proof.Seed.X86_64.Swap
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # A round on x86-64

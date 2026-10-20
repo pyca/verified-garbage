@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RunFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Preservation of caller bytes and untouched encoded intermediates -/
 

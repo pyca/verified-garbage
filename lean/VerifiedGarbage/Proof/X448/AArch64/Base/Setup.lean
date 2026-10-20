@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
-public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
-import VerifiedGarbage.Proof.X448.AArch64.Fast.VSave
 import VerifiedGarbage.Proof.X448.AArch64.Bits
-import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!

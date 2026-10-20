@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 public import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.P256.EcdhDouble
 public import VerifiedGarbage.Impl.P256.VerifyTable

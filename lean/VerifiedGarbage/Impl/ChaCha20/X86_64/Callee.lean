@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512VL
 
 /-!

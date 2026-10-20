@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Core
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # XORing blocks on AArch64

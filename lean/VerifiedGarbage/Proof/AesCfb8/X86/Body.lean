@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.X86.Steps
+import VerifiedGarbage.Proof.AesCfb8.X86.Steps
 public import VerifiedGarbage.Proof.AesCbc.X86.Body
+public import VerifiedGarbage.Proof.AesCfb8.X86.Loop
+public import VerifiedGarbage.Proof.MdStream.X86.Common
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB8 on x86: one byte

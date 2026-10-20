@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+public import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
-public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Impl.Ed25519.Arm.RecoverSign
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Straight-line and fixed-loop pieces of public point decoding. -/
 

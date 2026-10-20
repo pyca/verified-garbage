@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
-public import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
 /-!
 # RSA's private-key operation checked against `e`, on x86-64

@@ -2,9 +2,7 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.Permutation
-import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Bswap
-import VerifiedGarbage.Proof.Framework.X86.Taint
 
 @[expose] public section
 

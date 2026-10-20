@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Verify.Hash
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Calls
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 verification on AArch64: the frame's body

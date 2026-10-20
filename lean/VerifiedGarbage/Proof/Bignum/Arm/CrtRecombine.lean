@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineProduct
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact wide CRT reconstruction, including all buffer initialization -/
 

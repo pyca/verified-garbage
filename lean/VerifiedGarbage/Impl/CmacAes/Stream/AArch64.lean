@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
+public import VerifiedGarbage.Impl.CmacAes.AArch64
 
 /-!
 # Streaming AES-CMAC: AArch64 implementation

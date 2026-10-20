@@ -4,7 +4,9 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.CoeffW
 public import VerifiedGarbage.Proof.MlKem.KPke
 public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on AArch64: the loop of `SampleNTT`

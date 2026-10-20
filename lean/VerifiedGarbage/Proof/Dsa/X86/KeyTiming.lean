@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 
-public import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CallMinusTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallValidationTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallMinusTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CallReduceTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant-time domain and key validation -/
 

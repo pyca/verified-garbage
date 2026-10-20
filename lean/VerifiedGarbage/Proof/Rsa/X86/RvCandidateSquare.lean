@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareLoop
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareInit
+import VerifiedGarbage.Proof.Rsa.X86.RvSquareLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvSquareInit
 public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # The squaring search following a candidate's exponentiation -/
 

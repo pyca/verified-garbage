@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Returning a complete native search preserves its output and System V registers -/
 

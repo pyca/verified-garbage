@@ -1,15 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
-meta import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: `ByteDecode₁₂` with AVX2, which the K-PKE functions inline
@@ -92,7 +100,7 @@ theorem wp_vsh {op : XShiftOp} {d a : XReg} {n : BitVec 8}
   WP.cons (s' := s.setV .l256 d (op.eval (s.lane a 0) n) (op.eval (s.lane a 1) n)) rfl (k _ (by
     have h := LUpd.setV256 s d (op.eval (s.lane a 0) n) (op.eval (s.lane a 1) n)
     exact ⟨fun l hl => by rw [h.val l hl]; rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl,
-      h.other, h.gpr, h.mem, h.rd, h.wr⟩))
+      h.other, h.gpr, h.mem, h.rd, h.wr, h.syms⟩))
 
 theorem wp_subi' {d : Reg} {v : BitVec 32}
     (k : ∀ s', GUpd s s' d (s.gpr d - v.signExtend 64) → s'.zf = some (s.gpr d - v.signExtend 64 == 0) →
@@ -126,7 +134,7 @@ theorem wp_vpbcastq {d a : XReg}
   refine WP.cons (s' := s.setV .l256 d (qword (s.xmm a) 0 ++ qword (s.xmm a) 0)
     (qword (s.xmm a) 0 ++ qword (s.xmm a) 0)) rfl (k _ ?_)
   have h := LUpd.setV256 s d (qword (s.xmm a) 0 ++ qword (s.xmm a) 0) (qword (s.xmm a) 0 ++ qword (s.xmm a) 0)
-  exact ⟨fun l hl => by rw [h.val l hl]; split <;> rfl, h.other, h.gpr, h.mem, h.rd, h.wr⟩
+  exact ⟨fun l hl => by rw [h.val l hl]; split <;> rfl, h.other, h.gpr, h.mem, h.rd, h.wr, h.syms⟩
 
 end
 

@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.AttemptCT
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.AttemptCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Guards
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # An iteration of the key search branches on its public point alone (AArch64)
 

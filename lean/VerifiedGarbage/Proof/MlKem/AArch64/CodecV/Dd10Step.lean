@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `dd10Body`
@@ -170,12 +174,11 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
     rw [v5 .v18 (by decide) (by decide) (by decide) (by decide)]; exact h.K.1
   have l19 : Lanes (s5.v .v19) fun _ => 2 ^ 10 - 1 := by
     rw [v5 .v19 (by decide) (by decide) (by decide) (by decide)]; exact h.K.2.1
-  have hGv : ∀ l < 4, Gv l < 2 ^ 40 := fun l _ => num_lt width10 s₀ _ 5
   have x3 : s.gpr .x3 = coeffAddr (fP s₀) (16 * k) := by
     rw [h.x3, show width10.c * 4 * k = 16 * k by simp [width10]; try omega]
   have out : CoeffsUpTo s5.mem (fP s₀) (16 * k) (DD.G width10 s₀) (old s₀) := by
     rw [m5, show 16 * k = width10.c * 4 * k by simp [width10]; try omega]; exact h.out
-  refine dd10Half_ok (Or.inl rfl) (o := 0) (by decide) cs5 l18 l19 D6 (fun l hl => hGv l (by omega))
+  refine dd10Half_ok (Or.inl rfl) (o := 0) (by decide) cs5 l18 l19 D6
     (fun i hi => by rw [wr5]; exact h.out16 hp hi) (by rw [g5 .x3 (by decide), x3, ptr_zero]) (by omega) out
     (by rw [m5]; exact h.frame) (fun m hm => G10 s₀ hk (by omega)) fun s6 g6 rd6 wr6 sp6 v6 o6 f6 => ?_
   refine dd10Half_ok (Or.inr rfl) (o := 32) (by decide)
@@ -183,7 +186,7 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
      by rw [v6 .v17 (by decide) (by decide) (by decide) (by decide)]; exact cs5.h⟩
     (by rw [v6 .v18 (by decide) (by decide) (by decide) (by decide)]; exact l18)
     (by rw [v6 .v19 (by decide) (by decide) (by decide) (by decide)]; exact l19)
-    (by rw [v6 .v7 (by decide) (by decide) (by decide) (by decide)]; exact D7) (fun l hl => hGv (2 + l) (by omega))
+    (by rw [v6 .v7 (by decide) (by decide) (by decide) (by decide)]; exact D7)
     (fun i hi => by rw [wr6, wr5]; exact h.out16 hp hi)
     (by rw [g6, g5 .x3 (by decide), x3]; exact coeffAddr_off _ _ 8) (by omega) o6 f6
     (fun m hm => by

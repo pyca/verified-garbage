@@ -1,11 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
-meta import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: `Decompress_d ∘ ByteDecode_d` with AVX2, which the K-PKE functions inline

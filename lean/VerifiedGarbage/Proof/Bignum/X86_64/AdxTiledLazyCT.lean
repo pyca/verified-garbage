@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxLazy8
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The lazy final subtraction: constant time

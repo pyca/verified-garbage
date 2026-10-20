@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.Arm.Compress
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-! Merged from `Proof.Ed25519.Arm.Whole.Hash`. -/
 

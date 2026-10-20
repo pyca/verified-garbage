@@ -2,49 +2,77 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
+import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
 import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305
-public import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
 public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.ContractPost
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.XorBufX
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls

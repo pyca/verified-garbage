@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Camellia.Arm.Core
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced subkeys on ARMv7

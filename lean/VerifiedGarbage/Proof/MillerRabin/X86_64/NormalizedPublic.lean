@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeValues
+import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeValues
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
 
 /-! # Public bookkeeping after normalization is fixed by the limb count -/
 

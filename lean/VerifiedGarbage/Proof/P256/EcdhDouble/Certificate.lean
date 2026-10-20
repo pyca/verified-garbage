@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.P256.EcdhDouble
-meta import VerifiedGarbage.Impl.P256.EcdhDouble
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
-meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.P256.EcdhDouble
+meta import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

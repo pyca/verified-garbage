@@ -1,9 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWin
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWin
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrLoop
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # A candidate on AArch64: constant time of Miller–Rabin's exponentiation

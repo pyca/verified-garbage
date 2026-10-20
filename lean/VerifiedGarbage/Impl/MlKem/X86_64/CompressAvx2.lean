@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_compress_encode_avx2` and `vg_mlkem_decode_decompress_avx2`

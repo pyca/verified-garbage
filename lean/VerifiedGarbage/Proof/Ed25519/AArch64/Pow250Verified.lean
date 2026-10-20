@@ -1,21 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Power
 public import VerifiedGarbage.Proof.X25519.Chain250
-meta import VerifiedGarbage.Proof.X25519.Chain250
 import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+meta import VerifiedGarbage.Proof.X25519.Chain250
 meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Spec.X25519.Field64
-meta import VerifiedGarbage.Spec.X25519.Field64
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_gf25519_r64_pow250` on AArch64, verified

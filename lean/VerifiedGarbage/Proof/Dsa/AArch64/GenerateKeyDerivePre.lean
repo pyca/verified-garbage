@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerive
+public import VerifiedGarbage.Spec.Dsa.Derive
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Establish the key-derivation contract at the wrapper's call boundary. -/
 @[expose] public section

@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRound
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.WitnessSlice
-public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 
 /-! # State of DSA's shared Miller–Rabin witness loop -/
 

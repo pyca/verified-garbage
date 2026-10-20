@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Verified
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # AES-OCB on AArch64, with its working space on the stack

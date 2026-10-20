@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 
 /-! # Prepared contexts: the short path with the context's powers
 

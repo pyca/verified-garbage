@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxLazy8
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
-public import VerifiedGarbage.Proof.Bignum.LazyMath
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+import VerifiedGarbage.Proof.Bignum.LazyMath
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # The lazy final subtraction, eight words at a time

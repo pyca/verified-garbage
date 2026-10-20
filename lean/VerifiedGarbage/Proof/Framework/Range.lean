@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Straight-line code built from indexed steps

@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.FbVerified
-meta import VerifiedGarbage.Proof.Idea.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Idea.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
+import VerifiedGarbage.Proof.Idea.KeyLit32
+meta import VerifiedGarbage.Proof.Idea.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
+meta import VerifiedGarbage.Proof.Idea.KeyLit32
 
 /-!
 # Idea-CBC on x86 (32-bit) meets its contracts

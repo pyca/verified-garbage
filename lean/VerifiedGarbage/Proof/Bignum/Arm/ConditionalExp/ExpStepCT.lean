@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpStep
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 
 /-! # Exponentiation arithmetic does not reveal the base or modulus values -/
 

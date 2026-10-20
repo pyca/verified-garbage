@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequenceCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
-import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSequenceCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeArgs
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Public addressing for shaping the full-width p candidate -/
 

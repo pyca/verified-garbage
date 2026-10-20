@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtPadModulus
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 
 /-! # Product-comparison inputs survive padding the modulus buffer -/
 

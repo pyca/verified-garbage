@@ -5,6 +5,80 @@ public import VerifiedGarbage.Proof.Weierstrass.WindowJA
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
+public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+public import VerifiedGarbage.Proof.Weierstrass.WindowJ
+import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Function
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross0
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross1
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross2
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductCross3
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDiag
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductDouble
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Reduction
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionBits
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionCorrect
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.Rotate
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the table into affine coordinates

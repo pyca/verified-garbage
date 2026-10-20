@@ -1,15 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.EncapsTop
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.EncapsTop
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encaps
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.EncapsTop
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Final
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encaps
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # The 16-bit `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`
@@ -43,10 +61,11 @@ theorem restHW1024_taint (c : Impl.Sha3.AArch64.Callee)
       (Impl.MlKem.AArch64.Kem16.enRest (prfW c) Impl.MlKem1024.AArch64.lay1024)) h).isSome=true := by
   taint_decide_generic c := hole using hS
 
-theorem matrixHW768_depth : (Impl.MlKem.AArch64.Hybrid.matrixH lay768 true).aarch64Depth ≤ 8 := by
+theorem matrixHW768_depth : (Impl.MlKem.AArch64.Hybrid.matrixH lay768 (Impl.MlKem.AArch64.Hybrid.ekSrc lay768) true).aarch64Depth ≤ 8 := by
   decide +kernel
 theorem matrixHW1024_depth :
-    (Impl.MlKem.AArch64.Hybrid.matrixH Impl.MlKem1024.AArch64.lay1024 true).aarch64Depth ≤ 8 := by
+    (Impl.MlKem.AArch64.Hybrid.matrixH Impl.MlKem1024.AArch64.lay1024
+      (Impl.MlKem.AArch64.Hybrid.ekSrc Impl.MlKem1024.AArch64.lay1024) true).aarch64Depth ≤ 8 := by
   decide +kernel
 
 /-! ## ML-KEM-768 -/
@@ -54,7 +73,7 @@ theorem matrixHW1024_depth :
 theorem encapsHW768_ct (v : Proof.Sha3.AArch64.Permutation) :
     ConstantTime isa (entryContractS (encapsAArch64S lay768)).pre (entryContractS (encapsAArch64S lay768)).pub
       (Impl.MlKem.AArch64.Kem16.encaps (fixedHash v.callee) (prfW v.callee) lay768) :=
-  encapsHW_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 hashOk768 habs768
+  encapsHW_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 srcOk768 hashOk768 habs768
     startH768_taint (restHW768_taint v.callee (symSums v))
 
 theorem encapsHW768_verified (v : Proof.Sha3.AArch64.Permutation) :
@@ -66,7 +85,7 @@ theorem encapsHW768_verified (v : Proof.Sha3.AArch64.Permutation) :
     have ss := preS h.1
     have ts := entryS_tables h
     exact using_correctHW (fixedHash v.callee) (prfW_valid v) (enG768_correct v)
-      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩ hashOk768
+      (kem_unstrip (Encaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩ srcOk768 hashOk768
       Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2 matrixHW768_depth (tailH_depth v)
   · exact ⟨fun _ h=>encapsH768_entry h,fun _ _ h hp=>encapsH768_post h hp,
       fun _ _ hs ht hp=>encapsH768_pub hs ht hp,encapsH768_sat⟩
@@ -77,7 +96,7 @@ theorem encapsHW1024_ct (v : Proof.Sha3.AArch64.Permutation) :
     ConstantTime isa (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre
       (entryContractS (encapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub
       (Impl.MlKem.AArch64.Kem16.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024) :=
-  encapsHW_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 hashOk1024 habs1024
+  encapsHW_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 srcOk1024 hashOk1024 habs1024
     startH1024_taint (restHW1024_taint v.callee (symSums v))
 
 theorem encapsHW1024_verified (v : Proof.Sha3.AArch64.Permutation) :
@@ -91,7 +110,7 @@ theorem encapsHW1024_verified (v : Proof.Sha3.AArch64.Permutation) :
     have ts := entryS_tables h
     exact using_correctHW (fixedHash v.callee) (prfW_valid v) (enG1024_correct v)
       (kem_unstrip (Encaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
-      hashOk1024 Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2 matrixHW1024_depth
+      srcOk1024 hashOk1024 Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2 matrixHW1024_depth
       (tailH_depth v)
   · exact ⟨fun _ h=>encapsH1024_entry h,fun _ _ h hp=>encapsH1024_post h hp,
       fun _ _ hs ht hp=>encapsH1024_pub hs ht hp,encapsH1024_sat⟩

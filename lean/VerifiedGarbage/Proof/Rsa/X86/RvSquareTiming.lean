@@ -1,7 +1,9 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 
 /-! # Masked squaring uses a public iteration count -/
 

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivGeometry
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Arguments retained in six stack slots across the three RSA calls -/
 

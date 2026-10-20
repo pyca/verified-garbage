@@ -2,10 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SampleRound
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
 
 /-! Witness selection, the shared callable round, and its completion policy. -/
 @[expose] public section

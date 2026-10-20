@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Packed-key validation preserves the saved public exponent -/
 

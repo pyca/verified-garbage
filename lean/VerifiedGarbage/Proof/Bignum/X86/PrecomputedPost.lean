@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.PublicWritten
-public import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Output obligations for every modulus represented by a packed key -/
 

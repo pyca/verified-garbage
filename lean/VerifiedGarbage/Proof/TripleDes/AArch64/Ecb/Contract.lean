@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.TripleDes.Contract
 
 @[expose] public section
 

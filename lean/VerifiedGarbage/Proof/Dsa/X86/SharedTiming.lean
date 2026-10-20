@@ -1,8 +1,19 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Dsa.X86.PublicDomain
-public import VerifiedGarbage.Proof.Dsa.X86.SigningOperationTiming
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperationTiming
+import VerifiedGarbage.Proof.Dsa.X86.PublicDomain
+import VerifiedGarbage.Proof.Dsa.X86.SigningOperationTiming
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperationTiming
+import VerifiedGarbage.Proof.Dsa.X86.SharedPublic
 
 /-! # Whole-operation constant time against the shared DSA contracts -/
 

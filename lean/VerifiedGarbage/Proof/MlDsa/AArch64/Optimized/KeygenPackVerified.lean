@@ -1,9 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerify
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourContracts
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
 
 @[expose] public section

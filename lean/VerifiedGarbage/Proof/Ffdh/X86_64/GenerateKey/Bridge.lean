@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH key generation on x86-64: reuse the exchange output workspace -/
 

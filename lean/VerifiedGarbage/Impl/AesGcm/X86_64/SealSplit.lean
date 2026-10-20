@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 
 /-!
 # AES-GCM on x86-64: `seal` of a plaintext whose prefix is elsewhere
@@ -96,12 +95,12 @@ def «prefix» (fTo : Fn) : Prog isa :=
 
 /-! ## In one pass
 
-On 256-bit registers, `prefixN` takes the texts whose first slice holds a
-whole group of 16 blocks and that hold more of them than it: the bytes of
-`src` after its last whole group copied to `dst`, its groups and then those
-at `dst` after them are encrypted and absorbed by one interleaved loop
-(`StitchR.encN`, inline), and the data from the last whole group of the
-text on is kept for `body`. -/
+`prefixN` takes the texts whose first slice holds a whole group of 16 blocks
+and that hold more of them than it: the bytes of `src` after its last whole
+group copied to `dst`, its groups and then those at `dst` after them are
+encrypted and absorbed by one interleaved loop `encN`, inline
+(`StitchR.encN` on 256-bit registers, `StitchZHTo.encN` on 512-bit ones),
+and the data from the last whole group of the text on is kept for `body`. -/
 
 /-- `CF` if `⌊src_len / 256⌋` is not 0 and less than `⌊len / 256⌋`: their
 values less one compared unsigned (`len` is at least `src_len`). -/
@@ -117,7 +116,7 @@ def nCopyArgs : List Instr :=
     .alu .sub .rcx (.reg .rax), .mov .rsi (.mem (at_ .r15 tlO)), .alu .add .rsi (.reg .rax),
     .mov .rdi (.mem (at_ .r15 dataO)), .alu .add .rdi (.reg .rax)]
 
-/-- The arguments of `StitchR.encN`: those of `vg_aes_gcm_encrypt_blocks_to`
+/-- The arguments of `encN`: those of `vg_aes_gcm_encrypt_blocks_to`
 for the whole groups at `src` (`r9` blocks), and `dst` and the number of
 blocks of the whole groups at `dst` after them in `rbx` and `rbp`. -/
 def nArgs : List Instr :=
@@ -134,12 +133,11 @@ def nRest : List Instr :=
     .shift .shl .rax 8, .alu .sub .rcx (.reg .rax), .store (at_ .r15 lenO) .rcx, .alu .add .rax (.mem (at_ .r15 dataO)),
     .store (at_ .r15 dataO) .rax]
 
-/-- `prefix fTo`, but in one pass (`StitchR.encN`) for the texts `nTest`
-takes. -/
-def prefixN (fTo : Fn) : Prog isa :=
+/-- `prefix fTo`, but in one pass (`encN`) for the texts `nTest` takes. -/
+def prefixN (fTo : Fn) (encN : Prog isa) : Prog isa :=
   .seq (.block nTest)
     (.ite .b
-      (.seq (.block nCopyArgs) (.seq SealGather.copy (.seq (.block nArgs) (.seq Gcm.X86_64.StitchR.encN (.block nRest)))))
+      (.seq (.block nCopyArgs) (.seq SealGather.copy (.seq (.block nArgs) (.seq encN (.block nRest)))))
       («prefix» fTo))
 
 /-- The total length put back where `oneBlocks` kept the length of what it

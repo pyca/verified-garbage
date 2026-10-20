@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPartition
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 
 @[expose] public section
 

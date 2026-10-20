@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT1
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecKdk
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecKdk
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, `DH` and `KDK`

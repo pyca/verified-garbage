@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.Arm.Round
-meta import VerifiedGarbage.Impl.MillerRabin.Arm.Round
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MillerRabin.Arm.Round
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The Miller–Rabin round on ARMv7: the pieces the taint analysis checks
 

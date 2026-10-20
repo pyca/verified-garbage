@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Finishing (x86)

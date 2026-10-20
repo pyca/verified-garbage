@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ffdh.KeyGeneration
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Spec.Ffdh
+import VerifiedGarbage.Spec.Ffdh.Contract
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
-public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 /-! # The key-generation controller's contract in terms of the machine
 

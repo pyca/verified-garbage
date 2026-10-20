@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Blowfish.X86
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 
-public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
+import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 import VerifiedGarbage.Proof.Blowfish.KeyTable
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Blowfish.Table
 
 /-!
 # Blowfish on x86 (32-bit): the initial schedule and the key into the P-array

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Spec.P224
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # The P-224 field prime `p = 2^224 - 2^96 + 1` and group order `n` are prime

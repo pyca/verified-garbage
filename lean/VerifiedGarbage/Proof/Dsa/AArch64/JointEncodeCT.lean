@@ -1,15 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
 
-import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time encoding of both bases -/
 

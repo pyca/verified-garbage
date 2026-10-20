@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEight
-import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductEight
 
 @[expose] public section
 namespace VG.Impl.Bignum.AArch64.SquareEightRaw

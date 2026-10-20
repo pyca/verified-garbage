@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the runs of the loop
@@ -35,17 +39,24 @@ abbrev cntR (σ : State) : Region := ⟨at' σ oCnt, 32⟩
 /-- After the first 168 iterations on the seeds before `K`. -/
 structure P1W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
   sq : SqTW w16 σ 0 3 s
-  tab : TabOK σ s.mem
+  tab : TabOK s
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < K, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
 
 /-- `P1W` with 32-bit coefficients. -/
 abbrev P1 := P1W false
 
+/-- After the two more squeezes, before the static's address. -/
+structure Q2W (w16 : Bool) (σ : State) (s : State) : Prop where
+  sq : SqTW w16 σ 3 2 s
+  j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
+    BitVec.ofNat 64 (Lt σ k (if k < 0 then 280 else 168)).length
+  st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < 0 then 280 else 168))
+
 /-- After the 112 more iterations on the seeds before `K`. -/
 structure P2W (w16 : Bool) (σ : State) (K : Nat) (s : State) : Prop where
   sq : SqTW w16 σ 3 2 s
-  tab : TabOK σ s.mem
+  tab : TabOK s
   j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
@@ -127,15 +138,6 @@ theorem sv_cnt : (⟨at' σ oSave, 40⟩ : Region).Disjoint (cntR σ) :=
   Offset.disjoint (scr σ) (.inl (by simp only [oSave, oCnt]; omega)) (by simp only [oSave]; omega)
     (by simp only [oCnt]; omega)
 
-omit hp in
-theorem tab_cnt : (tabR σ).Disjoint (cntR σ) :=
-  Offset.disjoint (scr σ) (.inr (by simp only [oTab, oCnt]; omega)) (by simp only [oTab]; omega)
-    (by simp only [oCnt]; omega)
-
-omit hp in
-theorem low_tab : (lowR σ).Disjoint (tabR σ) :=
-  Offset.base_disjoint (scr σ) (by simp only [oSave, oTab]; omega) (by simp only [oTab]; omega)
-
 theorem low_poly {K : Nat} (hK : K < 4) : (lowR σ).Disjoint (cRegion w16 (poly4W w16 (aP σ) K)) :=
   Region.Disjoint.sub_right (Region.Disjoint.sub_left hp.a_scr.symm (Region.sub_prefix (by simp only [oSave]; omega)))
     (sub_poly hK)
@@ -202,9 +204,10 @@ theorem env_regs {s₀ s : State} (e₀ : EnvW w16 σ s₀) (e : EnvW w16 σ s) 
 
 /-! ## The first runs -/
 
-/-- The table, after the squeezes. -/
-theorem p1_zero_ok {s : State} (h : SqTW w16 σ 0 3 s) : WP isa (.block tabBuild) s (P1W w16 σ 0) :=
-  WP.mono (tabT_ok hp h) fun _ ⟨h', ht⟩ => ⟨h', ht, fun _ hk => absurd hk (by omega), fun _ hk => absurd hk (by omega)⟩
+omit hp in
+/-- The static's address, after the squeezes. -/
+theorem p1_zero_ok {s : State} (h : SqTW w16 σ 0 3 s) : WP isa (.block tabAddr) s (P1W w16 σ 0) :=
+  WP.mono (tabT_ok h) fun _ ⟨h', ht, _⟩ => ⟨h', ht, fun _ hk => absurd hk (by omega), fun _ hk => absurd hk (by omega)⟩
 
 omit hp in
 theorem lb1 {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : LBW w16 σ s K 0 s :=
@@ -213,7 +216,7 @@ theorem lb1 {K : Nat} (hK : K < 4) {s : State} (h : P1W w16 σ K s) : LBW w16 σ
 /-- The count of seed `K` kept, after its first 168 iterations. -/
 theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) (h₂ : LAtW w16 σ s K 0 168 s₂) :
     WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (P1W w16 σ (K + 1)) := by
-  refine WP.mono (keepCnt_ok hp hK h₂) fun s₃ ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (keepCnt_ok hp hK h₂) fun s₃ ⟨hm, k⟩ sy => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write hK _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
   have g₃ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₃.gpr r = s₂.gpr r := fun r _ => k.gpr (by simp)
@@ -225,7 +228,7 @@ theorem run1End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P1W w16 σ K s) 
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
-    tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_⟩
+    h₂.lb.tab.of (k.gpr (by simp)) sy, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hm]
     by_cases e : k = K
     · subst e; rw [Mem.readW_writeW_self64]
@@ -309,7 +312,6 @@ theorem DoneW.of_full {s : State} (h : CheckedW w16 σ s) (hf : allFull σ 168 =
 /-- Before the two more squeezes: the counts and coefficients of the first runs. -/
 structure M2W (w16 : Bool) (σ : State) (s : State) : Prop where
   sq : SqTW w16 σ 3 0 s
-  tab : TabOK σ s.mem
   j : ∀ k < 4, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < 4, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
 
@@ -325,14 +327,13 @@ theorem reset_ok {s : State} (h : CheckedW w16 σ s) : WP isa (.block [.mov32 .r
   have hm₁ : s₁.mem = s₀.mem := hm.trans hm₀
   have hk₁ : Keep [.rax, .r14] s₀ s₁ := (hk₀.trans hk).mono (by simp)
   exact ⟨⟨h₀.sq.env.keep hm₁ hk₁ (by simp), hr, by rw [hm₁]; exact h₀.sq.rc, by rw [hm₁]; exact h₀.sq.lanes,
-    fun _ _ p hp' => absurd hp' (by omega)⟩, by rw [hm₁]; exact h₀.tab, by rw [hm₁]; exact h₀.j,
+    fun _ _ p hp' => absurd hp' (by omega)⟩, by rw [hm₁]; exact h₀.j,
     by rw [hm₁]; exact h₀.st⟩
 
 /-- The two more squeezes. -/
-theorem sqM_ok {fast : Bool} {s : State} (h : M2W w16 σ s) : WP isa (squeezes 0 2 fast) s (P2W w16 σ 0) := by
+theorem sqM_ok {fast : Bool} {s : State} (h : M2W w16 σ s) : WP isa (squeezes 0 2 fast) s (Q2W w16 σ) := by
   refine WP.mono (sqTs_ok (fast := fast) hp (by decide) (by decide) h.sq) fun s₂ ⟨q₂, hf⟩ =>
-    ⟨q₂, tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_tab.symm) hf h.tab,
-      fun k hk => ?_, fun k hk => ?_⟩
+    ⟨q₂, fun k hk => ?_, fun k hk => ?_⟩
   · rw [ite_eq_right (by omega), hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oCnt + 8 * k) (n := 8) (by simp only [oSave, oCnt]; omega)
@@ -342,6 +343,11 @@ theorem sqM_ok {fast : Bool} {s : State} (h : M2W w16 σ s) : WP isa (squeezes 0
       (Lt_le σ k _) (h.st k hk)
 
 omit hp in
+/-- The static's address, after the two more squeezes. -/
+theorem tab2_ok {s : State} (h : Q2W w16 σ s) : WP isa (.block tabAddr) s (P2W w16 σ 0) :=
+  WP.mono (tabT_ok h.sq) fun _ ⟨q, ht, hm⟩ => ⟨q, ht, by rw [hm]; exact h.j, by rw [hm]; exact h.st⟩
+
+omit hp in
 theorem lb2 {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : LBW w16 σ s K 168 s :=
   ⟨h.sq.env, rfl, h.tab, fun p hp' hb => by
     rw [h.sq.buf K hK p (by omega)], Frame.refl _ _⟩
@@ -349,7 +355,7 @@ theorem lb2 {K : Nat} (hK : K < 4) {s : State} (h : P2W w16 σ K s) : LBW w16 σ
 /-- The count of seed `K` kept, after its 112 more iterations. -/
 theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) (h₂ : LAtW w16 σ s K 168 112 s₂) :
     WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (P2W w16 σ (K + 1)) := by
-  refine WP.mono (keepCnt_ok hp hK h₂) fun s₃ ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (keepCnt_ok hp hK h₂) fun s₃ ⟨hm, k⟩ sy => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write hK _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
   have g₃ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₃.gpr r = s₂.gpr r := fun r _ => k.gpr (by simp)
@@ -361,7 +367,7 @@ theorem run2End_ok {K : Nat} (hK : K < 4) {s s₂ : State} (h : P2W w16 σ K s) 
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
-    tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_⟩
+    h₂.lb.tab.of (k.gpr (by simp)) sy, fun k hk => ?_, fun k hk => ?_⟩
   · rw [hm]
     by_cases e : k = K
     · subst e; rw [Mem.readW_writeW_self64, ite_eq_left (by omega)]
@@ -400,10 +406,10 @@ theorem last_ok {s : State} (h : P2W w16 σ 4 s) : WP isa (.block cntFlags) s (D
 /-- The two more squeezes and the second runs, after the check. -/
 theorem more4_ok {fast : Bool} {s : State} (h : CheckedW w16 σ s) : WP isa (more4 fast w16) s (DoneW w16 σ) := by
   unfold more4
-  exact WP.seq (WP.mono (reset_ok h) fun _ m => WP.seq (WP.mono (sqM_ok hp m) fun _ q₀ =>
-    WP.seq (WP.mono (run2_ok hp (by decide) q₀) fun _ q₁ =>
+  exact WP.seq (WP.mono (reset_ok h) fun _ m => WP.seq (WP.mono (sqM_ok hp m) fun _ q =>
+    WP.seq (WP.mono (tab2_ok q) fun _ q₀ => WP.seq (WP.mono (run2_ok hp (by decide) q₀) fun _ q₁ =>
     WP.seq (WP.mono (run2_ok hp (by decide) q₁) fun _ q₂ => WP.seq (WP.mono (run2_ok hp (by decide) q₂) fun _ q₃ =>
-      WP.seq (WP.mono (run2_ok hp (by decide) q₃) fun _ q₄ => last_ok hp q₄))))))
+      WP.seq (WP.mono (run2_ok hp (by decide) q₃) fun _ q₄ => last_ok hp q₄)))))))
 
 /-- The branch on the check. -/
 theorem branch_ok {fast : Bool} {s : State} (h : CheckedW w16 σ s) :

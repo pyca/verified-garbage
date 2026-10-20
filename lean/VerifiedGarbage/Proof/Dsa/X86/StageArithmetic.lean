@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
-public import VerifiedGarbage.Proof.Dsa.X86.CoreProduct
-public import VerifiedGarbage.Proof.Dsa.X86.CoreSum
+import VerifiedGarbage.Proof.Dsa.X86.CoreProduct
+import VerifiedGarbage.Proof.Dsa.X86.CoreSum
 public import VerifiedGarbage.Proof.Dsa.X86.CoreReduce
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Scalar arithmetic stages preserve validated caller parameters -/
 

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 public import VerifiedGarbage.Proof.X25519.X86_64.Mem
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X25519 on x86-64: a product's rows with BMI2 and ADX

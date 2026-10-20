@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 
 /-! # Recover ciphertext and exponent arguments in either selected factor workspace -/
 

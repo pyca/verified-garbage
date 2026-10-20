@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 @[expose] public section
 

@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
 
 /-! ## AdxRotate8Front -/
 

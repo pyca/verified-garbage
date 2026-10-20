@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Spec.P521
 
-public import VerifiedGarbage.Spec.P521
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # P-521's field arithmetic: the contracts, on every target

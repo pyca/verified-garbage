@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
 
-public import VerifiedGarbage.Proof.X448.Wide.Product
 
 /-!
 # Carrying a product's coefficients

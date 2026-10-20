@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+import VerifiedGarbage.Proof.Framework.GetElem
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeABI
 
 /-! # The shared contract exposes only call geometry and the public modulus -/
 

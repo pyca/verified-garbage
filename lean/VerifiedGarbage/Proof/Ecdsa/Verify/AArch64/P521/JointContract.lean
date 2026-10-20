@@ -1,26 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import Mathlib.Data.Finset.Card
 meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-! The joint P-521 verifier satisfies the existing public verification contract.
 The width-seven generator and width-five peer digits share one doubling chain;

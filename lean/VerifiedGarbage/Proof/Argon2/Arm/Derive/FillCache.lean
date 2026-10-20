@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.FillStep
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillDep
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.MemoryInit
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 on ARMv7: the address block and the random word

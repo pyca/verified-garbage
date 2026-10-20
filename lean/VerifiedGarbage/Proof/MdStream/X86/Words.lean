@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MdStream.X86
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.MdStream.Spec
 
-public import VerifiedGarbage.Proof.MdStream.X86.Common
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): length fields and digests

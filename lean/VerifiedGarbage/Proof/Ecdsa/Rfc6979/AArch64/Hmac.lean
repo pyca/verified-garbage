@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Deterministic ECDSA on AArch64: one HMAC

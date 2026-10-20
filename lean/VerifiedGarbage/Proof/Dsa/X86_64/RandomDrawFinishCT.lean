@@ -1,9 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The draw's final branches reveal only acceptance and its public retry budget. -/
 @[expose] public section

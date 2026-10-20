@@ -1,6 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `ce4Math`
@@ -14,16 +21,16 @@ namespace VG.Proof.MlKem.AArch64.CodecV
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64 VG.Spec.MlKem
 
-theorem cf_lt (d x : Nat) : cf d x < 2 ^ d := Nat.mod_lt _ (Nat.two_pow_pos d)
+theorem cf_lt (w : Width) (x : Nat) : cf w x < 2 ^ w.d := Nat.mod_lt _ (Nat.two_pow_pos _)
 
-theorem ce4Math_ok {s : State} (hc : CConsts 4 s) {X : Nat → Nat} (hX : ∀ i < 32, X i < 3329)
+theorem ce4Math_ok {s : State} (hc : CConsts width4 s) {X : Nat → Nat} (hX : ∀ i < 32, X i < 3329)
     (l0 : Lanes (s.v .v0) fun i => X i) (l1 : Lanes (s.v .v1) fun i => X (4 + i))
     (l2 : Lanes (s.v .v2) fun i => X (8 + i)) (l3 : Lanes (s.v .v3) fun i => X (12 + i))
     (l4 : Lanes (s.v .v4) fun i => X (16 + i)) (l5 : Lanes (s.v .v5) fun i => X (20 + i))
     (l6 : Lanes (s.v .v6) fun i => X (24 + i)) (l7 : Lanes (s.v .v7) fun i => X (28 + i)) :
     WP isa (.block ce4Math) s fun t => VChg [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v19] s t ∧
-      ∀ j < 16, (vbyte (t.v .v0) j).toNat = cf 4 (X (2 * j)) + cf 4 (X (2 * j + 1)) * 2 ^ 4 := by
-  have hd : (4 : Nat) ∈ compressWidths := by decide
+      ∀ j < 16, (vbyte (t.v .v0) j).toNat = cf width4 (X (2 * j)) + cf width4 (X (2 * j + 1)) * 2 ^ 4 := by
+  have hd : WOk width4 := width4_ok
   unfold ce4Math cmp8
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -35,8 +42,8 @@ theorem ce4Math_ok {s : State} (hc : CConsts 4 s) {X : Nat → Nat} (hX : ∀ i 
     ((Lanes.chg c1 (by decide) l7).congr fun i _ => by congr 1; omega))
     fun s2 ⟨c2, m4, m5, m6, m7⟩ => ?_
   -- the compressed coefficients
-  let Y : Nat → Nat := fun i => cf 4 (X i)
-  have hY : ∀ i, Y i < 2 ^ 4 := fun i => cf_lt 4 _
+  let Y : Nat → Nat := fun i => cf width4 (X i)
+  have hY : ∀ i, Y i < 2 ^ 4 := fun i => cf_lt width4 _
   rw [WP.block_append_iff]
   refine WP.mono (pairV_ok (b := 4) (f := Y) (by decide) (by decide) (by decide) (by decide)
     (Lanes.chg c2 (by decide) m0) (Lanes.chg c2 (by decide) m1) fun i _ => hY i)

@@ -6,6 +6,10 @@ import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleH`, the runs of the loop on three seeds
@@ -48,25 +52,29 @@ theorem cnt_hs (σ : State) : (cntR σ).Disjoint (hsR σ) :=
   Offset.disjoint (scr σ) (.inl (by simp only [oCnt, oHS]; omega)) (by simp only [oCnt]; omega)
     (by simp only [oHS]; omega)
 
-theorem tab_hs (σ : State) : (tabR σ).Disjoint (hsR σ) :=
-  Offset.disjoint (scr σ) (.inl (by simp only [oTab, oHS]; omega)) (by simp only [oTab]; omega)
-    (by simp only [oHS]; omega)
-
 theorem poly_hs {σ : State} (hp : PreW w16 σ) {K : Nat} (hK : K < 4) : (cRegion w16 (poly4W w16 (aP σ) K)).Disjoint (hsR σ) :=
   (scr_poly hp hK (a := oHS) (n := 200) (by simp only [oHS]; omega)).symm
 
 /-- After the first 168 iterations on the seeds before `K`. -/
 structure Q1 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
   sq : SqY w16 σ Y 0 3 s
-  tab : TabOK σ s.mem
+  tab : TabOK s
   j : ∀ k < K, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < K, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
+  hs : HS σ Hf s.mem
+
+/-- After the two more squeezes, before the static's address. -/
+structure R2 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
+  sq : SqY w16 σ (iterF 2 Y) 3 2 s
+  j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
+    BitVec.ofNat 64 (Lt σ k (if k < 0 then 280 else 168)).length
+  st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < 0 then 280 else 168))
   hs : HS σ Hf s.mem
 
 /-- After the 112 more iterations on the seeds before `K`. -/
 structure Q2 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (K : Nat) (s : State) : Prop where
   sq : SqY w16 σ (iterF 2 Y) 3 2 s
-  tab : TabOK σ s.mem
+  tab : TabOK s
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 =
     BitVec.ofNat 64 (Lt σ k (if k < K then 280 else 168)).length
   st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k (if k < K then 280 else 168))
@@ -94,19 +102,19 @@ include hp
 
 /-! ## The first runs -/
 
-/-- The table, after the squeezes, which it keeps. -/
+omit hp in
+/-- `SqY` after the static's address. -/
+theorem SqY.tab {Y : Spec.Sha3.State} {t n : Nat} {s s' : State} (h : SqY w16 σ Y t n s) (hm : s'.mem = s.mem)
+    (k : Keep [.r11] s s') : SqY w16 σ Y t n s' :=
+  ⟨h.env.keep hm k (by decide), by rw [k.gpr (by decide), h.r14], by rw [hm]; exact h.rc, by rw [hm]; exact h.lanes,
+    by rw [hm]; exact h.buf⟩
+
+omit hp in
+/-- The static's address, after the squeezes. -/
 theorem tabY_ok {Y Hf : Spec.Sha3.State} {s : State} (h : SqY w16 σ Y 0 3 s) (hs : HS σ Hf s.mem) :
-    WP isa (.block tabBuild) s (Q1 w16 σ Y Hf 0) := by
-  refine WP.mono (tab_ok hp h.env) fun s' h' => ⟨h.apart (by decide) h'.frame (fun r hr => ?_) (fun r hr => ?_)
-    (fun r hr => ?_) h'.keep.2.1 h'.keep.2.2 fun r hr => h'.keep.gpr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
-    h'.tab, fun _ hk => absurd hk (by omega), fun _ hk => absurd hk (by omega),
-    hs.frame h'.frame fun r hr => by rw [List.mem_singleton.mp hr]; exact (tab_hs σ).symm⟩ <;>
-    simp only [List.mem_singleton] at hr <;> subst hr
-  · exact Offset.base_disjoint _ (by simp only [oSave, oTab]; omega) (by simp only [oTab]; omega)
-  · exact Offset.disjoint _ (.inl (by simp only [oSave, oTab]; omega)) (by simp only [oSave]; omega)
-      (by simp only [oTab]; omega)
-  · exact ⟨scrR σ, by simp, sub_scr (by simp only [oTab]; omega)⟩
+    WP isa (.block tabAddr) s (Q1 w16 σ Y Hf 0) :=
+  WP.mono (tabAddr_ok s) fun _ ⟨hm, k, ht⟩ => ⟨h.tab hm k, ht, fun _ hk => absurd hk (by omega),
+    fun _ hk => absurd hk (by omega), by unfold HS; rw [hm]; exact hs⟩
 
 omit hp in
 theorem lbY1 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1 w16 σ Y Hf K s) : LBW w16 σ s K 0 s :=
@@ -116,7 +124,7 @@ theorem lbY1 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q1
 theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q1 w16 σ Y Hf K s)
     (h₂ : LAtW w16 σ s K 0 168 s₂) :
     WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q1 w16 σ Y Hf (K + 1)) := by
-  refine WP.mono (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ sy => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write (by omega) _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
   have g₃ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₃.gpr r = s₂.gpr r := fun r _ => k.gpr (by simp)
@@ -128,7 +136,7 @@ theorem run1EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
-    tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_,
+    h₂.lb.tab.of (k.gpr (by simp)) sy, fun k hk => ?_, fun k hk => ?_,
     (h.hs.frame h₂.lb.fr fun r hr => by rw [List.mem_singleton.mp hr]; exact (poly_hs hp (by omega)).symm).frame hf₃
       fun r hr => by rw [List.mem_singleton.mp hr]; exact (cnt_hs σ).symm⟩
   · rw [hm]
@@ -209,7 +217,6 @@ theorem Done3.of_full {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ 
 /-- Before the two more squeezes: the counts and coefficients of the first runs. -/
 structure M3 (w16 : Bool) (σ : State) (Y Hf : Spec.Sha3.State) (s : State) : Prop where
   sq : SqY w16 σ Y 3 0 s
-  tab : TabOK σ s.mem
   j : ∀ k < 3, s.mem.readW (at' σ (oCnt + 8 * k)) 64 = BitVec.ofNat 64 (Lt σ k 168).length
   st : ∀ k < 3, Stored w16 s.mem (poly4W w16 (aP σ) k) (Lt σ k 168)
   hs : HS σ Hf s.mem
@@ -224,15 +231,14 @@ theorem reset3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf
   have hm₁ : s₁.mem = s₀.mem := hm.trans hm₀
   have hk₁ : Keep [.rax, .r14] s₀ s₁ := (hk₀.trans hk).mono (by simp)
   exact ⟨⟨h₀.sq.env.keep hm₁ hk₁ (by simp), hr, by rw [hm₁]; exact h₀.sq.rc, by rw [hm₁]; exact h₀.sq.lanes,
-    fun _ _ p hp' => absurd hp' (by omega)⟩, by rw [hm₁]; exact h₀.tab, by rw [hm₁]; exact h₀.j,
+    fun _ _ p hp' => absurd hp' (by omega)⟩, by rw [hm₁]; exact h₀.j,
     by rw [hm₁]; exact h₀.st, by unfold HS; rw [hm₁]; exact h₀.hs⟩
 
 /-- The two more squeezes. -/
 theorem sqM3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : M3 w16 σ Y Hf s) :
-    WP isa (squeezes 0 2 fast) s (Q2 w16 σ Y Hf 0) := by
+    WP isa (squeezes 0 2 fast) s (R2 w16 σ Y Hf) := by
   refine WP.mono (sqYs_ok (fast := fast) hp (by decide) (by decide) h.sq) fun s₂ ⟨q₂, hf⟩ =>
-    ⟨q₂, tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_tab.symm) hf h.tab,
-      fun k hk => ?_, fun k hk => ?_, h.hs.frame hf fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm⟩
+    ⟨q₂, fun k hk => ?_, fun k hk => ?_, h.hs.frame hf fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_hs σ).symm⟩
   · rw [ite_eq_right (by omega), hf.readW (Region.contains_self _ _) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact (Offset.base_disjoint (scr σ) (k := oSave) (e := oCnt + 8 * k) (n := 8) (by simp only [oSave, oCnt]; omega)
@@ -240,6 +246,12 @@ theorem sqM3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : M3 w16 �
   · rw [ite_eq_right (by omega)]
     exact stored_apart hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact (low_poly hp (by omega)).symm)
       (Lt_le σ k _) (h.st k hk)
+
+omit hp in
+/-- The static's address, after the two more squeezes. -/
+theorem tabY2_ok {Y Hf : Spec.Sha3.State} {s : State} (h : R2 w16 σ Y Hf s) : WP isa (.block tabAddr) s (Q2 w16 σ Y Hf 0) :=
+  WP.mono (tabAddr_ok s) fun _ ⟨hm, k, ht⟩ => ⟨h.sq.tab hm k, ht, by rw [hm]; exact h.j, by rw [hm]; exact h.st,
+    by unfold HS; rw [hm]; exact h.hs⟩
 
 omit hp in
 theorem lbY2 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2 w16 σ Y Hf K s) : LBW w16 σ s K 168 s :=
@@ -250,7 +262,7 @@ theorem lbY2 {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s : State} (h : Q2
 theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : State} (h : Q2 w16 σ Y Hf K s)
     (h₂ : LAtW w16 σ s K 168 112 s₂) :
     WP isa (.block [.store (at_ .rbx (oCnt + 8 * K)) .rdi]) s₂ (Q2 w16 σ Y Hf (K + 1)) := by
-  refine WP.mono (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ => ?_
+  refine WP.mono_syms (keepCnt_ok hp (by omega) h₂) fun s₃ ⟨hm, k⟩ sy => ?_
   have hf₃ : Frame [cntR σ] s₂.mem s₃.mem := by rw [hm]; exact cnt_write (by omega) _
   have g₂ := env_regs h.sq.env h₂.lb.env h₂.lb.r14
   have g₃ : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s₃.gpr r = s₂.gpr r := fun r _ => k.gpr (by simp)
@@ -262,7 +274,7 @@ theorem run2EndY_ok {Y Hf : Spec.Sha3.State} {K : Nat} (hK : K < 3) {s s₂ : St
       (h₂.lb.env.rd.trans h.sq.env.rd.symm) (h₂.lb.env.wr.trans h.sq.env.wr.symm) g₂).apart (by decide) hf₃
       (fun r hr => by rw [List.mem_singleton.mp hr]; exact low_cnt) (fun r hr => by rw [List.mem_singleton.mp hr]; exact sv_cnt)
       sub_cntR k.2.1 k.2.2 g₃,
-    tab_frame (fun r hr => by rw [List.mem_singleton.mp hr]; exact tab_cnt) hf₃ h₂.lb.tab, fun k hk => ?_, fun k hk => ?_,
+    h₂.lb.tab.of (k.gpr (by simp)) sy, fun k hk => ?_, fun k hk => ?_,
     (h.hs.frame h₂.lb.fr fun r hr => by rw [List.mem_singleton.mp hr]; exact (poly_hs hp (by omega)).symm).frame hf₃
       fun r hr => by rw [List.mem_singleton.mp hr]; exact (cnt_hs σ).symm⟩
   · rw [hm]
@@ -306,10 +318,10 @@ theorem last3_ok {Y Hf : Spec.Sha3.State} {s : State} (h : Q2 w16 σ Y Hf 3 s) :
 theorem more3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) :
     WP isa (more3 fast w16) s (Done3 w16 σ Hf) := by
   unfold more3
-  exact WP.seq (WP.mono (reset3_ok h) fun _ m => WP.seq (WP.mono (sqM3_ok hp m) fun _ q₀ =>
-    WP.seq (WP.mono (run2Y_ok hp (by decide) q₀) fun _ q₁ =>
+  exact WP.seq (WP.mono (reset3_ok h) fun _ m => WP.seq (WP.mono (sqM3_ok hp m) fun _ q =>
+    WP.seq (WP.mono (tabY2_ok q) fun _ q₀ => WP.seq (WP.mono (run2Y_ok hp (by decide) q₀) fun _ q₁ =>
     WP.seq (WP.mono (run2Y_ok hp (by decide) q₁) fun _ q₂ =>
-      WP.seq (WP.mono (run2Y_ok hp (by decide) q₂) fun _ q₃ => last3_ok hp q₃)))))
+      WP.seq (WP.mono (run2Y_ok hp (by decide) q₂) fun _ q₃ => last3_ok hp q₃))))))
 
 /-- The branch on the check. -/
 theorem branch3_ok {fast : Bool} {Y Hf : Spec.Sha3.State} {s : State} (h : Checked3 w16 σ Y Hf s) :

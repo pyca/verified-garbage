@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Row
-public import VerifiedGarbage.Proof.Bignum.Arm.RowStep
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public pointer and counter update of an ARMv7 row -/
 

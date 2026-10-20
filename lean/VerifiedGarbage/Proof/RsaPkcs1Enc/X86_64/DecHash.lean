@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecD
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PbkCalls
 import Mathlib.Data.Fintype.Card
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.CTSetup
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: `DH = SHA256(D)`

@@ -1,10 +1,20 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+meta import Mathlib.Tactic.Attr.Core
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64 VG.Impl.Ecdsa.Verify.AArch64

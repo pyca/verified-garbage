@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+public import VerifiedGarbage.Proof.Rsa.Arm.RvMM
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
-public import VerifiedGarbage.Proof.Rsa.Arm.RvCnt
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # `vg_rsa_recover_primes` on ARMv7: steps that keep Montgomery multiplication ready
 

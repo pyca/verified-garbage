@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

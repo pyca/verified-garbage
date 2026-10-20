@@ -1,6 +1,16 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
+import VerifiedGarbage.Proof.AesOcb.X86_64.XorPad
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on x86-64: the rest of the data and the tag (`rest`, `tag`)

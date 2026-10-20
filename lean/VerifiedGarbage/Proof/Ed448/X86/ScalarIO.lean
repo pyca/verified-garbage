@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarLoop
+public import VerifiedGarbage.Proof.X448.X86.Instr
+public import VerifiedGarbage.Proof.X448.X86.Save
 import VerifiedGarbage.Proof.X448.X86.Frame
-public import VerifiedGarbage.Proof.X448.X86.Restore
-import VerifiedGarbage.Proof.X448.X86.Output
+import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.X86.Pack
+import VerifiedGarbage.Proof.X448.X86.ByteMem
+import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): entry and exit

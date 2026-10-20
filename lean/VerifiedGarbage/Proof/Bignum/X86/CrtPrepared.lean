@@ -1,6 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSized
+import VerifiedGarbage.Proof.Bignum.X86.CrtCheckedFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtImport
+import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
+import VerifiedGarbage.Proof.Bignum.WordsPrefix
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # Resources and a boolean acceptance mask survive private CRT arithmetic -/
 

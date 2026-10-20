@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.Swap
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.Arm.Mem
+import VerifiedGarbage.Proof.X448.Arm.Field
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on ARMv7: decoding a coordinate limb

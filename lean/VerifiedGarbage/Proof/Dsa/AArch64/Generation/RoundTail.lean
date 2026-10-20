@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTail
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! Reuse RSA's proven completion policy, including forced-witness accounting. -/
 @[expose] public section

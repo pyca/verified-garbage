@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 
-import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStore
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
+import VerifiedGarbage.Proof.Mont.Words128
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # The Jacobian window method on x86-64: selecting an entry

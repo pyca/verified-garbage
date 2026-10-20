@@ -4,7 +4,9 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedLoop
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: the loop of `vg_mldsa_expand_mask_poly`

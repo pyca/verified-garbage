@@ -96,6 +96,64 @@ meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Update
 meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
+import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideLoop
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
+import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.IterationsIndices
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.SegmentIndices
+import VerifiedGarbage.Proof.Argon2.Serialization
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderWords
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlock
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideLoop
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Absorb
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Finalize
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Update
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Mix
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
+meta import VerifiedGarbage.Proof.Argon2.Serialization
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 @[expose] public section
 

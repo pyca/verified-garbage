@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafPoints
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafPoints
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! The verifier with `[v]Q` by the public NAF satisfies the complete verification postcondition. -/
 
@@ -20,20 +26,22 @@ open VG.Impl.Ecdsa.Verify.AArch64 (U V)
 
 variable {c : Cfg}
 
-theorem pubNafVerify_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c =
+theorem pubNafVerify_eq (c : Cfg) (dd : Option (Prog isa)) :
+    Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c dd =
     .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c dd) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
 theorem pubNafVerify_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC : Law c.C) (hO : PrimeOrder c.C)
     (hn17 : 17 ≤ c.C.n) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {dd : Option (Prog isa)} (hD : ∀ base, PubNaf.NafDblOk (winQ c) c.C base 8192 dd)
     {s₀ : State} (hp : VPre c s₀) :
-    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c) s₀ fun s' =>
+    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafVerify c dd) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [pubNafVerify_eq]
@@ -60,7 +68,7 @@ theorem pubNafVerify_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) (hC :
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
     hC hO hn17 hT hp.tbl (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
-    (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) fun s₃ hP => ?_
+    (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) (hD _) fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP.toFinalState) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt

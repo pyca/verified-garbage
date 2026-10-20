@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.SHRun
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleH`, correctness
@@ -112,9 +113,9 @@ theorem end3_ok {s : State} (h : Done3 w16 σ (hst σ 3) s) :
 
 /-- After the squeezes, with the sponge's state stored back. -/
 theorem run3_ok {fast : Bool} {s : State} (h : SqY w16 σ (hst σ 3) 0 3 s) (hs : HS σ (hst σ 3) s.mem) :
-    WP isa (.seq (.block tabBuild) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
+    WP isa (.seq (.block tabAddr) (.seq (run1 0 w16) (.seq (run1 1 w16) (.seq (run1 2 w16) (tail3 fast w16))))) s fun s' =>
       (sampleHKW w16).post σ s' ∧ gprPreserved σ s' := by
-  refine WP.seq (WP.mono (tabY_ok hp h hs) fun _ p₀ => ?_)
+  refine WP.seq (WP.mono (tabY_ok h hs) fun _ p₀ => ?_)
   refine WP.seq (WP.mono (run1Y_ok hp (by decide) p₀) fun _ p₁ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₁)
     fun _ p₂ => WP.seq (WP.mono (run1Y_ok hp (by decide) p₂) fun _ p₃ => ?_)))
   unfold tail3

@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Dsa.X86.Pointer
+public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 
-public import VerifiedGarbage.Proof.Dsa.X86.OpenScratch
-public import VerifiedGarbage.Proof.Dsa.X86.SaveArguments
-public import VerifiedGarbage.Proof.Dsa.X86.EntryFrame
+import VerifiedGarbage.Proof.Dsa.X86.OpenScratch
+import VerifiedGarbage.Proof.Dsa.X86.SaveArguments
+import VerifiedGarbage.Proof.Dsa.X86.EntryFrame
+import VerifiedGarbage.Proof.Dsa.X86.KeyPointers
+import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
 
 /-! # Complete cdecl argument installation and packed-key pointer expansion -/
 

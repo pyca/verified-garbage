@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPost
-public import VerifiedGarbage.Proof.Bignum.X86.CrtDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Bignum.X86.CrtDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
 
 /-! # Public modulus length selects the complete private CRT implementation -/
 

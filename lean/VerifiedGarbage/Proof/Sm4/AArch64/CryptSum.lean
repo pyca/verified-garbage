@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
-meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
-meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # A summary of the sixteen-block encryption

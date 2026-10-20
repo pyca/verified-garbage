@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Mix
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+public import VerifiedGarbage.Proof.Argon2.Spec
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Argon2 compression working memory -/
 

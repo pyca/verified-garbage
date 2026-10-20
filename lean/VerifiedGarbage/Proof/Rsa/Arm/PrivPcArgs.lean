@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPrefix
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Register and stack arguments for the public precomputation call -/
 

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: decapsulation, K-PKE.Decrypt

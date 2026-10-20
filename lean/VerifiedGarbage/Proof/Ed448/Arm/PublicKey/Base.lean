@@ -1,14 +1,48 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
 import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
 import VerifiedGarbage.Proof.Ed448.PruneBytes
 import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.Arm.BaseEncode
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Proof.X448.Arm.BitStep
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Counters
+import VerifiedGarbage.Proof.X448.Arm.Decode
+import VerifiedGarbage.Proof.X448.Arm.DecodeAll
+import VerifiedGarbage.Proof.X448.Arm.Fill
+import VerifiedGarbage.Proof.X448.Arm.Finish
+import VerifiedGarbage.Proof.X448.Arm.Initial
+import VerifiedGarbage.Proof.X448.Arm.Iter
+import VerifiedGarbage.Proof.X448.Arm.Normalize
+import VerifiedGarbage.Proof.X448.Arm.Setup
+import VerifiedGarbage.Proof.X448.Arm.Step
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # Ed448 public-key derivation on ARMv7: the pruning, the scalar's call, and the whole

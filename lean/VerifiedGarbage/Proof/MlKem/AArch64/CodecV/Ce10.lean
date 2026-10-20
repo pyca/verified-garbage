@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `ce10Math`
@@ -46,20 +55,20 @@ theorem ce10IdxHi_eq : ∀ j < 4, ce10IdxHi.getD j 255 = 25 + j := by decide
 abbrev grp10 (Y : Nat → Nat) (g : Nat) : Nat :=
   Y (4 * g) + Y (4 * g + 1) * 2 ^ 10 + (Y (4 * g + 2) + Y (4 * g + 3) * 2 ^ 10) * 2 ^ 20
 
-theorem ce10Math_ok {s : State} (hc : CConsts 10 s) (h20 : s.v .v20 = idxVec ce10Idx)
+theorem ce10Math_ok {s : State} (hc : CConsts width10 s) (h20 : s.v .v20 = idxVec ce10Idx)
     (h21 : s.v .v21 = idxVec ce10IdxHi) {X : Nat → Nat} (hX : ∀ i < 16, X i < 3329)
     (l0 : Lanes (s.v .v0) fun i => X i) (l1 : Lanes (s.v .v1) fun i => X (4 + i))
     (l2 : Lanes (s.v .v2) fun i => X (8 + i)) (l3 : Lanes (s.v .v3) fun i => X (12 + i)) :
     WP isa (.block ce10Math) s fun t => VChg [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v19] s t ∧
-      (∀ j < 16, (vbyte (t.v .v6) j).toNat = grp10 (fun i => cf 10 (X i)) (j / 5) / 2 ^ (8 * (j % 5)) % 2 ^ 8) ∧
-      (∀ j < 4, (vbyte (t.v .v7) j).toNat = grp10 (fun i => cf 10 (X i)) 3 / 2 ^ (8 * (1 + j)) % 2 ^ 8) := by
-  have hd : (10 : Nat) ∈ compressWidths := by decide
+      (∀ j < 16, (vbyte (t.v .v6) j).toNat = grp10 (fun i => cf width10 (X i)) (j / 5) / 2 ^ (8 * (j % 5)) % 2 ^ 8) ∧
+      (∀ j < 4, (vbyte (t.v .v7) j).toNat = grp10 (fun i => cf width10 (X i)) 3 / 2 ^ (8 * (1 + j)) % 2 ^ 8) := by
+  have hd : WOk width10 := width10_ok
   unfold ce10Math
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (cmp4_ok hd hc hX l0 l1 l2 l3) fun s1 ⟨c1, m0, m1, m2, m3⟩ => ?_
-  let Y : Nat → Nat := fun i => cf 10 (X i)
-  have hY : ∀ i, Y i < 2 ^ 10 := fun i => cf_lt 10 _
+  let Y : Nat → Nat := fun i => cf width10 (X i)
+  have hY : ∀ i, Y i < 2 ^ 10 := fun i => cf_lt width10 _
   let Z : Nat → Nat := fun i => Y (2 * i) + Y (2 * i + 1) * 2 ^ 10
   have hZ : ∀ i, Z i < 2 ^ 20 := fun i => by
     have := hY (2 * i); have := hY (2 * i + 1); simp only [Z]; omega

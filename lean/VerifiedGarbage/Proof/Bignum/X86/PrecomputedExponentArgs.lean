@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Scan the public exponent supplied through the cdecl argument slots -/
 

@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspacesCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCTState
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceReady
 
 /-! # Relating independently initialized workspaces without assuming scratch equality -/
 

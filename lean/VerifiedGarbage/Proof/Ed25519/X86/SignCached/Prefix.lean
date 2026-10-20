@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

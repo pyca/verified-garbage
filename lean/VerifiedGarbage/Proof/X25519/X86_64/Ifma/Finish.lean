@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.X25519.X86_64.Env
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: after the loop

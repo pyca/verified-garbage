@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.RcBase
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery with a precomputed public key on ARMv7: up to the call

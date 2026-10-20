@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.CrtWin5
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Bignum.X86_64.Exp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation by windows of 5 bits

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
 public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mem
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # `mul_4`
 

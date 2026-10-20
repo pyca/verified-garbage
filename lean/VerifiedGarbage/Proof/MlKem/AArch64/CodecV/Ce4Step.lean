@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `ce4Body`
@@ -19,7 +24,7 @@ open VG.Spec.Sha3 (bytesAt)
 
 /-- A compressed coefficient, as the code computes it. -/
 theorem C_cf {w : Width} (hw : WOk w) (s₀ : State) (i : Nat) :
-    C w s₀ i = cf w.d ((P s₀)[i]!).val := compress_eq hw.mem _
+    C w s₀ i = cf w ((P s₀)[i]!).val := hw.cmp _
 
 /-- Byte `j` of the output for `d = 4`: two coefficients. -/
 theorem L4 (s₀ : State) {g : Nat} (hg : g < 128) :
@@ -49,7 +54,7 @@ theorem step4 {s₀ : State} (hp : Pre width4 s₀) {k : Nat} (hk : k < 8) {s : 
     (by rw [c1.gpr, e0]; exact coeffAddr_off _ _ 16) (by omega))
     fun s2 ⟨c2, l4, l5, l6, l7⟩ => ?_
   rw [WP.block_append_iff]
-  have cs2 : CConsts 4 s2 := (h.cs.chg c1).chg c2
+  have cs2 : CConsts width4 s2 := (h.cs.chg c1).chg c2
   refine WP.mono (ce4Math_ok cs2 (X := X) (fun i _ => val_lt _)
     (Lanes.chg c2 (by decide) l0)
     ((Lanes.chg c2 (by decide) l1).congr fun e _ => by show _ = X (4 + e); congr 2; omega)
@@ -72,7 +77,7 @@ theorem step4 {s₀ : State} (hp : Pre width4 s₀) {k : Nat} (hk : k < 8) {s : 
   refine ⟨⟨by rw [o.rd, h4.rd, c3.rd, c2.rd, c1.rd, h.rd], by rw [o.wr, h4.wr, w3, h.wr],
     by rw [o.sp, h4.sp, c3.sp, c2.sp, c1.sp, h.sp], t0, t2, t11, ?_, trivial, ?_, ?_⟩,
     by rw [show 256 / (width4.c * 16) = 8 from rfl] at tc; exact tc⟩
-  · have cs3 : CConsts 4 s3 := cs2.chg c3
+  · have cs3 : CConsts width4 s3 := cs2.chg c3
     exact ⟨by rw [v, h4.v]; exact cs3.m, by rw [v, h4.v]; exact cs3.a, by rw [v, h4.v]; exact cs3.k⟩
   · rw [o.mem, h4.mem, m3, show width4.nb * 16 * (k + 1) = 16 * k + 16 by simp [width4]; omega]
     have out := h.out
@@ -84,8 +89,8 @@ theorem step4 {s₀ : State} (hp : Pre width4 s₀) {k : Nat} (hk : k < 8) {s : 
     apply BitVec.eq_of_toNat_eq
     rw [hb j hj, BitVec.toNat_ofNat, C_cf width4_ok, C_cf width4_ok,
       show 2 * (16 * k + j) = 32 * k + 2 * j by omega, show 32 * k + 2 * j + 1 = 32 * k + (2 * j + 1) by omega]
-    have := cf_lt 4 (X (2 * j))
-    have := cf_lt 4 (X (2 * j + 1))
+    have : cf width4 (X (2 * j)) < 2 ^ 4 := cf_lt width4 _
+    have : cf width4 (X (2 * j + 1)) < 2 ^ 4 := cf_lt width4 _
     exact (Nat.mod_eq_of_lt (by omega)).symm
   · rw [o.mem, h4.mem, m3]
     exact h.frame.write (n := 16) (List.mem_singleton_self _) _

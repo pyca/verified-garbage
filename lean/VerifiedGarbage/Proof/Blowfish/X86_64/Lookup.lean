@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Reduce
+public import VerifiedGarbage.Proof.Blowfish.X86_64.Row
 
-public import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Blowfish.X86_64.Combine
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 
 /-!
 # An S-box lookup

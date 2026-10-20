@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PShape
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShape
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashShape
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The native hash-suffix shaper feeds exactly the specified reduction -/
 

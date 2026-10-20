@@ -1,6 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Call
+public import VerifiedGarbage.Impl.AesXts.X86_64Unit
+public import VerifiedGarbage.Spec.Xts.Contract
+import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES of data units on x86-64: the contract the proofs are written against

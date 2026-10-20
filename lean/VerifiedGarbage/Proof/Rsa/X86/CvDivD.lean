@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvChecksB
-public import VerifiedGarbage.Proof.Rsa.X86.CvDivN
+import VerifiedGarbage.Proof.Rsa.X86.CvDivN
+import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # Reducing the private exponent modulo each factor minus one -/
 

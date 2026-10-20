@@ -1,13 +1,31 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Sieve
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTTest
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTTest
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Halve
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Sieve
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Halve
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time of the shape's checks

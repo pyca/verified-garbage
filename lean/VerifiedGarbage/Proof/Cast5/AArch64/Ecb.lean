@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.Block
 import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 on AArch64: ECB

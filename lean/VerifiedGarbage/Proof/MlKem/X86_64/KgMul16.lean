@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.RowY
-public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
+import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
-public import VerifiedGarbage.Proof.MlKem.PolyW
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
+import VerifiedGarbage.Proof.MlKem.X86_64.EncMulY
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `keygen_mul` reading `Â` as `u16`s

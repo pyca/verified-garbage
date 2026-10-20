@@ -2,12 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Cached points

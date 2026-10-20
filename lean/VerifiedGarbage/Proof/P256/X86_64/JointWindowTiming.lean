@@ -1,19 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.Joint
-meta import VerifiedGarbage.Impl.P256.X86_64.Joint
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.P256.X86_64.Joint
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Taint checks of the joint loop's seed and counter. -/
 

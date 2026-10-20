@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Spec.Xts
 
-public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # XTS: all the blocks in one call

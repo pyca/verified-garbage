@@ -1,13 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.P256.X86_64.JointLayout
+import VerifiedGarbage.Proof.P256.X86_64.JointLayout
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointInitLayout
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.P256.X86_64.Joint
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The actual baseline and ADX table initialization layouts satisfy the nine-point bounds. -/
 

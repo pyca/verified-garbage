@@ -1,8 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryGeneratorWork
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchPlan
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+public import Mathlib.Algebra.Group.Monoid
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 
 /-! # Concrete generator plan over the saved p and exponent buffers -/
 

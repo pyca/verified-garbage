@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
-public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on AArch64

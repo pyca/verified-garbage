@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.ExponentWords
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Save a validated exponent and derive the public limb count -/
 

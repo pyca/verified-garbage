@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.Compute
+import VerifiedGarbage.Proof.Dsa.Arm.Compute
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

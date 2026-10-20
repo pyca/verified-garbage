@@ -3,6 +3,14 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecBase
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the call of `vg_rsa_private_checked`

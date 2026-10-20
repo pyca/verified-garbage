@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Streaming TDEA-CMAC on x86-64: the shared contracts imply ours

@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb8.Arm.Body
-meta import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesCfb8.Arm.Body
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CFB8 on ARMv7: constant time

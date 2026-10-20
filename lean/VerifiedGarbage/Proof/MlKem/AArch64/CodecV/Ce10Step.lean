@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce1Step
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4Step
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `ce10Body`
@@ -45,7 +50,7 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
   refine WP.mono (ld4_ok src .v0 .v1 .v2 .v3 (o := 0) (j := 16 * k) (by decide)
     (by rw [ptr_zero, e0]) (by omega)) fun s1 ⟨c1, l0, l1, l2, l3⟩ => ?_
   rw [WP.block_append_iff]
-  have cs1 : CConsts 10 s1 := h.cs.chg c1
+  have cs1 : CConsts width10 s1 := h.cs.chg c1
   refine WP.mono (ce10Math_ok cs1 (by rw [c1.get .v20 (by decide)]; exact h.K.1)
     (by rw [c1.get .v21 (by decide)]; exact h.K.2) (X := X) (fun i _ => val_lt _) l0
     (l1.congr fun e _ => by show _ = X (4 + e); congr 2; omega)
@@ -74,7 +79,7 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
   refine ⟨⟨by rw [o.rd, h5.rd, o4.rd, h3.rd, c2.rd, c1.rd, h.rd], by rw [o.wr, h5.wr, o4.wr, h3.wr, w2, h.wr],
     by rw [o.sp, h5.sp, o4.sp, h3.sp, c2.sp, c1.sp, h.sp], t0, t2, t11, ?_, ?_, ?_, ?_⟩,
     by rw [show 256 / (width10.c * 4) = 16 from rfl] at tc; exact tc⟩
-  · have cs2 : CConsts 10 s2 := cs1.chg c2
+  · have cs2 : CConsts width10 s2 := cs1.chg c2
     exact ⟨by rw [hv]; exact cs2.m, by rw [hv]; exact cs2.a, by rw [hv]; exact cs2.k⟩
   · exact ⟨by rw [hv, c2.get .v20 (by decide), c1.get .v20 (by decide)]; exact h.K.1,
       by rw [hv, c2.get .v21 (by decide), c1.get .v21 (by decide)]; exact h.K.2⟩
@@ -103,7 +108,6 @@ theorem step10 {s₀ : State} (hp : Pre width10 s₀) {k : Nat} (hk : k < 16) {s
     rw [b7 j hj, BitVec.toNat_ofNat]
     simp only [grp10, C_cf width10_ok]
     rw [show 4 * (4 * k + 3) = 16 * k + 12 by omega]
-    rfl
   · rw [o.mem, h5.mem, o4.mem, h3.mem, m2]
     exact (h.frame.write (n := 16) (List.mem_singleton_self _) _
       (contains_off (by simp [width10]; omega) (by decide))).write (n := 32 / 8) (List.mem_singleton_self _) _

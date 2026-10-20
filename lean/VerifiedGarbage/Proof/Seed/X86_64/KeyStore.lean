@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Seed.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Seed.X86_64.Lanes
 
-public import VerifiedGarbage.Proof.Seed.X86_64.KeyLoad
-public import VerifiedGarbage.Proof.Seed.X86_64.Copy
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.X86_64.Copy
+import VerifiedGarbage.Proof.Seed.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Copying `G`'s outputs on x86-64

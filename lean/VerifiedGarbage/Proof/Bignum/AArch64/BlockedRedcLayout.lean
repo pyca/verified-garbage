@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBody
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
-import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCorrect
 
 @[expose] public section
 

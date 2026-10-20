@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! The full, unreduced ADX square in the Montgomery working space. -/
 

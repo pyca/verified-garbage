@@ -1,23 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
 
 /-! # secp256k1 signing on AArch64: correctness and constant time -/
 

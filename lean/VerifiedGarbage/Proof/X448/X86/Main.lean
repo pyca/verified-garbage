@@ -3,14 +3,17 @@ module
 import VerifiedGarbage.Proof.X448.X86.BitsInput
 import VerifiedGarbage.Proof.X448.X86.Finish
 import VerifiedGarbage.Proof.X448.X86.Ladder
-public import VerifiedGarbage.Proof.X448.X86.FinalSwap
+import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
-public import VerifiedGarbage.Spec.X448.Contract
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.X448.X86.Setup
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.X448.X86.FnLit
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # X448 on x86 (32-bit): the whole function

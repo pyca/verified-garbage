@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Native-word arithmetic for the public-exponent accumulator -/
 

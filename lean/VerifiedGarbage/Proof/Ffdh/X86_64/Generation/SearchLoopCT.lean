@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTStep
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchIterationCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTStep
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Repeated native candidate retries preserve the public timing relation -/

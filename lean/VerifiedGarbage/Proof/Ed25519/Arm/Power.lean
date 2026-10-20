@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Power
-public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
-import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 public import VerifiedGarbage.Proof.Ed25519.RootPower
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.Arm.AsFn
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Merged from `Proof.Ed25519.Arm.PowerEnv`. -/
 

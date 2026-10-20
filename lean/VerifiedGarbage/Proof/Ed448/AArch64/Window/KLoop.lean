@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Window
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 verification on AArch64: the windows of the challenge

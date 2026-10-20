@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPcCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Call verified public re-exponentiation while retaining the private intermediate -/
 

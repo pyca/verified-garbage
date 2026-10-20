@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # ML-DSA verification on x86 (32-bit): a row of `w′₁`

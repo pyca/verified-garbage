@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
 
 /-! # A compositional view of the fixed generator's output instructions -/
 @[expose] public section

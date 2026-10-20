@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceSample
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ForceSample
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Native witness selection agrees exactly with RSA's shared sampler. -/
 @[expose] public section

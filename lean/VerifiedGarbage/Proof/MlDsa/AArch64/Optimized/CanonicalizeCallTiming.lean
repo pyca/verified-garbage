@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Spec.MlDsa.Canonicalize
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! ## From `CanonicalizeCall.lean` -/
 

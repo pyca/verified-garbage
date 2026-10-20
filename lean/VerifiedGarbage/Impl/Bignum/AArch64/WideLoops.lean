@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedc
 public import VerifiedGarbage.Impl.Bignum.AArch64.DiagonalChain
 
 @[expose] public section

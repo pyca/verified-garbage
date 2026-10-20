@@ -2,10 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PowerChain
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 
 /-! # P-256 field inversion by a fixed addition chain -/
 

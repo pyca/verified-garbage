@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 
 /-!
 # ECDSA on AArch64: what the complete additions' calls need

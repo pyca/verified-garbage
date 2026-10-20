@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildState
 
-public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
 import VerifiedGarbage.Proof.Weierstrass.X86.CachedJacField
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! ## `WinJacAdd` -/
 

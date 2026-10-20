@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashCallers
 public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
 
 /-! # ML-KEM encapsulation hashing `ek` inside the paired matrix sampling
 
@@ -31,28 +31,39 @@ state's pointer is `scratch`'s.
 namespace VG.Impl.MlKem.AArch64.Hybrid
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
 
-/-- The number of 136-byte blocks of `pad(ek)`. -/
-def blocks (L : KemLay) : Nat := L.ekLen / 136 + 1
+/-- The message the third state absorbs: `len` bytes at `r + base`, padded
+with the suffix `sfx` (rate 136). -/
+structure HSrc where
+  r : Reg
+  base : Nat
+  len : Nat
+  sfx : Nat
 
-/-- The pairs of the matrix whose main squeezes absorb `ek`: three blocks each. -/
-def hashPairs (L : KemLay) : Nat := blocks L / 3
+/-- `ek`, for SHA3-256 (`H`). -/
+def ekSrc (L : KemLay) : HSrc := ⟨.x25, 0, L.ekLen, 6⟩
 
-/-- XOR the `n` words of `ek` at `eo` into the first `n` lanes of the third state
+/-- The number of 136-byte blocks of `pad(M)`. -/
+def blocks (S : HSrc) : Nat := S.len / 136 + 1
+
+/-- The pairs of the matrix whose main squeezes absorb the message: three blocks each. -/
+def hashPairs (S : HSrc) : Nat := blocks S / 3
+
+/-- XOR the `n` words at `r + eo` into the first `n` lanes of the third state
 (at `scratch + ST`, `ST = 0`). -/
-def absorbWords (eo n : Nat) : List Instr :=
+def absorbWords (r : Reg) (eo n : Nat) : List Instr :=
   (List.range n).flatMap fun w =>
-    [.ldr .x .x9 .x25 (eo + 8 * w), .ldr .x .x10 .x28 (8 * w), .logic .eor .x .x9 .x9 .x10,
+    [.ldr .x .x9 r (eo + 8 * w), .ldr .x .x10 .x28 (8 * w), .logic .eor .x .x9 .x9 .x10,
       .str .x .x9 .x28 (8 * w)]
 
 /-- XOR the byte `value` into byte `off` of `scratch`. -/
 def xorByte (off value : Nat) : List Instr :=
   [.ldrb .x9 .x28 off, .movz .x .x10 (BitVec.ofNat 16 value) 0, .logic .eor .x .x9 .x9 .x10, .strb .x9 .x28 off]
 
-/-- Block `b` of `pad(ek)` (rate 136, SHA3's suffix `0x06`) into the third state. -/
-def absorbBlock (L : KemLay) (b : Nat) : List Instr :=
-  if 136 * b + 136 ≤ L.ekLen then absorbWords (136 * b) 17
-  else absorbWords (136 * b) ((L.ekLen - 136 * b) / 8) ++
-    xorByte (L.ekLen - 136 * b) 6 ++ xorByte 135 128
+/-- Block `b` of `pad(M)` (rate 136, suffix `S.sfx`) into the third state. -/
+def absorbBlock (S : HSrc) (b : Nat) : List Instr :=
+  if 136 * b + 136 ≤ S.len then absorbWords S.r (S.base + 136 * b) 17
+  else absorbWords S.r (S.base + 136 * b) ((S.len - 136 * b) / 8) ++
+    xorByte (S.len - 136 * b) S.sfx ++ xorByte 135 128
 
 /-- `vg_keccak_f1600_x3_sha3` on the pair at `x19`, the third state at `scratch`
 (`ST = 0`) and its working space at `x19 + 1536`, keeping `x30` after it. -/
@@ -67,16 +78,16 @@ def squeezeTail : List Instr :=
   Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++ [.addImm .x .x20 .x20 168, .addImm .x .x21 .x21 168]
 
 /-- One main squeeze absorbing block `b`. -/
-def step3 (L : KemLay) (b : Nat) : Prog isa :=
-  .seq (.block (absorbBlock L b)) (.seq x3call (.block squeezeTail))
+def step3 (S : HSrc) (b : Nat) : Prog isa :=
+  .seq (.block (absorbBlock S b)) (.seq x3call (.block squeezeTail))
 
 /-- The three main squeezes of pair `i`, absorbing blocks `3i`, `3i + 1`, `3i + 2`. -/
-def squeeze3 (L : KemLay) (i : Nat) : Prog isa :=
-  .seq (step3 L (3 * i)) (.seq (step3 L (3 * i + 1)) (step3 L (3 * i + 2)))
+def squeeze3 (S : HSrc) (i : Nat) : Prog isa :=
+  .seq (step3 S (3 * i)) (.seq (step3 S (3 * i + 1)) (step3 S (3 * i + 2)))
 
 /-- `Paired.pair` (encapsulation) with `squeeze3` for the three main squeezes. -/
-def pair3 (L : KemLay) (a i : Nat) (w16 : Bool := false) : Prog isa :=
-  seqs [.block (Paired.init SB SS a (a+1) L.k), squeeze3 L i, .block Rej8.rejConsts,
+def pair3 (L : KemLay) (S : HSrc) (a i : Nat) (w16 : Bool := false) : Prog isa :=
+  seqs [.block (Paired.init SB SS a (a+1) L.k), squeeze3 S i, .block Rej8.rejConsts,
     Paired.reject 400 (AH+1024*a) .x22 w16,
     .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
     Paired.reject 904 (AH+1024*(a+1)) .x23 w16,
@@ -84,10 +95,10 @@ def pair3 (L : KemLay) (a i : Nat) (w16 : Bool := false) : Prog isa :=
     .ite (.zero .x .x6) (Paired.extraPair w16) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 
-/-- The encapsulation matrix: the first `hashPairs` pairs absorb `ek`. -/
-def matrixH (L : KemLay) (w16 : Bool := false) : Prog isa :=
+/-- The matrix whose first `hashPairs S` pairs absorb the message `S`. -/
+def matrixH (L : KemLay) (S : HSrc) (w16 : Bool := false) : Prog isa :=
   seqs (((List.range (L.k*L.k/2)).map fun i =>
-      if i < hashPairs L then pair3 L (2*i) i w16 else Paired.pair L false (2*i) w16) ++
+      if i < hashPairs S then pair3 L S (2*i) i w16 else Paired.pair L false (2*i) w16) ++
     (if L.k*L.k%2=1 then [Paired.lastSample L false w16] else []))
 
 /-- The prologue, `m`, the all-zero third state and `ρ`. -/

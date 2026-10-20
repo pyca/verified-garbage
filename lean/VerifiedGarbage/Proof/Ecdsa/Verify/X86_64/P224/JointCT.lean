@@ -2,13 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 
 /-! Whole-function timing of P-224's joint verification follows the public-input contract. -/
 

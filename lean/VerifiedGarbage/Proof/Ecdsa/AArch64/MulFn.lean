@@ -3,12 +3,16 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
+import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_<curve>_mul` on AArch64, and `R = [k]P` by its call

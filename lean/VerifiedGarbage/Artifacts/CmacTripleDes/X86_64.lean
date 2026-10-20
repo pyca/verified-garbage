@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Update
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on x86-64

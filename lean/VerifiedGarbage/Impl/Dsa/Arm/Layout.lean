@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Layout
-public import VerifiedGarbage.Impl.Mont.Arm.Context
 
 /-! # DSA workspace on 32-bit ARM
 

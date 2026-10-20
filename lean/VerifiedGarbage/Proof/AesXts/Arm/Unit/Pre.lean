@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Call
+public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES of data units on ARMv7: the arguments of each call

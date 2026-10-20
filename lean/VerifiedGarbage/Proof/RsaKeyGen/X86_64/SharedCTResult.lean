@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTMain
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
 
 /-! # Reuse the existing result routine's constant-time proof -/
 

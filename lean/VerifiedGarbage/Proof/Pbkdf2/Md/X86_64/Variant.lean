@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyCT
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
-public import VerifiedGarbage.Proof.Framework.X86_64.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Hmac.AnyKey
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.AnyKeyEntry
+import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Hmac.AnyKey
 public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha256.X86_64.Variant
 public import VerifiedGarbage.TCB.Registration
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Hmac.Scratch
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-!
 # Merkle–Damgård hash functions on x86-64, as variants

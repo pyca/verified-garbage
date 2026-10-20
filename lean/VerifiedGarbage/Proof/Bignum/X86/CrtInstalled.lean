@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
+public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtResources
-public import VerifiedGarbage.Proof.Bignum.X86.CrtEntry
+import VerifiedGarbage.Proof.Bignum.X86.CrtResources
+import VerifiedGarbage.Proof.Bignum.X86.CrtEntry
 
 /-! # Install all caller resources for the private CRT operation -/
 

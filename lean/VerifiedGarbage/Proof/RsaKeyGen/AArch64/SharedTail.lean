@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedMain
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
+import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-! # RSA Montgomery setup, shared Miller–Rabin loop, and result -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Classify
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
 
 /-! # The key-generation controller's tests of its budgets, tape and status (AArch64) -/
 

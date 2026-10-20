@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
-public import VerifiedGarbage.Proof.Rsa.X86.RvHalving
+import VerifiedGarbage.Proof.Rsa.RecoverMath
 
 /-! # Bounds and split-exponent facts for the recovery body -/
 

@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
+import VerifiedGarbage.Proof.Rc4.Memory
 
 /-!
 # The PRGA's finish

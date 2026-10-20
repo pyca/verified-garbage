@@ -1,16 +1,10 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized

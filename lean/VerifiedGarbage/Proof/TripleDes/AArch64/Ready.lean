@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.WordState
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 @[expose] public section
 

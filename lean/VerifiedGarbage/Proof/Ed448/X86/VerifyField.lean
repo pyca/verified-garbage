@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 public import VerifiedGarbage.Proof.X448.X86.Square
-public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): field programs

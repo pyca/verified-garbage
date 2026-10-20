@@ -1,10 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackStore
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Bind each complete seed to q hashing without resetting witness consumption -/
 

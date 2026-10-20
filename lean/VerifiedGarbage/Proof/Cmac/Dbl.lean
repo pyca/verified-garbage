@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # CMAC: doubling a 16-byte block as a 128-bit integer

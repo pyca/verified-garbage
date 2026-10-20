@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X448.Field
+public import VerifiedGarbage.Proof.X448.X86.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.X448.X86.Normalize
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on x86 (32-bit): field operations and their frame

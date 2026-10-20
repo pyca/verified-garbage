@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ProductBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBatch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

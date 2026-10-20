@@ -1,17 +1,31 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
-meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 public import VerifiedGarbage.Spec.Cmac.Contract
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Spec.Cmac.Contract
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CMAC's chaining with AES-NI on x86-64: `vg_cmac_aes_update_aesni_cbc`

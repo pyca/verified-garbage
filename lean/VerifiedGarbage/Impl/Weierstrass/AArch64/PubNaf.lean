@@ -170,18 +170,28 @@ def digit (K : WinCfg) : Prog isa :=
 def step (K : WinCfg) : Prog isa :=
   .seq (.block [decCounter]) <| .seq (fprogB K.M (dblJ K.S K.R K.D)) (digit K)
 
+/-- `step`, with the doubling `d` in place of the field program's. -/
+def stepD (K : WinCfg) (d : Prog isa) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq d (digit K)
+
+/-- An iteration, with the given doubling (`dd`) if any. -/
+def stepOf (K : WinCfg) : Option (Prog isa) → Prog isa
+  | none => step K
+  | some d => stepD K d
+
 /-- `R` to projective coordinates, through `E`: `(XZ : Y : Z³)`, and
 `(0 : 1 : 0)` for the point at infinity. -/
 def finish (K : WinCfg) : Prog isa :=
   .seq (.block (copyPt K.M.n K.E K.R)) <|
     .seq (fprogB K.M (fromJ K.S K.E (WinCfg.zeroPt K) K.R)) (.block (WinCfg.ySel K))
 
-/-- `[k]P` into `R`, projective, from the digits at `K.bits`. -/
-def window (K : WinCfg) : Prog isa :=
+/-- `[k]P` into `R`, projective, from the digits at `K.bits`, with the
+doubling `dd` if given (an allocated one, which does what `dblJ` does). -/
+def window (K : WinCfg) (dd : Option (Prog isa) := none) : Prog isa :=
   .seq (table K) <|
   .seq (cache K) <|
   .seq (.block (infinity K K.D ++ [.movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n)) 0])) <|
   .seq (digit K) <|
-  .seq (.loop (step K) (.nonzero .x .x19)) (finish K)
+  .seq (.loop (stepOf K dd) (.nonzero .x .x19)) (finish K)
 
 end VG.Impl.Weierstrass.AArch64.PubNaf

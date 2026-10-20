@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTri8
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddWord
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 @[expose] public section
 

@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCTBase
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecKdk
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecArgs
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT1
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMac
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, `DH` and `KDK`

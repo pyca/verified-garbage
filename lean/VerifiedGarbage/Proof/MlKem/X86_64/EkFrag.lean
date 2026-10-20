@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 public import VerifiedGarbage.Proof.MlKem.HSponge
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key in the matrix's fragments, what does not depend on the layout
@@ -33,23 +33,23 @@ open VG.Proof.MlKem.HSponge (hstate padBlock)
 
 /-! ## The blocks of `pad(ek)` -/
 
-/-- Block `t` of `pad(E)`, for `E` that does not end at a block boundary. -/
-def blk (E : List Byte) (t : Nat) : List Byte :=
-  if 136 * t + 136 ≤ E.length then (E.drop (136 * t)).take 136 else padBlock (E.drop (136 * t))
+/-- Block `t` of `pad(E)` (suffix `d`, `0x06` by default), for `E` that does not end at a block boundary. -/
+def blk (E : List Byte) (t : Nat) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
+  if 136 * t + 136 ≤ E.length then (E.drop (136 * t)).take 136 else padBlock (E.drop (136 * t)) d
 
 /-- `E`'s length leaves a partial last block, with room for the padding. -/
 def Partial (E : List Byte) : Prop := 0 < E.length % 136 ∧ E.length % 136 < 135
 
-theorem hstate_blk {E : List Byte} (hE : Partial E) {t : Nat} (ht : t ≤ E.length / 136) :
-    keccakF (xorAt (hstate E t) 0 (blk E t)) = hstate E (t + 1) := by
+theorem hstate_blk {E : List Byte} {d : Byte} (hE : Partial E) {t : Nat} (ht : t ≤ E.length / 136) :
+    keccakF (xorAt (hstate E t d) 0 (blk E t d)) = hstate E (t + 1) d := by
   unfold blk
   split
   · exact HSponge.hstate_full (by omega)
   · have := Nat.div_add_mod E.length 136
     exact HSponge.hstate_padBlock (by obtain ⟨h1, h2⟩ := hE; omega) (by obtain ⟨h1, h2⟩ := hE; omega)
 
-theorem habs_blk {E : List Byte} (hE : Partial E) {i : Nat} (hi : 3 * i + 3 ≤ E.length / 136 + 1) :
-    SH.habs (hstate E (3 * i)) (fun j => blk E (3 * i + j)) 3 = hstate E (3 * i + 3) := by
+theorem habs_blk {E : List Byte} {d : Byte} (hE : Partial E) {i : Nat} (hi : 3 * i + 3 ≤ E.length / 136 + 1) :
+    SH.habs (hstate E (3 * i) d) (fun j => blk E (3 * i + j) d) 3 = hstate E (3 * i + 3) d := by
   simp only [SH.habs, Nat.add_zero]
   rw [hstate_blk hE (by omega), hstate_blk hE (by omega), hstate_blk hE (by omega)]
 
@@ -107,15 +107,15 @@ theorem padList (n : Nat) (a b : Byte) :
 
 /-! ## The blocks of a fragment -/
 
-/-- The 408 bytes of `pad(E)` from `408 i`, for `E` whose last block ends in fragment `i` or later. -/
+/-- The 408 bytes of `pad(E)` (suffix `d`) from `408 i`, for `E` whose last block ends in fragment `i` or later. -/
 
-def hbE (E : List Byte) (i : Nat) : List Byte :=
+def hbE (E : List Byte) (i : Nat) (d : Byte := BitVec.ofNat 8 6) : List Byte :=
   if 408 * i + 408 ≤ E.length then (E.drop (408 * i)).take 408
-  else E.drop (408 * i) ++ BitVec.ofNat 8 6 :: (List.replicate (406 - (E.length - 408 * i)) 0 ++ [BitVec.ofNat 8 0x80])
+  else E.drop (408 * i) ++ d :: (List.replicate (406 - (E.length - 408 * i)) 0 ++ [BitVec.ofNat 8 0x80])
 
-theorem hbE_blk {E : List Byte} {i j : Nat} (hj : j < 3)
+theorem hbE_blk {E : List Byte} {d : Byte} {i j : Nat} (hj : j < 3)
     (hp : 408 * i + 408 ≤ E.length ∨ (272 < E.length - 408 * i ∧ E.length - 408 * i < 406)) :
-    ((hbE E i).drop (136 * j)).take 136 = blk E (3 * i + j) := by
+    ((hbE E i d).drop (136 * j)).take 136 = blk E (3 * i + j) d := by
   unfold hbE blk
   split
   · rw [ite_eq_left (show 136 * (3 * i + j) + 136 ≤ E.length by omega), List.drop_take, List.take_take, List.drop_drop]

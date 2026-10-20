@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Lazy forward NTT: range/congruence through eight layers, followed by
 canonical reduction, under the existing public NTT contract. -/

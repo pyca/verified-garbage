@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Impl.AesXts.AArch64Unit
+public import VerifiedGarbage.Spec.Xts.Contract
 
-public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Call
+import VerifiedGarbage.Proof.AesXts.Unit
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # XTS-AES of data units on AArch64: the contract the proofs are written against

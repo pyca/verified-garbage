@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
+public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.CheckPoint
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # `vg_p384_check_point` on AArch64: `Verified`

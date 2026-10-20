@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroTiming
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBothTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBothTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # Fourth/fifth-block continuation branches only on the public matrix streams -/
 @[expose] public section

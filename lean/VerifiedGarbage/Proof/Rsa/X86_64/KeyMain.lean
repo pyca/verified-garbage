@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
 import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-public import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Rsa.KeyParts
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyMod
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-!
 # `vg_rsa_check_key` on x86-64: the checks

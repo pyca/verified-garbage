@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
 public import VerifiedGarbage.Proof.MlDsa.Arith.Lazy
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Doubleword storage relations for lazy NTT coefficients. -/
 

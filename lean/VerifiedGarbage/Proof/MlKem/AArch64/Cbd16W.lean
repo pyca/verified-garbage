@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Step
+import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Step
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Step
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # `vg_mlkem16_cbd2` on AArch64

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopRound
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopRound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopExhausted
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One guarded iteration of DSA's finite primality loop -/
 

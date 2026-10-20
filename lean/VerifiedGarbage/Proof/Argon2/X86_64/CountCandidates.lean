@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Argon2.X86_64.CountCandidates
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Candidate window arithmetic before selecting the reference lane -/
 

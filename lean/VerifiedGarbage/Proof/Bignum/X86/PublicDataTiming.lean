@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseTiming
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Data conversion, comparison and masking traces depend only on addresses -/
 

@@ -1,7 +1,16 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtOperationTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtObservations
+import VerifiedGarbage.Proof.Bignum.X86.CrtOperationTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtObservations
+import VerifiedGarbage.Proof.Bignum.X86.CrtCorrect
 
 /-! # Complete i686 certificate for the private CRT RSA operation -/
 

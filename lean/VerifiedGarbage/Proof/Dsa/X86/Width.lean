@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Width
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
-public import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Correctness of the exact-width mask -/
 

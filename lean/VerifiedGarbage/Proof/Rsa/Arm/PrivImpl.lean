@@ -4,8 +4,6 @@ public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
-public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # Verified callees for the ARMv7 checked private operation
 

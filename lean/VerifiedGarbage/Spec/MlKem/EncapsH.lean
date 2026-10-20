@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM: encapsulation with `H(ek)` given, on every target

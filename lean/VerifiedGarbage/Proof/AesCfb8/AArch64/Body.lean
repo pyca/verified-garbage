@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.AArch64.Steps
+import VerifiedGarbage.Proof.AesCfb8.AArch64.Steps
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+public import VerifiedGarbage.Proof.AesCfb8.AArch64.Loop
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CFB8 on AArch64: one byte

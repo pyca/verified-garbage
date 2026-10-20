@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemDecode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 
 /-! # Establish the fused arithmetic preconditions from KEM buffer facts -/
 

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomFrame
+public import VerifiedGarbage.Proof.Dsa.RandomBytes
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-!
 # Preparing to sample (32-bit ARM)

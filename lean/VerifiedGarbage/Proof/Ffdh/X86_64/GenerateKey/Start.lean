@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Entry
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Context
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH key-generation attempts on x86-64: entry and modulus checks -/
 

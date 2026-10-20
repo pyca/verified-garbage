@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Sha3.Tables
-public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.Sha3.X86_64
 
 /-!

@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
-public import VerifiedGarbage.Proof.Dsa.RandomSign
-public import VerifiedGarbage.Proof.Dsa.RandomSignResult
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Dsa.RandomSign
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # The randomized signer's body (32-bit ARM)

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignSpec
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # RSASSA-PSS signing on AArch64: the checks and the encoding

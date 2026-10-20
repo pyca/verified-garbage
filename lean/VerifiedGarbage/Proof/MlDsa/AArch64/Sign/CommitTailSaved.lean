@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailCoreState
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

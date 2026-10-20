@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPrefix
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

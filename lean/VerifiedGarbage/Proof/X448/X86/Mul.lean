@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.MulLoop
 import VerifiedGarbage.Proof.X448.X86.Reduce
 public import VerifiedGarbage.Proof.X448.X86.FnCtx
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.X86.Normalize
+public import VerifiedGarbage.Proof.X448.X86.RowMem
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.X86.Init
 import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.Row
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): field multiplication

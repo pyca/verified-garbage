@@ -1,7 +1,11 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Ntt16.Readonly
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem.AArch64

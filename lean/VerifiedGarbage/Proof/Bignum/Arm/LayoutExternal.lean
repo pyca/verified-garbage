@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
 /-! # Writes outside the arithmetic workspace and saved base preserve readiness -/
 

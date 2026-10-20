@@ -1,9 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.P521
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
 

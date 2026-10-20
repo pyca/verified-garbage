@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.AesCcm.AArch64.Contract
 
 /-!
 # AES-CCM on AArch64: the functions called

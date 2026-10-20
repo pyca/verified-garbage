@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
-import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

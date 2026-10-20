@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GHASH with PMULL: the values

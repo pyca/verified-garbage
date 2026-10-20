@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The checked RSA private-key operation on AArch64: its callees' contracts

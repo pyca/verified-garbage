@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): saving and restoring registers in memory

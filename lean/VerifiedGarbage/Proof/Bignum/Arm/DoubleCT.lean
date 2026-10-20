@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
+public import VerifiedGarbage.Impl.Bignum.Arm.Double
+import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Double
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontInitCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Modular doubling reveals only its public workspace layout -/
 

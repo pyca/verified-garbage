@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.X86_64
 
-public import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
 
 /-!
 # AES-GCM streaming encryption, out of place: x86-64 implementation

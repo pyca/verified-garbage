@@ -1,7 +1,8 @@
 module
-
-public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Impl.Rsa.X86_64
+
 
 /-! # Workspace representation shared by RSA and FFDH Miller–Rabin -/
 

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivPublicPre
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeCall
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
+public import VerifiedGarbage.Proof.Rsa.X86.PrivCall
+import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeCall
+import VerifiedGarbage.Proof.Rsa.X86.PrivCallInput
+import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Call verified public re-exponentiation while retaining the private intermediate -/
 

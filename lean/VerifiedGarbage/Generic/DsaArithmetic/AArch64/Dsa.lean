@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCorrect
 
 /-! # DSA signing and verification for every AArch64 arithmetic backend -/
 

@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFront
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: correctness

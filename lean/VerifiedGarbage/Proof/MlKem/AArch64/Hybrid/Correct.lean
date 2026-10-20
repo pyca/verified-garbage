@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 
 /-!
 # The hashing encapsulation: its constant tables
@@ -88,8 +90,8 @@ theorem WP.tables128 {s : State} {c : Prog isa} {Q : State→Prop}
   have hf := Frame.below_mono (VG.AArch64.Exec.frameSp he (by omega)) (b:=128) (by omega) (by decide)
   exact tables_frame128 ht hk (VG.AArch64.Exec.syms he) hr hw hsp hf
 
-theorem mb_bW3 {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) :
-    ∀ r ∈ bW3 P s₀, (R (kA s₀) (enL P).sc MB 32).Disjoint r := by
+theorem mb_bW3 {L : Layout} {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) :
+    ∀ r ∈ bW3 P L s₀, (R (kA s₀) L.sc MB 32).Disjoint r := by
   have hw := hp.wf
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
@@ -101,5 +103,29 @@ theorem mb_bW3 {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P s₀) :
   · rcases mem2' hr with rfl | rfl
     · exact sdisj hp (by lom) (by lom) (by lom)
     · exact (hk.R hp.scb (hp.fs (by lom))).symm
+
+/-- `ek`, argument 0 of encapsulation. -/
+def ekM (P : KemLay) : Msg := ⟨Impl.MlKem.AArch64.Hybrid.ekSrc P, 0, 0⟩
+
+theorem ekM_base (s₀ : State) : ((ekM P).reg s₀).base = kA s₀ 0 := ptr_zero _
+
+theorem ekM_ok {s₀ : State} (hp : Pre P (enL P) s₀) (hk : Stk128 P (enL P) s₀)
+    (hs : SrcOk (Impl.MlKem.AArch64.Hybrid.ekSrc P)) : MsgOk P (enL P) (ekM P) s₀ := by
+  have hw := hp.wf
+  have ek0 : ∀ (o' l' : Nat), o' + l' ≤ SV P + 48 →
+      ((ekM P).reg s₀).Disjoint (R (kA s₀) (enL P).sc o' l') := fun o' l' f' =>
+    hp.args.rdisj (show 0 < 5 by decide) hp.scb (by simp [enL, ekM, Impl.MlKem.AArch64.Hybrid.ekSrc])
+      (hp.fs f') (.inr (.inr hp.scw)) (.inl (by simp [enL, Layout.sc, ekM]))
+  refine ⟨hs, fun s h => ?_, fun s h => ?_, (ek0 0 200 (by lom)).symm, fun r hr => ?_,
+    ek0 SS 2048 (by lom), fun e he => ek0 _ _ (by lom), ?_⟩
+  · show s.gpr .x25 + BitVec.ofNat 64 0 = _
+    rw [ekM_base, h.x25, ptr_zero]; rfl
+  · exact cov_r hp h (show 0 < 5 by decide) (by simp [enL, ekM, Impl.MlKem.AArch64.Hybrid.ekSrc])
+  · rcases mem4 hr with rfl | rfl | rfl | rfl
+    · exact ek0 _ _ (by lom)
+    · exact ek0 _ _ (by lom)
+    · exact ek0 _ _ (by lom)
+    · exact below_R hp (show 0 < 5 by decide) (by simp [enL, ekM, Impl.MlKem.AArch64.Hybrid.ekSrc])
+  · exact hk.R (show 0 < 5 by decide) (by simp [enL, ekM, Impl.MlKem.AArch64.Hybrid.ekSrc])
 
 end VG.Proof.MlKem.AArch64.Hybrid

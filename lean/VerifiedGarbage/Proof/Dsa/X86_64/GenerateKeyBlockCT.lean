@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
 
 /-! # Key generation's straight-line pieces: only the stack pointer is public in them -/
 

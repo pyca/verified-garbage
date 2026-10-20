@@ -2,8 +2,11 @@ module
 
 import VerifiedGarbage.Proof.X448.Wide.Encoded
 public import VerifiedGarbage.Proof.X448.AArch64.Mul
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.Reduce
+import VerifiedGarbage.Proof.X448.Wide.Normalize
+import VerifiedGarbage.Proof.X448.Wide.Pack
+import VerifiedGarbage.Proof.X448.Wide.Columns
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: wide field multiplication behind the existing X448 slot contract. -/
 

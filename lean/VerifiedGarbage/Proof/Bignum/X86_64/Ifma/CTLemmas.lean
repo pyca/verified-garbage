@@ -1,15 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
+meta import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, lemmas

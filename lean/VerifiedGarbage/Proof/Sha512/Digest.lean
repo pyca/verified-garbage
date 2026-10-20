@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.Md
-public import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Sha512.Word64
 public import VerifiedGarbage.Spec.Sha512.Contract
-public import VerifiedGarbage.Proof.Sha512.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MdStream.Prefix
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory

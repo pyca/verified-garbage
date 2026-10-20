@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
+import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.PdChecked
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The precomputed RSA path imports, validates, and applies a packed public key -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Complete chunks of immutable generation tapes use the shared DSA slice proof. -/
 @[expose] public section

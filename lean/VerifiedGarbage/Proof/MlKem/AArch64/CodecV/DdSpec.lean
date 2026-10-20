@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Width
+public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on AArch64: what `vg_mlkem_decode_decompress` reads and writes
@@ -70,11 +76,11 @@ theorem G_eq {w : Width} (hw : WOk w) (s₀ : State) {g e : Nat} (hg : g < 256 /
   rw [G, decodeDecompress_get _ _ (show _ < n from hi),
     byteDecode_group hw.dc _ he (show _ < n from hi), bytes_map_take_drop _ (by
       rw [bytesAt_length]; exact nbg_le hw hg), ite_eq_left hd12, Nat.mod_mod,
-    (decompress_val hw.mem (Nat.mod_lt _ (Nat.two_pow_pos _))).1]
+    (decompress_val_of_le hw.d_pos hw.d_le (Nat.mod_lt _ (Nat.two_pow_pos _))).1]
   rfl
 
 theorem Pre.byte_eq {w : Width} {s₀ : State} (hp : Pre w s₀) {m : Mem}
-    (hf : Frame [polyRegion (fP s₀)] s₀.mem m) {j : Nat} (hj : j < 32 * w.d) (hw : w.d ≤ 10) :
+    (hf : Frame [polyRegion (fP s₀)] s₀.mem m) {j : Nat} (hj : j < 32 * w.d) (hw : w.d ≤ 11) :
     (m (bP s₀ + BitVec.ofNat 64 j)).toNat = byte w s₀ j := by
   rw [byte_frame (len := 32 * w.d) hf
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) (by omega) hj]

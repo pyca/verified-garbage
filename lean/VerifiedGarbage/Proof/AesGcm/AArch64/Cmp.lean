@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Spec.Gcm
 
-import VerifiedGarbage.Proof.AesGcm.AArch64.J0
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
+import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: checking a received tag (`tagLenOk`, `cmpSeg`, `verRet`), moving tags

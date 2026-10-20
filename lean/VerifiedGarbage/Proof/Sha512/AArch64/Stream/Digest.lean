@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
 import VerifiedGarbage.Proof.Sha512.Digest
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
 import VerifiedGarbage.Proof.MdStream.Prefix
 import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SHA-384, SHA-512/256 and SHA-512/224 on AArch64: the digests

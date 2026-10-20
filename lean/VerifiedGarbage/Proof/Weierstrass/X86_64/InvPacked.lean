@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
-public import VerifiedGarbage.Proof.Mont.X86_64.Wide
-public import VerifiedGarbage.Proof.Divstep.Packed
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Divstep.PackedDef
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Divstep.Packed
 import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Divstep.WordDef
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps

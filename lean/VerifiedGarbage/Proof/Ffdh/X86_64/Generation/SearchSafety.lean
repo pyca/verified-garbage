@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
 
 /-! # The complete generation controller's instruction safety and stack bound -/
 

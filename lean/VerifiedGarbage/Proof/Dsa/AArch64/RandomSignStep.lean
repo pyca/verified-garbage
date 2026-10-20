@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
 public import VerifiedGarbage.Proof.Dsa.RandomSignTraceResult
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Public status and continuation facts after one signing attempt. -/

@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.CTBase
+import VerifiedGarbage.Proof.AesCcm.Arm.Mac
+import VerifiedGarbage.Proof.AesCcm.Arm.B0
 meta import VerifiedGarbage.Proof.AesCcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesCcm.Arm.Mac
+meta import VerifiedGarbage.Proof.AesCcm.Arm.B0
 
 /-!
 # AES-CCM on ARMv7: the MAC is constant time

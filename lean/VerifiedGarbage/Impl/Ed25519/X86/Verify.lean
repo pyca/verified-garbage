@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
 public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 

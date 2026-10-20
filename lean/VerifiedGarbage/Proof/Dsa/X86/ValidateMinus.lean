@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Dsa.X86.CoreStore
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-public import VerifiedGarbage.Proof.Dsa.X86.Minus
+import VerifiedGarbage.Proof.Dsa.X86.Minus
 public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Encoded p - 1 and q - 2 for domain checks and exponentiation -/
 

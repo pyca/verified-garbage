@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.CrtFrame
 
 /-! Persistent frame words survive writes within a separate arithmetic workspace. -/
 @[expose] public section

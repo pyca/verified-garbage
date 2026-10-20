@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
-public import VerifiedGarbage.Proof.RsaOaep.Scan
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.RsaOaep.Scan
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-!
 # RSAES-OAEP on x86-64: addresses, the frame and the working space

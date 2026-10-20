@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.EncBytes
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Params
 

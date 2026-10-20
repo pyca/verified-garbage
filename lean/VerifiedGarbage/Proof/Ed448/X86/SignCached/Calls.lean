@@ -3,9 +3,40 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Hash
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86.Callee
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
-import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAdd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Step
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the scalar calls

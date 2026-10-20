@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TrialCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2CT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoopCT
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TrialCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetupCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2CT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
+meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSetupCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoopCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoopCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of the complete DSA probable-prime operation -/
 

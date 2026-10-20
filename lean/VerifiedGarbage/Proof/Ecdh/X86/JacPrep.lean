@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.X86.WinJac
-public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-public import VerifiedGarbage.Proof.Mont.X86.Chain
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Weierstrass.X86.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 
 /-! # Scalar recoding for the x86 P-256 variable-base window -/
 

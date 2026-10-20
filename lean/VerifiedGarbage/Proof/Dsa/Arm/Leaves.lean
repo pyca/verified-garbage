@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Entry
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Impl.Dsa.Arm.Entry
+public import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+meta import VerifiedGarbage.Impl.Dsa.Arm.SignVerify
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DSA on 32-bit ARM: the parts whose traces a taint analysis checks

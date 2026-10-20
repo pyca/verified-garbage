@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
+import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 
 /-! Width-five NAF multiplication for public verification scalars. -/
 

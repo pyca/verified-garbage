@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecIrprf
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCT2
-import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCT
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecIrprf
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecMsg
+meta import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: constant time, `CL` and `AM`

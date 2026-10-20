@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeSetup
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Montgomery
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupChoice
 import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Montgomery setup for DSA's full and padded prime candidates -/
 

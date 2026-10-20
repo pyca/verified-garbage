@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Scrypt.X86_64.Scrypt
 import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Scrypt.Memory
 
 /-!
 # scrypt on x86-64: the blocks between the calls

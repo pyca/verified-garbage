@@ -1,20 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.PreparedBody
-meta import VerifiedGarbage.Proof.Camellia.X86_64.PreparedBody
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
-public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
-meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Camellia.X86_64.PreparedBody
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Camellia's batches under prepared subkeys on x86-64 meet their contract

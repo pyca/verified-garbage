@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Spec.Sha1
 public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!

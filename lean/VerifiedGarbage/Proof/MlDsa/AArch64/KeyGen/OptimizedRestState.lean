@@ -1,17 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestBase
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
-import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedEntry
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.LazyInv
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 @[expose] public section
 

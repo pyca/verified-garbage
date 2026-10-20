@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPrefixMemory
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdSuffix
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPdSuffix
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # All arguments and the saved precomputation status before re-exponentiation -/
 

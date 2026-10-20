@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
 
 /-!
 # ML-KEM on x86 (32-bit): the body of key generation

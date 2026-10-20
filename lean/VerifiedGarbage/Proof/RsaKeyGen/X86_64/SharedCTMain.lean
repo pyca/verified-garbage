@@ -3,10 +3,15 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTRound
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMain
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMrLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedRanges
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of RSA's loop with a callable shared round -/
 

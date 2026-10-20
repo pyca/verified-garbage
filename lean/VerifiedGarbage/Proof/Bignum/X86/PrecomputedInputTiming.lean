@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInput
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInput
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Importing the secret representative has a trace fixed by public geometry -/
 

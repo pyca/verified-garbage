@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPending
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPending
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 
 /-! A tail bit either extends the pending digit or executes one complete window. -/
 

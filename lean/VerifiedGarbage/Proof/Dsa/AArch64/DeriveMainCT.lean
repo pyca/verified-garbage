@@ -1,17 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveBodyCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveBodyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
+public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
+import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveBodyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveWrite
+meta import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ABIRegions
-import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.AArch64.DeriveCopy
+meta import VerifiedGarbage.Proof.Dsa.SizeBounds
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdRest
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
 
 /-! # Constant time of the complete AArch64 key derivation -/
 

@@ -1,13 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.AddCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of the multiply-and-add reduction step -/
 

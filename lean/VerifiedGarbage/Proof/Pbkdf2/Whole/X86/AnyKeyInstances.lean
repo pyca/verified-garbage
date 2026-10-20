@@ -1,13 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha256.X86.Shared
+import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
-import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Lit
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha256.X86.Shared
+meta import VerifiedGarbage.TCB.Registration
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC's `init` for a key of any length on x86 (32-bit): the instances

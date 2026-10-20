@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Copy
+import VerifiedGarbage.Proof.X448.AArch64.Copy
 public import VerifiedGarbage.Proof.X448.Freeze
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: preparing canonical reduction

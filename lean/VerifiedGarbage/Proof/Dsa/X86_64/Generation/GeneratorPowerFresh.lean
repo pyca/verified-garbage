@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorPower
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorModulus
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFootprint
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorModulus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFootprint
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPower
 
 /-! # Initialize and evaluate one generator power from arbitrary scratch -/
 

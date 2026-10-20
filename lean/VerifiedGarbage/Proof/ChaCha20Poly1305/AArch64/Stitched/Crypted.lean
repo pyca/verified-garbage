@@ -2,9 +2,37 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`
@@ -309,7 +337,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} 
     (v₂ : ∀ r ∈ preservedV, (s₂.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64)
     (hL : 512 ≤ L s₀) :
     WP isa (.seq (.block polyIn) (.seq (Stitch.bulk sve enc) (.block (polyOut enc)))) s₂
-      fun u => ∃ T, Crypted enc s₀ s key msg T u := by
+      fun u => ∃ T, 1 ≤ T ∧ Crypted enc s₀ s key msg T u := by
   have hL' : L s₀ ≤ 2 ^ 64 := Nat.le_of_lt (s₀.gpr .x5).isLt
   have i₂ := h.step1 k₂ (by lit_omega) (by lit_omega) (by lit_omega)
   have hr₂ : Repr s₂.mem (off (cx s₀) 448) key msg := Repr.frame k₂.frame (fun r hr => by
@@ -340,7 +368,7 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} 
       VG.Proof.ChaCha20.AArch64.Xor.bp, x3₃] at e; exact e
   have le₄ : 512 * T ≤ L s₀ := by have e := hi.le; simp only [Stitch.L_rebase, hLB] at e; exact e
   refine (polyOut_ok hp enc x0₄ (by rw [rd₄, rd₃, i₂.rd]) (by rw [wr₄, wr₃, i₂.wr])).mono
-    fun s₅ ⟨⟨hv₅, m₅, x21₅, x27₅, x28₅, x22₅, x23₅, g₅, rd₅, wr₅⟩, vv₅, sp₅, _, _⟩ => ⟨T, ?_⟩
+    fun s₅ ⟨⟨hv₅, m₅, x21₅, x27₅, x28₅, x22₅, x23₅, g₅, rd₅, wr₅⟩, vv₅, sp₅, _, _⟩ => ⟨T, hB.pos, ?_⟩
   -- Memory.
   have f₂₃ : Frame (inR s₀) s₂.mem s₃.mem := by rw [m₃]; exact memIn_frame _ _ _
   have f₄₅ : Frame [sub s₀ 448 24] s₄.mem s₅.mem := by rw [m₅]; exact storeHm_frame _ _ _ _ _
@@ -475,17 +503,53 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} 
       exact ov₄ r hr h8 h9
     rw [vv₅, e4, v₃]; exact v₂ r hr
 
-theorem cryptStitched_ok (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
+theorem cryptStitched_ok (enc : Bool) (he : enc = false) {s₀ : State} (hp : APre e s₀)
+    {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hr : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (cryptStitched sve enc) s fun u => ∃ T, Crypted enc s₀ s key msg T u := by
   unfold cryptStitched
+  rw [show afterBulk sve enc = .block (polyOut enc) by simp only [afterBulk, he, Bool.false_eq_true,
+    ite_false]]
   refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
   apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
   · intro _
     exact WP.block_nil ⟨0, short_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂⟩
   · intro hs
-    exact long_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
-      (by have := of_decide_eq_false hs; omega)
+    exact (long_crypted enc hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
+      (by have := of_decide_eq_false hs; omega)).mono fun _ ⟨T, _, hc⟩ => ⟨T, hc⟩
+
+/-! ## When encrypting -/
+
+/-- What `cryptStitched` leaves when encrypting, from `s`: the data's first `P`
+bytes encrypted from counter 1, the counter advanced past them if data
+follows, the stream's arguments set to the rest, the first `A` bytes absorbed,
+and the rest's pointer and length in `x22`, `x23`. -/
+structure Sealed (s₀ s : State) (key msg : List Byte) (P A : Nat) (u : State) : Prop where
+  inv : Inv0 s₀ u
+  le : P ≤ L s₀
+  aP : A ≤ P
+  a16 : A % 16 = 0
+  p64 : P < L s₀ → P % 64 = 0
+  x0 : u.gpr .x0 = off (cx s₀) 64
+  x1 : u.gpr .x1 = dp s₀ + BitVec.ofNat 64 P
+  x2 : u.gpr .x2 = BitVec.ofNat 64 (L s₀ - P)
+  x3 : u.gpr .x3 = off (cx s₀) 128
+  x22 : u.gpr .x22 = dp s₀ + BitVec.ofNat 64 A
+  x23 : u.gpr .x23 = BitVec.ofNat 64 (L s₀ - A)
+  cnt : P < L s₀ →
+    stateAt u.mem (off (cx s₀) 64) = ctr (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (P / 64)
+  data : ∀ k < L s₀, u.mem (dp s₀ + BitVec.ofNat 64 k) =
+    if k < P then s.mem (dp s₀ + BitVec.ofNat 64 k) ^^^ (KS1 s₀).getD k 0
+    else s.mem (dp s₀ + BitVec.ofNat 64 k)
+  frame : Frame [sub s₀ 64 408, sub s₀ 32 16, dR s₀] s.mem u.mem
+  mac : Repr u.mem (off (cx s₀) 448) key (msg ++ bytesAt u.mem (dp s₀) A)
+  vec : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
+
+theorem Crypted.sealed {s₀ s : State} {key msg : List Byte} {T : Nat} {u : State}
+    (h : Crypted true s₀ s key msg T u) : Sealed s₀ s key msg (512 * T) (pre true T) u :=
+  ⟨h.inv, h.le, pre_le true T, pre_mod true T, fun _ => by omega, h.x0, h.x1, h.x2, h.x3, h.x22, h.x23,
+    fun _ => by rw [h.cnt, show 512 * T / 64 = 8 * T by omega], h.data, h.frame,
+    by simpa only [ite_true] using h.mac, h.vec⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64

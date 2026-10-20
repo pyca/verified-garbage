@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: the contract

@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupWsCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.SetupWsCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupWsCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import VerifiedGarbage.Proof.Framework.Semantics
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: initialize an odd modulus in constant time -/
 

@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86.Linear
 public import VerifiedGarbage.Proof.Camellia.X86.Sbox
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # A round of bitsliced Camellia on x86 (32-bit)

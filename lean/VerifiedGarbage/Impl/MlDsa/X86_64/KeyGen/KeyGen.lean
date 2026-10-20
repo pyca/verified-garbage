@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
 public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

@@ -3,12 +3,13 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Framework.SigEval
-public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Proof.Blowfish.Scratch
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Blowfish.Schedule
-public import VerifiedGarbage.Proof.Framework.Bswap
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # Blowfish on x86 (32-bit): the contracts the proofs use

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top3
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # An RSA key on ARMv7: constant time (`key_ct`)
 

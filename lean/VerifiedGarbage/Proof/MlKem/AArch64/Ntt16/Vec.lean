@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+public import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: vectors of halfwords

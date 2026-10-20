@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 
-public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
 
 /-!
 # The lazy final subtraction, eight words at a time

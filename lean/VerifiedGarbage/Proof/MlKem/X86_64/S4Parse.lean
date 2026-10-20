@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4`, sampling
@@ -31,19 +33,13 @@ open VG.Spec.Sha3 (bytesAt)
 def okN (σ : State) (K : Nat) : Nat :=
   if (List.range K).all fun k => (sampleNTT minIterations (B σ k)).isSome then 1 else 0
 
-/-- The table of the sampling and the constants of the vector code, from
-byte `oTab` of `scratch`. -/
-def TabOK (σ : State) (m : Mem) : Prop := ∀ i < 280, m.readW (at' σ (oTab + 8 * i)) 64 = tabQ i
+/-- `r11` holds the address of the static of the table of the sampling,
+the constants of the vector code and the counts (`tblName`). -/
+def TabOK (s : State) : Prop := s.gpr .r11 = s.syms tblName
 
-/-- Where the table is. -/
-abbrev tabR (σ : State) : Region := ⟨at' σ oTab, 2240⟩
-
-/-- The table is kept by writes elsewhere. -/
-theorem tab_frame {σ : State} {m m' : Mem} {rs : List Region} (hd : ∀ r ∈ rs, Region.Disjoint (tabR σ) r)
-    (hf : Frame rs m m') (h : TabOK σ m) : TabOK σ m' := fun i hi => by
-  rw [← h i hi]
-  exact hf.readW (Offset.contains _ (by simp only [oTab]; omega) (by simp only [oTab]; omega)
-    (by simp only [oTab]; omega)) hd (by decide)
+/-- `TabOK` of a state with the same `r11` and statics. -/
+theorem TabOK.of {s s' : State} (h : TabOK s) (g : s'.gpr .r11 = s.gpr .r11) (sy : s'.syms = s.syms) : TabOK s' := by
+  unfold TabOK at h ⊢; rw [g, sy, h]
 
 /-- Before the `K`-th polynomial, with `X` of the memory. -/
 structure PCW (w16 : Bool) (X : Mem → Prop) (σ : State) (K : Nat) (s : State) : Prop where
@@ -63,7 +59,7 @@ holds bytes `3 b` on of its XOF output, and only polynomial `K` is written. -/
 structure LBW (w16 : Bool) (σ s₀ : State) (K b : Nat) (s : State) : Prop where
   env : EnvW w16 σ s
   r14 : s.gpr .r14 = s₀.gpr .r14
-  tab : TabOK σ s.mem
+  tab : TabOK s
   out : ∀ p < 504, 3 * b + p < 840 → s.mem (at' σ (oBuf + 504 * K + p)) = xofByte (B σ K) (3 * b + p)
   fr : Frame [cRegion w16 (poly4W w16 (aP σ) K)] s₀.mem s.mem
 
@@ -122,11 +118,11 @@ theorem EnvW.poly {K : Nat} (hK : K < 4) {s s' : State} (he : EnvW w16 σ s)
 /-- Writes to polynomial `K` keep `LB`. -/
 theorem LBW.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LBW w16 σ s₀ K b s)
     (hf : Frame [cRegion w16 (poly4W w16 (aP σ) K)] s.mem s'.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
-    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], s'.gpr r = s.gpr r) : LBW w16 σ s₀ K b s' :=
+    (hg : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14, .r11], s'.gpr r = s.gpr r) (hsy : s'.syms = s.syms) :
+    LBW w16 σ s₀ K b s' :=
   ⟨EnvW.poly hp hK h.env hf hrd hwr fun r hr => hg r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
-    by rw [hg .r14 (by simp), h.r14],
-    tab_frame (by simpa using scr_poly hp hK (a := oTab) (n := 2240) (by simp only [oTab]; omega)) hf h.tab,
+    by rw [hg .r14 (by simp), h.r14], h.tab.of (hg .r11 (by simp)) hsy,
     fun p hp' hb => by
       rw [byte_frame hf (R := ⟨at' σ (oBuf + 504 * K + p), 1⟩)
         (by simpa using scr_poly hp hK (a := oBuf + 504 * K + p) (n := 1) (by simp only [oBuf]; omega))
@@ -137,24 +133,27 @@ theorem LBW.poly {s₀ : State} {K b : Nat} (hK : K < 4) {s s' : State} (h : LBW
 omit hp in
 /-- `LB` after code that writes no memory and keeps its registers. -/
 theorem LBW.keep {s₀ : State} {K b : Nat} {s s' : State} (h : LBW w16 σ s₀ K b s) (hm : s'.mem = s.mem) {rs : List Reg}
-    (k : Keep rs s s') (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], r ∉ rs := by decide) :
+    (k : Keep rs s s') (hsy : s'.syms = s.syms)
+    (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14, .r11], r ∉ rs := by decide) :
     LBW w16 σ s₀ K b s' :=
   ⟨h.env.keep hm k fun r hr => hrs r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h <;> simp [h]),
-    by rw [k.gpr (hrs .r14 (by simp)), h.r14], by rw [hm]; exact h.tab, by rw [hm]; exact h.out,
+    by rw [k.gpr (hrs .r14 (by simp)), h.r14], h.tab.of (k.gpr (hrs .r11 (by simp))) hsy,
+    by rw [hm]; exact h.out,
     by rw [hm]; exact h.fr⟩
 
 omit hp in
 theorem LAtW.same {s₀ : State} {K b t : Nat} {s s' : State} (h : LAtW w16 σ s₀ K b t s) (g : s'.gpr = s.gpr)
-    (m : s'.mem = s.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) : LAtW w16 σ s₀ K b t s' :=
-  ⟨h.lb.keep m (rs := []) ⟨fun r _ => by rw [g], rd, wr⟩ (by simp), by rw [g]; exact h.rsi,
+    (m : s'.mem = s.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (sy : s'.syms = s.syms) : LAtW w16 σ s₀ K b t s' :=
+  ⟨h.lb.keep m (rs := []) ⟨fun r _ => by rw [g], rd, wr⟩ sy (by simp), by rw [g]; exact h.rsi,
     by rw [g]; exact h.rdi, by rw [g]; exact h.rbp, by rw [m]; exact h.stored⟩
 
 omit hp in
 theorem LAtW.same' {s₀ : State} {K b t : Nat} {s s' : State} (h : LAtW w16 σ s₀ K b t s) (m : s'.mem = s.mem)
-    {rs : List Reg} (k : Keep rs s s') (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14], r ∉ rs := by decide)
+    {rs : List Reg} (k : Keep rs s s') (sy : s'.syms = s.syms)
+    (hrs : ∀ r ∈ [Reg.rbx, .r12, .r13, .rsp, .r15, .r14, .r11], r ∉ rs := by decide)
     (hrs' : Reg.rsi ∉ rs ∧ Reg.rdi ∉ rs ∧ Reg.rbp ∉ rs := by decide) : LAtW w16 σ s₀ K b t s' :=
-  ⟨h.lb.keep m k hrs, by rw [k.gpr hrs'.1]; exact h.rsi, by rw [k.gpr hrs'.2.1]; exact h.rdi,
+  ⟨h.lb.keep m k sy hrs, by rw [k.gpr hrs'.1]; exact h.rsi, by rw [k.gpr hrs'.2.1]; exact h.rdi,
     by rw [k.gpr hrs'.2.2]; exact h.rbp, by rw [m]; exact h.stored⟩
 
 omit hp in
@@ -182,15 +181,16 @@ theorem lat_step {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t < 168) (hbt :
     refine ⟨aRW w16 σ, by simp, ?_⟩
     rw [cAddr, poly4W, Offset.add_add]
     exact Offset.contains_base _ (by wd_omega) (by wd_omega)
-  refine WP.mono (snBody_ok w16 s (aP := poly4W w16 (aP σ) K) h.rbp h.rdi hL hw h.stored
+  refine WP.mono_syms (snBody_ok w16 s (aP := poly4W w16 (aP σ) K) h.rbp h.rdi hL hw h.stored
     (by simpa using lat_regions hp hK h (j := 0) (by omega)) (lat_regions hp hK h (by omega))
-    (lat_regions hp hK h (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ => ?_
+    (lat_regions hp hK h (by omega))) fun s' ⟨hdi, hst, hf, hsi, hcx, hz, hk⟩ hsy => ?_
   have e0 := out_byte h (j := 0) (by omega) (by omega)
   rw [add_ofNat_zero, Nat.add_zero] at e0
   rw [e0, out_byte h (j := 1) (by omega) (by omega), out_byte h (j := 2) (by omega) (by omega),
     ← sampleAfter_succ] at hdi hst
-  refine ⟨⟨h.lb.poly hp hK hf hk.2.1 hk.2.2 fun r hr => hk.gpr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide),
+  refine ⟨⟨h.lb.poly hp hK hf hk.2.1 hk.2.2 (fun r hr => hk.gpr (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) hsy,
     by rw [hsi, h.rsi, show (3 : BitVec 64) = BitVec.ofNat 64 3 from rfl, Offset.add_add, Nat.mul_succ], hdi,
     by rw [hk.gpr (by decide), h.rbp], hst⟩, hcx, hz⟩
 

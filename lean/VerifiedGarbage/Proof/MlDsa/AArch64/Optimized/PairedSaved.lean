@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Loads
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `PairedExtra.lean` -/
 

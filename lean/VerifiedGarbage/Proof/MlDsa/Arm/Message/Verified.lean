@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
+public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Lay
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: verified

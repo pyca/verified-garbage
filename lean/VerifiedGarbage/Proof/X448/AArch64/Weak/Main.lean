@@ -3,11 +3,17 @@ module
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 import VerifiedGarbage.Proof.X448.AArch64.Weak.FinalSwap
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Main
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.X448.AArch64.BitBody
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 import VerifiedGarbage.Proof.X448.AArch64.Bits
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Inv
+import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Spec.X25519
 
 @[expose] public section
 

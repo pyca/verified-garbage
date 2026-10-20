@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarBound
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarBound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 
 /-! # FFDH private-key validation on x86-64: complete scalar range check -/
 

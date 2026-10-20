@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Ecdh.Arm.Validate
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Arm
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
+import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDSA verification on 32-bit ARM: the arguments and the key

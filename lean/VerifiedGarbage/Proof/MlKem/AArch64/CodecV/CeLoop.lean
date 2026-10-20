@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeSpec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: the loop of the vector compression
@@ -27,7 +31,7 @@ structure VInv (w : Width) (G : Nat) (K : State → Prop) (s₀ : State) (k : Na
   x0 : s.gpr .x0 = coeffAddr (fP s₀) (w.c * G * k)
   x2 : s.gpr .x2 = oP s₀ + BitVec.ofNat 64 (w.nb * G * k)
   x11 : (s.gpr .x11).toNat = 256 / (w.c * G) - k
-  cs : CConsts w.d s
+  cs : CConsts w s
   K : K s
   out : BytesUpTo s.mem (oP s₀) (32 * w.d) (w.nb * G * k) (L w s₀) (old s₀)
   frame : Frame [oR w s₀] s₀.mem s.mem

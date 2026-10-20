@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
-public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len` = 4 and 2

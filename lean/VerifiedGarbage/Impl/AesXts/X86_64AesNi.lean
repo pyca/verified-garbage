@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.AesXts.X86_64Vaes
-import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # XTS-AES on x86-64 in one pass, with AES-NI and PCLMULQDQ

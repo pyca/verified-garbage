@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 
 /-!
 # Ed25519 verification's windows with AVX512_IFMA

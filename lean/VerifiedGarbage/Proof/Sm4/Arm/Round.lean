@@ -3,8 +3,11 @@ module
 public import VerifiedGarbage.Proof.Sm4.Arm.Linear
 public import VerifiedGarbage.Proof.Sm4.Arm.Sbox
 public import VerifiedGarbage.Proof.Sm4.Rounds
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 
 /-!
 # A round of bitsliced SM4 on ARMv7

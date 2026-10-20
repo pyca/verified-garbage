@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
-public import VerifiedGarbage.Impl.Mont.X86.Words
 
 /-! # Accept exactly those RSA representatives below the modulus -/
 

@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecSel
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecTaint
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecPrfLoop
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the body

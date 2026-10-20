@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkState
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
 
 /-!
 # `vg_rsa_check_key` on AArch64: the pieces on `CkS`

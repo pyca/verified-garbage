@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA on x86 (32-bit): the butterflies

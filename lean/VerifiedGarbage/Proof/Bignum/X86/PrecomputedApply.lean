@@ -3,7 +3,15 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.AcceptSave
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPower
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPower
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Compare, save acceptance, and exponentiate every RSA representative -/
 

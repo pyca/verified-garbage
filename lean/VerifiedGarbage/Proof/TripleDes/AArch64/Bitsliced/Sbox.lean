@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.SboxTables
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The AdvSIMD S-box circuits' machine code

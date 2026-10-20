@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequest
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDoneUpdate
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequest
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDoneUpdate
 
 /-! # Native entropy requests return the remaining budget and consumed prefix -/
 

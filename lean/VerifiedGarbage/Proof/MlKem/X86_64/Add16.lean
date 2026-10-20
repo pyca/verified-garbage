@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith16
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
 public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: a polynomial of `u16`s added to one of `u32`s (`add16Y`)

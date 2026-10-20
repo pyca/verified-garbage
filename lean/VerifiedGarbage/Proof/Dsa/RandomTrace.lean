@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Dsa.Random
 
-public import VerifiedGarbage.Proof.Dsa.RandomResult
+import VerifiedGarbage.Proof.Dsa.RandomResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Recover individual draw decisions from the specified public sampling trace. -/

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # SHA-224's digest, from the hash value in memory

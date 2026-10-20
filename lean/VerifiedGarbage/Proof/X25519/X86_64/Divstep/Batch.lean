@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Loop
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Proof.X25519.X86_64.Ops
 
 /-!
 # X25519 on x86-64, inversion by divsteps: a batch

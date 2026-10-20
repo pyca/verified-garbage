@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
 # ML-KEM on AArch64: encoding, decoding and sampling from bytes

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Reading a bounded lookahead from the scalar's expanded bits. -/
 

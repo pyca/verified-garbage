@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
 
-public import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
-public import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.CallPowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreProductTiming
+import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-! # Product stages retain public layout and caller operands -/
 

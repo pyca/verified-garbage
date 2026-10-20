@@ -1,21 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Md5.Md
-meta import VerifiedGarbage.Proof.Md5.Md
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Md5.X86_64.Compress
-meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
 public import VerifiedGarbage.Impl.Md5.X86_64.Stream
-meta import VerifiedGarbage.Impl.Md5.X86_64.Stream
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Md5.Md
+meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
+meta import VerifiedGarbage.Impl.Md5.X86_64.Stream
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming MD5 on x86-64: `update` and `finalize`

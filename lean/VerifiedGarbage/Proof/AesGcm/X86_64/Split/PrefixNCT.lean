@@ -1,15 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixN
 
 /-!
 # AES-GCM `seal_split` on x86-64: `prefixN` in constant time
@@ -19,7 +19,7 @@ same public values take the same branch of `nTest` (on the lengths); on the
 path in one pass, each block is checked by the taint analysis from the
 registers that hold the same values in both (`W`, then the copy's
 arguments, then the loop's, as `NA`–`NC` give them), and the loop
-(`StitchR.encN`, from its literal) addresses memory from its arguments
+(`encN`, from its literal) addresses memory from its arguments
 alone; the other path is `prefix`'s (`prefixNRel`).
 -/
 
@@ -42,7 +42,8 @@ theorem nArgs_check :
 theorem nRest_check : ∃ hc, (taint.check (Taint.ofRegs [.r15]) (.block SealSplit.nRest) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
-/-- The registers `StitchR.encN` addresses memory and counts from. -/
+/-- The registers `encN` (`StitchR.encN`, `StitchZHTo.encN`) addresses memory
+and counts from. -/
 abbrev encNRegs : List Reg := [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .r10, .r11, .rbx, .rbp, .rsp]
 
 theorem encN_check :
@@ -60,10 +61,11 @@ abbrev NT (n sl : Nat) (σ t : State) : Prop :=
     (∀ r, r ≠ .rax → r ≠ .rcx → t.gpr r = σ.gpr r) ∧ t.mem = σ.mem ∧ t.rd = σ.rd ∧ t.wr = σ.wr
 
 /-- The path in one pass, in two runs. -/
-theorem nPath_rel (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {P : State → State → Prop}
+theorem nPath_rel {c : Prog isa} (hE : EncNOk c)
+    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (hC : 1 ≤ sl / 256 ∧ sl / 256 < n / 256) {P : State → State → Prop}
     (hP : ∀ a b, P a b → NT n sl σ a ∧ NT n sl σ' b) :
     RelCT isa P (.seq (.block SealSplit.nCopyArgs) (.seq SealGather.copy (.seq (.block SealSplit.nArgs)
-      (.seq Impl.Gcm.X86_64.StitchR.encN (.block SealSplit.nRest))))) fun _ _ => True := by
+      (.seq c (.block SealSplit.nRest))))) fun _ _ => True := by
   have r15 : ∀ {t t' : State}, t.gpr .r15 = σ.gpr .r15 → t'.gpr .r15 = σ'.gpr .r15 → t.gpr .r15 = t'.gpr .r15 :=
     fun e e' => by rw [e, e', h.env.r15, h'.env.r15]
   refine RelCT.seq (step [.r15] nCopyArgs_check (F₁ := NT n sl σ) (F₂ := NT n sl σ')
@@ -96,7 +98,7 @@ theorem nPath_rel (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl
     (fun _ _ g => g) (fun _ g => nC_ok h g) (fun _ g => nC_ok h' g)) ?_
   let G (σ : State) : State → Prop := fun u => ∃ t, NC Ctx W D S R n sl σ t ∧
     Gcm.X86_64.StitchR.NPost t (16 * (n / 256)) u
-  refine RelCT.seq (step encNRegs encN_check (F₁ := NC Ctx W D S R n sl σ) (F₂ := NC Ctx W D S R n sl σ')
+  refine RelCT.seq (step encNRegs hct (F₁ := NC Ctx W D S R n sl σ) (F₂ := NC Ctx W D S R n sl σ')
     (G₁ := G σ) (G₂ := G σ')
     (fun _ _ g r hr => by
       obtain ⟨g₁, g₂⟩ := g
@@ -113,8 +115,8 @@ theorem nPath_rel (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl
       · rw [g₁.rbx, g₂.rbx]
       · rw [g₁.rbp, g₂.rbp]
       · rw [g₁.keep _ (by simp), g₂.keep _ (by simp), h.env.rsp, h'.env.rsp])
-    (fun _ _ g => g) (fun t g => WP.mono (nD_ok h hS hC g) fun u hu => ⟨t, g, hu⟩)
-    (fun t g => WP.mono (nD_ok h' hS hC g) fun u hu => ⟨t, g, hu⟩)) ?_
+    (fun _ _ g => g) (fun t g => WP.mono (nD_ok h hE hC g) fun u hu => ⟨t, g, hu⟩)
+    (fun t g => WP.mono (nD_ok h' hE hC g) fun u hu => ⟨t, g, hu⟩)) ?_
   exact (step [.r15] nRest_check (F₁ := G σ) (F₂ := G σ') (G₁ := fun _ => True) (G₂ := fun _ => True)
     (fun _ _ g r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -128,7 +130,9 @@ theorem nPath_rel (hS : Gcm.X86_64.StitchR.SetupFin) (hC : 1 ≤ sl / 256 ∧ sl
 end
 
 /-- `prefixN` in two runs. -/
-theorem prefixNRel (hS : Gcm.X86_64.StitchR.SetupFin) (T : BlkToFn CtxMode.prepared) : PreRel CtxMode.prepared (SealSplit.prefixN T.fn) := by
+theorem prefixNRel {c : Prog isa} (hE : EncNOk c)
+    (hct : ∃ hc, (taint.check (Taint.ofRegs encNRegs) c hc).isSome = true) (T : BlkToFn CtxMode.prepared) :
+    PreRel CtxMode.prepared (SealSplit.prefixN T.fn c) := by
   intro Ctx W SP D S R n sl σ σ' h h'
   unfold SealSplit.prefixN
   refine RelCT.seq (step [.r15] nTest_check (F₁ := (· = σ)) (F₂ := (· = σ'))
@@ -140,7 +144,7 @@ theorem prefixNRel (hS : Gcm.X86_64.StitchR.SetupFin) (T : BlkToFn CtxMode.prepa
   refine RelCT.ite (fun _ _ g => by simp only [eval, g.1.1, g.2.1]) ?_ ?_
   · refine StreamTo.RelCT.of_imp (1 ≤ sl / 256 ∧ sl / 256 < n / 256) (fun _ _ g => by
       have e := g.2; simp only [eval, g.1.1.1] at e; simpa using e) fun hC => ?_
-    exact nPath_rel h h' hS hC fun _ _ g => g.1
+    exact nPath_rel h h' hE hct hC fun _ _ g => g.1
   · refine rel_each fun t t' g => ?_
     obtain ⟨⟨⟨-, g₁, m₁, rd₁, wr₁⟩, ⟨-, g₂, m₂, rd₂, wr₂⟩⟩, -⟩ := g
     have he : ∀ {σ t : State} {M : CtxMode} {R : Nat}, PP M Ctx W SP D S R n sl σ →
@@ -153,32 +157,48 @@ theorem prefixNRel (hS : Gcm.X86_64.StitchR.SetupFin) (T : BlkToFn CtxMode.prepa
 
 /-! ## What every instruction of `prefixN` does not do -/
 
-/-- The path in one pass. -/
-abbrev nPart : Prog isa := .seq (.block SealSplit.nCopyArgs) (.seq SealGather.copy (.seq (.block SealSplit.nArgs)
-  (.seq Impl.Gcm.X86_64.StitchR.encN (.block SealSplit.nRest))))
+/-- The path in one pass, with the loop `c`. -/
+abbrev nPart (c : Prog isa) : Prog isa := .seq (.block SealSplit.nCopyArgs) (.seq SealGather.copy
+  (.seq (.block SealSplit.nArgs) (.seq c (.block SealSplit.nRest))))
 
-theorem nPart_mx : (nPart : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
-  lit_decide
-theorem nPart_spSafe : (nPart : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
-theorem nPart_xdepth : (nPart : Prog isa).x86_64Depth = 0 := by decide +kernel
+theorem nPart_mx {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (nPart c).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Code.allInstrs, hc, Bool.true_and]
+  decide +kernel
+theorem nPart_spSafe {c : Prog isa} (hc : c.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (nPart c).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [Code.all, hc, Bool.true_and]
+  decide +kernel
+theorem nPart_xdepth {c : Prog isa} (hc : c.x86_64Depth = 0) : (nPart c).x86_64Depth = 0 := by
+  simp only [Code.x86_64Depth, hc]
+  decide +kernel
 
-theorem prefixN_mx {fTo : Fn} (h : (SealSplit.prefix fTo).allInstrs (fun i => !loadsMxcsr i) = true) :
-    (SealSplit.prefixN fTo).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have e := nPart_mx
+theorem prefixN_mx {fTo : Fn} {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true)
+    (h : (SealSplit.prefix fTo).allInstrs (fun i => !loadsMxcsr i) = true) :
+    (SealSplit.prefixN fTo c).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have e := nPart_mx hc
   simp only [SealSplit.prefixN, Code.allInstrs] at e h ⊢
   rw [e, h]; decide
 
-theorem prefixN_spSafe {fTo : Fn} (h : (SealSplit.prefix fTo).all (fun i => !X86_64.isa.writesSp i) = true) :
-    (SealSplit.prefixN fTo).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have e := nPart_spSafe
+theorem prefixN_spSafe {fTo : Fn} {c : Prog isa} (hc : c.all (fun i => !X86_64.isa.writesSp i) = true)
+    (h : (SealSplit.prefix fTo).all (fun i => !X86_64.isa.writesSp i) = true) :
+    (SealSplit.prefixN fTo c).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have e := nPart_spSafe hc
   simp only [SealSplit.prefixN, Code.all] at e h ⊢
   rw [e, h]; decide
 
-theorem prefixN_xdepth {fTo : Fn} {d : Nat} (h : (SealSplit.prefix fTo).x86_64Depth ≤ d) :
-    (SealSplit.prefixN fTo).x86_64Depth ≤ d := by
-  have e := nPart_xdepth
+theorem prefixN_xdepth {fTo : Fn} {c : Prog isa} (hc : c.x86_64Depth = 0) {d : Nat}
+    (h : (SealSplit.prefix fTo).x86_64Depth ≤ d) : (SealSplit.prefixN fTo c).x86_64Depth ≤ d := by
+  have e := nPart_xdepth hc
   simp only [SealSplit.prefixN, Code.x86_64Depth] at e h ⊢
   rw [e]; simp only [Nat.max_le] at h ⊢; omega
+
+/-! ## `StitchR.encN` -/
+
+theorem encNR_mx : Impl.Gcm.X86_64.StitchR.encN.allInstrs (fun i => !loadsMxcsr i) = true := by
+  lit_decide
+theorem encNR_spSafe : Impl.Gcm.X86_64.StitchR.encN.all (fun i => !X86_64.isa.writesSp i) = true :=
+  Code.all_of_allInstrs (by lit_decide)
+theorem encNR_xdepth : Impl.Gcm.X86_64.StitchR.encN.x86_64Depth = 0 := by decide +kernel
 
 end VG.Proof.AesGcm.X86_64.Split

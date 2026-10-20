@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Field
-public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
-public import VerifiedGarbage.Proof.X25519.Invert
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.A24
 public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+public import VerifiedGarbage.Proof.X25519.X86_64.Env
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Ed25519 field programs: correctness of the lowering

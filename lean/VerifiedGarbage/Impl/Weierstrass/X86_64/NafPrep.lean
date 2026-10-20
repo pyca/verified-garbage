@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
 
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 
 /-! Signed five-bit NAF recoding of a public scalar of `n` words into `64 n + 1` bytes. -/
 

@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.OneTag
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Seal
+import VerifiedGarbage.Proof.AesGcm.X86.Seal
+import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneTag
 meta import VerifiedGarbage.Proof.AesGcm.X86.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_open`

@@ -4,6 +4,10 @@ import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
 public import VerifiedGarbage.Proof.AesSiv.X86_64.FinishShort
 import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-SIV on x86-64: the end of `vg_aes_siv_encrypt`

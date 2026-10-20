@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.PcPieces
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: the call and the masks

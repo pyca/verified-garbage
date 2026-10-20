@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.CvCT
+import VerifiedGarbage.Proof.Rsa.Arm.CvCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Rsa.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Rsa.Arm.CvCorrect
 
 /-! # `vg_rsa_crt_values` on ARMv7 is verified against the shared RSA contract -/
 

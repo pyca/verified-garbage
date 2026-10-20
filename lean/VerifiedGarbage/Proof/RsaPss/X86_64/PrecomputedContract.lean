@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 @[expose] public section
 

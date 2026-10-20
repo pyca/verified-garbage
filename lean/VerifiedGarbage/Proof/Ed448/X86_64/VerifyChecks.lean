@@ -1,16 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
-public import VerifiedGarbage.Proof.X448.X86_64.Main
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Impl.Ed448.Wnaf
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on x86-64: the checks

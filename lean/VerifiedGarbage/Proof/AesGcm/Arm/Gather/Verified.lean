@@ -2,6 +2,50 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.CT
 public import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+public import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+public import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
+public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+public import VerifiedGarbage.Proof.AesGcm.CtxFrame
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Bytes
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.CtxFrame
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: `Verified`

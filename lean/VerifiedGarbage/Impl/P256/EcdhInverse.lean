@@ -7,8 +7,8 @@ Only existing AArch64 ISA instructions are used.
 -/
 module
 
-public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.P256.EcdhAllocatedCode
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 
 @[expose] public section
 

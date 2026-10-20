@@ -1,8 +1,20 @@
 module
+public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.Arm.Crypt8
+public import VerifiedGarbage.Proof.Sm4.Arm.Prologue
 
-public import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.Arm.KeyInit
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Sm4.Arm.Group
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+import VerifiedGarbage.Proof.Sm4.Layout
 
 /-!
 # The loop of the SM4 key schedule on ARMv7

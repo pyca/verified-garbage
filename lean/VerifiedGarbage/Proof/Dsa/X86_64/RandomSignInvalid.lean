@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Invalid moduli exit before sampling and publish zero consumption. -/
 @[expose] public section

@@ -3,6 +3,36 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+public import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86

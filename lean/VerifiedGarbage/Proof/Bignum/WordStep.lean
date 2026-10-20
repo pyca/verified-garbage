@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Multiword arithmetic: a step of long division

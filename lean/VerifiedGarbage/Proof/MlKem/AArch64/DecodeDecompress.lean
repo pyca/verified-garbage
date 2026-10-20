@@ -2,8 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_decode_decompress`
@@ -105,7 +115,7 @@ theorem loop1_ok {s₀ : State} (hp : Pre width1 s₀) :
       simp only [List.append_assoc]
       exact wp_bytesVec fun s1 g1 v1 e1 => wp_bytesVec fun s2 g2 v2 e2 => wp_dupW (by decide) fun s3 g3 v3 e3 =>
         wp_vop rfl fun s4 h4 => wp_nil ⟨(g1.trans g2).trans (g3.trans (.of_upd h4)),
-          fun r a b c d => by rw [h4.get r d, v3 r c, v2 r b, v1 r a],
+          fun r a b c d _ _ => by rw [h4.get r d, v3 r c, v2 r b, v1 r a],
           ⟨by rw [h4.get .v18 (by decide), v3 .v18 (by decide), v2 .v18 (by decide), e1, dd1idx18]
               exact fun e he => by rw [vword_ofVWords4 _ _ _ _ e he]
                                    rcases (show e = 0 ∨ e = 1 ∨ e = 2 ∨ e = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl,
@@ -125,7 +135,7 @@ theorem loop4_ok {s₀ : State} (hp : Pre width4 s₀) :
         PolyIs s'.mem (fP s₀) (decodeDecompress width4.d (B width4 s₀)) :=
   dloop_ok width4_ok (Ng := 16) (K := K4) rfl (by decide) rfl
     (fun s => wp_movImm9 fun s1 g1 v1 e1 => wp_vop rfl fun s2 h2 => wp_vop rfl fun s3 h3 => wp_nil
-      ⟨g1.trans ((GFr.of_upd h2).trans (.of_upd h3)), fun r a b _ _ => by rw [h3.get r b, h2.get r a, v1],
+      ⟨g1.trans ((GFr.of_upd h2).trans (.of_upd h3)), fun r a b _ _ _ _ => by rw [h3.get r b, h2.get r a, v1],
         fun j hj => by
           rw [h3.get .v18 (by decide), h2.v, vbyte_ofVBytes _ hj, e1]; rfl,
         by rw [h3.v]⟩)
@@ -142,7 +152,7 @@ theorem loop10_ok {s₀ : State} (hp : Pre width10 s₀) :
       rw [← List.append_nil (bytesVec .v21 _)]
       exact wp_dupW (by decide) fun s1 g1 v1 l1 => wp_dupW (by decide) fun s2 g2 v2 l2 =>
         wp_bytesVec fun s3 g3 v3 e3 => wp_bytesVec fun s4 g4 v4 e4 => wp_nil
-          ⟨((g1.trans g2).trans g3).trans g4, fun r a b c d => by rw [v4 r d, v3 r c, v2 r b, v1 r a],
+          ⟨((g1.trans g2).trans g3).trans g4, fun r a b c d _ _ => by rw [v4 r d, v3 r c, v2 r b, v1 r a],
             by rw [v4 .v18 (by decide), v3 .v18 (by decide), v2 .v18 (by decide)]; exact l1,
             by rw [v4 .v19 (by decide), v3 .v19 (by decide)]; exact l2,
             by rw [v4 .v20 (by decide), e3, dd10idx], by rw [e4, dd10idxHi]⟩)

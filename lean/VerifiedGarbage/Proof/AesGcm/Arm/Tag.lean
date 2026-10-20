@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Crypt
+public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on ARMv7: the tag (`tag o`)

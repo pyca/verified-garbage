@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinishTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindow
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

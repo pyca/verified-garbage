@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Call2
+import VerifiedGarbage.Proof.Dsa.X86_64.Call2
 import VerifiedGarbage.Proof.Dsa.X86_64.Reduce
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
 
 /-! # Streaming reduction in the DSA parent workspace -/
 

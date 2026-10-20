@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Cdecl arguments remain fixed across disjoint output writes -/
 

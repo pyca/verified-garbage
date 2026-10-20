@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Argon2
 
-public import VerifiedGarbage.Proof.Argon2.Dimensions
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! Bounds for every block address used by the filling loop. -/
 

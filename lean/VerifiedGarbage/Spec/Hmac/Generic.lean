@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Hmac
-public import VerifiedGarbage.Spec.Sha256
-public import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.Spec.Md5
-public import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.TCB.Artifact
 
 /-!

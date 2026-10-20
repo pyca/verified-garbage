@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignAttempt
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
 
 /-! Functional correctness and termination of the outer signing retry loop. -/
 @[expose] public section

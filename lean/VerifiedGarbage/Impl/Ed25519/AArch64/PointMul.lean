@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
 
 /-! A descending byte counter at workspace byte 56. -/
 

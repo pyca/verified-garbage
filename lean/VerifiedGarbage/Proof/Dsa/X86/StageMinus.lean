@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
 
-public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateMinus
+import VerifiedGarbage.Proof.Dsa.X86.ValidateMinus
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Persistent modulus-minus-constant stages -/
 

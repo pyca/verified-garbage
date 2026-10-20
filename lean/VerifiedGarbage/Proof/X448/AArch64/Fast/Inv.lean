@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 
 /-!
 # X448 on AArch64: inversion

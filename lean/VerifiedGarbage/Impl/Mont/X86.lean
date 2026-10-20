@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.Impl.Mont.Mod
 public import VerifiedGarbage.Impl.Mont.X86.Sparse
 
 /-!

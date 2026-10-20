@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86_64.Execution
 
 import VerifiedGarbage.Proof.Dsa.X86_64.ReleaseBytes
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.WriteScalar
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Release both signature scalars, or zero the complete output -/
 

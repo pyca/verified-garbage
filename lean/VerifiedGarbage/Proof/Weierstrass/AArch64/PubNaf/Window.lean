@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # The public NAF multiplication
@@ -203,8 +208,9 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
     (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) (hO : PrimeOrder C)
     (hn17 : 17 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hF : NafFixed K C base s P k)
-    (hz1 : tmv C K.M.n base s K.P.z = 1) (hk : k < 2 ^ (64 * K.M.n)) :
-    WP isa (PubNaf.window K) s fun t => Scr t base size ∧ KeepRegs (nafClob K.M.n) s t ∧
+    (hz1 : tmv C K.M.n base s K.P.z = 1) (hk : k < 2 ^ (64 * K.M.n)) {dd : Option (Prog isa)}
+    (hD : NafDblOk K C base size dd) :
+    WP isa (PubNaf.window K dd) s fun t => Scr t base size ∧ KeepRegs (nafClob K.M.n) s t ∧
       Unch base (winW K ++ cacheW K) s.mem t.mem ∧ ModOkA K.M size C.p t.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal t.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base t K.R.x) (tmv C K.M.n base t K.R.y) (tmv C K.M.n base t K.R.z)
@@ -236,7 +242,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Na
   refine countLoop_ok (Inv := fun j t => NInv K C base size P s₂ t j (Naf5.residual k j))
     (n := 64 * K.M.n) (by omega) (fun j t hj1 hjn hI => ?_) (fun t hI => ?_) (by omega) I₄
   · have e : j - 1 + 1 = j := by omega
-    refine WP.mono (step_ok hL hp hC hM3 hone_lt hP F₂ (j := j - 1) (by omega) (by rw [e]; exact hI))
+    refine WP.mono (stepOf_ok hL hp hC hM3 hone_lt hP F₂ hD (j := j - 1) (by omega) (by rw [e]; exact hI))
       fun t' h' => ⟨h', h'.x19⟩
   · refine WP.mono (finish_ok hL hp hC hpn hone_lt hone F₂ hI.st hI.rlt hI.r) fun t' ⟨S', l', r'⟩ => ?_
     refine ⟨S'.scr, S₁.keep.trans (k₂.trans S'.keep), (U₀₂.trans S'.unch).mono fun w hw => ?_, S'.mod, l',

@@ -1,7 +1,8 @@
 module
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The final DSA p-candidate reduction
 
