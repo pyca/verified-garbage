@@ -18,7 +18,6 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Sha256.Stream
