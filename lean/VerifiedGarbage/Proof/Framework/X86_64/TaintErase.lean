@@ -198,7 +198,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | vmovdqu32Load _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti32x4 _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vbroadcasti32x4H _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
-  | zbcst _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | zbcst _ _ _ m | vpbroadcastdZ _ m | zbcstd _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vpmadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | vmovdqu32Store m _ => exact storeStepKD_nil h hs
   | eop _ => cases hs; exact nx

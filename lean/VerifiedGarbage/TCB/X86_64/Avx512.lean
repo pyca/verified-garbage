@@ -167,6 +167,25 @@ doubleword of each quadword, and the low doubleword of `SRC2[63:0]` is
 def ZBcstOp.sse : ZBcstOp → XBinOp
   | .vpmuludq => .pmuludq | .vpandq => .pand | .vporq => .por
 
+/-- EVEX-encoded three-operand instructions `vop zmm, zmm, m32bcst` whose
+second source is a doubleword in memory broadcast to every doubleword
+(`DWORD PTR [m]{1to16}`, `EVEX.b = 1`); see `ZBcstDOp.sse`. -/
+inductive ZBcstDOp
+  | vpaddd
+  deriving DecidableEq, Repr
+
+/-- The legacy SSE instruction whose operation `op` applies to each lane,
+with the loaded doubleword in all four doublewords of its source. SDM
+Vol. 2, "PADDB/PADDW/PADDD/PADDQ", "VPADDD (EVEX Encoded Versions)" with
+`(KL, VL) = (16, 512)`, no write mask and a memory `SRC2` with
+`EVEX.b = 1`: `IF (EVEX.b = 1) AND (SRC2 *is memory*) THEN DEST[i+31:i] :=
+SRC1[i+31:i] + SRC2[31:0]` for each doubleword `j` from 0 to 15
+(`i := j * 32`). Each doubleword of `DEST` is that of `SRC1` plus
+`SRC2[31:0]`, so on each 128-bit lane this is PADDD (`XBinOp.eval`) of the
+lane of `SRC1` and `SRC2[31:0]` four times. -/
+def ZBcstDOp.sse : ZBcstDOp → XBinOp
+  | .vpaddd => .paddd
+
 /-- SDM Vol. 2, "VSHUFF32x4/VSHUFF64x2/VSHUFI32x4/VSHUFI64x2", 512-bit form:
 `Select4(SRC, control) { CASE (control[1:0]) OF 0: TMP := SRC[127:0]; 1:
 TMP := SRC[255:128]; 2: TMP := SRC[383:256]; 3: TMP := SRC[511:384]; }`,

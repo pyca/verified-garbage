@@ -133,7 +133,9 @@ Modelling choices:
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
   `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
   (`evLoad`, `evStore`), the quadword source of the
-  embedded-broadcast forms `zbcst` (`m64bcst`), the second source of
+  embedded-broadcast forms `zbcst` (`m64bcst`), the doubleword source of
+  `vpbroadcastdZ` (`m32`) and of the embedded-broadcast forms `zbcstd`
+  (`m32bcst`), the second source of
   `vbinLoad` (`xmm3/m128` or `ymm3/m256`), the 256-bit second
   source of `vpmadd52Load` and `evMadd52Load` (`m256`), and the masked
   moves `kLoad`, `kStore`, `kLoad8` and `kStore8` (`m512`), which (like
@@ -328,6 +330,13 @@ inductive Instr
   `vpandq` (`EVEX.512.66.0F.W1 DB /r`) or `vporq` (`EVEX.512.66.0F.W1 EB
   /r`). -/
   | zbcst (op : ZBcstOp) (dst src1 : XReg) (src2 : MemOp)
+  /-- `vpbroadcastd zmm, DWORD PTR [src]` (`EVEX.512.66.0F38.W0 58 /r`),
+  AVX512F: the doubleword at `src` in every doubleword of `dst`. -/
+  | vpbroadcastdZ (dst : XReg) (src : MemOp)
+  /-- `op zmm1, zmm2, DWORD PTR [src2]{1to16}`, an AVX-512 instruction whose
+  second source is the doubleword at `src2` broadcast to every doubleword
+  (`m32bcst`, `EVEX.b = 1`): `vpaddd` (`EVEX.512.66.0F.W0 FE /r`). -/
+  | zbcstd (op : ZBcstDOp) (dst src1 : XReg) (src2 : MemOp)
   /-- `vpmadd52luq ymm1, ymm2, YMMWORD PTR [src2]` (`EVEX.256.66.0F38.W1 B4
   /r`), or with `hi` `vpmadd52huq ymm1, ymm2, YMMWORD PTR [src2]`
   (`EVEX.256.66.0F38.W1 B5 /r`), AVX512_IFMA and AVX512VL: the forms of
@@ -536,7 +545,8 @@ def Instr.requires : Instr → List String
   | .zop (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
   | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) =>
     ["avx512bw"]
-  | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. =>
+  | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst ..
+  | .vpbroadcastdZ .. | .zbcstd .. =>
     ["avx512f"]
   | .kLoad .. | .kStore .. => ["avx512f"]
   | .kLoad8 .. | .kStore8 .. => ["avx512f", "avx512bw"]
@@ -695,6 +705,19 @@ def exec : Instr → State → Option State
   | .zbcst op d a m, s => (s.load64 (s.ea m)).map fun v =>
     let f (i : Nat) := op.sse.eval (s.zlane a i) (v ++ v)
     s.setZ d (f 0) (f 1) (f 2) (f 3)
+  -- SDM Vol. 2, "VPBROADCAST" (VPBROADCASTD, EVEX encoded versions, without
+  -- a write mask): `DEST[i+31:i] := SRC[31:0]` for each doubleword `j` from
+  -- 0 to 15 (`i := j * 32`), so each 128-bit lane is the loaded doubleword
+  -- four times; no alignment is required.
+  | .vpbroadcastdZ d m, s => (s.load32 (s.ea m)).map fun v =>
+    let w := v ++ v ++ v ++ v
+    s.setZ d w w w w
+  -- See `ZBcstDOp.sse`: on each 128-bit lane, the SSE operation of the lane
+  -- of `SRC1` and the loaded doubleword `SRC2[31:0]` in all four
+  -- doublewords; no alignment is required.
+  | .zbcstd op d a m, s => (s.load32 (s.ea m)).map fun v =>
+    let f (i : Nat) := op.sse.eval (s.zlane a i) (v ++ v ++ v ++ v)
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
   -- SDM Vol. 2, "VPMADD52LUQ" and "VPMADD52HUQ" (EVEX.256 encoded, without a
   -- write mask or embedded broadcast): as the register form (see `madd52`,
   -- each lane), with `SRC3` the 32 bytes at the address, in little-endian
@@ -808,6 +831,8 @@ def addrs : Instr → State → List Addr
   | .vbroadcasti32x4 _ m, s => [s.ea m]
   | .vbroadcasti32x4H _ m, s => [s.ea m]
   | .zbcst _ _ _ m, s => [s.ea m]
+  | .vpbroadcastdZ _ m, s => [s.ea m]
+  | .zbcstd _ _ _ m, s => [s.ea m]
   | .vpmadd52Load _ _ _ m, s => [s.ea m]
   | .eop _, _ => []
   | .evLoad _ m, s => [s.ea m]
@@ -929,7 +954,7 @@ def Instr.dst : Instr → Option Reg
   | .store .. | .store32 .. | .store8 .. | .store16 .. | .movdquLoad .. | .movdquStore .. | .movdquTbl .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
+  | .vpbroadcastdZ .. | .zbcstd .. | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .kLoad8 .. | .kStore8 ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
 abbrev isa : ISA where
