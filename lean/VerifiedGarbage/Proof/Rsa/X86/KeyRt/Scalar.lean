@@ -111,9 +111,10 @@ theorem eqS_ok {s : State} (h : RtWs L s B Z len N) {d a b t : Nat}
 
 /-- `[j]`'s low word plus the header word `sl`, for `[j]` even and the word a bit. -/
 theorem addLow_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
-    (hsl : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) (even : num s.mem B (kw len) j % 2 = 0) (bit : slot s.mem B sl ≤ 1) :
+    (hsl : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) :
     WP isa (.block (addLow L j sl)) s fun t => RtWs L t B Z len N ∧ Keep B (kw len) [j] [] s.mem t.mem ∧
-      num t.mem B (kw len) j = num s.mem B (kw len) j + slot s.mem B sl ∧ Keeps [.eax, .ecx, .edx] s t ∧
+      (num s.mem B (kw len) j % 2 = 0 → slot s.mem B sl ≤ 1 →
+        num t.mem B (kw len) j = num s.mem B (kw len) j + slot s.mem B sl) ∧ Keeps [.eax, .ecx, .edx] s t ∧
       w32 t.mem B (arr (kw len) j + 4 * kw len) = w32 s.mem B (arr (kw len) j + 4 * kw len) := by
   have positive := h.kw_pos
   have head := h.ws.hdr_le
@@ -127,6 +128,7 @@ theorem addLow_ok {s : State} (h : RtWs L s B Z len N) {j sl : Nat} (hj : j < N)
   have mx : x.mem = s.mem := by rw [X.mem, V.mem, m]
   rw [mx] at F Vt top
   refine ⟨ht, F, ?_, ((K.mono (by decide)).trans (KX.mono (by decide))).trans (Kt.mono (by decide)), top⟩
+  intro even bit
   have low := low_word (B := B) (m := s.mem) (j := j) positive
   have sv : (v.mem.readW (off B sl) 32).toNat = slot s.mem B sl := by rw [V.mem, m]
   rw [Vt, X.gpr, V.gpr, m, BitVec.toNat_add, sv, ← low]
