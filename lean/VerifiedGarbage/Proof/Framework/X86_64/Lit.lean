@@ -38,6 +38,7 @@ deriving instance Lean.ToExpr for ZKeyOp
 deriving instance Lean.ToExpr for HReg
 deriving instance Lean.ToExpr for ZOp
 deriving instance Lean.ToExpr for ZBcstOp
+deriving instance Lean.ToExpr for ZBcstDOp
 deriving instance Lean.ToExpr for VReg
 deriving instance Lean.ToExpr for EBinOp
 deriving instance Lean.ToExpr for EOp

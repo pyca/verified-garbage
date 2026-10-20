@@ -15,9 +15,12 @@ VMOVDQU64 load and store of `kLoad` and `kStore`, on an Intel Xeon with
 AVX-512F, and `kmovq k1, rbx` and the masked VMOVDQU8 load and store of
 `kLoad8` and `kStore8`, in C inline assembly on an Intel Xeon (Emerald
 Rapids), each with the 64 bytes at the end of a page followed by one mapped
-`PROT_NONE`, where the masked-off elements do not fault; and the
+`PROT_NONE`, where the masked-off elements do not fault; the
 embedded-broadcast forms, run as the printed strings in Rust naked
-functions), and is compared with the model's result on the same inputs.
+functions; and the memory form of VPBROADCASTD and the doubleword
+embedded-broadcast VPADDD, in C inline assembly on an Intel Xeon with
+AVX512_FP16 and AMX (Sapphire Rapids or later)), and is compared with the
+model's result on the same inputs.
 -/
 
 namespace VG.Test.Avx512
@@ -290,6 +293,35 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard ((exec (.zbcst .vporq .xmm1 .xmm1 { base := .rdi }) s).map (·.zmm .xmm1)) == bcst .vporq 0
 #guard ((exec (.zbcst .vporq .xmm5 .xmm1 { base := .rdi }) s).map (·.zmm .xmm1)) == some B
 
+/-- `zmm5` after `vpbroadcastd zmm5, DWORD PTR [rdi+disp]`, where memory
+holds `A`. -/
+def bcstD (disp : Int) : Option (BitVec 512) :=
+  (exec (.vpbroadcastdZ .xmm5 { base := .rdi, disp := disp }) s).map (·.zmm .xmm5)
+
+#guard bcstD 0 == some 0x76543210765432107654321076543210765432107654321076543210765432107654321076543210765432107654321076543210765432107654321076543210#512
+#guard bcstD 13 == some 0xb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcdb489abcd#512
+#guard bcstD 60 == some 0x0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d0badf00d#512
+-- The doubleword must lie within the regions.
+#guard (bcstD 61).isNone
+#guard (bcstD (-1)).isNone
+
+/-- `zmm5` after `vpaddd zmm5, zmm1, DWORD PTR [rdi+disp]{1to16}`, where
+memory holds `A`. -/
+def bcstAdd (disp : Int) : Option (BitVec 512) :=
+  (exec (.zbcstd .vpaddd .xmm5 .xmm1 { base := .rdi, disp := disp }) s).map (·.zmm .xmm5)
+
+#guard bcstAdd 0 == some 0x8563411f67452300cba9dcbaa987fedc673604d32af9c89789abcdef9abcdef077777777ffffffff5501f0ff4152ecce7654320ff6543210f654320f88888888#512
+#guard bcstAdd 13 == some 0xc398badca57a9cbd09df5677e7bd7899a56b7e90692f4254c7e147acd8f258adb5acf1343e3579bc93376abc7f88668bb489abcc3489abcd3489abccc6be0245#512
+#guard bcstAdd 60 == some 0x1abcff1cfc9ee0fd61039ab73ee1bcd9fc8fc2d0c05386941f058bec30169ced0cd135749559bdfcea5baefcd6acaacb0badf00c8badf00d8badf00c1de24685#512
+#guard (bcstAdd 61).isNone
+#guard (bcstAdd (-1)).isNone
+-- The destination may be the source, and only the destination changes.
+#guard ((exec (.zbcstd .vpaddd .xmm1 .xmm1 { base := .rdi }) s).map (·.zmm .xmm1)) == bcstAdd 0
+#guard ((exec (.zbcstd .vpaddd .xmm5 .xmm1 { base := .rdi }) s).map (·.zmm .xmm1)) == some B
+-- Each leaks its address.
+#guard addrs (.vpbroadcastdZ .xmm5 { base := .rdi, disp := 8 }) s == [0x108]
+#guard addrs (.zbcstd .vpaddd .xmm5 .xmm1 { base := .rdi, disp := 8 }) s == [0x108]
+
 /-! ## Printing -/
 
 #guard printer.instr (.zop (.zbin .vpaddd .xmm1 .xmm2 .xmm15)) == ["vpaddd zmm1, zmm2, zmm15"]
@@ -332,6 +364,10 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard printer.instr
     (.zbcst .vporq .xmm15 .xmm14 { base := .rdi, index := some .rax, scale := 8, disp := -8 }) ==
   ["vporq zmm15, zmm14, QWORD PTR [rdi+rax*8-8]{1to8}"]
+#guard printer.instr (.vpbroadcastdZ .xmm3 { base := .rdi, disp := 52 }) ==
+  ["vpbroadcastd zmm3, DWORD PTR [rdi+52]"]
+#guard printer.instr (.zbcstd .vpaddd .xmm12 .xmm12 { base := .rdi, disp := 4 }) ==
+  ["vpaddd zmm12, zmm12, DWORD PTR [rdi+4]{1to16}"]
 
 /-! ## Required features -/
 
@@ -356,5 +392,7 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard isa.requires (.zbcst .vpmuludq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vpandq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vporq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
+#guard isa.requires (.vpbroadcastdZ .xmm0 { base := .rdi }) == ["avx512f"]
+#guard isa.requires (.zbcstd .vpaddd .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 
 end VG.Test.Avx512

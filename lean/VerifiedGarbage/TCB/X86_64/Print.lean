@@ -177,6 +177,9 @@ def ZShiftOp.name : ZShiftOp → String
 def ZBcstOp.name : ZBcstOp → String
   | .vpmuludq => "vpmuludq" | .vpandq => "vpandq" | .vporq => "vporq"
 
+def ZBcstDOp.name : ZBcstDOp → String
+  | .vpaddd => "vpaddd"
+
 def HReg.name : HReg → String
   | .xmm16 => "xmm16" | .xmm17 => "xmm17" | .xmm18 => "xmm18" | .xmm19 => "xmm19"
   | .xmm20 => "xmm20" | .xmm21 => "xmm21" | .xmm22 => "xmm22" | .xmm23 => "xmm23"
@@ -304,6 +307,8 @@ def Instr.asm : Instr → List String
   | .vbroadcasti32x4H d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .vbroadcasti32x4 d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .zbcst op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str}" ++ "{1to8}"]
+  | .vpbroadcastdZ d m => [s!"vpbroadcastd {d.zname}, {m.str32}"]
+  | .zbcstd op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str32}" ++ "{1to16}"]
   | .vpmadd52Load hi d a m =>
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.vname .l256}, {a.vname .l256}, {m.strV .l256}"]
   | .eop op => [op.asm]
@@ -354,6 +359,7 @@ def Instr.memOps : Instr → List MemOp
   | .movdquStore m _ | .movdquTbl _ m ..
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vmovdquTbl _ m .. | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
+  | .vpbroadcastdZ _ m | .zbcstd _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
   | .kLoad8 _ _ m | .kStore8 m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
