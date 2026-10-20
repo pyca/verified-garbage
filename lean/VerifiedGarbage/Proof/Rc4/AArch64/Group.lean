@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
 import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # The groups

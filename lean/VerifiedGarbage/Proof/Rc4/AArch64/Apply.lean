@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import VerifiedGarbage.Proof.Rc4.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # The PRGA

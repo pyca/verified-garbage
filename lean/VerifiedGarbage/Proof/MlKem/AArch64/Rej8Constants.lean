@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Spec.MlKem
 import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Construct the parser constants with the measured emitted instructions -/
 

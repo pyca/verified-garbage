@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 
 import VerifiedGarbage.Proof.Rc4.AArch64.Lookup
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A keystream byte

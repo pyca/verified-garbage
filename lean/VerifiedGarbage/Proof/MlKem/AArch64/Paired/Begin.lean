@@ -34,6 +34,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize and parse the first three paired matrix blocks -/
 @[expose] public section

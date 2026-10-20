@@ -3,6 +3,8 @@ module
 import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86_64
 public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Rc4.Qword
 
 /-! # RC4 on x86-64: replacing a secret-indexed byte of the table -/
 

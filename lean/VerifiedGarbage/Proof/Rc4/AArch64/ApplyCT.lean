@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 meta import VerifiedGarbage.Impl.Rc4.AArch64
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The PRGA's constant time

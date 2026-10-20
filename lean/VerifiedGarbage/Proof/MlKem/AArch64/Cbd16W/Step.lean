@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16W.Loop
 import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # `vg_mlkem16_cbd2` on AArch64: an iteration, and the loop -/
 

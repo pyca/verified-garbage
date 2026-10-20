@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.X86.Lookup
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
+import VerifiedGarbage.Proof.Rc4.Dword
 
 /-! # RC4 on x86 (32-bit): key scheduling -/
 

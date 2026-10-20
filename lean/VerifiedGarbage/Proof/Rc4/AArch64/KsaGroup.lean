@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rc4.AArch64.KsaStep
 import VerifiedGarbage.Proof.Rc4.AArch64.Group
 import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The key schedule's groups

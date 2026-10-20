@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.Mem16Bytes
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-!
 # ML-KEM on AArch64: polynomials stored with 16-bit coefficients

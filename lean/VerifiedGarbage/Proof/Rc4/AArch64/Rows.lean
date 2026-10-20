@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table in memory, rotated

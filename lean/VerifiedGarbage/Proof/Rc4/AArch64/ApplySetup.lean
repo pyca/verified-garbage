@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
 import VerifiedGarbage.Proof.Rc4.AArch64.Consts
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-!
 # The PRGA's setup
