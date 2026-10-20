@@ -28,10 +28,10 @@ theorem candSquare_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m y eLen 
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (ht : V sTc ≤ 8 * (dLen + eLen))
     (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384) :
-    WP isa (candSquare g.n) s fun t => SI g s0 A AW V m (8 * (dLen + eLen)) 0
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candSquare s fun t => SI g s0 A AW V m (8 * (dLen + eLen)) 0
       (sqIter m (V sTc) (8 * (dLen + eLen)) (sqStart m y)) t := by
   have cop := VG.Proof.Bignum.coprime_pow2 odd (64 * g.n)
-  unfold candSquare
+  unfold VG.Impl.Rsa.X86.RecoverRt.candSquare VG.Impl.Rsa.X86.RecoverRt.eqAt
   simp only [seqs]
   refine WP.seq (WP.mono (h.eqS_w (d := sE1) (a := mY) (b := aO)
     (by simp [liveSq]) (by simp [liveSq, liveM]) (by decide) (by decide) (by decide) (by decide))

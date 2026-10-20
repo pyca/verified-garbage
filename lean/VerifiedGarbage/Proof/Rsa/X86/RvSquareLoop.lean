@@ -16,7 +16,7 @@ theorem sqLoop_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m c : Nat}
     (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (hm : 1 < m)
     (one : A aO = 2 ^ (64 * g.n) % m) (neg : A aNg = m - 2 ^ (64 * g.n) % m)
     (ht : V sTc ≤ c) (count : 0 < c) (limit : c ≤ 16384) :
-    WP isa (.loop (sqBody g.n) .ne) s fun t =>
+    WP isa (.loop VG.Impl.Rsa.X86.RecoverRt.sqBody .ne) s fun t =>
       SI g s0 A AW V m c 0 (sqIter m (V sTc) c st) t := by
   refine WP.loop (M := isa)
     (fun j u => ∃ k, k + j = c ∧ 0 < j ∧
