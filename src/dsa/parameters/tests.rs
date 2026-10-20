@@ -387,3 +387,64 @@ fn backend_combinations() {
         }
     }
 }
+
+#[test]
+#[cfg(target_arch = "x86")]
+fn backend_combinations() {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    let cases: &[(H1, H256, Generate, Features)] = &[
+        (
+            H1::Scalar,
+            H256::Scalar,
+            vg_dsa_generate_parameters,
+            Features(0),
+        ),
+        (
+            H1::Scalar,
+            H256::ShaNi,
+            vg_dsa_generate_parameters_sha256_shani,
+            VG_DSA_GENERATE_PARAMETERS_SHA256_SHANI_FEATURES,
+        ),
+        (
+            H1::ShaNi,
+            H256::Scalar,
+            vg_dsa_generate_parameters_sha1_shani,
+            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_FEATURES,
+        ),
+        (
+            H1::ShaNi,
+            H256::ShaNi,
+            vg_dsa_generate_parameters_sha1_shani_sha256_shani,
+            VG_DSA_GENERATE_PARAMETERS_SHA1_SHANI_SHA256_SHANI_FEATURES,
+        ),
+    ];
+    for &(h1, h256, expected, required) in cases {
+        let selected = select_backends(h1, h256);
+        assert!(core::ptr::fn_addr_eq(selected, expected));
+        if detected().contains(required) {
+            let mut out = [0xa5; 276];
+            let mut scratch = vec![0u64; 9216];
+            let empty: &[u8] = &[];
+            // SAFETY: supported dimensions, disjoint output and scratch,
+            // complete empty entropy tapes, and detected CPU requirements.
+            let status = unsafe {
+                selected(
+                    out.as_mut_ptr(),
+                    out.len(),
+                    128,
+                    20,
+                    empty.as_ptr(),
+                    0,
+                    empty.as_ptr(),
+                    0,
+                    empty.as_ptr(),
+                    0,
+                    scratch.as_mut_ptr(),
+                    scratch.len(),
+                )
+            };
+            assert_eq!(status, 0);
+            assert_eq!(out, [0; 276]);
+        }
+    }
+}

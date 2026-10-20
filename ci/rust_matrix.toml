@@ -131,7 +131,7 @@ chip = "native"
 arch = "x86"
 container = { image = "ghcr.io/pyca/verified-garbage-runner:i686", options = "--platform linux/386 --security-opt seccomp=unconfined" }
 runs = """
-- | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
+- | dsa_parameters sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
 none | all
 aes | aes_gcm aes_gcm_siv cpu
 pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu

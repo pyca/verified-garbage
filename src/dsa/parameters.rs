@@ -3,7 +3,7 @@
 //! validation all run in verified assembly. Rust supplies the three entropy
 //! tapes, allocates output and scratch, and selects the CPU implementation.
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::{vec, vec::Vec};
 
@@ -117,7 +117,7 @@ type Generate = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
 type Generate = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -171,7 +171,7 @@ fn select_backends(
 #[cfg(test)]
 mod tests;
 
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "x86", target_arch = "aarch64"))]
 fn select(features: Features) -> Generate {
     use crate::hashes::{sha1::Sha1Backend, sha256::Sha256Backend};
     select_backends(
@@ -191,5 +191,19 @@ fn select_backends(
         (H1::Scalar, H256::Sha2) => vg_dsa_generate_parameters_sha256_sha2,
         (H1::Sha2, H256::Scalar) => vg_dsa_generate_parameters_sha1_sha2,
         (H1::Sha2, H256::Sha2) => vg_dsa_generate_parameters_sha1_sha2_sha256_sha2,
+    }
+}
+
+#[cfg(target_arch = "x86")]
+fn select_backends(
+    sha1: crate::hashes::sha1::Sha1Backend,
+    sha256: crate::hashes::sha256::Sha256Backend,
+) -> Generate {
+    use crate::hashes::{sha1::Sha1Backend as H1, sha256::Sha256Backend as H256};
+    match (sha1, sha256) {
+        (H1::Scalar, H256::Scalar) => vg_dsa_generate_parameters,
+        (H1::Scalar, H256::ShaNi) => vg_dsa_generate_parameters_sha256_shani,
+        (H1::ShaNi, H256::Scalar) => vg_dsa_generate_parameters_sha1_shani,
+        (H1::ShaNi, H256::ShaNi) => vg_dsa_generate_parameters_sha1_shani_sha256_shani,
     }
 }
