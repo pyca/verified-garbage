@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
-public import VerifiedGarbage.Proof.Rsa.X86.KcSized
+import VerifiedGarbage.Proof.Rsa.X86.KcSized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
-public import VerifiedGarbage.Proof.Rsa.X86.KcPair
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Rsa.X86.KcPair
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 
 /-! # The trace of the key checks at a run-time width, once the modulus and exponent are accepted
 

@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! # The taint checks of the key checks at a run-time width -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
+import VerifiedGarbage.Proof.Rsa.X86.KcFrames
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
 
 /-! # Importing one key component into its zeroed workspace array
 

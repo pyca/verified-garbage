@@ -3,8 +3,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
 
 import VerifiedGarbage.Proof.Rsa.X86.KcBodyTiming
-import VerifiedGarbage.Proof.Rsa.X86.KcTimeCheck
-import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheckRt
 import VerifiedGarbage.Proof.Rsa.X86.KcEntryTiming
 import VerifiedGarbage.Proof.Rsa.X86.KcArgumentsEq
