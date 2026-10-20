@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
 
 @[expose] public section
 

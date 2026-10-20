@@ -8,11 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Impl.Rc2.X86.ExpandKey
-import VerifiedGarbage.Impl.Rc2.X86.Lookup
 import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
 
 @[expose] public section
 

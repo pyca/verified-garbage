@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Individual Arm RC2 key-expansion steps -/
 

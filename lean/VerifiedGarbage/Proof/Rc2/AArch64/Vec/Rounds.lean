@@ -6,11 +6,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
-import VerifiedGarbage.Impl.Tbl.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The sixteen reverse rounds on eight blocks
