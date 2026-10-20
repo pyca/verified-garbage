@@ -17,7 +17,7 @@ theorem call_gpr (p : KeyPublic) (used : Nat) (s : State) {r : Reg} (keep : r �
 theorem call_pre {p : KeyPublic} {used keys scalars : Nat} {s : State} {m : Mem}
     (facts : CallFacts p used) (h : ArgumentContext p used keys scalars s)
     (sp : s.sp = callSp p) (mem : s.mem = callMem p used m (callSp p)) :
-    (generateKeyContract abi 128).pre (callState p used s) := by
+    (generateKeyContract abi 176).pre (callState p used s) := by
   have a0 := call_stackArg (j := 0) facts sp mem (by decide)
   have a1 := call_stackArg (j := 1) facts sp mem (by decide)
   have a2 := call_stackArg (j := 2) facts sp mem (by decide)
@@ -39,7 +39,7 @@ theorem call_pre {p : KeyPublic} {used keys scalars : Nat} {s : State} {m : Mem}
   simp only [h.x, h.xlen, h.y, h.ylen,
     a0, a1, a2, a3, a4, a5, a6, nativeLen, domainLen, capacity, argAddr, sp]
   have stack (r : Region) (member : r ∈ [rX p, rY p, rDomain p, rTape p used, rScratch p, rCallArgs p]) :
-      (⟨State.addr (callSp p) - 128#64, 128⟩ : Region).Disjoint r := by
+      (⟨State.addr (callSp p) - 176#64, 176⟩ : Region).Disjoint r := by
     rw [← FrameStack.addr_sub' facts.stackFits]
     exact facts.stack r member
   refine ⟨facts.stackFits, ?_, ?_, ?_, facts.xy, facts.xd, facts.xr, facts.xs, facts.xa,

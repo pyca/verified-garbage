@@ -8,8 +8,8 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
-meta import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
@@ -104,7 +104,7 @@ theorem attempt_of_room {q : KeyPoint} {s : State}
   have room := of_decide_eq_false (Option.some.inj (flag.symm.trans enough))
   exact ⟨⟨original, live, statuses⟩, keys, scalars, by have := live.used_le; omega⟩
 
-theorem branch_ready (backend : VG.Proof.Ffdh.Arm.Backend) (q : KeyPoint) (s : State) (h : KeysGuard q s) :
+theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s : State) (h : KeysGuard q s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) s (KeyBranchResult q) := by
   obtain ⟨⟨original, live, statuses⟩, flag⟩ := h
   have done : ∀ (t : State) (result : Spec.Ffdh.KeySearchResult), ¬keyContinues q →
@@ -162,7 +162,7 @@ private theorem leaf {Φ : KeyPoint → State → Prop} {code : Prog isa}
     RelCT isa (Two Φ) code (fun _ _ => True) :=
   ct.mono (fun _ _ ⟨q, h₁, h₂, sp⟩ => ⟨q.inputs, get q _ h₁, get q _ h₂, sp⟩) (fun _ _ h => h)
 
-theorem branch_ct (backend : VG.Proof.Ffdh.Arm.Backend) :
+theorem branch_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
     RelCT isa (Two KeysGuard) (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.branch
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm)

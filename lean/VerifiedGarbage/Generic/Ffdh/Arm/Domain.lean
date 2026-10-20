@@ -44,16 +44,6 @@ def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
     verified := v.exchange_verified
     notes := ["ARMv7: RSA's fixed three-bit window exponentiator computes the shared value; \
       range checking, fixed-width export, and rejection masking stay in verified code. \
-      Output is cleared without branching on a degenerate result."] },
-  Spec.Ffdh.generateKeyApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    features := v.features
-    stack := 128
-    code := v.generateKey
-    verified := v.generateKey_verified
-    notes := ["ARMv7: public-bound scanning, entropy masking, scalar rejection, fixed three-bit \
-      window exponentiation, and masking of both encodings run in verified code. The \
-      exponent uses the public bound's significant byte width. A generated power's \
-      subgroup membership follows from the checked generator, so only its range is tested."] }]
+      Output is cleared without branching on a degenerate result."] }]
 
 end VG.Generic.Ffdh.Arm.Domain

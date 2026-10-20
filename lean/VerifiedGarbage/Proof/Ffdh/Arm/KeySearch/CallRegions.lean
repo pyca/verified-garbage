@@ -65,7 +65,7 @@ theorem argument_frame (_h : KeyLive p original used keys scalars s) {u : State}
 
 theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State} {depth : Nat}
     (mem : u.mem = callMem p used s.mem (callSp p)) (sp : u.sp = callSp p)
-    (frame : Frame (callWr p ++ [FrameStack.belowA u.sp depth]) u.mem t.mem) (limit : depth ≤ 128) :
+    (frame : Frame (callWr p ++ [FrameStack.belowA u.sp depth]) u.mem t.mem) (limit : depth ≤ 176) :
     Frame (callChanges p) s.mem t.mem := by
   apply (h.argument_frame mem).trans
   apply frame.sub
@@ -77,8 +77,8 @@ theorem attempt_frame (h : KeyLive p original used keys scalars s) {u t : State}
     refine ⟨rCallStack p, by simp [callChanges], ?_⟩
     rw [sp]
     apply FrameStack.belowA_sub limit
-    have fit : 184 ≤ p.sp.toNat := h.input.bounds.stackFits
-    change 128 ≤ (p.sp - 56#32).toNat
+    have fit : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
+    change 176 ≤ (p.sp - 56#32).toNat
     rw [FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)]
     omega
 

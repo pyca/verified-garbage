@@ -19,7 +19,7 @@ theorem call_public {p : KeyPublic} {used keys scalars : Nat} {s₁ s₂ origina
     (sp₁ : u₁.sp = callSp p) (sp₂ : u₂.sp = callSp p)
     (mem₁ : u₁.mem = callMem p used s₁.mem (callSp p)) (mem₂ : u₂.mem = callMem p used s₂.mem (callSp p))
     (status : currentStatus p original₁ used = currentStatus p original₂ used) :
-    (generateKeyContract abi 128).pub (callState p used u₁) (callState p used u₂) := by
+    (generateKeyContract abi 176).pub (callState p used u₁) (callState p used u₂) := by
   have facts := live₁.input.callFacts room
   have a0₁ := call_stackArg (j := 0) facts sp₁ mem₁ (by decide)
   have a1₁ := call_stackArg (j := 1) facts sp₁ mem₁ (by decide)

@@ -17,7 +17,7 @@ open VG VG.Arm VG.Proof.Mont
 
 theorem KeyInput.pushed_arguments {p : KeyPublic} {s : State} (h : KeyInput p s) :
     EntryArguments p (searchPushed s) := by
-  have fit : 184 ≤ s.sp.toNat := by have := h.bounds.stackFits; rw [← h.2] at this; exact this
+  have fit : 232 ≤ s.sp.toNat := by have := h.bounds.stackFits; rw [← h.2] at this; exact this
   have argsFit : s.sp.toNat + 36 ≤ 2 ^ 32 := by have := h.bounds.argsFit; rw [← h.2] at this; exact this
   have native (i : Nat) (hi : i < 9) : stackArgAddr s i = off (State.addr s.sp) (4 * i) :=
     VG.Arm.addr_add (by omega)

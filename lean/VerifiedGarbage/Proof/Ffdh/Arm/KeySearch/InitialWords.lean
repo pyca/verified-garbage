@@ -33,8 +33,8 @@ theorem KeyInput.initial_words {p : KeyPublic} {s : State} (h : KeyInput p s) :
 theorem KeyInput.pushed_word {p : KeyPublic} {s : State} {j : Nat} (h : KeyInput p s) (bound : j < 3) :
     (searchPushed s).mem.readW (off (State.addr p.control) (8 * j)) 64 =
       s.mem.readW (off (State.addr p.control) (8 * j)) 64 := by
-  have fit : 184 ≤ p.sp.toNat := h.bounds.stackFits
-  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2] at fit; change 184 ≤ s.sp.toNat at fit; omega
+  have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
+  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2] at fit; change 232 ≤ s.sp.toNat at fit; omega
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) rootFit
   have sep : (rControl p).Disjoint (FrameStack.belowA s.sp 24) := by

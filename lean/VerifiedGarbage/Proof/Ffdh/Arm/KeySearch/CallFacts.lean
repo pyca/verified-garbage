@@ -14,7 +14,7 @@ open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 abbrev rCallArgs (p : KeyPublic) : Region := ⟨State.addr (callSp p), 28⟩
 
 structure CallFacts (p : KeyPublic) (used : Nat) : Prop where
-  stackFits : 128 ≤ (callSp p).toNat
+  stackFits : 176 ≤ (callSp p).toNat
   argsFit : (callSp p).toNat + 28 ≤ 2 ^ 32
   xy : (rX p).Disjoint (rY p)
   xd : (rX p).Disjoint (rDomain p)
@@ -44,7 +44,7 @@ structure CallFacts (p : KeyPublic) (used : Nat) : Prop where
 
 theorem KeyInput.callFacts {p : KeyPublic} {original : State} {used : Nat}
     (h : KeyInput p original) (room : used + p.len ≤ p.randLen) : CallFacts p used := by
-  have fit : 184 ≤ p.sp.toNat := h.bounds.stackFits
+  have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
   have callNat : (callSp p).toNat = p.sp.toNat - 56 :=
     FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)
   have rootWrite (r : Region) (hr : r ∈ [rX p, rY p, rScratch p]) : r ∈ original.wr := by
@@ -88,9 +88,9 @@ theorem KeyInput.callFacts {p : KeyPublic} {original : State} {used : Nat}
     · exact (stackRead _ (by simp)).sub_left stackSub
     · exact ((stackRead _ (by simp)).sub_left stackSub).sub_right tape
     · exact (stackWrite _ (by simp)).sub_left stackSub
-    · have enough : 128 ≤ (callSp p).toNat := by rw [callNat]; omega
+    · have enough : 176 ≤ (callSp p).toNat := by rw [callNat]; omega
       rw [rCallStack, FrameStack.belowA, FrameStack.addr_sub' enough]
-      exact (Offset.base_disjoint_below _ (by decide : 128 + 28 ≤ 2 ^ 64)).symm
+      exact (Offset.base_disjoint_below _ (by decide : 176 + 28 ≤ 2 ^ 64)).symm
   · have lengths := h.bounds.domainLength
     have maxLength := h.bounds.maxLength
     unfold domainLenValid at lengths

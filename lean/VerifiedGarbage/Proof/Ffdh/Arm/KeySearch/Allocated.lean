@@ -15,7 +15,7 @@ theorem KeyLive.allocated_data {p : KeyPublic} {original s : State} {used keys s
     (h : KeyLive p original used keys scalars s) :
     Controller p.control (allocated 32 s) ∧ Workspace (allocated 32 s) (allocated 32 s).sp 32 ∧
       (rControl p).Disjoint (rArguments p) := by
-  have rootFit : 184 ≤ p.sp.toNat := h.input.bounds.stackFits
+  have rootFit : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
   have outerFit : 32 ≤ s.sp.toNat := by
     rw [h.sp, FrameStack.sub_toNat' (by omega : 24 ≤ p.sp.toNat)]; omega
   refine ⟨⟨h.input.control_space (fun _ hr => List.mem_cons_of_mem _ (by rw [h.wr]; exact List.mem_cons_of_mem _ hr)), h.pointer⟩,

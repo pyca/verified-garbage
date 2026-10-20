@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 
@@ -19,7 +19,7 @@ namespace VG.Proof.Ffdh.Arm.KeySearch
 open VG VG.Arm
 
 private theorem call_ready {q : KeyPoint} {u : State} (h : KeyCallCT q u) :
-    (Spec.Ffdh.generateKeyContract abi 128).pre (callState q.inputs q.used u) ∧
+    (Spec.Ffdh.generateKeyContract abi 176).pre (callState q.inputs q.used u) ∧
       Covers (callRd q.inputs q.used ++ callWr q.inputs) (u.rd ++ u.wr) ∧ Covers (callWr q.inputs) u.wr := by
   obtain ⟨_, s, live, _, _, _, room, args, mem, rest⟩ := h
   have sp := rest.sp.trans live.call_sp
@@ -27,14 +27,14 @@ private theorem call_ready {q : KeyPoint} {u : State} (h : KeyCallCT q u) :
     live.covers_reads room rest.rd rest.wr, live.covers_writes rest.wr⟩
 
 private theorem call_pub {q : KeyPoint} {u₁ u₂ : State} (h₁ : KeyCallCT q u₁) (h₂ : KeyCallCT q u₂) :
-    (Spec.Ffdh.generateKeyContract abi 128).pub (callState q.inputs q.used u₁) (callState q.inputs q.used u₂) := by
+    (Spec.Ffdh.generateKeyContract abi 176).pub (callState q.inputs q.used u₁) (callState q.inputs q.used u₂) := by
   obtain ⟨_, _, live₁, statuses₁, keys₁, scalars₁, room₁, args₁, mem₁, rest₁⟩ := h₁
   obtain ⟨_, _, live₂, statuses₂, keys₂, scalars₂, room₂, args₂, mem₂, rest₂⟩ := h₂
   exact call_public live₁ live₂ room₁ args₁ args₂ (rest₁.sp.trans live₁.call_sp) (rest₂.sp.trans live₂.call_sp)
     mem₁ mem₂ ((attempt_status live₁ statuses₁ keys₁ scalars₁ room₁).trans
       (attempt_status live₂ statuses₂ keys₂ scalars₂ room₂).symm)
 
-theorem attempt_call_ct (backend : VG.Proof.Ffdh.Arm.Backend) :
+theorem attempt_call_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
     RelCT isa (Two KeyCallCT) (.call backend.keyName backend.generateKey) (fun _ _ => True) := by
   intro s t tr₁ tr₂ u v ⟨q, h₁, h₂, _⟩ e₁ e₂
   have ct : RelCT isa (fun s t => KeyCallCT q s ∧ KeyCallCT q t)
@@ -47,7 +47,7 @@ theorem attempt_call_ct (backend : VG.Proof.Ffdh.Arm.Backend) :
     exact ⟨pre₁, pre₂, call_pub ha hb, reads₁, writes₁, reads₂, writes₂⟩
   exact ct _ _ _ _ _ _ ⟨h₁, h₂⟩ e₁ e₂
 
-theorem attempt_run_ct (backend : VG.Proof.Ffdh.Arm.Backend) :
+theorem attempt_run_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
     RelCT isa (Two KeyReady)
       (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRun

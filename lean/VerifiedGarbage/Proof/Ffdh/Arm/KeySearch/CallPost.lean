@@ -34,7 +34,7 @@ theorem call_post {p : KeyPublic} {original s u t : State} {used keys scalars : 
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (args : ArgumentContext p used keys scalars u) (sp : u.sp = callSp p)
     (mem : u.mem = callMem p used s.mem (callSp p))
-    (post : (generateKeyContract abi 128).post (callState p used u)
+    (post : (generateKeyContract abi 176).post (callState p used u)
       (t.withRegions (callRd p used) (callWr p))) : AttemptPost p original used t := by
   have facts := h.input.callFacts room
   have a0 := call_stackArg (j := 0) facts sp mem (by decide)

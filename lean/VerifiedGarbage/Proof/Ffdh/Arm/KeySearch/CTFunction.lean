@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFinish
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLoop
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Loop
 
@@ -17,7 +17,7 @@ frame compose without timing dependence beyond the disclosed search policy. -/
 namespace VG.Proof.Ffdh.Arm.KeySearch
 open VG VG.Arm
 
-private theorem loop_ready (backend : VG.Proof.Ffdh.Arm.Backend) (a : KeyPublic × List Nat) (s : State)
+private theorem loop_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend) (a : KeyPublic × List Nat) (s : State)
     (h : Entered a s) :
     WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
       s (KeyCTDone a.1) := by
@@ -27,7 +27,7 @@ private theorem loop_ready (backend : VG.Proof.Ffdh.Arm.Backend) (a : KeyPublic 
     (n := 128 * a.1.keys + a.1.scalars + 1) ?_) (fun _ result => ⟨original, _, result⟩)
   exact ⟨0, a.1.keys, a.1.scalars, rfl, live, rfl, rfl⟩
 
-theorem body_ct (backend : VG.Proof.Ffdh.Arm.Backend) : RelCT isa (Two PushedStart)
+theorem body_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) : RelCT isa (Two PushedStart)
     (.seq (.block VG.Impl.Ffdh.Arm.KeySearch.entry)
       (.seq (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
         (.block VG.Impl.Ffdh.Arm.KeySearch.finish))) (fun _ _ => True) := by
@@ -44,7 +44,7 @@ private theorem push_search_eq {s t : State}
   split at h <;> cases h
   rfl
 
-theorem function_ct (backend : VG.Proof.Ffdh.Arm.Backend) : RelCT isa (Two KeyStart)
+theorem function_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) : RelCT isa (Two KeyStart)
     (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.code
   refine RelCT.frame (fun _ _ ⟨_, _, _, sp⟩ => sp) ?_
