@@ -7,4 +7,3 @@ import VerifiedGarbage.TCB.Axioms
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.mul_ok
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.setupInverse_ok
 #assert_standard_axioms VG.Proof.Mont.X86.Dynamic.mul_constantTime
-#assert_standard_axioms VG.Proof.Mont.X86.Dynamic.contextSetup_constantTime

@@ -110,47 +110,6 @@ theorem encapsHSel_keep {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk 
   · exact .inr d12
   · exact .inl rfl
 
-/-- Decapsulation with 16-bit polynomials, against the contract of `K` with
-the first `n` bytes of `scratch`. -/
-theorem decaps16_narrow {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk K.L) (v : Sample4Impl)
-    (W16 : Decaps16.Dc16Wf (narrowK K n)) {m : String} {c : Prog isa} (hs : v.callee.s16 = some (m, c))
-    (hctl : ctlOk (kemDecaps16 K v.callee (m, c)) = true) (hsat : ∃ s, (decapsK K.L).pre s) :
-    Verified X86_64.target (kemDecaps16 K v.callee (m, c)) (decapsK (narrowL K.L n)) :=
-  Verified.of_correct (kemDecaps16_correct (K := narrowK K n) (hK.narrow n) v W16 hs hctl)
-    (kemDecaps16_ct (K := narrowK K n) (hK.narrow n) v W16 hs)
-    (.refl (hsat.elim fun _ hs => ⟨_, decapsK_pre hn hs⟩))
-
-theorem decapsSel_verified {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk K.L) (v : Sample4Impl)
-    (W16 : Decaps16.Dc16Wf (narrowK K n)) (W : Decaps.DcWf K.L) {wc wd : List Nat} (C : KemCalls K.L wc wd)
-    {k : Contract isa} (hk : (decapsK K.L).Implies k)
-    (hctl16 : ∀ n c, S16Ok c → ctlOk (kemDecaps16 K v.callee (n, c)) = true)
-    (hctl : ctlOk (kemDecaps K.L v.callee) = true) :
-    Verified X86_64.target (kemDecapsSel K v.callee) k := by
-  unfold kemDecapsSel
-  match hs : v.callee.s16 with
-  | some (m, c) =>
-    exact Verified.of_implies (decapsK_widen hn
-      (decaps16_narrow hn hK v W16 hs (hctl16 m c (v.s16 m c hs)) hk.sat_left) hk.sat_left) hk
-  | none => exact Verified.of_correct (kemDecaps_correct v W C hctl) (kemDecaps_ct v W C) hk
-
-/-- Decapsulation with 16-bit polynomials leaves `scratch` from its `n`-th
-byte on as it was. -/
-theorem decapsSel_keep {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk K.L) (v : Sample4Impl)
-    (W16 : Decaps16.Dc16Wf (narrowK K n)) {m : String} {c : Prog isa} (hs : v.callee.s16 = some (m, c))
-    (hctl : ctlOk (kemDecaps16 K v.callee (m, c)) = true) (hsp : SpSafe (kemDecaps16 K v.callee (m, c)))
-    (hd : (kemDecaps16 K v.callee (m, c)).x86_64Depth ≤ 32) {s : State} (hp : (decapsK K.L).pre s)
-    {t : List Leak} {s' : State} (he : Exec isa (kemDecapsSel K v.callee) s t s') {i : Nat} (hi : n ≤ i)
-    (hil : i < K.L.scr) : s'.mem (s.gpr .rcx + BitVec.ofNat 64 i) = s.mem (s.gpr .rcx + BitVec.ofNat 64 i) := by
-  unfold kemDecapsSel at he
-  rw [hs] at he
-  obtain ⟨-, hwr, -, -, -, -, d5, -, -, -, -, -, -, -, b4, -, -, -, o4⟩ := id hp
-  refine verified_keepTail (decaps16_narrow hn hK v W16 hs hctl ⟨s, hp⟩) hsp hd (decapsK_pre hn hp)
-    (by rw [hwr]; exact prefix2 hn) he o4 (fun r hr => ?_) b4 hi hil
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · exact .inr d5
-  · exact .inl rfl
-
 /-- No instruction of the top-level function `kemKeyGenSel K c` writes the
 stack pointer, if neither of the functions it may run does. -/
 theorem keyGenSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
@@ -165,14 +124,6 @@ theorem encapsHSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
     (h16 : ∀ n c, S16Ok c → (kemEncapsH16 K v.callee (n, c)).all p = true)
     (h : (kemEncapsH K.L v.callee).all p = true) : (kemEncapsHSel K v.callee).all p = true := by
   unfold kemEncapsHSel
-  match hs : v.callee.s16 with
-  | some (n, c) => exact h16 n c (v.s16 n c hs)
-  | none => exact h
-
-theorem decapsSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
-    (h16 : ∀ n c, S16Ok c → (kemDecaps16 K v.callee (n, c)).all p = true)
-    (h : (kemDecaps K.L v.callee).all p = true) : (kemDecapsSel K v.callee).all p = true := by
-  unfold kemDecapsSel
   match hs : v.callee.s16 with
   | some (n, c) => exact h16 n c (v.s16 n c hs)
   | none => exact h

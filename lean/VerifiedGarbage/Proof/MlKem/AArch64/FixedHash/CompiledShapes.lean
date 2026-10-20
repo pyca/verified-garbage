@@ -76,13 +76,6 @@ theorem deG768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
         [⟨.x28,KEM.MB,32⟩,⟨.x25,2336,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩]) :=
  compiled_same (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
-theorem deJ768_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,2368,32⟩,⟨.x26,0,lay768.ctLen⟩] [⟨.x28,KEM.JB,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,2368,32⟩,⟨.x26,0,lay768.ctLen⟩] [⟨.x28,KEM.JB,32⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
-
 theorem kgG1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
  (compiled c .x28 KG.ST KG.WK 72 6
         [⟨.x25,0,32⟩,⟨.x28,KG.BK,1⟩] [⟨.x28,KG.SB,32⟩,⟨.x28,KG.SG,32⟩])
@@ -125,10 +118,4 @@ theorem deG1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
         [⟨.x28,KEM.MB,32⟩,⟨.x25,3104,32⟩] [⟨.x28,KEM.KP,32⟩,⟨.x28,KEM.RB,32⟩]) :=
  compiled_same (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 
-theorem deJ1024_compiled (c : Impl.Sha3.AArch64.Callee) : Fusion.Same
- (compiled c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,3136,32⟩,⟨.x26,0,Impl.MlKem1024.AArch64.lay1024.ctLen⟩] [⟨.x28,KEM.JB,32⟩])
- (Impl.MlKem.AArch64.FixedHash.code c .x28 KEM.ST KEM.WK 136 0x1f
-        [⟨.x25,3136,32⟩,⟨.x26,0,Impl.MlKem1024.AArch64.lay1024.ctLen⟩] [⟨.x28,KEM.JB,32⟩]) :=
- compiled_same (by kernel_rfl) (by kernel_rfl) (by decide +kernel)
 end VG.Proof.MlKem.AArch64.FixedHash

@@ -11,7 +11,8 @@ import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Bignum.Octets
+-- Proofs inside exposed definitions (structure values) use these: Lean needs them public.
+public import VerifiedGarbage.Proof.Bignum.Octets -- shake: keep
 
 /-! # x86-64 DSA key derivation verified against the shared contract -/
 

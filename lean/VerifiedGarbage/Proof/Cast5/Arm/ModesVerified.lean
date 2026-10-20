@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import Batteries.Logic

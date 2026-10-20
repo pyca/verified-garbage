@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Impl.Weierstrass.X86.Mont
-public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 import VerifiedGarbage.Proof.Mont.X86.Words
 import VerifiedGarbage.Impl.Weierstrass.Slots
 import VerifiedGarbage.Impl.Weierstrass.X86

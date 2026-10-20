@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
-import VerifiedGarbage.Proof.MlKem.X86_64.EcBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke

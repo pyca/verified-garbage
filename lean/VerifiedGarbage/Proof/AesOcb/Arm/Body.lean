@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Ocb.State
-public import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.Ocb.Bytes
 
 /-!
 # AES-OCB on ARMv7: the data (`body`)

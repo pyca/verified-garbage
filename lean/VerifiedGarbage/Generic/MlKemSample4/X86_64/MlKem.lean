@@ -125,7 +125,7 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     stack := 32
     verified := Proof.MlKem1024.X86_64.decaps1024_verified v
     spSafe := Proof.MlKem.X86_64.decaps1024_spSafe v
-    written := Proof.MlKem1024.X86_64.written v
+    written := Proof.MlKem1024.X86_64.writtenEnc v
     writtenOk := Proof.MlKem1024.X86_64.decaps1024_written v
     features := v.features }]
 

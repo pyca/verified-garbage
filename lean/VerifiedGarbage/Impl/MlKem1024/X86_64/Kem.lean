@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
+import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
+import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
+import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
 public import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress

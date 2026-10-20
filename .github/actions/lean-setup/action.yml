@@ -61,7 +61,7 @@ runs:
     # modules: they change only with the toolchain, the manifest or the
     # list, so a hit skips the clones, building Mathlib's `cache` tool and
     # the download. Archives have their own directory, index and files.tar,
-    # separate from the project build. The new path/key starts with a miss.
+    # separate from the project build.
     - name: Restore Mathlib and its dependencies
       id: lake-packages
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

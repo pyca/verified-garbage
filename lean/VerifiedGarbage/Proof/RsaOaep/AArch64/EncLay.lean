@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 /-!
 # RSAES-OAEP encryption on AArch64: where everything is

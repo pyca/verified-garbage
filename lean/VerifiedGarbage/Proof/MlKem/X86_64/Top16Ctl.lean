@@ -34,7 +34,7 @@ elab "closed16_in " v:ident c:ident : tactic => withMainContext do
     let e ← elabTerm x none
     if g.containsFVar e.fvarId! then throwError "the goal mentions {e}"
   let calls := [``Impl.MlKem.X86_64.kemKeyGen16, ``Impl.MlKem.X86_64.kemEncapsH16,
-    ``Impl.MlKem.X86_64.kemDecaps16, ``Impl.MlKem.X86_64.Top16.kgTail, ``Impl.MlKem.X86_64.Top16.kgRest,
+    ``Impl.MlKem.X86_64.Top16.kgTail, ``Impl.MlKem.X86_64.Top16.kgRest,
     ``Impl.MlKem.X86_64.Top16.encRest, ``Impl.MlKem.X86_64.Top16.encrypt,
     ``Impl.MlKem.X86_64.Kem.kpkeKgAt, ``Impl.MlKem.X86_64.Kem.kpkeEncAt, ``Impl.MlKem.X86_64.Kem.kpkeDecAt,
     ``Impl.MlKem.X86_64.kpkeKg, ``Impl.MlKem.X86_64.kpkeEnc, ``Impl.MlKem.X86_64.kpkeDec]

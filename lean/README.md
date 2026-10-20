@@ -176,7 +176,11 @@ whose one layer is `lean-cache.tar.zst`: `.lake/build` and `.lake/packages`
 relative to `lean/`, with each module's outputs in one `.ltar` archive, the
 format of Lake's `ltar` facet and Mathlib's cache, and every other file (the
 outputs' `.hash` files, the dependencies' checkouts) in one tar,
-`.lake/ltar/files.tar`, first in the layer (`ci/lean_cache.py`). Only
+`.lake/ltar/files.tar`, first in the layer (`ci/lean_cache.py`). The publisher
+combines the existing project and dependency module caches with
+`ci/lean_cache.py bundle`, without expanding their compiled outputs. The
+project cache records its dependency cache key; older caches or missing
+dependency caches use the normal setup path first. Only
 the latest version is retained. CI compares the checked build's cache key
 with the manifest's `io.pyca.lean.cache-key` annotation and skips packaging
 and publishing when it matches, so Rust- or docs-only changes do not create

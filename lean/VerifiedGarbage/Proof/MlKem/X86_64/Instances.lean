@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
 
 /-!
 # ML-KEM on x86-64: the stack pointer, for each implementation of `Sample4`
@@ -37,7 +39,7 @@ theorem encaps_spSafe (v : Sample4Impl) :
 
 theorem decaps_spSafe (v : Sample4Impl) :
     (Impl.MlKem.X86_64.decaps v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  decapsSel_sp v (fun _ c S => by s16_sp v c S kpke768) (by s4_sp v)
+  decapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B kpke768) (by s4_sp v)
 
 theorem keyGen1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.keyGen1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
@@ -59,7 +61,7 @@ theorem encaps1024_spSafe (v : Sample4Impl) :
 
 theorem decaps1024_spSafe (v : Sample4Impl) :
     (Impl.MlKem1024.X86_64.decaps1024 v.callee).all (fun i => !X86_64.isa.writesSp i) = true :=
-  decapsSel_sp v (fun _ c S => by s16_sp v c S MlKem1024.X86_64.kpke1024) (by
+  decapsSel_sp v (fun _ c b S B => by ek16_sp v c b S B MlKem1024.X86_64.kpke1024) (by
     s4_sp v
     all_goals first | exact MlKem1024.X86_64.ce1024_sp _ | exact MlKem1024.X86_64.dd1024_sp _)
 

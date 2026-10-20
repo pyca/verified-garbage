@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 /-!
 # One main squeeze of a hashing pair
 
-`step3_ok`: block `blk` of `pad(ek)` XORed into the third state, the `x3`
+`step3_ok`: block `blk` of the message's padding XORed into the third state, the `x3`
 call, then both SHAKE128 states' 21 words to their stream buffers.
 -/
 
@@ -63,9 +63,9 @@ def step3Writes (p a b st sp : Addr) : List Region :=
   [pairR p, rateR21 a, rateR21 b, callR (p + 1536), stR st, frame sp]
 
 /-- What a main squeeze needs of its memory. -/
-structure StepLay (L : Impl.MlKem.AArch64.KemLay) (p a b e st : Addr) (s : State) : Prop where
+structure StepLay (S : Impl.MlKem.AArch64.Hybrid.HSrc) (p a b e st : Addr) (s : State) : Prop where
   cov : Covers [pairR p, stR st, callR (p + 1536)] s.wr
-  ek : Covers [⟨e, L.ekLen⟩] (s.rd ++ s.wr)
+  ek : Covers [⟨e, S.len⟩] (s.rd ++ s.wr)
   hin : ∀ i < 25, InRegions (s.rd ++ s.wr) (wordAddr p i) 16
   hwa : ∀ i < 21, InRegions s.wr (outAddr a i) 8
   hwb : ∀ i < 21, InRegions s.wr (outAddr b i) 8
@@ -78,27 +78,27 @@ structure StepLay (L : Impl.MlKem.AArch64.KemLay) (p a b e st : Addr) (s : State
   dSC : (stR st).Disjoint (callR (p + 1536))
   dSA : (stR st).Disjoint (rateR21 a)
   dSB : (stR st).Disjoint (rateR21 b)
-  dSE : (stR st).Disjoint ⟨e, L.ekLen⟩
+  dSE : (stR st).Disjoint ⟨e, S.len⟩
   fP : (frame s.sp).Disjoint (pairR p)
   fS : (frame s.sp).Disjoint (stR st)
   fC : (frame s.sp).Disjoint (callR (p + 1536))
 
 /-- **A main squeeze** absorbing block `blk`. -/
-theorem step3_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p a b e st : Addr} {A B : Spec.Sha3.State}
-    {E : List Byte} {blk : Nat}
+theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : Addr}
+    {A B : Spec.Sha3.State} {E : List Byte} {blk : Nat} (hS : SrcOk S)
     (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = a) (h21 : s.gpr .x21 = b)
-    (h25 : s.gpr .x25 = e) (h28 : s.gpr .x28 = st)
-    (hb : 136 * blk < L.ekLen) (h8 : L.ekLen % 8 = 0) (hlim : L.ekLen ≤ 4096)
-    (hE : bytesAt s.mem e L.ekLen = E) (hst : stateAt s.mem st = hstate E blk)
-    (pair : PairAt s.mem p A B) (hl : StepLay L p a b e st s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.step3 L blk) s fun t =>
+    (h25 : s.gpr S.r + BitVec.ofNat 64 S.base = e) (h28 : s.gpr .x28 = st)
+    (hb : 136 * blk < S.len)
+    (hE : bytesAt s.mem e S.len = E) (hst : stateAt s.mem st = hstate E blk (dB S))
+    (pair : PairAt s.mem p A B) (hl : StepLay S p a b e st s) :
+    WP isa (Impl.MlKem.AArch64.Hybrid.step3 S blk) s fun t =>
       Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
       Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
-      stateAt t.mem st = hstate E (blk + 1) ∧
+      stateAt t.mem st = hstate E (blk + 1) (dB S) ∧
       t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 := by
-  refine WP.seq (WP.mono (absorbBlock_ok L h25 h28 hb h8 hlim hE hst hl.ek
+  refine WP.seq (WP.mono (absorbBlock_ok S hS h25 h28 hb hE hst hl.ek
     (covers_mono hl.cov (by simp))
     hl.dSE) fun u ⟨ku, fu, su⟩ => ?_)
   have pu : PairAt u.mem p A B :=

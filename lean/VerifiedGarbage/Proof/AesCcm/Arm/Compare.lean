@@ -14,9 +14,9 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Tag
-public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
-public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-CCM on ARMv7: checking a received tag (`recv`, `cmp o`)
