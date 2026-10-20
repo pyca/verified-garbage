@@ -38,14 +38,14 @@ theorem selectBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
   rw [selectBody, WP.seq_iff]
   refine WP.mono (selectStep_ok s _ _ _ (addr inv.outPtr (by omega)) (addr inv.aPtr (by omega))
     (addr inv.bPtr (by omega)) (writable _ (by omega)) (readable _ (by omega))
-    (readable _ (by omega)) (by rw [inv.rest.gpr .r11 (by simp [selectLoopClobbers])]; exact hc)) ?_
+    (readable _ (by omega)) (by rw [inv.rest.gpr .r11 (by simp [selectLoopClobbers])]; exact hc) inv.mask) ?_
   rintro u ⟨mem, keep⟩
   obtain ⟨outside, prefixValue⟩ := select_value_step ctx inv hi mem
   refine WP.mono (subAdvance_ok u) ?_
   rintro t ⟨p0, p10, p12, count, zero, mem2, keep2⟩
   have uc : u.gpr .lr = BitVec.ofNat 32 (n - i) :=
     (keep.gpr .lr (by simp [selectClobbers])).trans inv.count
-  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨by omega, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [p0, keep.gpr .r0 (by simp [selectClobbers]), inv.outPtr]
     change base + BitVec.ofNat 32 (o + 4 * i) + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
@@ -64,6 +64,9 @@ theorem selectBody_ok {s0 s : State} {base : BitVec 32} {size o a b n i : Nat}
     congr 1
   · rw [mem2]; exact outside
   · rw [mem2]; exact prefixValue
+  · rw [keep2.gpr .r4 (by simp), keep.gpr .r4 (by simp [selectClobbers]),
+      keep2.gpr .r11 (by simp), keep.gpr .r11 (by simp [selectClobbers])]
+    exact inv.mask
   · refine inv.rest.trans ((keep.mono ?_).trans (keep2.mono ?_))
     all_goals intro r hr; cases r <;> simp_all [selectClobbers, selectLoopClobbers]
   · rw [zero, uc]

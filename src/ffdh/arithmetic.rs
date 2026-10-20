@@ -6,6 +6,12 @@ use crate::arch::ffdh::{
     VG_FFDH_GENERATE_KEY_ADX_FEATURES, VG_FFDH_GENERATE_KEY_SEARCH_ADX_FEATURES,
     VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES,
 };
+#[cfg(target_arch = "arm")]
+use crate::arch::ffdh::{
+    VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES, VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES,
+    VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES, VG_FFDH_EXCHANGE_UMAAL_FEATURES,
+    VG_FFDH_GENERATE_KEY_SEARCH_UMAAL_FEATURES, VG_FFDH_GENERATE_KEY_UMAAL_FEATURES,
+};
 use crate::cpu::Features;
 use alloc::{vec, vec::Vec};
 
@@ -24,7 +30,7 @@ pub(super) fn scalar(a: &[u8], len: usize) -> Vec<u8> {
     out
 }
 /// The implementations of the verified functions FFDH calls: the baseline
-/// ISA's, or on x86-64 their `_adx` variants. Each use selects it from the
+/// ISA's, x86-64 ADX variants, or ARMv7 UMAAL variants. Each use selects it from the
 /// features of the functions it calls; RSA's private-key routines have
 /// additional feature requirements that do not apply to these functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -32,6 +38,8 @@ pub(super) enum Backend {
     Baseline,
     #[cfg(target_arch = "x86_64")]
     Adx,
+    #[cfg(target_arch = "arm")]
+    Umaal,
 }
 impl Backend {
     /// The implementation of the FFDH operations (`vg_ffdh_*`, in
@@ -53,6 +61,21 @@ impl Backend {
             },
         ) {
             return Self::Adx;
+        }
+        #[cfg(target_arch = "arm")]
+        if _f.contains(
+            const {
+                Features::all(&[
+                    VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES,
+                    VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES,
+                    VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES,
+                    VG_FFDH_EXCHANGE_UMAAL_FEATURES,
+                    VG_FFDH_GENERATE_KEY_UMAAL_FEATURES,
+                    VG_FFDH_GENERATE_KEY_SEARCH_UMAAL_FEATURES,
+                ])
+            },
+        ) {
+            return Self::Umaal;
         }
         Self::Baseline
     }
@@ -97,6 +120,22 @@ mod tests {
         for &(features, expected) in cases {
             let selected = Backend::ffdh(Features::of(features));
             assert_eq!(selected, expected, "{features:?}");
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod arm_tests {
+    use super::*;
+    #[test]
+    fn backend_feature_requirements() {
+        for (names, expected) in [
+            (&[][..], Backend::Baseline),
+            (&["neon"][..], Backend::Baseline),
+            (&["umaal"][..], Backend::Umaal),
+            (&["neon", "umaal"][..], Backend::Umaal),
+        ] {
+            assert_eq!(Backend::ffdh(Features::of(names)), expected);
         }
     }
 }

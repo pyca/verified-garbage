@@ -9,11 +9,13 @@ public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
 namespace VG.Impl.Bignum.Arm
 open VG VG.Arm
 
-/-- Select `r1` for bit zero or `r2` for bit one, putting the result in
-`r3`. The bit in `r11` and the flags are preserved. -/
+/-- Form the selection mask once for the whole row. -/
+def selectMask : List Instr :=
+  [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.reg .r11)]
+
+/-- Select under the precomputed mask in `r4`; preserve the mask and flags. -/
 def selectWord : List Instr :=
-  [.mov .r4 (.imm 0), .dp .sub .r4 .r4 (.reg .r11),
-   .dp .eor .r3 .r1 (.reg .r2), .dp .and .r3 .r3 (.reg .r4),
+  [.dp .eor .r3 .r1 (.reg .r2), .dp .and .r3 .r3 (.reg .r4),
    .dp .eor .r3 .r3 (.reg .r1)]
 
 def selectStep : Prog isa :=
@@ -24,6 +26,6 @@ def selectBody : Prog isa := .seq selectStep (.block subAdvance)
 
 /-- Select `lr` words from `r10` or `r12` using the secret bit `r11`,
 writing to `r0`. The count is nonzero. -/
-def selectRow : Prog isa := .loop selectBody .ne
+def selectRow : Prog isa := .seq (.block selectMask) (.loop selectBody .ne)
 
 end VG.Impl.Bignum.Arm

@@ -1,0 +1,59 @@
+module
+
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Framework.Registration
+
+/-! Emit every native ARMv7 FFDH backend and propagate its exact CPU features. -/
+
+@[expose] public section
+namespace VG.Generic.Ffdh.Arm.Domain
+open VG
+
+def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
+  [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
+    suffix := v.suffix
+    features := v.features
+    stack := 128
+    code := v.checkDomain
+    verified := v.checkDomain_verified
+    notes := ["ARMv7: RSA's packed-u64 working space and native 32-bit arithmetic check the \
+      modulus, generator, subgroup bound, divisibility and subgroup relation. Exponentiation \
+      uses fixed three-bit windows; every selected Montgomery row is verified."] },
+  Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
+    suffix := v.suffix
+    features := v.features
+    stack := 128
+    code := v.checkPublic
+    verified := v.checkPublic_verified
+    notes := ["ARMv7: native range checking and optional subgroup exponentiation use RSA's \
+      fixed three-bit window arithmetic. Domain and public-value bytes are public."] },
+  Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
+    suffix := v.suffix
+    features := v.features
+    stack := 128
+    code := v.checkPrivate
+    verified := v.checkPrivate_verified
+    notes := ["ARMv7: scalar bounds, public-value range, subgroup membership and equality with \
+      the generator's power run in verified code. RSA's fixed three-bit windows process \
+      every supplied private-scalar byte, including leading zeros."] },
+  Spec.Ffdh.exchangeApi.artifact VG.Arm.target {
+    suffix := v.suffix
+    features := v.features
+    stack := 128
+    code := v.exchange
+    verified := v.exchange_verified
+    notes := ["ARMv7: RSA's fixed three-bit window exponentiator computes the shared value; \
+      range checking, fixed-width export, and rejection masking stay in verified code. \
+      Output is cleared without branching on a degenerate result."] },
+  Spec.Ffdh.generateKeyApi.artifact VG.Arm.target {
+    suffix := v.suffix
+    features := v.features
+    stack := 128
+    code := v.generateKey
+    verified := v.generateKey_verified
+    notes := ["ARMv7: public-bound scanning, entropy masking, scalar rejection, fixed three-bit \
+      window exponentiation, and masking of both encodings run in verified code. The \
+      exponent uses the public bound's significant byte width. A generated power's \
+      subgroup membership follows from the checked generator, so only its range is tested."] }]
+
+end VG.Generic.Ffdh.Arm.Domain

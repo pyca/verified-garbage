@@ -14,14 +14,15 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest wp_ldr wp_str)
 
-abbrev selectClobbers : List Reg := [.r1, .r2, .r3, .r4]
+abbrev selectClobbers : List Reg := [.r1, .r2, .r3]
 
 theorem selectStep_ok (s : State) (o a b : Addr)
     (ho : State.addr (s.gpr .r0 + BitVec.ofNat 32 0) = o)
     (ha : State.addr (s.gpr .r10 + BitVec.ofNat 32 0) = a)
     (hb : State.addr (s.gpr .r12 + BitVec.ofNat 32 0) = b)
     (wo : InRegions s.wr o 4) (ra : InRegions (s.rd ++ s.wr) a 4)
-    (rb : InRegions (s.rd ++ s.wr) b 4) (hc : (s.gpr .r11).toNat ≤ 1) :
+    (rb : InRegions (s.rd ++ s.wr) b 4) (hc : (s.gpr .r11).toNat ≤ 1)
+    (mask : s.gpr .r4 = 0 - s.gpr .r11) :
     WP isa selectStep s fun t =>
       t.mem = s.mem.writeW o (if (s.gpr .r11).toNat = 0 then s.mem.readW a 32 else s.mem.readW b 32) ∧
       Rest selectClobbers s t := by
@@ -34,7 +35,8 @@ theorem selectStep_ok (s : State) (o a b : Addr)
   have cc : s2.gpr .r11 = s.gpr .r11 :=
     (u2.other .r11 (by decide)).trans (u1.other .r11 (by decide))
   rw [WP.seq_iff]
-  refine WP.mono (selectWord_ok s2 (by rw [cc]; exact hc)) ?_
+  refine WP.mono (selectWord_ok s2 (by rw [cc]; exact hc)
+    (by rw [u2.other .r4 (by decide), u1.other .r4 (by decide), cc]; exact mask)) ?_
   rintro s3 ⟨value, keep⟩
   have ptr : s3.gpr .r0 = s.gpr .r0 := (keep.regs .r0 (by simp)).trans
     ((u2.other .r0 (by decide)).trans (u1.other .r0 (by decide)))
@@ -42,7 +44,7 @@ theorem selectStep_ok (s : State) (o a b : Addr)
     (by rw [keep.wr, u2.wr, u1.wr]; exact wo) fun t ut => WP.block_nil ?_
   refine ⟨?_, ?_⟩
   · rw [ut.mem, keep.mem, u2.mem, u1.mem, value, aa, bb, cc]
-  · have k3 : Rest [.r3, .r4] s2 s3 := ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩
+  · have k3 : Rest [.r3] s2 s3 := ⟨keep.regs, keep.rd, keep.wr, keep.sp⟩
     exact (u1.rest (by simp [selectClobbers])).trans ((u2.rest (by simp [selectClobbers])).trans
       ((k3.mono (by simp [selectClobbers])).trans (ut.rest _)))
 

@@ -49,10 +49,12 @@ impl Domain {
             Backend::Baseline => vg_ffdh_check_domain,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_check_domain_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_domain_umaal,
         };
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
-        // Rust objects. The ADX variant is selected only when the CPU has
+        // Rust objects. The CPU variant is selected only when the CPU has
         // its generated feature set.
         let ok = unsafe {
             f(
@@ -78,10 +80,12 @@ impl Domain {
             Backend::Baseline => vg_ffdh_check_public,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_check_public_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_public_umaal,
         };
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
-        // The ADX variant is selected only when the CPU has its generated
+        // The CPU variant is selected only when the CPU has its generated
         // feature set.
         unsafe {
             f(
@@ -108,6 +112,8 @@ impl Domain {
             Backend::Baseline => vg_ffdh_check_private,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_check_private_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_check_private_umaal,
         };
         // SAFETY: as in `check_public`, and `x` is 1 to `p_len` bytes.
         unsafe {
@@ -154,13 +160,15 @@ impl Domain {
             Backend::Baseline => vg_ffdh_generate_key_search,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_generate_key_search_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_umaal,
         };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
         // been passed to this function since, which keeps its words as the
         // contract's precondition needs; the domain was checked by
         // `vg_ffdh_check_domain`; `x` and `y` are `p_len` bytes and `ws`
-        // `16 p_len + 32` words. All are distinct Rust objects. The ADX
+        // `16 p_len + 32` words. All are distinct Rust objects. The CPU
         // variant is selected only when the CPU has its generated feature
         // set.
         let status = unsafe {
@@ -195,6 +203,8 @@ impl Domain {
             Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_umaal,
         };
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
         // `ws` and the variant as in `check_public`; all are distinct
@@ -233,6 +243,8 @@ impl Domain {
             Backend::Baseline => vg_ffdh_exchange,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_exchange_adx,
+            #[cfg(target_arch = "arm")]
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_exchange_umaal,
         };
         // SAFETY: `out` and `y` are `p_len` bytes, `x` 1 to `p_len`, the
         // domain, `ws` and the variant as in `check_public`; all are

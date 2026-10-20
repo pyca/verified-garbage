@@ -9,13 +9,13 @@
 //! need. Rust obtains random bytes and packs inputs and results. Parameter
 //! generation runs entirely in verified code, including its attempt limit
 //! and entropy requests; Rust allocates and fills the random tape it asks
-//! for.
+//! for. Parameter generation is currently available on x86-64 and AArch64.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -109,6 +109,7 @@ impl Parameters {
     /// generator 2 or 5. The result omits q, as PKCS #3/OpenSSL does.
     /// Miller–Rabin uses 64 independent uniform witnesses through 2048 bits
     /// and 128 above. There is no primality certificate.
+    #[cfg(not(target_arch = "arm"))]
     pub fn generate(bits: usize, generator: u32) -> Result<Self, Error> {
         generation::parameters(bits, generator, getrandom::fill)
     }
@@ -361,6 +362,10 @@ mod tests {
         let (mut x, mut y) = (vec![0xa5; 64], vec![0x5a; 64]);
         let mut state = domain.key_state();
         assert_eq!(&state[..4], &[128, 128, 64, 64]);
+        // Only the budgets and width constrain a call. The incoming
+        // request and private controller workspace may hold arbitrary
+        // u64 words, including nonzero upper halves on a 32-bit target.
+        state[3..].fill(u64::MAX);
         assert_eq!(
             domain.key_search(&mut state, &tape, &mut x, &mut y),
             (1, 192, 0)
@@ -372,6 +377,7 @@ mod tests {
         // consumed, and the controller asks for one attempt's bytes again,
         // with the scalar budget one smaller.
         let mut state = domain.key_state();
+        state[3..].fill(u64::MAX);
         let (status, used, request) = domain.key_search(&mut state, &tape[..100], &mut x, &mut y);
         assert_eq!((status, used, request), (0, 64, 64));
         assert_eq!(&state[..4], &[128, 127, 64, 64]);
@@ -390,6 +396,38 @@ mod tests {
         );
         assert_eq!(&state[..4], &[0, 0, 64, 0]);
         assert!(x.iter().chain(&y).all(|&b| b == 0));
+    }
+    #[test]
+    fn partial_limb_moduli_and_short_exponents() {
+        // Algebraic regression fixtures, with no claim of primality:
+        // p = leading * 256^(len-1) + 1, g = 2. With x = 3 and
+        // peer exponent 7, the public values are 8 and 128 and the
+        // shared value is 2^21, below each modulus. These widths cross
+        // byte, native-word, and packed-u64 workspace boundaries.
+        for len in [65, 71, 129, 1024] {
+            for leading in [1, 128] {
+                let mut p = vec![0; len];
+                p[0] = leading;
+                p[len - 1] = 1;
+                let params = Parameters::from_components(&p, &[2], None).unwrap();
+                let key = PrivateKey::from_components(&params, &[8], &[3]).unwrap();
+                let peer = PublicKey::from_components(&params, &[128]).unwrap();
+                let out = key.exchange(&peer).unwrap();
+                assert!(out[..len - 3].iter().all(|&b| b == 0));
+                assert_eq!(&out[len - 3..], &[32, 0, 0]);
+                let generated = params
+                    .generate_with(|out| {
+                        out.fill(0);
+                        *out.last_mut().unwrap() = 3;
+                        Ok::<_, ()>(())
+                    })
+                    .unwrap();
+                assert_eq!(
+                    generated.public_key().component(),
+                    key.public_key().component()
+                );
+            }
+        }
     }
     #[test]
     fn generated_attempt_masks_failed_outputs() {

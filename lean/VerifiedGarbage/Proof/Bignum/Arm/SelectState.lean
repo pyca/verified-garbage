@@ -26,6 +26,7 @@ structure SelectInv (s0 : State) (base : BitVec 32) (o a b n i : Nat) (s : State
   outside : Outside (State.addr base) o (4 * i) s0.mem s.mem
   value : val32 s.mem (State.addr base) o i = if (s0.gpr .r11).toNat = 0 then
     val32 s0.mem (State.addr base) a i else val32 s0.mem (State.addr base) b i
+  mask : s.gpr .r4 = 0 - s.gpr .r11
   rest : Rest selectLoopClobbers s0 s
 
 theorem select_value_step {s0 s t : State} {base : BitVec 32} {size o a b n i : Nat}

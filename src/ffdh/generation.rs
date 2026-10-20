@@ -1,14 +1,21 @@
-//! Probable safe-prime parameter generation. The whole search runs in
+//! Entropy-tape service and safe-prime parameter generation on x86-64/AArch64.
+//! The whole parameter search runs in
 //! verified code (`vg_ffdh_generate_parameters`): the candidates, their
 //! Miller–Rabin witnesses, the attempt limit and the length of each entropy
 //! request. Rust allocates, fills the random tape the controller asks for
 //! and selects the implementation for the CPU.
+use super::Error;
+#[cfg(not(target_arch = "arm"))]
+use super::Parameters;
+#[cfg(not(target_arch = "arm"))]
 use super::arithmetic::Backend;
-use super::{Error, Parameters};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::vg_ffdh_generate_parameters_adx;
+#[cfg(not(target_arch = "arm"))]
 use crate::arch::ffdh::{vg_ffdh_generate_parameters, vg_ffdh_parameter_generation_init};
+#[cfg(not(target_arch = "arm"))]
 use crate::cpu::detected;
+#[cfg(not(target_arch = "arm"))]
 use crate::rsa::Scratch;
 use crate::zeroize::zeroize;
 use alloc::{vec, vec::Vec};
@@ -57,7 +64,9 @@ pub(super) fn serve<E>(
 /// The parameter-generation controller's 16 words: the attempts left, the
 /// width of p in bytes, the entropy cap and the next request, then private
 /// working space (`vg_ffdh_parameter_generation_init`).
+#[cfg(not(target_arch = "arm"))]
 struct Controller(Scratch);
+#[cfg(not(target_arch = "arm"))]
 impl Controller {
     fn new(bits: usize, generator: u32) -> Result<Self, Error> {
         let mut state = Self(Scratch::new(16));
@@ -114,6 +123,7 @@ impl Controller {
     }
 }
 
+#[cfg(not(target_arch = "arm"))]
 pub(super) fn parameters<E>(
     size: usize,
     generator: u32,
@@ -122,6 +132,7 @@ pub(super) fn parameters<E>(
     search(size, generator, Controller::new(size, generator)?, fill)
 }
 
+#[cfg(not(target_arch = "arm"))]
 fn search<E>(
     size: usize,
     generator: u32,
@@ -138,7 +149,7 @@ fn search<E>(
 }
 
 /// `parameters` with at most `limit` candidates.
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "arm")))]
 fn parameters_limit<E>(
     size: usize,
     generator: u32,
@@ -150,7 +161,7 @@ fn parameters_limit<E>(
     search(size, generator, state, fill)
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "arm")))]
 mod tests {
     use super::*;
     #[test]
