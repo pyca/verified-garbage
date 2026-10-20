@@ -315,8 +315,9 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hk8 : 8 * geom K.J ≤ k) (hJ2 : 2 ≤ K.J) (hb : 16 * winE k K.J 2 + 8 < C.n)
     {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
     (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa)
-    (hfarI : AddFar K.M K.S IW pa) {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
-    WP isa (WinCfg.windowJ K inv pa dd) s₀ fun s' => KeepRegs RC s₀ s' ∧
+    (hfarI : AddFar K.M K.S IW pa) {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd)
+    {ma : Option (Prog isa)} (hMa : MaddOk K C base size ma) :
+    WP isa (WinCfg.windowJ K inv pa dd ma) s₀ fun s' => KeepRegs RC s₀ s' ∧
       Unch base (winW K ++ IW) s₀.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -432,7 +433,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (by omega_using [hJ])
     (fun j t h1 h2 hi => winStepJ_ok hL hA hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8 h1 h2
       (Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_left _
-        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi hD)
+        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi hD hMa)
     (fun t hi => WP.mono (stepLast_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 hpa hr' hfar hi hD)
       fun u ⟨S, l, r⟩ => ⟨((B.keep.mono c19).trans Kn).trans (S.keep.mono hRC),
         (U₀.trans S.unch).mono fun w hw => by

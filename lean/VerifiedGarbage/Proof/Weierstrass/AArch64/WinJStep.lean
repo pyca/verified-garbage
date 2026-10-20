@@ -125,6 +125,25 @@ def DblsOk (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (dd : Option (Pro
 theorem DblsOk.none {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} : DblsOk K C base size none :=
   fun _ h => by cases h
 
+/-- What a window's mixed addition must do, `R` and `E` holding their values:
+change only the registers `combClob` and the loop's slots, and leave `D`
+holding `R + E` by the mixed addition. -/
+def MaddSpec (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (prog : Prog isa) : Prop :=
+  ∀ (E : Nat → Fe C) (s : State), Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) E s →
+    WP isa prog s fun s' => KeepRegs (clob K.M.n ++ winSaved K.M.n) s s' ∧ Unch base (loopW K) s.mem s'.mem ∧
+      ∃ E' : Nat → Fe C,
+      Inv K.M base size C.p (· ∈ winSlots K) ([K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.R K.E) E' s' ∧
+      (∀ x, x ∉ rcbW K.S K.D → E' x = E x) ∧
+      (E' K.D.x, E' K.D.y, E' K.D.z) = maddJF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y)
+
+/-- The mixed addition a window is given (`WinCfg.maddRD`) does what the
+field program does. -/
+def MaddOk (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (ma : Option (Prog isa)) : Prop :=
+  ∀ m, ma = some m → MaddSpec K C base size m
+
+theorem MaddOk.none {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} : MaddOk K C base size none :=
+  fun _ h => by cases h
+
 /-- The field program's doubling from `p` into `o`, on the window's slots. -/
 theorem dblN_spec {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt} (hAp : RcbApart K.S p p o)
@@ -441,8 +460,9 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     (hltE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) QR)
     (hE : RepA C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) QE)
-    (hsep : QR ≠ .infinity → QE ≠ .infinity → QR ≠ QE) :
-    WP isa (WinCfg.sumJ K) s fun s' =>
+    (hsep : QR ≠ .infinity → QE ≠ .infinity → QR ≠ QE) {ma : Option (Prog isa)}
+    (hM : MaddOk K C base size ma) :
+    WP isa (WinCfg.sumJ K ma) s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .x19 = s.gpr .x19 ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       InvJ C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -468,10 +488,18 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     · exact ⟨winOther_mem (oE _ (by simp)), hltE _ (by simp)⟩
   have I₀ : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
-  rw [WinCfg.sumJ, maddJ_eq]
-  refine WP.seq (WP.mono (winN_ok hL hA hp maddJN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2.1 w1.2.2 I₀
-    (fun x hx => hx)) fun s₁ ⟨k₁, U₁, E₁, I₁, o₁, v₁⟩ => ?_)
-  have S₁ := hS.next hL I₁.scr (k₁.mono clob_combClob) U₁
+  have hM' : MaddSpec K C base size (WinCfg.maddRD K ma) := by
+    cases ma with
+    | some m => exact hM m rfl
+    | none =>
+      intro E s hI
+      rw [WinCfg.maddRD, maddJ_eq]
+      exact WP.mono (winN_ok hL hA hp maddJN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2.1 w1.2.2 hI
+        (fun x hx => hx)) fun s' ⟨k, U, E', I, o, v⟩ =>
+        ⟨k.mono fun _ h => List.mem_append_left _ h, U, E', I, o, v.trans (maddJN_run _)⟩
+  rw [WinCfg.sumJ]
+  refine WP.seq (WP.mono (hM' _ s I₀) fun s₁ ⟨k₁, U₁, E₁, I₁, o₁, v₁⟩ => ?_)
+  have S₁ := hS.next hL I₁.scr (k₁.mono fun _ h => winSaved_combClob h) U₁
   obtain ⟨-, -, -, hRo, -, -, -, hEo, -, -⟩ := hL.other_ne
   have nD : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z], x ∉ rcbW K.S K.D := by
     intro x hx h
@@ -502,7 +530,7 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.z K.M.n)) =
       maddJF (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
         (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) := by
-    refine Eq.trans ?_ (v₁.trans (maddJN_run _))
+    refine Eq.trans ?_ v₁
     rw [I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp))]
   have jx := congrArg Prod.fst vD
   have jy := congrArg (fun t => t.2.1) vD
@@ -517,7 +545,9 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
   have tz2 := v₁' K.E.z (by simp)
   have l1 := lt₁ K.R.z (by simp)
   have l2 := lt₁ K.E.z (by simp)
-  refine ⟨S₂, by rw [k₂.gpr _ (by decide), k₁.gpr _ (x19_not_clob _)], fun x hx => ?_, ?_⟩
+  have n19 : Reg.x19 ∉ clob K.M.n ++ winSaved K.M.n := fun h =>
+    (List.mem_append.mp h).elim (x19_not_clob _) (not_mem_winSaved (by decide))
+  refine ⟨S₂, by rw [k₂.gpr _ (by decide), k₁.gpr _ n19], fun x hx => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · rw [r2x, selValJ]; split
@@ -601,8 +631,9 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} (hj : 2 ≤ j) (hjn : j ≤ K.J)
     (hb : 16 * winE k K.J j + 8 < C.n) {s : State} (hI : WinInvJ K C base size k P s₀ s j)
-    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
-    WP isa (WinCfg.stepJ K dd) s fun s' =>
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) {ma : Option (Prog isa)}
+    (hM : MaddOk K C base size ma) :
+    WP isa (WinCfg.stepJ K dd ma) s fun s' =>
       WinInvJ K C base size k P s₀ s' (j - 1) ∧
         s'.gpr .x4 = BitVec.ofNat 64 (j - 1) - BitVec.ofNat 64 1 := by
   have hJ := hL.J
@@ -646,7 +677,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (by rw [Nat.sub_add_cancel (by omega_using [hj] : 1 ≤ j)]; exact hb)
   rw [Nat.sub_add_cancel (by omega_using [hj] : 1 ≤ j)] at hsep
   refine WP.seq (WP.mono (sumJ_ok hL hA hp hC hM3 hF S₇ (hC.onCurve_mul hP _)
-    (onCurve_winPt hC hP k (j - 1)) lt₇ E₇.lt rep₇ E₇.rep (fun h1 _ => (hsep h1).1))
+    (onCurve_winPt hC hP k (j - 1)) lt₇ E₇.lt rep₇ E₇.rep (fun h1 _ => (hsep h1).1) hM)
     fun s₈ ⟨S₈, x₈, l₈, r₈⟩ => ?_)
   have hadd := win_add hC hP (k := k) (J := K.J) (j := j - 1) hk8 (by omega_using [hjn, hJ])
   rw [Nat.sub_add_cancel (by omega_using [hj] : 1 ≤ j)] at hadd
