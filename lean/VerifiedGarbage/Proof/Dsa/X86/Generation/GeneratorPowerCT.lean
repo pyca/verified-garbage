@@ -41,7 +41,7 @@ def GeneratorPoweredAt (n : Nat) (p : GeneratorPublic) (s : State) : Prop :=
 
 theorem generatorExponentiate_ct (n : Nat) (positive : 0 < n) : RelCT isa (Two (GeneratorPowerAt n))
     (exponentiate n (2 * n)) (Two (GeneratorPoweredAt n)) := by
-  refine two_post ((exponentiate_ct n (2 * n) (by omega)).mono ?_ (fun _ _ h => h)) ?_
+  refine two_post ((exponentiate_ct n (2 * n)).mono ?_ (fun _ _ h => h)) ?_
   · rintro s t ⟨p, hs, ht⟩ r hr
     obtain rfl := List.mem_singleton.mp hr
     exact BitVec.eq_of_toNat_eq (hs.context.scr.edi_toNat.trans ht.context.scr.edi_toNat.symm)

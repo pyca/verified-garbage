@@ -6,7 +6,6 @@ public import VerifiedGarbage.Impl.Dsa.X86.Generation.DrawWitness
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Dsa.X86.Generation.DrawWitness
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimeEffects
-import VerifiedGarbage.Proof.Framework.X86.Exec
 
 /-! # A full available draw preserves the prime-test invariant -/
 @[expose] public section

@@ -3,7 +3,6 @@ public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimeFrameInputs
-import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.ArenaReady
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryBuffers
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometrySeparate

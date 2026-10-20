@@ -17,7 +17,7 @@ theorem round_ok {base : Addr} {n m size e a exponent witness : Nat} {s : State}
     (C : Context n m base size s) (width : n ≤ 48) (room : roundStatus + 4 ≤ size)
     (one : wordsVal s.mem base (slot n 3) n = 1)
     (r2 : wordsVal s.mem base (slot n 4) n = 2 ^ (128 * n) % m)
-    (epos : 0 < e) (ebound : e ≤ 2 * n) (apos : 1 ≤ a) (abound : a ≤ Spec.RsaKeyGen.bitLength m)
+    (epos : 1 < e) (ebound : e ≤ 2 * n) (apos : 1 ≤ a) (abound : a ≤ Spec.RsaKeyGen.bitLength m)
     (countbound : a - 1 < 2 ^ 32)
     (count : s.mem.readW (off base roundCount) 32 = BitVec.ofNat 32 (a - 1))
     (exp : val32 s.mem base (slot n 8) e = exponent)

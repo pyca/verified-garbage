@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.CheckPrime
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchContext
 import Mathlib.Tactic.Attr.Core
-import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryPrimeInputs
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryStack
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryTrial

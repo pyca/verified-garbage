@@ -16,7 +16,7 @@ def RoundPowerAt (n e : Nat) (p : RoundPublic × Nat) (s : State) : Prop :=
 def roundPowerResult (p : RoundPublic × Nat) : RoundPublic :=
   {p.1 with value := p.1.value ^ p.2 % p.1.modulus}
 
-theorem roundPower_phase_ok {n e : Nat} (epos : 0 < e) (ebound : e ≤ 2 * n)
+theorem roundPower_phase_ok {n e : Nat} (epos : 1 < e) (ebound : e ≤ 2 * n)
     {p : RoundPublic × Nat} {s : State} (R : RoundPowerAt n e p s) :
     WP isa (exponentiate n e) s (RoundFinishAt n (roundPowerResult p)) := by
   have width := R.1.width
@@ -43,10 +43,10 @@ theorem roundPower_phase_ok {n e : Nat} (epos : 0 < e) (ebound : e ≤ 2 * n)
   exact ⟨⟨C, width, R.1.room, (exponentRanges_one O fit).trans R.1.one, r2, count, R.1.bound⟩,
     by change wordsVal t.mem p.1.base (slot n 6) n = p.1.value ^ p.2 % p.1.modulus; rw [value, R.2.1, R.2.2]⟩
 
-theorem round_ct (n e : Nat) (epos : 0 < e) (ebound : e ≤ 2 * n) :
+theorem round_ct (n e : Nat) (epos : 1 < e) (ebound : e ≤ 2 * n) :
     RelCT isa (Two (RoundPowerAt n e)) (round n e) (fun _ _ => True) := by
   refine RelCT.seq (two_post (Ψ := fun p => RoundFinishAt n (roundPowerResult p))
-    ((exponentiate_ct n e epos).mono ?_ (fun _ _ h => h))
+    ((exponentiate_ct n e).mono ?_ (fun _ _ h => h))
     (fun _ _ R => roundPower_phase_ok epos ebound R))
     (two_map roundPowerResult (fun _ _ h => h) (roundFinish_ct n))
   rintro s t ⟨p, hs, ht⟩ r hr

@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Dsa.X86.Generation.ParameterSearch
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SeedPlan
-import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Dsa.X86.Generation.DrawMemory
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimeRunSpec
 import VerifiedGarbage.Proof.Dsa.X86.Generation.CandidatePreserve

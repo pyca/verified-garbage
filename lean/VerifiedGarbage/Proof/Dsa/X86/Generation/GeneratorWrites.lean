@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchGeneratorMemory
-import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometrySeparate
 import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchWrites
 
 /-! # Generator search writes only its arithmetic area, witness buffer, frame, and g -/

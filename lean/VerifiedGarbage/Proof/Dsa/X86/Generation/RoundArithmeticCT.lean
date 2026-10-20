@@ -46,9 +46,9 @@ theorem roundMinusOne_relCT (n : Nat) :
 theorem roundMinusOne_ct (n : Nat) : RelCT isa (RegistersAgree [.edi]) (roundMinusOne n) (fun _ _ => True) :=
   (roundMinusOne_relCT n).mono (fun _ _ h => agree_regs h) (fun _ _ _ => trivial)
 
-theorem exponentiate_ct (n expWords : Nat) (positive : 0 < expWords) :
+theorem exponentiate_ct (n expWords : Nat) :
     RelCT isa (RegistersAgree [.edi]) (exponentiate n expWords) (fun _ _ => True) :=
-  (checkedProgramChange (exponentiate_check n expWords positive)
+  (checkedProgramChange (exponentiate_check n expWords)
     (show taint.le (workspaceTaint false) (rowTaint false) = true from rfl)).mono
     (fun _ _ h => agree_regs h) (fun _ _ _ => trivial)
 

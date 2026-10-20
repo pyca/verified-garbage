@@ -10,7 +10,6 @@ public import Aesop.BuiltinRules
 public import VerifiedGarbage.Impl.Dsa.X86.Generation.PrimeArguments
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.SearchContext
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
-import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 import VerifiedGarbage.Proof.Dsa.X86.Generation.CheckPrimeCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryPrimeInputs
 import VerifiedGarbage.Proof.Dsa.X86.Generation.GeometryStack
