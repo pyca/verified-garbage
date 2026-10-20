@@ -210,4 +210,40 @@ def inverse : Prog isa :=
   .seq (.block (bits L))
     (.loop (.seq (invStep L 0 4) (.seq (invStep L 4 0) (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]))) .ne)
 
+/-! ## Modular multiplication
+
+`Keys.mulMod`'s schedule: per bit of the multiplier `[y]`, from the bottom,
+the multiplicand `[x]` (or zero) added into `[a]` and `[x]` doubled, both
+modulo `[m]`, then `[y]` halved; `esi` counts the steps. -/
+
+/-- `[o] = [a] + [b] mod [m]` for `[a], [b] < m`, through `t`, `t + 1`, `t + 2`, with `[z]` zero. -/
+def addMod (o a b m z t : Nat) : List (Prog isa) :=
+  [sub3 L t z b, sub3 L (t + 1) a t, sub3 L (t + 2) (t + 1) m,
+   .block [.store (sc sC) .ebx], sel L o (t + 2) (t + 1) sC]
+
+/-- `[t]` the multiplicand where `[y]`'s low bit is set, else zero. -/
+def mulHead (z y x t : Nat) : Prog isa :=
+  .seq (.block (bitOf L sB y)) (sel L t z x sB)
+
+/-- `[y]` halved, and the count. -/
+def mulTail (y : Nat) : Prog isa :=
+  seqs [.block [.mov .ebx (.imm 0)], half L y,
+    .block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]]
+
+def mulModStep (z y x a m t : Nat) : Prog isa :=
+  seqs [mulHead L z y x t, seqs (addMod L a a t m z (t + 1)),
+    seqs (addMod L x x x m z (t + 1)), mulTail L y]
+
+/-- `esi` steps of `mulModStep`. -/
+def mulMod (z y x a m t : Nat) : Prog isa := .loop (mulModStep L z y x a m t) .ne
+
+/-! ## Inputs -/
+
+/-- Array `j` from the big-endian bytes at argument `arg`, as many as argument `arg + 1`, into its zeroed words. -/
+def load (arg j : Nat) : Prog isa :=
+  .seq (.block ([.mov .esi (.mem (VG.Impl.Bignum.X86.PublicFn.argument arg)),
+      .mov .ecx (.mem (VG.Impl.Bignum.X86.PublicFn.argument (arg + 1)))] ++ arrPtr L .ebx j .edx ++
+      [.alu .add .esi (.reg .ecx), .alu .sub .esi (.imm 1)]))
+    VG.Impl.Bignum.X86.reverseBytes
+
 end VG.Impl.Rsa.X86.KeyRt
