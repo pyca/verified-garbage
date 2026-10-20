@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-public import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, sixteen candidates at once
