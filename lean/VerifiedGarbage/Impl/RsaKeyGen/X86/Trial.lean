@@ -32,4 +32,14 @@ def wordStep (endOffset : Nat) : List Instr :=
 /-- The positive-width word loop, from the candidate's first word to its end. -/
 def words (endOffset : Nat) : Prog isa := .loop (.block (wordStep endOffset)) .ne
 
+/-- Convert the two possible zero residues into a bit. The accumulator is
+below twice the positive divisor, so the two tests are mutually exclusive. -/
+def finish : List Instr :=
+  [.mov .eax (.imm 0), .mov .edx (.reg .ebp), .alu .sub .edx (.imm 1),
+    .alu .adc .eax (.imm 0), .alu .sub .ebp (.reg .ebx), .alu .sub .ebp (.imm 1),
+    .alu .adc .eax (.imm 0)]
+
+/-- The complete fixed-width test for one public small-prime divisor. -/
+def divisor (endOffset : Nat) : Prog isa := .seq (words endOffset) (.block finish)
+
 end VG.Impl.RsaKeyGen.X86.Trial

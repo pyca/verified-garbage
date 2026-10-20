@@ -29,4 +29,27 @@ theorem inverse_entry {i : Nat} (bound : i < 1024) :
   rw [slot]
   exact valid
 
+theorem packed_length : packed.length = 1024 := by simp only [packed, List.length_map, List.length_range]
+
+theorem packed_entry {i : Nat} (bound : i < 1024) :
+    packed[i]'(by rw [packed_length]; exact bound) = BitVec.ofNat 64 (entry i) := by
+  simp only [packed, List.getElem_map, List.getElem_range]
+
+theorem entry_bound {i : Nat} (bound : i < 1024) : entry i < 2 ^ 64 := by
+  have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
+  have inv := (inverse (BitVec.ofNat 32 (tabEntry i))).isLt
+  unfold entry
+  omega
+
+theorem entry_low {i : Nat} (bound : i < 1024) : entry i % 2 ^ 32 = tabEntry i := by
+  have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
+  unfold entry
+  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
+
+theorem entry_high {i : Nat} (bound : i < 1024) :
+    entry i / 2 ^ 32 = (inverse (BitVec.ofNat 32 (tabEntry i))).toNat := by
+  have prime := (VG.Proof.RsaKeyGen.tabEntry_facts bound).2.2
+  unfold entry
+  rw [Nat.add_mul_div_left _ _ (by decide : 0 < 2 ^ 32), Nat.div_eq_of_lt (by omega), Nat.zero_add]
+
 end VG.Proof.RsaKeyGen.TrialTable32

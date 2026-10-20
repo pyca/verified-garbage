@@ -17,4 +17,7 @@ def publicRegs : VG.X86.Taint.T := { regs := .ofList [.ebx, .esi, .edi], flags :
 theorem redc32_relCT : RelCT isa (VG.X86.Taint.Agree publicRegs) (.block redc32)
     (VG.X86.Taint.Agree publicRegs) := checkedBlockInvariant rfl rfl
 
+theorem finish_relCT : RelCT isa (VG.X86.Taint.Agree publicRegs) (.block finish)
+    (VG.X86.Taint.Agree publicRegs) := checkedBlockInvariant rfl rfl
+
 end VG.Proof.RsaKeyGen.X86.Trial

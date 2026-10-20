@@ -23,4 +23,11 @@ def inverse (s : BitVec 32) : BitVec 32 :=
 def entry (i : Nat) : Nat :=
   tabEntry i + 2 ^ 32 * (inverse (BitVec.ofNat 32 (tabEntry i))).toNat
 
+/-- A read-only native table shared by all candidates and widths. -/
+def symbol : String := "VG_RSA_KEYGEN_TRIAL32"
+
+def packed : List (BitVec 64) := (List.range 1024).map fun i => BitVec.ofNat 64 (entry i)
+
+def consts : List (String × List (BitVec 64)) := [(symbol, packed)]
+
 end VG.Impl.RsaKeyGen.TrialTable32
