@@ -198,8 +198,9 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
     (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa)
     {s : State} (hI : WinInvJ K C base size k P s₀ s 1)
-    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
-    WP isa (WinCfg.stepLast K pa dd) s fun s' =>
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) {sl : Option (List Instr)}
+    (hS : SelOk K size (WinCfg.selOf K sl)) :
+    WP isa (WinCfg.stepLast K pa dd sl) s fun s' =>
       WinSt K C base size P s₀ s' ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -229,7 +230,7 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
       rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega) (by have := S₅.scr.nowrap; omega)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntryR_ok hL hA (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
-    S₅.scr S₅.mod (i := 0) (by omega) hx₅ hbits₅ hz₅ S₅.tbl) fun s₇ E₇ => ?_)
+    S₅.scr S₅.mod (i := 0) (by omega) hx₅ hbits₅ hz₅ S₅.tbl hS) fun s₇ E₇ => ?_)
   have hn := S₅.scr.nowrap
   have S₇ := S₅.next hL E₇.scr E₇.keep (E₇.unch.mono (entryW_loopW K))
   have eR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n = wordsVal s₅.mem base x K.M.n :=
@@ -316,8 +317,9 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     {pa : Option (String × Nat)} (hpa : AddOk K.M size (· ∈ winSlots K) K.S K.R K.E K.D pa)
     (hr : AddReady base K.M s₀.mem K.S pa) (hfar : AddFar K.M K.S (winW K) pa)
     (hfarI : AddFar K.M K.S IW pa) {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd)
-    {ma : Option (Prog isa)} (hMa : MaddOk K C base size ma) :
-    WP isa (WinCfg.windowJ K inv pa dd ma) s₀ fun s' => KeepRegs RC s₀ s' ∧
+    {ma : Option (Prog isa)} (hMa : MaddOk K C base size ma) {sl : Option (List Instr)}
+    (hS : SelOk K size (WinCfg.selOf K sl)) :
+    WP isa (WinCfg.windowJ K inv pa dd ma sl) s₀ fun s' => KeepRegs RC s₀ s' ∧
       Unch base (winW K ++ IW) s₀.mem s'.mem ∧ ModOkA K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -433,8 +435,8 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (by omega_using [hJ])
     (fun j t h1 h2 hi => winStepJ_ok hL hA hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8 h1 h2
       (Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_left _
-        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi hD hMa)
-    (fun t hi => WP.mono (stepLast_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 hpa hr' hfar hi hD)
+        (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi hD hMa hS)
+    (fun t hi => WP.mono (stepLast_ok hL hA hp hC hM3 hP hpn hone_lt hone hF hk8 hpa hr' hfar hi hD hS)
       fun u ⟨S, l, r⟩ => ⟨((B.keep.mono c19).trans Kn).trans (S.keep.mono hRC),
         (U₀.trans S.unch).mono fun w hw => by
           simp only [List.mem_append] at hw ⊢; rcases hw with (hw | hw) | hw <;> simp [hw],

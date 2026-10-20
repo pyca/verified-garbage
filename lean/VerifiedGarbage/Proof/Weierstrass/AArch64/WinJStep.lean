@@ -632,8 +632,8 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} (hj : 2 ≤ j) (hjn : j ≤ K.J)
     (hb : 16 * winE k K.J j + 8 < C.n) {s : State} (hI : WinInvJ K C base size k P s₀ s j)
     {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) {ma : Option (Prog isa)}
-    (hM : MaddOk K C base size ma) :
-    WP isa (WinCfg.stepJ K dd ma) s fun s' =>
+    (hM : MaddOk K C base size ma) {sl : Option (List Instr)} (hS : SelOk K size (WinCfg.selOf K sl)) :
+    WP isa (WinCfg.stepJ K dd ma sl) s fun s' =>
       WinInvJ K C base size k P s₀ s' (j - 1) ∧
         s'.gpr .x4 = BitVec.ofNat 64 (j - 1) - BitVec.ofNat 64 1 := by
   have hJ := hL.J
@@ -660,7 +660,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
       rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega_using [ht, this]) (by have := S₅.scr.nowrap; omega)]
       exact hF.bits t ht
   refine WP.seq (WP.mono (winEntryR_ok hL hA (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
-    S₅.scr S₅.mod (i := j - 1) (by omega_using [hjn, hJ]) hx₅ hbits₅ hz₅ S₅.tbl) fun s₇ E₇ => ?_)
+    S₅.scr S₅.mod (i := j - 1) (by omega_using [hjn, hJ]) hx₅ hbits₅ hz₅ S₅.tbl hS) fun s₇ E₇ => ?_)
   have hn := S₅.scr.nowrap
   have S₇ := S₅.next hL E₇.scr E₇.keep (E₇.unch.mono (entryW_loopW K))
   have eR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n = wordsVal s₅.mem base x K.M.n :=
