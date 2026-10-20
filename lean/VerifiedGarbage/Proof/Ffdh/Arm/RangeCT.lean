@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBit
 import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBitCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Block
 
@@ -36,6 +37,22 @@ theorem belowP_ct {base : BitVec 32} {len w a : Nat} (ha : a < 8) :
       (fun s h => WP.mono (setLowBit_ok s h) fun _ k => k.1)
       (fun s h => WP.mono (setLowBit_ok s h) fun _ k => k.1)
       (compare_ct (by decide : 7 < 8) (by decide : 0 < 8)))
+
+theorem inRange_ready (s : State) {base : BitVec 32} {len w a : Nat}
+    (h : ArithmeticReady base len w s) (ha : Operand a) (na7 : a ≠ 7) :
+    WP isa (VG.Impl.Ffdh.Arm.inRange a) s (ArithmeticReady base len w) := by
+  rw [VG.Impl.Ffdh.Arm.inRange, WP.seq_iff]
+  refine WP.mono (greaterOne_ok s h ha.1 ha.2.2 na7 ha) ?_
+  rintro u ⟨readyU, _⟩
+  rw [WP.seq_iff]
+  refine WP.mono (saveFlag_ok u readyU) ?_
+  rintro v ⟨readyV, _⟩
+  rw [WP.seq_iff]
+  refine WP.mono (belowP_ready v readyV ha.1) ?_
+  intro t readyT
+  refine WP.mono (andFlag_ok t readyT) ?_
+  rintro z ⟨⟨_, mem⟩, rest⟩
+  exact readyT.of_mem mem rest ((rest.gpr .r0 (by simp)).trans readyT.ptr)
 
 theorem inRange_ct {base : BitVec 32} {len w a : Nat} (ha : Operand a) (na7 : a ≠ 7) :
     RelCT isa (fun s t => ArithmeticReady base len w s ∧ ArithmeticReady base len w t ∧ s.sp = t.sp)

@@ -140,6 +140,12 @@ theorem Context.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : 
     (savedSep : ∀ d ∈ slots, ∀ r ∈ regions, (⟨off (State.addr s.sp) d, 4⟩ : Region).Disjoint r) :
     Context p slots t := ⟨h.toArgumentMemory.after_frame frame rest domainSep savedSep, ptr⟩
 
+theorem Context.of_mem {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    (h : Context p slots s) (mem : t.mem = s.mem) (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) :
+    Context p slots t := by
+  have frame : Frame [] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
+  exact h.after_frame frame rest ptr (by simp) (by simp)
+
 theorem Context.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
     (h : Context p slots s) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
     (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) (fit : ∀ d ∈ slots, d + 4 ≤ 72) :
