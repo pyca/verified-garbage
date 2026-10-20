@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.AesXts.X86_64.CT
+meta import VerifiedGarbage.Proof.AesXts.X86_64.CT
 
 /-!
 # XTS-AES of data units on x86-64: constant time
