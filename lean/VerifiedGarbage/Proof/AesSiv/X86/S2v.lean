@@ -26,7 +26,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Common
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops

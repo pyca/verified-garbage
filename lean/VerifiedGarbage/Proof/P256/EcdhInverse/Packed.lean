@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Proof.Divstep.WordBasic
+import VerifiedGarbage.Proof.Divstep.WordBasic
 
 @[expose] public section
 

@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.CT
 import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
 meta import VerifiedGarbage.Proof.AesGcm.X86.Fn

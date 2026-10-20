@@ -62,6 +62,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-OCB on ARMv7: the data and the tag in two runs
