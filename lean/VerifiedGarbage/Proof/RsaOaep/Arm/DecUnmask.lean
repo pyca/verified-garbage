@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaOaep.Decode
 import VerifiedGarbage.Proof.RsaPss.Arm.CtMgfLoop
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!

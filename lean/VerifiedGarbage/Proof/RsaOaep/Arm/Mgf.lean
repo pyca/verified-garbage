@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
 import VerifiedGarbage.Proof.Mgf1.Bytes
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -15,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Arm.Step
+import VerifiedGarbage.Proof.RsaPss.Arm.CtXor
 
 /-!
 # RSAES-OAEP on ARMv7: `dst ⊕= MGF1(src, dstLen)`

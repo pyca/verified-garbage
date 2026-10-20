@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf

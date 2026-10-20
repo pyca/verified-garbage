@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.EncChk
 public import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaOaep.Arm.Label
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec

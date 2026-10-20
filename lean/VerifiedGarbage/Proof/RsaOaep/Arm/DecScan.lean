@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.RsaOaep.Arm.DecAcc
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
