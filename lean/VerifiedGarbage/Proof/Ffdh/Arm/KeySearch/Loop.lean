@@ -34,7 +34,7 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.Backend) (runAttempt : AttemptRun
         (isa.eval .eq t = some true ∧ ∃ m < n, KeyInvariant p original expected m t) :=
     fun _ _ finished resultOutcome resultUsed => WP.mono finished.loop_guard fun _ ⟨flag, state⟩ =>
       Or.inl ⟨flag, state.congr (resultOutcome.trans outcome.symm) (resultUsed.trans count.symm)⟩
-  unfold VG.Impl.Ffdh.Arm.KeySearch.iteration
+  unfold VG.Impl.Ffdh.Arm.KeySearch.iteration VG.Impl.Ffdh.Arm.KeySearch.branch
   refine WP.seq (WP.mono h.keys_guard fun u ⟨live1, flag1⟩ => ?_)
   apply WP.seq
   refine WP.ite (decide (keys = 0)) (by change some u.z = _; rw [flag1]) ?_ ?_

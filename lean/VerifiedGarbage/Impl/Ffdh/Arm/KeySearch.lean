@@ -74,9 +74,11 @@ def attemptRun (attempt : Prog isa) : Prog isa :=
 def attemptOrRequest (attempt : Prog isa) : Prog isa := .seq (.block room)
   (.ite .eq request (.seq (attemptRun attempt) classify))
 
+def branch (attempt : Prog isa) : Prog isa := .ite .eq exhausted
+  (.seq (.block [ldf .r9 1, .cmp .r9 (.imm 0)]) (.ite .eq exhausted (attemptOrRequest attempt)))
+
 def iteration (attempt : Prog isa) : Prog isa := .seq (.block [ldf .r9 0, .cmp .r9 (.imm 0)])
-  (.seq (.ite .eq exhausted (.seq (.block [ldf .r9 1, .cmp .r9 (.imm 0)])
-    (.ite .eq exhausted (attemptOrRequest attempt)))) (.block [ldf .r9 14, .cmp .r9 (.imm 4)]))
+  (.seq (branch attempt) (.block [ldf .r9 14, .cmp .r9 (.imm 4)]))
 
 def finish : List Instr := [
   ldf .r1 15, ldf .r2 11, ldf .r0 14, .mov .r3 (.imm 0), .str .r2 .r1 0, .str .r3 .r1 4,
