@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
-public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -23,14 +22,18 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.Recover.code_sp
     stack := 20 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
-    code := Impl.Rsa.X86.KeyCheck.code true
+    notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
+      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
+      exponent select a branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.KeyCheckRt.code true
     verified := Proof.Rsa.X86.KeyCheck.verified true
-    spSafe := Proof.Rsa.X86.KeyCheck.code_sp true
     stack := 20 },
   Spec.Rsa.checkCrtKeyApi.artifact X86.target {
-    code := Impl.Rsa.X86.KeyCheck.code false
+    notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
+      its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
+      exponent select a branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.KeyCheckRt.code false
     verified := Proof.Rsa.X86.KeyCheck.verified false
-    spSafe := Proof.Rsa.X86.KeyCheck.code_sp false
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
