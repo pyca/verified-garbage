@@ -10,8 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `sized` (`Impl/Bignum/X86/PublicRt.lean`): the modulus and the input read,
 the input's acceptance kept as a mask at 144, `-M⁻¹ mod 2³²` at 152 (the
 setup, `setup_ok`), one, `R² mod M`, the exponentiation, and the result
-cleared unless the input was accepted and written out (`sized_ok`), as
-`publicSized_ok` says of the copies per width.
+cleared unless the input was accepted and written out (`sized_ok`).
 -/
 
 @[expose] public section
@@ -151,7 +150,7 @@ theorem prepare_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat →
   exact ⟨E₆, hT, hO, X₆, W₆, a₆, S₆, K₁₆⟩
 
 /-- The operation on a valid modulus: the result written out when the input is below the modulus, and zeros
-otherwise, as `publicSized_ok` says of the copies per width. -/
+otherwise. -/
 theorem sized_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → BitVec 32}
     (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat)
     (hbytes : bytes = (args 9).toNat * 8) (R : CallRoom (s.gpr .esp) base bytes)

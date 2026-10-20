@@ -2,16 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeSized
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeSized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicOperationTiming
-meta import VerifiedGarbage.Proof.Bignum.X86.PublicOperationTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicFailureTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicModulusTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentsEq
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicObservations
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The trace of public RSA at a run-time width, from the entry to the return
 
-The checks around `sized` are `PublicFn`'s, related as for the copies per
-width (`publicCheckExponent_trace`, `publicBody_relCT`,
-`publicOperation_trace`), with `sized` related by `sizedNarrow_relCT` from
+The checks around `sized` are `PublicFn`'s, related by their own lemmas
+(`publicExponent_trace`, `publicModulus_relCT`, `publicFailure_relCT`,
+`publicEntry_relCT`), with `sized` related by `sizedNarrow_relCT` from
 what each run keeps (`Side`).
 -/
 

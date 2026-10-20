@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSized
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.PublicWritten
+public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
+public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
-/-! # Match the checked-RSA contract on both acceptance and failure paths -/
+/-! # The checked-RSA contract's postcondition, and the failure path meeting it -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.X86.PublicContext
@@ -16,18 +16,6 @@ def PublicPost (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (mem :
       (Spec.Rsa.bytesAt mem (byteAddr (args 4)) (args 5).toNat)
       (Spec.Rsa.bytesAt mem (byteAddr (args 6)) len)) ∧
   Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩] mem t.mem
-
-theorem PublicResult.written {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {mem : Mem} {t : State}
-    (R : PublicResult base bytes len args mem
-      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt mem (byteAddr (args 4)) (args 5).toNat)) t)
-    (modulus : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt mem (byteAddr (args 2)) len)) len = true)
-    (exponent : Spec.Rsa.exponentValid
-      (Spec.Rsa.os2ip (Spec.Rsa.bytesAt mem (byteAddr (args 4)) (args 5).toNat)) = true) :
-    PublicPost base bytes len args mem t := by
-  obtain ⟨Y, B, F⟩ := R
-  refine ⟨publicOutput_written (bytesAt_length _ _ _) modulus exponent ?_ B, F⟩
-  rw [powMod_eq]
-  split <;> simp_all only [ite_true, ite_false, i2osp_zero']
 
 theorem publicFailure_post {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
     (h : PublicInputs base bytes len args s)

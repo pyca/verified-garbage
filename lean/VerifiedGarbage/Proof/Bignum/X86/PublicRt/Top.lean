@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicOperation
+public import VerifiedGarbage.Proof.Bignum.X86.PublicFailurePost
+public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.PublicWritten
@@ -9,11 +13,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public RSA at a run-time width, from the entry to the return
 
-The checks of `PublicFn` around `sized` (`Sized.lean`), as
-`publicValid_ok`, `checkExponent_ok`, `publicBody_ok` and
-`publicOperation_ok` say of the copies per width, with the room for the
-multiplications' calls below `esp` (`Room`), which the contract's 40 bytes
-of stack give (`TopABI`).
+The checks of `PublicFn` around `sized` (`Sized.lean`): the exponent saved
+(`valid_ok`), checked (`checkExponent_ok`) after the modulus (`body_ok`),
+with the room for the multiplications' calls below `esp` (`Room`), which
+the contract's 40 bytes of stack give (`TopABI`).
 -/
 
 @[expose] public section

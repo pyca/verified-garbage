@@ -6,8 +6,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Functional correctness and cdecl preservation of public RSA at a run-time width
 
-As `publicOperation_ok` and `publicCorrect` say of the copies per width,
-with the 40 bytes of stack below `esp` that the calls use.
+From the entry, which saves the callee-saved registers in the working
+space, through `body_ok` to their restore, with the 40 bytes of stack
+below `esp` that the calls use.
 -/
 
 @[expose] public section
