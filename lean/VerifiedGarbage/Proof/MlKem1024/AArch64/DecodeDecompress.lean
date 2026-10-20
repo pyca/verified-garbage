@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd5Step
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd11Step
-public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dd5Step
@@ -12,6 +12,10 @@ import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSpec
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_decode_decompress`
