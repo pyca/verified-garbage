@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp4
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! RSA's five masked shifts construct the full power-of-two metadata
 word for any native t. No memory or control-flow branch depends on t. -/
@@ -48,5 +49,17 @@ theorem code_ok (s : State) :
       (((k3.trans (k4.trans (k5.trans (k6.trans k7)))).mono (by simp)).trans
         ((u8.rest (by simp)).trans ((u9.rest (by simp)).trans ((u10.rest (by simp)).trans
           ((u11.rest (by simp)).trans ((u12.rest (by simp)).trans (u13.rest (by simp)))))))))
+
+theorem code_word_ok (s : State) :
+    WP isa (.block VG.Impl.Bignum.Arm.TwoPower.code) s fun t =>
+      (t.gpr .r3 ++ t.gpr .r2 : BitVec 64) = BitVec.twoPow 64 ((s.gpr .r1).toNat % 64) ∧
+        t.mem = s.mem ∧ Rest [.r1, .r2, .r3, .r4] s t := by
+  refine WP.mono (code_ok s) ?_
+  rintro t ⟨value, memory, rest⟩
+  refine ⟨?_, memory, rest⟩
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (t.gpr .r2).isLt,
+    Nat.shiftLeft_eq, BitVec.toNat_twoPow_of_lt (Nat.mod_lt _ (by decide : 0 < 64))]
+  omega
 
 end VG.Proof.Bignum.Arm.TwoPower
