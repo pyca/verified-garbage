@@ -7,9 +7,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The loop over groups

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Rc2.Select32
-import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Correctness of the baseline Arm RC2 key lookup
 
