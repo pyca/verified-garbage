@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 meta import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
@@ -16,15 +16,15 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitLit
 public import VerifiedGarbage.Proof.Argon2.X86_64.ParametersLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.ParametersLit
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
+import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveNormalize
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyReviewedState
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyReviewedState
-public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
+import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveSaved
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Parameters
@@ -34,34 +34,34 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
 meta import VerifiedGarbage.Proof.Argon2.X86_64.DeriveRegions
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Argon2.Divide
-public import VerifiedGarbage.Proof.Argon2.FillPositions
-public import VerifiedGarbage.Proof.Argon2.References
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
-public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.Divide
+import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.References
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
+import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressLit
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillPointersLit
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
-public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+import VerifiedGarbage.Proof.Argon2.X86_64.FillWriteCover
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
+import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
-public import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-public import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
-public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
+import VerifiedGarbage.Proof.Argon2.X86_64.Relative
+import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
+import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Finalize
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Argon2.Divide
 meta import VerifiedGarbage.Proof.Argon2.FillPositions
 meta import VerifiedGarbage.Proof.Argon2.References
@@ -146,6 +146,50 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Spec.Argon2
+meta import VerifiedGarbage.Spec.Argon2
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
+meta import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
+meta import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
+public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+meta import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
+public import VerifiedGarbage.Proof.Framework.Covers
+meta import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Argon2.Contract
+meta import VerifiedGarbage.Spec.Argon2.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Impl.Argon2.X86_64.Derive
+meta import VerifiedGarbage.Impl.Argon2.X86_64.Derive
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
+public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
+meta import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+meta import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Spec.Blake2
+meta import VerifiedGarbage.Spec.Blake2
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.TCB.X86_64.Gpr
+meta import VerifiedGarbage.TCB.X86_64.Gpr
 
 @[expose] public section
 
