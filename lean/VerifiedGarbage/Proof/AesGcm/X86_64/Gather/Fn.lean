@@ -15,11 +15,7 @@ import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: correctness

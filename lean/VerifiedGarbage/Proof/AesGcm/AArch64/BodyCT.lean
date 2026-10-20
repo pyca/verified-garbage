@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Loops

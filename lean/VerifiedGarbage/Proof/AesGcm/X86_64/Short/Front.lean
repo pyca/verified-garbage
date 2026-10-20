@@ -5,12 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Ks
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-GCM's short path on x86-64: the powers, `G` and the keystream

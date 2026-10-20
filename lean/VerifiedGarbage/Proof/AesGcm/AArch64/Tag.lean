@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.AesGcm.AArch64
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AES-GCM on AArch64: the tag (`tag o`)

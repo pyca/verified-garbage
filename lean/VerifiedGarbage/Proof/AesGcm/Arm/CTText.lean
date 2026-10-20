@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk

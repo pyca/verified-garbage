@@ -8,12 +8,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneTag
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import VerifiedGarbage.Impl.AesGcm.X86
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 public import VerifiedGarbage.Proof.Gcm.Compose
 meta import VerifiedGarbage.Impl.AesGcm.X86

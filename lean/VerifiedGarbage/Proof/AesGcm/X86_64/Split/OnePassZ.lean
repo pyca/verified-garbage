@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
 meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PrefixNCT
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Cached.OnePass
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
+meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.SetupFin
 
 /-!
 # AES-GCM `seal_split` on x86-64: the one-pass loops

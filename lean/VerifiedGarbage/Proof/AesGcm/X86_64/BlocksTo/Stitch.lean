@@ -13,14 +13,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TacticTemplate
-import VerifiedGarbage.Impl.Aes.Circuit
-import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the first `16 ⌊n / 16⌋` blocks in one pass

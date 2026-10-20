@@ -9,10 +9,7 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 meta import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

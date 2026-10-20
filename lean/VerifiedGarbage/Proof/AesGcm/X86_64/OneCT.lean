@@ -14,12 +14,9 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import Lean.Level
-import VerifiedGarbage.Impl.AesGcm.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import Lean.Level
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
