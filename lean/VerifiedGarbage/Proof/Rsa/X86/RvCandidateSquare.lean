@@ -31,8 +31,9 @@ theorem candSquare_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m y eLen 
     WP isa VG.Impl.Rsa.X86.RecoverRt.candSquare s fun t => SI g s0 A AW V m (8 * (dLen + eLen)) 0
       (sqIter m (V sTc) (8 * (dLen + eLen)) (sqStart m y)) t := by
   have cop := VG.Proof.Bignum.coprime_pow2 odd (64 * g.n)
-  unfold VG.Impl.Rsa.X86.RecoverRt.candSquare VG.Impl.Rsa.X86.RecoverRt.eqAt
+  unfold VG.Impl.Rsa.X86.RecoverRt.candSquare VG.Impl.Rsa.X86.RecoverRt.candSquareInit VG.Impl.Rsa.X86.RecoverRt.eqAt
   simp only [seqs]
+  refine WP.seq ?_
   refine WP.seq (WP.mono (h.eqS_w (d := sE1) (a := mY) (b := aO)
     (by simp [liveSq]) (by simp [liveSq, liveM]) (by decide) (by decide) (by decide) (by decide))
     fun s1 ⟨h1, _⟩ => ?_)
@@ -46,8 +47,8 @@ theorem candSquare_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m y eLen 
     simp only [neg, VG.Proof.Rsa.eq_neg_mont cop hm yl rfl]
     simp [b2n]
   simp only [upd_self, upd_ne _ _ (by decide : aO ≠ mY), upd_ne _ _ (by decide : aNg ≠ mY), eo, en] at h2
-  refine WP.seq (WP.mono (sqInit_ok h2 (e1 := decide (y = 1)) (e2 := decide (y = m - 1))
-    (by simp) (by simp) (by simp [upd, sE1, sE2]) (by simp [upd]) ae ad (by omega)) fun s3 h3 => ?_)
+  refine WP.mono (sqInit_ok h2 (e1 := decide (y = 1)) (e2 := decide (y = m - 1))
+    (by simp) (by simp) (by simp [upd, sE1, sE2]) (by simp [upd]) ae ad (by omega)) fun s3 h3 => ?_
   have initial : SI g s0 A AW V m 0 (8 * (dLen + eLen)) (sqStart m y) s3 := by
     refine h3.mono (fun j hj => ⟨hj, rfl⟩) (fun j hj => ⟨hj, rfl⟩) ?_
     intro d hd

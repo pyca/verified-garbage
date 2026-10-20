@@ -43,7 +43,7 @@ theorem sqBody_step {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat
   have mr := h.montReady (m := m) (by simp [liveSq, liveM]) (by simp [slotsSq])
     (by simpa only [upd_ne _ _ (by decide : mBase ≠ mY)] using value) bound
     (by simpa [VS, upd, sInv, sK, sCnt, sDone, sOk] using inverse)
-  unfold VG.Impl.Rsa.X86.RecoverRt.sqBody VG.Impl.Rsa.X86.RecoverRt.eqAt
+  unfold VG.Impl.Rsa.X86.RecoverRt.sqBody VG.Impl.Rsa.X86.RecoverRt.sqTail VG.Impl.Rsa.X86.RecoverRt.eqAt
   simp only [seqs]
   refine WP.seq (WP.mono (h.mmul mr (o := mX) (a := mY) (b := mY)
     (by decide) (by decide) (by decide) (by decide) (by simp [liveSq]) (by simp [liveSq])

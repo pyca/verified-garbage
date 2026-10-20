@@ -113,11 +113,16 @@ def setupR2 : Prog isa := seqs [copy nar mR2 aOne,
   .loop (seqs (VG.Impl.Rsa.X86.KeyRt.addMod nar mR2 mR2 mR2 aN aZ mAcc ++
     [.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)]])) .ne]
 
-def mont : Prog isa := seqs [
+/-- Zero, one, the modulus, its inverse and `R²`, and one into `mXm`. -/
+def montHead : Prog isa := seqs [
   sub3 nar aZ aN aN, copy nar aOne aZ, .block (setOne nar aOne),
   copy nar mBase aN, .block setupInverse,
-  setupR2, copy nar mXm aOne, mmul mXm mXm mR2,
-  copy nar aO mXm, sub3 nar aNg aN aO]
+  setupR2, copy nar mXm aOne]
+
+/-- `R mod n` into `aO`, and `n - R mod n` into `aNg`. -/
+def montTail : Prog isa := seqs [copy nar aO mXm, sub3 nar aNg aN aO]
+
+def mont : Prog isa := seqs [montHead, mmul mXm mXm mR2, montTail]
 
 /-! ## The candidates -/
 
@@ -156,20 +161,26 @@ def scan : Nat → Prog isa
 
 def square : Prog isa := mmul mY mY mY
 
+/-- The window, the exponent shifted past it, and its table entry into `mXm`. -/
+def windowNext : Prog isa := seqs [.block windowTop, shiftUp, scan 15]
+
 def windowBody : Prog isa := seqs [square, square, square, square,
-  .block windowTop, shiftUp, scan 15, mmul mY mY mXm, .block cntNext]
+  windowNext, mmul mY mY mXm, .block cntNext]
 
 def eqAt (d a b : Nat) : Prog isa := eqS nar d a b aW
 
-def sqBody : Prog isa := seqs [mmul mX mY mY,
-  eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
+/-- The square's tests and masks, and `mY` kept or replaced by it. -/
+def sqTail : Prog isa := seqs [eqAt sE1 mX aO, eqAt sE2 mX aNg, .block sqMasks,
   copy nar aU mY, sel nar mY aU mX sLive, .block sqNext]
+
+def sqBody : Prog isa := .seq (mmul mX mY mY) sqTail
 
 def candExp : Prog isa := seqs [alignStart, .loop alignBody .ne,
   mmul mG mG mR2, table, .block windowCount, .loop windowBody .ne]
 
-def candSquare : Prog isa := seqs [eqAt sE1 mY aO, eqAt sE2 mY aNg,
-  .block sqInit, .loop sqBody .ne]
+def candSquareInit : Prog isa := seqs [eqAt sE1 mY aO, eqAt sE2 mY aNg, .block sqInit]
+
+def candSquare : Prog isa := .seq candSquareInit (.loop sqBody .ne)
 
 def candBody : Prog isa := seqs [candExp, candSquare, .block candNext]
 
@@ -178,9 +189,10 @@ def candLoop : Prog isa := .seq
 
 /-! ## The factors -/
 
-def finY : Prog isa := seqs [
-  .block [.mov .eax (.mem (sc sOk)), .store (sc sMask) .eax],
-  copy nar mXm aOne, mmul mY mY mXm]
+def finHead : Prog isa := seqs [
+  .block [.mov .eax (.mem (sc sOk)), .store (sc sMask) .eax], copy nar mXm aOne]
+
+def finY : Prog isa := .seq finHead (mmul mY mY mXm)
 
 def gcdSet : Prog isa := seqs [sub3 nar 0 mY aOne,
   copy nar 1 aN, copy nar aM aN, copy nar 2 aZ,

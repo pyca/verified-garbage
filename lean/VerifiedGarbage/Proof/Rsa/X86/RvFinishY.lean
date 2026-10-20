@@ -30,8 +30,9 @@ theorem finY_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
     WP isa VG.Impl.Rsa.X86.RecoverRt.finY s fun t =>
       KS g s0 (upd A mY st.1) [mY, aN, aZ, aOne] (fun _ => 0) []
         (fun _ => b2n st.2.2) [sMask] t := by
-  unfold VG.Impl.Rsa.X86.RecoverRt.finY
+  unfold VG.Impl.Rsa.X86.RecoverRt.finY VG.Impl.Rsa.X86.RecoverRt.finHead
   simp only [seqs]
+  refine WP.seq ?_
   refine WP.seq (wp_movS (h.readSlot (by simp [slotsSq] : sOk ∈ slotsSq)) fun u U _ => ?_)
   have hu := h.of_rest U.keeps (by decide) U.mem
   refine WP.mono (hu.storeSlot (d := sMask) (by decide) .eax) fun s1 ⟨h1, _, _⟩ => ?_
@@ -40,8 +41,8 @@ theorem finY_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m k c : Nat}
     simp only [VS, upd_self, BitVec.toNat_ofNat]
     exact Nat.mod_eq_of_lt (by have := VG.Proof.Rsa.b2n_le st.2.2; omega)
   rw [mask] at h1
-  refine WP.seq (WP.mono (h1.copy_w (o := mXm) (a := aOne) (by decide)
-    (by simp [liveSq, liveM]) (by decide) (by decide)) fun s2 ⟨h2, _, _⟩ => ?_)
+  refine WP.mono (h1.copy_w (o := mXm) (a := aOne) (by decide)
+    (by simp [liveSq, liveM]) (by decide) (by decide)) fun s2 ⟨h2, _, _⟩ => ?_
   simp only [upd_ne _ _ (by decide : aOne ≠ mY), one] at h2
   have mr := h2.montReady (m := m) (by simp [liveSq, liveM]) (by simp [slotsSq])
     (by simpa only [upd_ne _ _ (by decide : mBase ≠ mXm),
