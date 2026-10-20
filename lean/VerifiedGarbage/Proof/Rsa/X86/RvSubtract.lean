@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! # Recovery subtraction without a borrow -/
 

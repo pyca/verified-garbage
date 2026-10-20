@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Scrypt.X86_64.Scrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Scrypt.Whole
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Scrypt.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # scrypt on x86-64: where everything is

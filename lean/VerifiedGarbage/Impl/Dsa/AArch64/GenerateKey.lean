@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 
 /-! # Complete DSA key generation with AAPCS64 arguments
 

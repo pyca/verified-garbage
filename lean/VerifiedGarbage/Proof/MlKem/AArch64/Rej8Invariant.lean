@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Batch
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Steps
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Steps
 
 /-! # Vector-batch preservation of the scalar rejection invariant -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Group
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.Copy
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia ECB on ARMv7: the whole function

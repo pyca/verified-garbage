@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+import VerifiedGarbage.TCB.X86_64.Isa
 
 /-! # AVX-512 high registers: lanes and preservation -/
 

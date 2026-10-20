@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyGeometry
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractGeometry
 
 /-! # Resources supplied by the shared precomputed-verification signature -/
 

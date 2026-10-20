@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceSlice
+import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
 
 /-! # Read exactly the complete seed chunk selected by the native tape loop -/
 

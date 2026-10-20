@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Hash
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 
 /-! # Instruction safety of every seed hash and wrapped-seed contribution -/
 

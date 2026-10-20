@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Setup
 
-public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
 
 /-! # Build the three CRT workspaces and their public address links
 

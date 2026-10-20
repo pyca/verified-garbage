@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingCT
-import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
+import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The shared verification contract as machine-level resources -/
 

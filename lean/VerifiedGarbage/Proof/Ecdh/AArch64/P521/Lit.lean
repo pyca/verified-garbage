@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Spec.Weierstrass.Mul
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDH over P-521 on AArch64: the code as a literal

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEntryReady
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignGeometry
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 
 /-! # Decode checked RSA's cdecl arguments into its public buffer geometry -/
 

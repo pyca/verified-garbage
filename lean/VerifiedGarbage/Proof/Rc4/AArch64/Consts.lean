@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rc4.AArch64.Regs
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Rows
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import Mathlib.Tactic.SplitIfs
 
 /-!

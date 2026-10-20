@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Impl.CmacTripleDes.X86
-public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Cmac
 
 /-!
 # TDEA-CMAC on x86: the contracts the proofs are written against

@@ -1,17 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Checks
 meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualHead
-public import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Masks
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time equality of DSA byte buffers -/
 

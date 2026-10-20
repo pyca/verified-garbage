@@ -1,10 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReduceFromFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86_64.Loops
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Layout for native p construction and its saved generator exponent -/
 

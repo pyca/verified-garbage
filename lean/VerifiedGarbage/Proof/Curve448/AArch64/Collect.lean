@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.X448.Wide.Memory
+public import VerifiedGarbage.Impl.Curve448.AArch64
+public import VerifiedGarbage.Proof.X448.Wide.Representation
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.X448.AArch64
 
 @[expose] public section
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Spec.P521
 
 /-!
 # Point doubling and addition for `a = -3` in a curve's working space, as functions

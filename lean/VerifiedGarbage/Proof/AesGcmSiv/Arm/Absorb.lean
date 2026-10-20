@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
+public import VerifiedGarbage.Proof.Cmac.Mem32
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
 import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.GcmSiv.Words32
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on ARMv7: POLYVAL (`chunk`)

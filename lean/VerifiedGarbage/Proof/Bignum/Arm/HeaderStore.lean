@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Updating an RSA control slot preserves all arithmetic arrays -/
 

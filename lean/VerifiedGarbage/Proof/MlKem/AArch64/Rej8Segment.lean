@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8CT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8CT
 
 /-! # A reusable rejection segment with an existing accepted prefix -/
 

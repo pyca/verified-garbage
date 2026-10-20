@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
 import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len` = 2 and 1 on AVX2 registers

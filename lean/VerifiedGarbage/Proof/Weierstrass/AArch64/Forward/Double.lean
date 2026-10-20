@@ -1,11 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
 
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

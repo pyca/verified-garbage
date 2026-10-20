@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackBody
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

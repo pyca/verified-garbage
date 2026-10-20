@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareR2CT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareR2CT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareConstantsCT
 
 /-! # FFDH parameter generation on x86-64: timing of complete modulus preparation -/

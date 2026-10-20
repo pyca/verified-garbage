@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.CTBase
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # Argon2 on ARMv7: two runs of the body

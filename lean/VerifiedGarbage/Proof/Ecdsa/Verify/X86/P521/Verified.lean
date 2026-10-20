@@ -1,23 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Lit
+public import VerifiedGarbage.Spec.Ecdsa.P521
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.P521
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86
+meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDSA verification over P-521 on x86 (32-bit): `Verified`

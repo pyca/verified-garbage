@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Spec.Secp256k1
 
 /-! # secp256k1's instance of the shared point-operation API -/
 

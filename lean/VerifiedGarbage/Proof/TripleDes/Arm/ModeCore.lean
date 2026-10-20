@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
-import VerifiedGarbage.Proof.TripleDes.CbcScratch
+import VerifiedGarbage.Proof.TripleDes.Arm.Frame
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.TripleDes.Arm.Cbc
-public import VerifiedGarbage.Proof.TripleDes.CbcBlocks
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
+public import VerifiedGarbage.Spec.TripleDes.Cbc
+import VerifiedGarbage.Proof.TripleDes.CbcBlocks
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 
 /-!

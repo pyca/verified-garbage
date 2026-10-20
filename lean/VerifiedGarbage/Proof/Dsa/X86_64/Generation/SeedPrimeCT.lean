@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchStateCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchStateCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeSearchCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
 
 /-! # The accepted subgroup enters the complete public-trace prime search -/
 

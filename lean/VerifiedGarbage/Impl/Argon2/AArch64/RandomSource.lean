@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressMode
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressCache
 public import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord

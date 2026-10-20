@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm.SealGather
+public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import Mathlib.Tactic.SplitIfs
 
 /-!

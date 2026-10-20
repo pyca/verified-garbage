@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native p-width branch matches the specification's guard -/

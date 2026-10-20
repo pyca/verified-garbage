@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Significant
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

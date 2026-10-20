@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 public import VerifiedGarbage.Proof.Framework.X86_64.StraightX
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The transposition of the SSE2 state

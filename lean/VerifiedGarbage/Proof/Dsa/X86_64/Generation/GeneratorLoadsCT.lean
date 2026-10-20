@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public-address loads for generator range checks -/
 

@@ -1,6 +1,7 @@
 module
+public import Mathlib.Data.Int.ModEq
 
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # The natural residue difference is the RSA specification's signed difference -/
 

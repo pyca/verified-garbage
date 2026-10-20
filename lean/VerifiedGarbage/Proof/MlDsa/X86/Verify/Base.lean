@@ -18,6 +18,9 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.MlKem.X86.Pack
 
 /-!
 # ML-DSA verification on x86 (32-bit): the setting

@@ -1,17 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
 public import VerifiedGarbage.Proof.Ecdh.Arm.Contract
-meta import VerifiedGarbage.Proof.Ecdh.Arm.Contract
-public import VerifiedGarbage.Proof.Ecdh.Arm.Lit
-meta import VerifiedGarbage.Proof.Ecdh.Arm.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdh.P256.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Spec.EcKey.P256
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdh.Arm.Lit
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdh.Arm.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Impl.Ecdh.P256.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.EcKey.P256
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdh.Arm.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDH over P-256 on 32-bit ARM: `Verified`

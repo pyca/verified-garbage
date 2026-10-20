@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+import VerifiedGarbage.Proof.Rsa.X86.KcLoads
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcPair
 
 /-! # Only the declared cdecl arguments matter to key-check caller geometry -/
 

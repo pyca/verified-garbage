@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Sm4.Ofb
-public import VerifiedGarbage.Spec.Sm4.Cfb
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Cfb
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Sm4.Cfb
 
 /-!
 # SM4-OFB and SM4-CFB128 with their working space as an argument

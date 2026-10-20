@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrepare
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullStart
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SeedSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # The complete singleton fallback, including parser failure and saved flags -/
 @[expose] public section

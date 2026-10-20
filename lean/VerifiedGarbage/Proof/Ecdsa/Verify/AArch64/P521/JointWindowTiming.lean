@@ -1,7 +1,14 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointDigitsTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLoopTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointDigitsTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLoopTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointStepTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

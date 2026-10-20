@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Numbers as 32-bit words, on any target

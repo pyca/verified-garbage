@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignPre
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Rel
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the call of the signing function on `μ`

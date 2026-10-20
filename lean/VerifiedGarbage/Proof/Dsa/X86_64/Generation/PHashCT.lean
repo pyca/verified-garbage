@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PSeedCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedAddCT
 
 /-! # Streaming hash contributions for the public p-candidate search -/
 

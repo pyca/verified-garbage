@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # Ed25519 doublings with AVX512_IFMA: the blocks, run symbolically

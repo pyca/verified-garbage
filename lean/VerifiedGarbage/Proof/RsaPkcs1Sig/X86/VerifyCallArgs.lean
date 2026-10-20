@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyArguments
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocalArgument
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
 
 /-! # All ten arguments of precomputed public RSA verification -/
 

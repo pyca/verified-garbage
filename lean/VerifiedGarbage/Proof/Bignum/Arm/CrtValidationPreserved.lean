@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+import VerifiedGarbage.Proof.Bignum.Arm.ControlBuffers
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Factor validation preserves all three RSA workspace layouts -/
 

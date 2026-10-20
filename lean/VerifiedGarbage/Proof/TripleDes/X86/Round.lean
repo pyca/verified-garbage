@@ -2,10 +2,9 @@ module
 
 import VerifiedGarbage.Proof.TripleDes.X86.Sbox
 public import VerifiedGarbage.Proof.TripleDes.X86.Spills
-public import VerifiedGarbage.Proof.TripleDes.Permutation
+import VerifiedGarbage.Proof.TripleDes.Permutation
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
 
 @[expose] public section
 

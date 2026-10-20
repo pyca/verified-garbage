@@ -1,9 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
-meta import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
+public import VerifiedGarbage.Proof.AesOcb.X86.Entry
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.HashCT
+import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86.Front
+import VerifiedGarbage.Proof.AesOcb.X86.TagIO
+import VerifiedGarbage.Proof.AesOcb.X86.Hash
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+meta import VerifiedGarbage.Proof.AesOcb.X86.BodyCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.Entry
 meta import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.AesOcb.X86.HashCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+meta import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86.Front
+meta import VerifiedGarbage.Proof.AesOcb.X86.TagIO
+meta import VerifiedGarbage.Proof.AesOcb.X86.Hash
+meta import VerifiedGarbage.Proof.AesOcb.X86.Setup
+meta import VerifiedGarbage.Proof.AesOcb.X86.Run
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_seal` and `vg_aes_ocb_open` in constant time

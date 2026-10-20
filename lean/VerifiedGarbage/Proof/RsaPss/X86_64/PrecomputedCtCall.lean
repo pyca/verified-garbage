@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtCall
+public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCt
-public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedContract
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedContract
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedArgs
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+meta import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCtCall
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCall
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedArgs
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
 
 @[expose] public section
 

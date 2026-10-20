@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
 import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` on registers, the words of its layers

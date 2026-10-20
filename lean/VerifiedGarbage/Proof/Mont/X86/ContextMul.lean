@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Montgomery multiplication within a runtime context -/
 

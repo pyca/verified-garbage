@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRaw
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

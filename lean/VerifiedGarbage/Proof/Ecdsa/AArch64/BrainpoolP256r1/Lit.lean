@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
-meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
+import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # ECDSA over brainpoolP256r1 on AArch64: the code as a literal

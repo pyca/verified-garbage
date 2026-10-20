@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Init
+import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Init
-import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Seal
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_init` is constant time

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.CmacAes.AArch64.Callee
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Aese
 public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCT
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 
 @[expose] public section
 

@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Top
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Top
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the contract

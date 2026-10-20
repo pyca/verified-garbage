@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Field
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.X86.Instr
 
 /-!
 # X448 on x86 (32-bit): copying field elements

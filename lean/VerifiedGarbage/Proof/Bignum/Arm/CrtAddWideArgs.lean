@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtAddWide
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideScalars
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideScalars
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideArgs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Load the public pointers and width for final CRT addition -/
 

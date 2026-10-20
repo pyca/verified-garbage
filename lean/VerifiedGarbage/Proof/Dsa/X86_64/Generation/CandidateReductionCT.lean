@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionState
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionState
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Increment
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of p reduction from X and 2q -/
 

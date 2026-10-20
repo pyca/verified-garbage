@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.TCB.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
 
 /-!
 # BLAKE2s on x86 (32-bit): what the doubleword lemmas leave out

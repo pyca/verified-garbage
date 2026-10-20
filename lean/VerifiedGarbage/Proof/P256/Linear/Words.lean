@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
 
 @[expose] public section
 

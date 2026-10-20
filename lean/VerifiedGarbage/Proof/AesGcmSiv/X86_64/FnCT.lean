@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.Framework.X86_64.Narrow
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` are constant time

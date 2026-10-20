@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.X86.LitB
 meta import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
 meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
-public import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -12,12 +12,38 @@ public import VerifiedGarbage.Spec.Blake2.Contract
 meta import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Blake2.Scratch
 meta import VerifiedGarbage.Proof.Blake2.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Common
+public import VerifiedGarbage.Impl.StackScratch.X86
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Impl.Sha256.X86.Stream
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MdStream.X86.Common
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance

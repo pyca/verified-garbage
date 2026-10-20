@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
 
 /-!
 # AES-OCB on ARMv7: `L_{ntz(i)}` (`lNtz`)

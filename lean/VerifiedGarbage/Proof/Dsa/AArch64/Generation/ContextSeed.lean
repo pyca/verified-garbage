@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedArguments
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Prepare q hashing while retaining all persistent search inputs -/

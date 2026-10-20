@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
-public import VerifiedGarbage.Proof.Divstep.Iter
-public import VerifiedGarbage.Proof.Divstep.Tc
-public import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
+import VerifiedGarbage.Proof.Divstep.Iter
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Packed
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import Mathlib.Data.BitVec
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+import VerifiedGarbage.Proof.X25519.X86_64.Ops
 
 /-!
 # X25519 on x86-64, inversion by divsteps: the theory

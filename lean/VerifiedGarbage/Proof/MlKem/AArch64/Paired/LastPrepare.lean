@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared-seed timing for the first singleton rejection pass -/
 @[expose] public section

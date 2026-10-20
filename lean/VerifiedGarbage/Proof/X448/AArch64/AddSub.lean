@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Columns
+import VerifiedGarbage.Proof.X448.AArch64.Columns
 public import VerifiedGarbage.Proof.X448.Difference
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

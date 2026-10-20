@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.Mem
 
-public import VerifiedGarbage.TCB.Code
 
 /-!
 # x86-64 machine state

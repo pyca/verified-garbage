@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Loading a pair of operands while retaining Montgomery constants -/
 

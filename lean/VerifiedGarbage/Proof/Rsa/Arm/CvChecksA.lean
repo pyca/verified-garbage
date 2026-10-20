@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
 
 /-! # `vg_rsa_crt_values` on ARMv7: the checks of `p q = n`, and `inverse`'s start -/
 

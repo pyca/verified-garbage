@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableDecode
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRoots
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

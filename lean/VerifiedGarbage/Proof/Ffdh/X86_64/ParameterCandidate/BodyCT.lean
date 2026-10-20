@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of the callable body -/
 

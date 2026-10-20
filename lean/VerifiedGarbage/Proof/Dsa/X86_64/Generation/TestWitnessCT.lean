@@ -1,15 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PaddedLoadCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PaddedLoadCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TestWitness
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PaddedLoadCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TestWitness
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of the DSA witness interval test -/
 

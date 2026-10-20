@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rc2.AArch64.KeySteps
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.KeyLoop
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Public effective-key mask selection -/
 

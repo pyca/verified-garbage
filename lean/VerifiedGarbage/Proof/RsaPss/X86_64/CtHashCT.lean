@@ -1,19 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash` is constant time

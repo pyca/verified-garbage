@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming TDEA-CMAC: lemmas about the state

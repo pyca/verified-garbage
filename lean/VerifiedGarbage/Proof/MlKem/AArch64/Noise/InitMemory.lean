@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Tail
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Memory shape after paired seed initialization -/
 

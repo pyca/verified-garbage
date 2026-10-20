@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin5
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Base
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! # A candidate on ARMv7: the contract's arguments
 

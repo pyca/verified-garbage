@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.X25519.X86_64.Env
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: stages 2 and 3 of an iteration

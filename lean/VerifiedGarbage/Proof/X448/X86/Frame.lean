@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.Contract
-public import VerifiedGarbage.Proof.X448.X86.Env
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86.Instr
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # X448 on x86 (32-bit): memory frames

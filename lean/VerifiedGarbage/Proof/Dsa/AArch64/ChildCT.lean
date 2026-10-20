@@ -1,21 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Child
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Child
-public import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.LoadCheckCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildBases
 public import VerifiedGarbage.Proof.Dsa.AArch64.ChildCount
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildBases
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ChildCount
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ReduceInitCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
+meta import VerifiedGarbage.Proof.Dsa.AArch64.NewChild
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Load
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of creating and initializing a modulus workspace -/
 

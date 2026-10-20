@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Wide.Limbs
 public import Batteries.Logic
+public import VerifiedGarbage.Proof.X448.Field
 
 /-!
 # Headroom-aware X448 field representation

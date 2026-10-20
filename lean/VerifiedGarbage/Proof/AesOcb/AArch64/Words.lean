@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Subkeys
+public import VerifiedGarbage.Impl.AesOcb.AArch64
+public import VerifiedGarbage.Spec.Ocb
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB on AArch64: blocks of `W`, two words at a time

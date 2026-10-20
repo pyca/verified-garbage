@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
 import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ECDH on 32-bit ARM: reading and checking the peer's key

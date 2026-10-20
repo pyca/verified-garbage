@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillSetup
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillFinish

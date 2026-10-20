@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillSlice
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Merged from `Proof.Argon2.X86_64.FillSlicePrepare`. -/
 

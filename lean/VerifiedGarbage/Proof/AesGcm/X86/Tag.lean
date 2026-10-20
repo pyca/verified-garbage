@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-GCM on x86: the tag (`tag`)

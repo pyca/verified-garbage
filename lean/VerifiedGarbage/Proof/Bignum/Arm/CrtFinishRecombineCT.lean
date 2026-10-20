@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombine
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Final CRT reconstruction hides the product and residue -/
 

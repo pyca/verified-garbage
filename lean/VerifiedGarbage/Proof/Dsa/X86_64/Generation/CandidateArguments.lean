@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Arguments
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Native setup for candidate reduction and the saved generator exponent -/

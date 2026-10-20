@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtContractInput
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtContractInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFnCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFn
 
 /-! # Private CRT RSA satisfies its shared contract under AAPCS -/
 

@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
 public import VerifiedGarbage.Proof.X448.AArch64.Clamp
 public import VerifiedGarbage.Spec.X448.Contract
+public import VerifiedGarbage.Proof.X448.Ladder
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X448 on AArch64: the scalar's decoded bits

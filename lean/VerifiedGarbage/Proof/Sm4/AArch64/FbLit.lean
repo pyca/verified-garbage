@@ -1,11 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
-public import VerifiedGarbage.Impl.Sm4.AArch64.Fb
-meta import VerifiedGarbage.Impl.Sm4.AArch64.Fb
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # SM4-OFB and SM4-CFB128 on AArch64: the code as literals

@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationBody
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Dsa.Arm.PublicValidation
+public import VerifiedGarbage.Proof.Dsa.Arm.Session
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Resources of the shared public-key validation contract -/
 

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.GenerateKey
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSlots
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 
 /-! # Key generation's entry: the arguments saved in its frame -/
 

@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignVerified
 public import VerifiedGarbage.Proof.Dsa.X86.Verified
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignVerified
+import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The randomized signer, calling the registered `vg_dsa_sign` (x86) -/

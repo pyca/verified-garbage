@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
 public import VerifiedGarbage.Proof.Camellia.X86_64.PreparedVerified
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -8,6 +7,46 @@ public import VerifiedGarbage.Impl.Camellia.X86_64.Ctr
 public import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
 meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Camellia.X86_64.Copy
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.X86_64.Counter
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Spec.Camellia.Contract
+import VerifiedGarbage.Spec.Ctr.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Spec.Camellia.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Camellia.X86_64.Ecb
+public import VerifiedGarbage.Proof.Camellia.X86_64.Copy
+public import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Proof.Modes.X86_64.Counter
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.Proof.Modes.X86_64.Steps
+public import VerifiedGarbage.Spec.Camellia.Contract
+public import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # Camellia's core for the modes on x86-64

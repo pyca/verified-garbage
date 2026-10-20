@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivBodyCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivBodyCT
 
 /-! # Allocation adds no secret-dependent trace around the private body -/
 

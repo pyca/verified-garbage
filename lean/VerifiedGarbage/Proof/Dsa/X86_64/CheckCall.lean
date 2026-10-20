@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
-import VerifiedGarbage.Proof.Dsa.X86_64.CallHeader
+import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Impl.Dsa.X86_64.Checks
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.EnterLeave
 
 /-! # Returning DSA validation predicates through the parent workspace -/
 

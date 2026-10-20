@@ -6,6 +6,40 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Impl.Poly1305.X86_64.Avx2
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # BLAKE2b compression function on x86-64 with AVX-512

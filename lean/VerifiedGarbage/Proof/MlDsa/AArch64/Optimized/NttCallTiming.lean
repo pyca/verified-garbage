@@ -3,8 +3,11 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCall
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 
 @[expose] public section
 

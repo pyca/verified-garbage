@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopRound
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopRound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopExhausted
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeCheck
 
 /-! # One guarded iteration of DSA's finite primality loop -/
 

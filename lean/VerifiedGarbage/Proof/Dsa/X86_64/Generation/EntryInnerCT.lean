@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicCT
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicContextCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PublicContextCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
 
 /-! # The inner ABI frame preserves the proved generator trace and stack pointer -/
 

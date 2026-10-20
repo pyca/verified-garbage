@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
+public import VerifiedGarbage.Proof.Dsa.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicCalls
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Generator construction uses the existing verified public exponentiation -/

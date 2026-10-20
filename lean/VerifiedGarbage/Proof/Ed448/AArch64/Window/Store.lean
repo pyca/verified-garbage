@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 verification on AArch64: storing a table entry

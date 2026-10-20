@@ -2,20 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-public import VerifiedGarbage.Proof.Rc2.CbcMemory
-public import VerifiedGarbage.Proof.Rc2.PairMem
-public import VerifiedGarbage.Proof.Rc2.Select
-public import VerifiedGarbage.Proof.Rc2.Word
-public import VerifiedGarbage.Proof.Rc2.Word32
 public import VerifiedGarbage.Proof.Rc2.X86.KeyLit
-public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 
 @[expose] public section
 

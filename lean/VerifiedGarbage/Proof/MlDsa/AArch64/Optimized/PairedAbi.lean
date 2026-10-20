@@ -1,9 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowKernel
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 @[expose] public section
 

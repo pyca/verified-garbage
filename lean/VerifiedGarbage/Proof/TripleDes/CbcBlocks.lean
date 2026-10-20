@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.Modes.Ctr
 public import VerifiedGarbage.Spec.TripleDes.Cbc
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Triple DES-CBC's blocks, for every target's core

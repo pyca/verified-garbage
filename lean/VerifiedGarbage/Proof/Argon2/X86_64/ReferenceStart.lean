@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.ReferenceStart
-public import VerifiedGarbage.Proof.Argon2.Dimensions
-public import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
+public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.X86_64.CountCandidates
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! The reference window starts at the next slice on later passes. -/
 

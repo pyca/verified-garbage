@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # FFDH on x86-64: an exponentiation

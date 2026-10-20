@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 
-public import VerifiedGarbage.Proof.Rc4.X86_64.Init
+import VerifiedGarbage.Proof.Rc4.X86_64.Schedule
+import VerifiedGarbage.Proof.Rc4.X86_64.Replace
 
 /-! # RC4 on x86-64: one PRGA step -/
 

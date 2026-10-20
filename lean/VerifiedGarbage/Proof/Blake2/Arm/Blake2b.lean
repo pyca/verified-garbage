@@ -2,9 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
-public import VerifiedGarbage.Impl.Blake2.Arm.Stream
-public import VerifiedGarbage.Proof.Blake2.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Blake2.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Spec.Rc2
 
 /-!

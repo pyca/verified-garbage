@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh48
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+public import VerifiedGarbage.Proof.Gcm.Poly
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: 48 blocks in the field

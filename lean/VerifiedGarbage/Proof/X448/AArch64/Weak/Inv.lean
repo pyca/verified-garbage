@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Square
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # X448 on AArch64: inversion

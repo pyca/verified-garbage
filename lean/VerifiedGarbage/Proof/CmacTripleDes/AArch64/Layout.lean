@@ -5,7 +5,8 @@ public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 public import VerifiedGarbage.Proof.CmacTripleDes.Des
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # DES on AArch64: the spread words and the tables

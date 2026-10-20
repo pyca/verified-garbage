@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Resident
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 
 /-!
 # AES-OCB on AArch64: the whole blocks (`whole`)

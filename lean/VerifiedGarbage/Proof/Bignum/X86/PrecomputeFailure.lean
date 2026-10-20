@@ -1,10 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
-public import VerifiedGarbage.Proof.Bignum.ByteWords
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Invalid moduli clear every precomputation word -/
 

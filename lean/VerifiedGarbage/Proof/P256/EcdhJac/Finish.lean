@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.P256.EcdhJac.Extra
 public import VerifiedGarbage.Proof.P256.EcdhJac.OutCertificate
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJOut
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 
 /-! ## `WindowPost` -/
 

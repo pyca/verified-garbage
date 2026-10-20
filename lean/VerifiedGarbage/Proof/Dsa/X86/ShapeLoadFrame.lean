@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeLoadWidths
 public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Public-header preservation while inspecting the second modulus -/
 

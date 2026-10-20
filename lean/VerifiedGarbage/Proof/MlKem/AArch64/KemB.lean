@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-public import VerifiedGarbage.Proof.MlKem.CoeffW
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on AArch64: the matrix `Â` of `encaps` and `decaps`

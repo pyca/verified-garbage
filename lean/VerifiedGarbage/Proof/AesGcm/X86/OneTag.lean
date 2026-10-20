@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+public import VerifiedGarbage.Proof.AesGcm.X86.Tag
 
-public import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+import VerifiedGarbage.Proof.AesGcm.X86.OneAad
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 meta import VerifiedGarbage.Proof.AesGcm.X86.OneAad
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-GCM on x86: the data and the tag of `seal` and `open`

@@ -1,10 +1,12 @@
 module
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
-import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Impl.Rsa.X86_64
 
 /-!
 # A candidate on x86-64: one bit of Miller–Rabin's exponentiation

@@ -5,13 +5,11 @@ public import VerifiedGarbage.Proof.Argon2.Matrix
 import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheSelect
 import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheWord
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
-public import VerifiedGarbage.Impl.Argon2.X86_64.AddressMode
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.FillKernelInvariant`. -/
 

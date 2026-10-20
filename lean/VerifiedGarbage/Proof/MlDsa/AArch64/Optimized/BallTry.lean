@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ball
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 
 /-! A parser step independent of its byte budget or buffer location. The
 second SHAKE block can therefore resume exactly the first block's state. -/

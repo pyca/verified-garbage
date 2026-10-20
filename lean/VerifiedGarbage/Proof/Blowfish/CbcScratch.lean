@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Blowfish.Cbc
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Blowfish-CBC with its working space as an argument

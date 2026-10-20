@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationInputs
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInputCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBodyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationInputs
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInputCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The private RSA validation stages hide all key and ciphertext bytes -/
 

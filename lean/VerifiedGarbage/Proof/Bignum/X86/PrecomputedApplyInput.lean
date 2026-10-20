@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInput
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInput
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApply
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportSafe
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApply
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportSafe
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.PublicExport
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Import, apply, and export the representative using the stored public key -/
 

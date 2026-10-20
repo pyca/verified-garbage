@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Pass
 import VerifiedGarbage.Proof.TripleDes.Word
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 @[expose] public section
 

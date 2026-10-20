@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Exp1
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Loads
 
 /-! # A candidate on ARMv7: the halvings (`halving_vp`)
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
 
 /-! # Stack bound for public generator exponentiation -/
 

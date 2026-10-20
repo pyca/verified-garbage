@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
-meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Derive
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 
 /-!
 # AES-GCM-SIV on ARMv7: relating two runs, the keys and POLYVAL

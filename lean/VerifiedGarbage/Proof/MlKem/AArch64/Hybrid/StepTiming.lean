@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # The main squeezes of a hashing pair leak only public pointers

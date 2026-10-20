@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PdChecks
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # Combine the public comparison and parity bits into one branch condition -/
 

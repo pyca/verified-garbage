@@ -1,19 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
-import VerifiedGarbage.Spec.Weierstrass
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
-meta import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Ed25519.Recode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelectY
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed25519's fixed-base multiplication with BMI2 and ADX: `Verified`

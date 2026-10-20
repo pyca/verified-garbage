@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Absorb
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Absorb
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86.KeysCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 
 /-!
 # AES-GCM-SIV on x86: POLYVAL is constant time

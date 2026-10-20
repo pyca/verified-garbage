@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Batch
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Scalar
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Memory
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Memory
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # The batch appends exactly the accepted coefficients to the existing prefix -/
 

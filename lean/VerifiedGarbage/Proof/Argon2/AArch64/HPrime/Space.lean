@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Chain
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Output
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.HPrime.Written`. -/
 

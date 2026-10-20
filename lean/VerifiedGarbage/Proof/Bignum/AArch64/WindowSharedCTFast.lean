@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedSave
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

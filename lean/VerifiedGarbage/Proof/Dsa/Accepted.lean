@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.SizeBounds
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Dsa.SignVerify
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # DSA acceptance, on any target

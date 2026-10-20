@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Import the ciphertext and save its exact secret range-check bit -/
 

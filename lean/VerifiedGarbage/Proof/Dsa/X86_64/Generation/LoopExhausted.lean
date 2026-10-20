@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopState
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 

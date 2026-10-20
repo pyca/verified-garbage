@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.X86.Common
+import VerifiedGarbage.Proof.Scrypt.X86.Common
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Scrypt.BlockMix
+public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
+public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # scryptBlockMix on x86 (32-bit): the loop

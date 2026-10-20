@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
+import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerResult
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerStages
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCT
-import VerifiedGarbage.Proof.MillerRabin.AArch64.CT
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Frame
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
 
 /-! # A prepared round for generic RSA and FFDH policies -/
 

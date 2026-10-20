@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Parse
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the table

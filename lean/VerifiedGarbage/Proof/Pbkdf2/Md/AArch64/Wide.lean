@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # HMAC over any Merkle–Damgård hash function on AArch64: 16-byte copies and padding

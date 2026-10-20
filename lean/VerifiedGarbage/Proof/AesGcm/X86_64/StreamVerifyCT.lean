@@ -1,13 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify` is constant time

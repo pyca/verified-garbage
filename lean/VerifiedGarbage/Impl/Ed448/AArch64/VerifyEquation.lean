@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+public import VerifiedGarbage.Spec.Ed448
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # Ed448 verification's equation on AArch64: the checks, the decodings and the entry

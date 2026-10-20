@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-public import VerifiedGarbage.Impl.Sha3.AArch64.Stream
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
 /-!
 # ML-DSA on AArch64, signing: the pieces of the top-level function

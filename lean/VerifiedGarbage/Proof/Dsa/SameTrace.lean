@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # Two runs from two given states leak the same trace

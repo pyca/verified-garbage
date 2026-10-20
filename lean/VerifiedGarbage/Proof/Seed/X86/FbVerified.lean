@@ -1,29 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Seed.FbScratch
-meta import VerifiedGarbage.Proof.Seed.FbScratch
-public import VerifiedGarbage.Proof.Seed.X86.FbLit
-meta import VerifiedGarbage.Proof.Seed.X86.FbLit
 public import VerifiedGarbage.Proof.Seed.X86.ModeCore
-meta import VerifiedGarbage.Proof.Seed.X86.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86.Modes
-meta import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Modes.X86.Modes
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.Seed.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Seed.X86.FbLit
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Seed.FbScratch
+meta import VerifiedGarbage.Proof.Seed.X86.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Aes.X86.Sbox
-public import VerifiedGarbage.Proof.Seed.Scratch
-meta import VerifiedGarbage.Proof.Aes.X86.Sbox
-meta import VerifiedGarbage.Proof.Seed.Scratch
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Spec.Seed.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Seed.X86.FbLit
 
 /-!
 # SEED-OFB and SEED-CFB128 on x86 (32-bit) meet their contracts

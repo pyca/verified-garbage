@@ -2,8 +2,44 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Lanes
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lane
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+meta import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_decode_decompress`

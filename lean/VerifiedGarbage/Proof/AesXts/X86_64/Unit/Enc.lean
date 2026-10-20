@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Run
+public import VerifiedGarbage.Proof.AesXts.Unit
+public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
+import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 
 /-!
 # XTS-AES of data units on x86-64: encryption

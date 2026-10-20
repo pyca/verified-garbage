@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.ReduceOperand
-public import VerifiedGarbage.Proof.Mont.X86.ContextMul
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
-public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Two Montgomery products reduce an arbitrary full-width operand -/
 

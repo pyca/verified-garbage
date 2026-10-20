@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
-public import VerifiedGarbage.Proof.Ed25519.WindowConstants
+import VerifiedGarbage.Proof.Ed25519.WindowConstants
 public import VerifiedGarbage.Proof.Ed25519.Recode
+public import VerifiedGarbage.Proof.Ed25519.BaseTable
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 /-!
 # The static odd multiples of `-B`

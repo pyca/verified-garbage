@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # ML-KEM on x86-64: the NTT and its inverse on AVX2 registers, the pieces

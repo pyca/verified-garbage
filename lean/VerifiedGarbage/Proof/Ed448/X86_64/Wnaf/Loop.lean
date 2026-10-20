@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Proof.Ed448.Window
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Math
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLoop
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! The common binary loop over two sparse signed digit streams. -/
 

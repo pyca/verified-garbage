@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+public import VerifiedGarbage.Impl.MlDsa.X86.Round.Round
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 
 /-!
 # ML-DSA on x86 (32-bit): what the rounding functions share

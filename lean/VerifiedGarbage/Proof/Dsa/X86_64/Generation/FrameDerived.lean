@@ -1,7 +1,12 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Initialize workspace pointers and cursors in the native generation frame -/
 

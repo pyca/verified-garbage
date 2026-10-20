@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.WideProduct
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.X86.WideMultiplier
-public import VerifiedGarbage.Proof.Bignum.X86.WideAdvance
-public import VerifiedGarbage.Proof.Bignum.WideWindow
+import VerifiedGarbage.Proof.Bignum.X86.WideMultiplier
+import VerifiedGarbage.Proof.Bignum.X86.WideAdvance
+import VerifiedGarbage.Proof.Bignum.WideWindow
+import VerifiedGarbage.Proof.Mont.X86.RowW
 
 /-! # A full multiplication row adds its shifted partial product -/
 

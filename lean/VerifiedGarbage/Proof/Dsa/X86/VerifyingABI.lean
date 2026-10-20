@@ -2,8 +2,14 @@ module
 
 public import VerifiedGarbage.Spec.Dsa.SignVerify
 public import VerifiedGarbage.TCB.X86.Target
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
 
 /-! # Verification resources supplied by the shared cdecl contract -/
 

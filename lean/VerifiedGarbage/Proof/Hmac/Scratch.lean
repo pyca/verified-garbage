@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Hmac.Generic
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Sha1.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha512.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

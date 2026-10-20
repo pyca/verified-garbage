@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 
 /-!
 # AES-GCM `seal`'s path for TLS records

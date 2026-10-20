@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Block
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
 import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

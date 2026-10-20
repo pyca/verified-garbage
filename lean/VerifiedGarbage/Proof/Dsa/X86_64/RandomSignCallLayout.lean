@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! Memory layout of the supplied-nonce call within the randomized wrapper. -/
 @[expose] public section

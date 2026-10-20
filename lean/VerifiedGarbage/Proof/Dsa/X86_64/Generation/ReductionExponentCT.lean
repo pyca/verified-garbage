@@ -1,11 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReductionCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReductionCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReductionCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateReduction
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of the saved generator-exponent calculation -/
 

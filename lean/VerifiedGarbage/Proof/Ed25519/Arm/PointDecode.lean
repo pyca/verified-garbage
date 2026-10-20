@@ -2,15 +2,18 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
-public import VerifiedGarbage.Impl.Ed25519.Arm.FieldCheck
-import VerifiedGarbage.Proof.Ed25519.Arm.Field
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.Decode
 public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
+public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverSign
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
 import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.Arm.SplitYSign`. -/
 

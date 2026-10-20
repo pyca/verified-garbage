@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86.Cipher
 import VerifiedGarbage.Proof.Blowfish.Blocks
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # Blowfish on x86 (32-bit): ECB

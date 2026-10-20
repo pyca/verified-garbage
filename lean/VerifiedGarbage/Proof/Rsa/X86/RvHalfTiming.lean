@@ -1,7 +1,9 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rsa.X86.RvHalfStep
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvHalfLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 
 /-! # The halving schedule depends on the public exponent lengths -/
 

@@ -4,6 +4,16 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed25519 verification on AArch64: the cached `-[1]B … -[15]B` in a static

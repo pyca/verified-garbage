@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtCheckedFrame
-public import VerifiedGarbage.Proof.Bignum.OutsFrame
+import VerifiedGarbage.Proof.Bignum.OutsFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Byte-level frame around the private RSA callee-save area -/
 

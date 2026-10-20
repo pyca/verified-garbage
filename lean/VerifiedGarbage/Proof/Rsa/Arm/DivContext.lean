@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.Div
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Public layout and persistent header for native RSA division -/
 

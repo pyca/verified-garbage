@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Pairs
 
-public import VerifiedGarbage.Proof.X448.AArch64.Decode
+import VerifiedGarbage.Proof.X448.AArch64.Decode
 import VerifiedGarbage.Proof.X448.AArch64.Swap
 import Batteries.Logic
 import VerifiedGarbage.Proof.Framework.Omega

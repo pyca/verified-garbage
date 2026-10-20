@@ -2,9 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
 # Multiword arithmetic on x86-64: a prime's workspace

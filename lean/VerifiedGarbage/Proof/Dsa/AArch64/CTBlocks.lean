@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMath
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Timing-preserving composition of adjacent DSA instruction blocks -/
 

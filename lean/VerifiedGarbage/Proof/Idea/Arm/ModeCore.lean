@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Idea.Arm.Modes
-public import VerifiedGarbage.Proof.Idea.Arith
 public import VerifiedGarbage.Spec.Idea.Cbc
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Idea.Arith
+public import Mathlib.Tactic.ToAdditive
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Idea.Arm.Verified
 
 /-!
 # IDEA's ECB function on ARMv7 as the modes' core

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Session
 public import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: the checks of the domain and the keys

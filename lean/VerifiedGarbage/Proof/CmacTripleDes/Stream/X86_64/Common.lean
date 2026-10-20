@@ -1,12 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Finalize
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming TDEA-CMAC on x86-64: arithmetic, memory and copying bytes

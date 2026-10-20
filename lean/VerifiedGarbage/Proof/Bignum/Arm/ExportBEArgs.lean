@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Set the source end pointer and output length for I2OSP -/
 

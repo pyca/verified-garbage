@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.CrtValidationFrame
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Proof.Bignum.X86.CrtCompute
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValidate
-public import VerifiedGarbage.Proof.Bignum.X86.CrtComputeFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtValidate
+import VerifiedGarbage.Proof.Bignum.X86.CrtComputeFrame
 
 /-! # Validation and private arithmetic preserve a common acceptance decision -/
 

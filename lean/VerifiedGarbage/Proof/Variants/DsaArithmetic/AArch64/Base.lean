@@ -4,6 +4,22 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.MulFixedCallMont
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
+public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuardCT
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPost
+import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingABIPre
 
 /-!
 # DSA with the shared AArch64 Montgomery arithmetic backend: the variant's code and proofs

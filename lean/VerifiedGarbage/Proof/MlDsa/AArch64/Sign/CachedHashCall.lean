@@ -2,15 +2,12 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 public import VerifiedGarbage.Spec.MlDsa.CommitTail
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 /-! ## From `CommitTailCall.lean` -/
 

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
+public import VerifiedGarbage.Spec.Ecdsa.P521
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # ECDSA verification over P-521 on x86-64: the contract the proof is written against

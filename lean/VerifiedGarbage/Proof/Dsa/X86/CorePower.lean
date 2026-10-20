@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStore
-public import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
-public import VerifiedGarbage.Proof.Dsa.X86.PowCall
+import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CorePowerFrame
+import VerifiedGarbage.Proof.Dsa.X86.PowCall
+import VerifiedGarbage.Proof.Dsa.X86.PowCorrect
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Complete modular exponentiation call, including byte I/O -/
 

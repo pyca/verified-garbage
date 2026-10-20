@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Spec.Aes.Contract
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ocb
 
 /-!
 # OCB: blocks in memory as AES states

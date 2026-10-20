@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Words
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Framework.Omega
 

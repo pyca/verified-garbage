@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackTailWords
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
+public import VerifiedGarbage.Proof.MlKem.Bits
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

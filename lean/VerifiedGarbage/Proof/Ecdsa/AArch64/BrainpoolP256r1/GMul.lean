@@ -3,8 +3,12 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.MulFn
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP256r1Literals
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! # brainpoolP256r1 multiplication by the base point, by a call of `vg_brainpoolp256r1_mul` -/
 

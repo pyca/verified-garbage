@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubFail
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: the computation for a valid modulus

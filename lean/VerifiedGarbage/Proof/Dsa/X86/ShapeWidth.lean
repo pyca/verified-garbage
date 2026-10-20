@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
-public import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Width
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Saving actual-width checks in the public domain header -/
 

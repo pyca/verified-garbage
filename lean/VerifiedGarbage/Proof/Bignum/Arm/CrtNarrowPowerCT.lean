@@ -1,12 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduce
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrimeCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInputCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExpCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResultCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowReduceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnterCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInputCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowExpCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowResultCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # A factor's narrow private power hides the factor, exponent, input and acceptance
 

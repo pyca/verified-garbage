@@ -1,8 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
+import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES on whole blocks on AArch64: the groups

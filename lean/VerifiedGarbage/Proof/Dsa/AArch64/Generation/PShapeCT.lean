@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PShape
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequenceCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashSequenceCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeArgs
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
 
 /-! Public addressing for shaping the full-width p candidate. -/

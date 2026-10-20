@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # FL and FLINV on x86-64

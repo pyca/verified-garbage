@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.Arm.ExpandKey
-public import VerifiedGarbage.Proof.Rc2.Arm.Save
-import VerifiedGarbage.Proof.Rc2.Expansion
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Rc2.Memory32
 
 /-! # Individual Arm RC2 key-expansion steps -/
 

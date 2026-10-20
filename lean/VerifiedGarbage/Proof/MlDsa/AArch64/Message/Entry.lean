@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: entry and exit

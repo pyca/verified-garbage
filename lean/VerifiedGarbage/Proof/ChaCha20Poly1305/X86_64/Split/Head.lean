@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: the copy

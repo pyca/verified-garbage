@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Open
-meta import VerifiedGarbage.Proof.AesOcb.Arm.Open
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Env
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Calls
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 
 /-!
 # AES-OCB on ARMv7: relating two runs

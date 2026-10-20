@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
-public import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
+import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Loading two arithmetic operands without revealing their values -/
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
-public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
-public import VerifiedGarbage.Proof.Dsa.X86.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.StagePower
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
 
 /-! # Both public components satisfy their subgroup-power checks -/
 

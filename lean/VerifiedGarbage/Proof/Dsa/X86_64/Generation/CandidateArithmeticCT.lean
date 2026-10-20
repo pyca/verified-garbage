@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateLoadState
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponentCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateLoadState
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponentCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of complete candidate and generator-exponent arithmetic -/
 

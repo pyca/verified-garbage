@@ -1,6 +1,10 @@
 module
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 
 /-! # The immutable input and factor-exponent arguments in the CRT call frame -/
 

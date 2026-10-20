@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Value
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Mask
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 
 /-! # Extracting the public rejection mask and table address -/
 

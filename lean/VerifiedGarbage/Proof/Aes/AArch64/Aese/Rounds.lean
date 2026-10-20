@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Aes.AArch64.Aese
-import VerifiedGarbage.Spec.Aes
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 import Mathlib.Tactic.SplitIfs
 
 /-!

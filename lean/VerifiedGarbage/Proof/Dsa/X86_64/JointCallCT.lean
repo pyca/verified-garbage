@@ -1,14 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointPowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant-time binding, execution and storage of a joint call -/
 

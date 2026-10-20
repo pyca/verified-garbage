@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
+import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
 import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.Args
+meta import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.Body
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on AArch64: the data and the tag are constant time

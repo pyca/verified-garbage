@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
 public import VerifiedGarbage.Proof.Rsa.X86.RvFinish
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 
 /-! # The complete recovery arithmetic after the initial validity test -/
 

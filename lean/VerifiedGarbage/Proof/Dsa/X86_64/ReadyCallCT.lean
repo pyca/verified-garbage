@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallReduceCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.CallAddCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.CallAddCT
 
 /-! # Arithmetic timing in a persistent DSA execution workspace -/
 

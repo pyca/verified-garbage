@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdInputImport
-public import VerifiedGarbage.Proof.Bignum.Arm.PdAccept
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFinish
+import VerifiedGarbage.Proof.Bignum.Arm.PdInputImport
+import VerifiedGarbage.Proof.Bignum.Arm.PdAccept
+import VerifiedGarbage.Proof.Bignum.Arm.PdFinish
+import VerifiedGarbage.Proof.Bignum.Arm.PdControls
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The complete checked-input RSA arithmetic path, from bytes to masked output -/
 

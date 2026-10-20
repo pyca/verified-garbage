@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
 meta import VerifiedGarbage.Proof.TripleDes.Bitslice.Layout
-public import VerifiedGarbage.Proof.TripleDes.Round
+import VerifiedGarbage.Proof.TripleDes.Round
 meta import VerifiedGarbage.Proof.TripleDes.Round
 public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.TripleDes.Permutation
+meta import VerifiedGarbage.Proof.TripleDes.Permutation
 
 /-!
 # A bitsliced DES round, lane by lane

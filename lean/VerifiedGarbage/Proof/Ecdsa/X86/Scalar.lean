@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 
 /-!
 # ECDSA on x86 (32-bit): the checks, and `s = k⁻¹ (e + r d) mod n`

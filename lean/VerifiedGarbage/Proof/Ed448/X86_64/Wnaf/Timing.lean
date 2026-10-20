@@ -1,11 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
+public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Add
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+meta import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Sparse control flow depends only on the public verification scalars. -/
 

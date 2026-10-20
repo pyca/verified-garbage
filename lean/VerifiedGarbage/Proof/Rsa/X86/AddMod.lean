@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.MulModArithmetic
-public import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.MulModArithmetic
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 public import VerifiedGarbage.Impl.Rsa.X86.MulMod
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # `addMod` on i686: `[o] = ([a] + [b]) mod [m]` -/
 

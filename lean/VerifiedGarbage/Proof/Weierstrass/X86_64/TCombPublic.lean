@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Framework.CallLay
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-! Direct table lookup when the comb scalar is public. -/
 

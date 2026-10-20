@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.Arm.Lookup
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Dword
 
 /-! # RC4 on ARMv7: replacing a secret-indexed byte of the table -/
 

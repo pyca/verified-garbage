@@ -1,10 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
+import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time, the context

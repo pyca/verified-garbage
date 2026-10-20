@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Pack
 public import VerifiedGarbage.Proof.X448.Pairs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
 import VerifiedGarbage.Proof.X448.Encoding
+import VerifiedGarbage.Proof.X448.AArch64.Iter
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on AArch64: the output buffer

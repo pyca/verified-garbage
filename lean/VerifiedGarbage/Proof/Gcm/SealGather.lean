@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.Gcm.Compose
-import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs

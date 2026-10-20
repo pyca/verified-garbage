@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA key generation: coefficients and polynomials in memory

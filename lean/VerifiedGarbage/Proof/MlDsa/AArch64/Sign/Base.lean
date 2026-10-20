@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Arith
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 
 /-!
 # ML-DSA signing on AArch64: the layout registers

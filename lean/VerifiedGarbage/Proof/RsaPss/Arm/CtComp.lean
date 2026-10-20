@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
 
-public import VerifiedGarbage.Proof.RsaPss.Arm.CtSel
-public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Compress
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Rc2.Memory
 
 /-!
 # RSASSA-PSS on ARMv7: hashing, every block compressed

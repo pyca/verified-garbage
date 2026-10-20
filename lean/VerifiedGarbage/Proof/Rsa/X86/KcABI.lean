@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import VerifiedGarbage.Proof.Rsa.X86.KcInputs
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # cdecl resources for the two shared key-validation contracts -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem.Arm.KeyGen
 
-public import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
-public import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
+import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_keygen`, `Verified`

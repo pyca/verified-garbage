@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.StoreBE
 
-public import VerifiedGarbage.Proof.Bignum.X86.StoreBEArgs
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
-public import VerifiedGarbage.Proof.Bignum.ByteWords
-public import VerifiedGarbage.Proof.Bignum.ReadPrefix
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Bignum.X86.StoreBEArgs
+import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Exact big-endian export of the low bytes of an RSA workspace integer -/
 

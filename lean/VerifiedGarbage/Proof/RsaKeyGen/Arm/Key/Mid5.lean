@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid1
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid2
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid3
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid4
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Result
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mid4
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Half
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `d` by `e`'s case (`dPart_vp`), and whether it is too small (`small_vp`) -/
 

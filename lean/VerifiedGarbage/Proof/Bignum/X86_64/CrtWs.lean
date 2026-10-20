@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.CrtRedc
 
 /-!
 # RSA with the CRT on x86-64: the primes' workspaces

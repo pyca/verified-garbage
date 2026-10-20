@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Caller
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
-public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: instruction safety and stack depth -/

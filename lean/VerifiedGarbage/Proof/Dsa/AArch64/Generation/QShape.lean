@@ -1,9 +1,18 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
-public import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeEnds
+import VerifiedGarbage.Proof.Dsa.Generation.QShapeMemory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! The native digest-to-subgroup-candidate operation. -/
 @[expose] public section

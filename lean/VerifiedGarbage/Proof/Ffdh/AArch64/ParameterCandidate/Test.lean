@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Mr
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrShift
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 
 /-!
 # An FFDH parameter candidate on AArch64: the test of a modulus

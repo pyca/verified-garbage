@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAddCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAddCT
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
-meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAdd
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAdd
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! # Constant time of a wrapped-seed hash contribution -/
 

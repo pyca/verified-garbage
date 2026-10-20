@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontRow
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontMul
-public import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Csub
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): chains and the result

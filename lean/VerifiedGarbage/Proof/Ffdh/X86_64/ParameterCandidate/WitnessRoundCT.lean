@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessRange
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessMont
 
 /-! # FFDH parameter generation on x86-64: timing of the shared prepared round -/
 

@@ -1,9 +1,12 @@
 module
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # XTS-AES of whole data units: what every target shares

@@ -1,5 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WidePrep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNafWide
 open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

@@ -1,27 +1,44 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
-public import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
-public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
-meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
+import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Spec.TripleDes.Cfb
+public import VerifiedGarbage.Proof.Modes.Cfb8
+public import VerifiedGarbage.Proof.Modes.Fb
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
+public import VerifiedGarbage.Impl.TripleDes.X86_64.Fb
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.Cfb8
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
-public import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Spec.TripleDes.Cfb
+meta import VerifiedGarbage.Proof.Modes.Cfb8
+meta import VerifiedGarbage.Proof.Modes.Fb
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.TripleDes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86-64 meet their contracts

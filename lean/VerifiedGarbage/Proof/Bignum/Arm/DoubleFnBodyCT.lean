@@ -3,9 +3,19 @@ module
 public import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
+meta import VerifiedGarbage.Proof.Bignum.Arm.DoubleCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontFnBodyCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Modular doubling through the header has the same public inputs as Montgomery multiplication -/
 

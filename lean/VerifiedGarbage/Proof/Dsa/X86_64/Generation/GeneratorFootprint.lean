@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPower
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Global memory footprint of the reused generator exponentiation -/
 

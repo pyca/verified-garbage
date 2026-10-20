@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Spec.RsaPkcs1Sig
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PKCS1-v1_5: bytes in memory

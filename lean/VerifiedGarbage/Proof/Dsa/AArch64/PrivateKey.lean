@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Private-key consistency and nonce-range validation -/
 

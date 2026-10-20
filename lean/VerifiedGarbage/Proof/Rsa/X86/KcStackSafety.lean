@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
-public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
+public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 
 /-! # Stack-pointer safety of both key-validation programs -/
 

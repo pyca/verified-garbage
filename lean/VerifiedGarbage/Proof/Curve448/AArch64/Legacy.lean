@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Curve448.AArch64
+public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
+public import VerifiedGarbage.Proof.X448.Wide.Word
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
+import VerifiedGarbage.Proof.Curve448.AArch64.Stage
 import VerifiedGarbage.Proof.Curve448.AArch64.Copy
 import VerifiedGarbage.Proof.X448.Wide.Pack
 import VerifiedGarbage.Proof.X448.Wide.TailNormalize
 import VerifiedGarbage.Proof.X448.Wide.Encoded
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

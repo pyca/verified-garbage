@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa
-public import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Dsa.BitLengthBounds
+import VerifiedGarbage.Proof.Dsa.BitLengthBounds
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # DSA's seed-hash candidate uses the existing verified byte shaping
 

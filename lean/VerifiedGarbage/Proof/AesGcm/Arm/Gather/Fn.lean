@@ -3,8 +3,16 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
-public import VerifiedGarbage.Proof.AesGcm.CtxFrame
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.CtxFrame
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Gcm.SealGather
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: the function

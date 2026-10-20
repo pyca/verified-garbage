@@ -3,10 +3,15 @@ module
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLayout
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialArgs
+public import VerifiedGarbage.Proof.Argon2.Initial
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Update
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 @[expose] public section
 

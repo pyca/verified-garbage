@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Ecb
-public import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
-public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Sm4.X86_64.Crypt16
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
 public import VerifiedGarbage.Impl.Sm4.X86_64.Prepared
-public import VerifiedGarbage.Proof.Sm4.Planes
+import VerifiedGarbage.Proof.Sm4.Planes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SM4's batches under prepared round keys on x86-64: the code

@@ -1,7 +1,12 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Input acceptance and exponentiation have no secret-dependent trace -/
 

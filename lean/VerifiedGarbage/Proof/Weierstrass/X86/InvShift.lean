@@ -1,14 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Mont.X86.Chain
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
 import VerifiedGarbage.Proof.Mont.X86.Ops
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
+import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! ## `InvMaskCopy` -/
 

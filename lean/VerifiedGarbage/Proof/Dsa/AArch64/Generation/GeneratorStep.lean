@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStatus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStatus
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorOutput
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStages
 
 /-! A complete native generator attempt accepts exactly the specified nontrivial power. -/
 @[expose] public section

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Spec.Xts
 
 /-!
 # XTS: the mode one block at a time

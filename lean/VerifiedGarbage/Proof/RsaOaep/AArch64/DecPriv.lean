@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCall
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecCallee
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # RSAES-OAEP decryption on AArch64: the private-key operation

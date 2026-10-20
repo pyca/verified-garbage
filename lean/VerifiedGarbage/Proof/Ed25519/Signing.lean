@@ -1,6 +1,9 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 
 /-! The primitive signing pipeline equals the complete RFC 8032 specification. -/
 

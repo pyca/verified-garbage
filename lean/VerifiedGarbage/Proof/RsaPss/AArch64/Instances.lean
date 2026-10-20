@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignVerified
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignVerified
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Spec.RsaPss.Precomputed
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignPre
 
 /-!
 # RSASSA-PSS on AArch64, for each hash function and RSA implementation

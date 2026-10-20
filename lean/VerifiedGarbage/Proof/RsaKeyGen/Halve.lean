@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

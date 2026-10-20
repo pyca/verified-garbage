@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Scalars
+import VerifiedGarbage.Proof.Ecdh.Arm.Peer
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lays
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 
 /-!
 # ECDSA verification on 32-bit ARM: `[u]G + [v]Q`

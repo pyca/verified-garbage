@@ -1,27 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Contract
-public import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
-meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
-meta import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Lit
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Spec.EcKey.Secp256k1
+public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Lit
+public import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.List.Forall2
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdh.X86.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Spec.EcKey.Secp256k1
+meta import VerifiedGarbage.Spec.Ecdh.Generic
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Verified
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Lit
+meta import VerifiedGarbage.Impl.Ecdh.Secp256k1.X86
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Data.List.Forall2
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDH over secp256k1 on x86 (32-bit): `Verified`

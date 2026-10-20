@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Gcm.Prepared
 
-public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-!

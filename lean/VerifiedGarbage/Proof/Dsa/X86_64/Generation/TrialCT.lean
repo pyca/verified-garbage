@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeInput
+public import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopyCT
+meta import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeInput
+meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Trial division reads public workspace metadata in the generation arena -/
 

@@ -1,7 +1,7 @@
 module
 
-import VerifiedGarbage.Impl.AesXts.X86_64
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
+import VerifiedGarbage.Impl.AesXts.X86_64
 
 /-!
 # XTS-AES on x86-64 in one pass, with VAES and VPCLMULQDQ

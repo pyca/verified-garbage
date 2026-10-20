@@ -4,10 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-! Working-space invariants for lazy forward transforms and centered products.
 Canonical `Pl` and `Fam` remain unchanged for packed and public values. -/

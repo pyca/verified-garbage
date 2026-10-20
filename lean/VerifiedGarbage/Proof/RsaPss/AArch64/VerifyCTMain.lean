@@ -1,17 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
-public import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTBase
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks of `EM` are constant time

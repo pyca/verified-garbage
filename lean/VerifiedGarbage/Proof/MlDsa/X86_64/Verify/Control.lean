@@ -1,11 +1,15 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Sha3.X86_64.Round
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.HashCT
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Blocks
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA verification on x86-64: branches, sequences and the comparison

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BoundedFour
 
 /-! The bounded sampler's vector groups preserve the standard nibble order.
 Only the accepted prefix is meaningful while the parser is running; a failed

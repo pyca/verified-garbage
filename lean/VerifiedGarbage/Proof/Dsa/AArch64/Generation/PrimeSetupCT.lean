@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ExponentCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ExponentCT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstants
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstants
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 
 /-! Compose Montgomery constants and exponent preparation timing proofs. -/
 @[expose] public section

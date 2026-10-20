@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Installed
+public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
-public import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
-public import VerifiedGarbage.Proof.Dsa.X86.VerifySized
+import VerifiedGarbage.Proof.Dsa.X86.InstalledInputs
+import VerifiedGarbage.Proof.Dsa.X86.PackedKeyBuffers
+import VerifiedGarbage.Proof.Dsa.X86.VerifySized
+import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 
 /-! # Verification of original caller bytes after cdecl argument installation -/
 

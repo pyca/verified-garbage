@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Store64
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Rc2.PairMem
 
 /-! # A native store pair has exactly the shared 64-bit memory effect -/
 

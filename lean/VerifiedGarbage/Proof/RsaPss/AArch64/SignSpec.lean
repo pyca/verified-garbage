@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignMain
-public import VerifiedGarbage.Proof.RsaPss.SignCases
+public import VerifiedGarbage.Proof.RsaPss.AArch64.SignChecks
+import VerifiedGarbage.Proof.RsaPss.SignCases
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPss.Params
 
 /-!
 # RSASSA-PSS signing on AArch64: the outcome, by cases

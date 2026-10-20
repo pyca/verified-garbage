@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashPlan
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PHashOne
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Advance the native hash-contribution sequence -/
 

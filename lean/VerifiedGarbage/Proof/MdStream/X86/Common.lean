@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Impl.MdStream.X86
 public import Mathlib.Tactic.Conv
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): common lemmas

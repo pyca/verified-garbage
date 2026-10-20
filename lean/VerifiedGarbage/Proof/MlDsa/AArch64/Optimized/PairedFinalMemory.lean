@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

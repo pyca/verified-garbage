@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedImport
-public import VerifiedGarbage.Proof.Bignum.X86.ImportArray
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
-public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.X86.ImportArray
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Bignum.PackedRead
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Both imported arrays equal the caller's stored precomputation -/
 

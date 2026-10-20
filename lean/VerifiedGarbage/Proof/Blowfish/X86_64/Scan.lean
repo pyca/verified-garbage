@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
 public import VerifiedGarbage.Impl.Blowfish.X86_64
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Words
 
 /-!
 # One row of a byte plane's scan

@@ -1,11 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Sha3.Arm.Permute
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 public import VerifiedGarbage.Spec.Sha3.Contract
+public import Batteries.Logic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Sha3.Arm.Stream
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # SHA-3 on ARMv7: the shared contracts

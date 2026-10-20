@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Cvt
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 
 /-!
 # The setup of the AVX-512 loops, from the powers in the key context

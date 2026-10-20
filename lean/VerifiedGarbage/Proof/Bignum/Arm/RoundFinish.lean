@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishSteps
+import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishSteps
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact stores and public loop condition at the end of a Montgomery round -/
 

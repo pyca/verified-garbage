@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Exact packed-word export from a shared RSA array -/
 

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullReject
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Constants and complete-stream rejection entry for the singleton fallback -/
 @[expose] public section

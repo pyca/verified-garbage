@@ -1,21 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
-meta import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
-public import VerifiedGarbage.Proof.Argon2.References
-meta import VerifiedGarbage.Proof.Argon2.References
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
+import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
+import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
+import VerifiedGarbage.Proof.Argon2.References
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT3
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.ReduceCT
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.InitialCT
+meta import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
-public import VerifiedGarbage.Proof.Argon2.Divide
-public import VerifiedGarbage.Proof.Argon2.FillPositions
-public import VerifiedGarbage.Proof.Argon2.SegmentIndices
-meta import VerifiedGarbage.Proof.Argon2.Divide
-meta import VerifiedGarbage.Proof.Argon2.FillPositions
-meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

@@ -1,7 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.PolyvalCT
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
 meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Fn
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Args
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-GCM-SIV on ARMv7: the functions are constant time

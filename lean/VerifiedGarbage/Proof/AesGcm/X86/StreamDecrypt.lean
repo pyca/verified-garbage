@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
 
-public import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
 
 /-!

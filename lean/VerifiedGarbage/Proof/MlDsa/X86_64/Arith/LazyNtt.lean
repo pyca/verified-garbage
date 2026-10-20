@@ -1,11 +1,52 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyInvariant
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNormalize
-import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNttLayers
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 
 /-! Lazy forward NTT: range/congruence through eight layers, followed by
 canonical reduction, under the existing public NTT contract. -/

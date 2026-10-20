@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.InitialBody
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitFill
 public import VerifiedGarbage.Proof.Argon2.X86_64.Initial
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.X86_64.InitialMetadata`. -/
 

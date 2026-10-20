@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
-public import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
-public import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Writing the derived key: p||q||g, y and x under the final mask -/
 

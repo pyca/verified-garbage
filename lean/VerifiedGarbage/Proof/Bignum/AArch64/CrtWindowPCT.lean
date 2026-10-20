@@ -1,15 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowQCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPowCT
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowPhases
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTP
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPowCT
+meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowPhases
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowP
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # RSA with the CRT on AArch64: constant time, `p`'s phase

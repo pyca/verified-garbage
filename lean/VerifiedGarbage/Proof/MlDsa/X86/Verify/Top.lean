@@ -1,11 +1,21 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Hint
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
-import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
-meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Ball
+meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Local
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 
 /-!
 # ML-DSA verification on x86 (32-bit): the body

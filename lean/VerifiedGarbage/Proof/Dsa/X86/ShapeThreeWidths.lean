@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeFrame
+import VerifiedGarbage.Proof.Dsa.X86.ShapeFrame
+import VerifiedGarbage.Proof.Dsa.X86.ShapeWidth
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # The three candidate widths of each DSA modulus -/
 

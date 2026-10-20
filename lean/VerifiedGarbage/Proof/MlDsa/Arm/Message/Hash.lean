@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Args
+public import VerifiedGarbage.Proof.MlKem.Arm.Keccak
 import VerifiedGarbage.Proof.MlKem.Arm.Sample
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: SHAKE256 through the sponge functions

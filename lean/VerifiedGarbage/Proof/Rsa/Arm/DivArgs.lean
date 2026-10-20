@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
 
 /-! # Division loop arguments depend only on the public header -/
 

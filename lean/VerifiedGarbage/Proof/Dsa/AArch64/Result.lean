@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
-public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
-import VerifiedGarbage.Proof.Dsa.AArch64.Masks
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Returning the DSA acceptance bit in the AAPCS64 result register -/
 @[expose] public section

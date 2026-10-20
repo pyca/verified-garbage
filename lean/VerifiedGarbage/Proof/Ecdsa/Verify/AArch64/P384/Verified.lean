@@ -1,27 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-!
 # ECDSA verification over P-384 on AArch64: `Verified`

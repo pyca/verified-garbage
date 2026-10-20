@@ -1,15 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.ParametersVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Arithmetic variants for the complete DSA entry points
 

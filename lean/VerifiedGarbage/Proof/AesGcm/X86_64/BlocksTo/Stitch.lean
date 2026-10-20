@@ -4,6 +4,11 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the first `16 ⌊n / 16⌋` blocks in one pass

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: correctness

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivatePre
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
 
 /-! # Public nested-call observations agree for the same public RSA key -/
 

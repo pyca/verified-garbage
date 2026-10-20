@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin1
+import VerifiedGarbage.Proof.Rsa.Arm.InverseCT
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
+import VerifiedGarbage.Proof.Rsa.Arm.InvLoop
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `p = gcd(y - 1, n)` (`gcd_vp`) -/
 

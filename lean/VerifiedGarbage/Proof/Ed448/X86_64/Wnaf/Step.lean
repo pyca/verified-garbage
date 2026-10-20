@@ -1,7 +1,17 @@
 module
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Recode
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.X448.X86_64.Reduce
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Write
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Digit
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
 
 /-! One recoded byte and the residual invariant. -/
 

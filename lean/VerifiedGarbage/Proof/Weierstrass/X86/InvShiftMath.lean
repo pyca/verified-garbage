@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Spec.Rc2
 
 /-! # Arithmetic for the 30-bit divstep shift -/

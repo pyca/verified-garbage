@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Installed
-public import VerifiedGarbage.Proof.Dsa.X86.InputBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+import VerifiedGarbage.Proof.Dsa.X86.InputBuffer
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Caller inputs and component addresses after argument installation -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.MulFn
-public import VerifiedGarbage.Spec.Ed25519
 
 /-! Extended Edwards formulas on the sixteen-limb field representation.
 Slots 0–21 occupy bytes 64–1471 of the eight-KiB workspace. -/

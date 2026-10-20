@@ -3,13 +3,15 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Spec.GcmSiv.Contract
-public import VerifiedGarbage.Proof.AesGcm.Arm.Run
-public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
-public import VerifiedGarbage.Impl.AesGcmSiv.Arm
-public import VerifiedGarbage.Proof.AesGcm.Arm.Words
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.AesGcmSiv.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on ARMv7: the contracts, and where everything is

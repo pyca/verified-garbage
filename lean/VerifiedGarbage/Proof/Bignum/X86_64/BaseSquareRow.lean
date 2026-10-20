@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.BaseSquare
 import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # The baseline square's multiply-add row (x86-64)

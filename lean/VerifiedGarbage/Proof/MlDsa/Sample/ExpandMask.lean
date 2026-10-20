@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 
 /-!
 # ML-DSA: `BitUnpack` as arithmetic on the bytes

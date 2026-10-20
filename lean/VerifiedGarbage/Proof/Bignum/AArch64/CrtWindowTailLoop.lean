@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByte
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoopControl
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Trailing bytes extend the exact exponent prefix, carrying partial windows. -/
 

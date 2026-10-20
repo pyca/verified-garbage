@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86.Mmx
 
-public import VerifiedGarbage.TCB.X86.Isa
 
 /-!
 # x86 MMX instructions: what they change

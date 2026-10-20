@@ -1,7 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+public import VerifiedGarbage.Proof.AesOcb.Arm.Front
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+import VerifiedGarbage.Proof.AesOcb.Arm.Seal
+import VerifiedGarbage.Proof.AesOcb.Arm.Body
+import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Front
 meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBody
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Seal
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Body
+meta import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
+meta import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_seal` and `vg_aes_ocb_open` are constant time

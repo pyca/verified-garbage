@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.AesGcm.X86.Env
-import VerifiedGarbage.Proof.Gcm.Ctr
-meta import VerifiedGarbage.Proof.Gcm.Ctr
 
 /-!
 # AES-GCM on x86: the byte loops

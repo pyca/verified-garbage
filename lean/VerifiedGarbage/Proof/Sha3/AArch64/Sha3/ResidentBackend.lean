@@ -1,12 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit

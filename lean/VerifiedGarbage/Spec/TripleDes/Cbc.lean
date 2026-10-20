@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.TripleDes.Contract
 public import VerifiedGarbage.Spec.Cbc
+public import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Triple DES-CBC: the contracts, on every target

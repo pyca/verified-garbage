@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacFinishTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFinish
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafStepTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTimingInit
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafFinishTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 @[expose] public section
 

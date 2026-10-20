@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowReady
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

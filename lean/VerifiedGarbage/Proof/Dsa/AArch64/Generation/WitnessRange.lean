@@ -1,8 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.WitnessRange
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! The uniform flag agrees with the shared RSA sampler, without changing the draw. -/
 @[expose] public section

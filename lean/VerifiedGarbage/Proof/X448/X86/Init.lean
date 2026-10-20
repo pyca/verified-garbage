@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.X448.X86.Fill
 public import VerifiedGarbage.Proof.X448.X86.RowMem
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.X86.Instr
 
 /-!
 # X448 on x86 (32-bit): initializing multiplication

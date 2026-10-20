@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WindowTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.PrepTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedLayout
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-!
 # Timing of verification with `[v]Q` by the public NAF

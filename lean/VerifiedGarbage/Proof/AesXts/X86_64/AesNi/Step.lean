@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
 public import VerifiedGarbage.Impl.AesXts.X86_64AesNi
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # One-pass XTS-AES with AES-NI on x86-64: a tweak in the buffer times `α⁸`

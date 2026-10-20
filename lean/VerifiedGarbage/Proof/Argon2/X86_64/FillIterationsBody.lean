@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillIteration
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.FillPassSave`. -/
 

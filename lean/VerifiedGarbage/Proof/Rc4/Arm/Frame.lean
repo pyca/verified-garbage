@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rc4.Arm.Run
+public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.Impl.StackScratch.Arm
 
-public import VerifiedGarbage.Proof.Rc4.Arm.Verified
-import VerifiedGarbage.Proof.Rc4.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Rc4.Arm.Verified
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # RC4 on ARMv7, with the working space on the stack

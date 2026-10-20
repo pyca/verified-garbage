@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `vg_cmac_triple_des_finish`

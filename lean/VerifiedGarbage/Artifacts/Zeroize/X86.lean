@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Zeroize.X86
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Zeroize.Common32
+import VerifiedGarbage.Proof.Zeroize.Common32
 
 @[expose] public section
 

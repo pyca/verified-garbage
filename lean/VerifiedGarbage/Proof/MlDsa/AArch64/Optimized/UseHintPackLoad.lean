@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.UseHintPack
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 
 /-! ## From `UseHintPackVec.lean` -/
 

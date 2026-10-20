@@ -1,6 +1,7 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 
-public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

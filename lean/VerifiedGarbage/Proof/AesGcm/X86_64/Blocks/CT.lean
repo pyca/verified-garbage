@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Tail
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Tail
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
 
 /-!
 # AES-GCM on whole blocks, x86-64: constant time

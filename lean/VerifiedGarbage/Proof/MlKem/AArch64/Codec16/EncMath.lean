@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Encoding arithmetic block -/

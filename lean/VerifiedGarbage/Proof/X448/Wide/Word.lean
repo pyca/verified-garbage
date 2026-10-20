@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Proof.X448.Wide.Product
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.X448.Wide.Limbs
 import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: two-word arithmetic for radix-2⁵⁶ X448 coefficients. -/

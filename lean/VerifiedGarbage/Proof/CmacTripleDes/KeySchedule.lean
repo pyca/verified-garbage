@@ -2,6 +2,9 @@ module
 
 import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.CmacTripleDes.Des
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DES's key schedule, bit by bit

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivArgs
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCheckOk
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivTail
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCrt
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_rsa_private_checked` on AArch64: correctness

@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
-public import VerifiedGarbage.Proof.Rsa.X86.DivLoop
+import VerifiedGarbage.Proof.Rsa.X86.DivLoop
+import VerifiedGarbage.Proof.Rsa.WordRanges
 
 /-! # Fixed-count division on key-workspace arrays -/
 

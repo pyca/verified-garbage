@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCcm.Mac
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-CCM: counter mode in pieces

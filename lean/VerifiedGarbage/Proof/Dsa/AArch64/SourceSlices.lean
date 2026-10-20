@@ -1,8 +1,10 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Memory-safe component and digest slices of external DSA inputs -/
 

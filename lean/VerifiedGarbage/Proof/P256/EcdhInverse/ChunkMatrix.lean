@@ -1,15 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Divstep.Packed
 public import VerifiedGarbage.Proof.P256.EcdhInverse.Chunk
 public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
 public import VerifiedGarbage.Proof.P256.EcdhInverse.LowUpdate
 import Mathlib.Data.BitVec
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Divstep.WordDef
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 @[expose] public section
 

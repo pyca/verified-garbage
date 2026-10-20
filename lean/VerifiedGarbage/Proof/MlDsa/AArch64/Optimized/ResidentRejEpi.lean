@@ -5,7 +5,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreV
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.RestoreG
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentRejRestoreV.lean` -/
 

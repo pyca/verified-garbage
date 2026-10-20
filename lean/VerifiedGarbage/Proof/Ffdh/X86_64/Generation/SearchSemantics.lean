@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
-public import VerifiedGarbage.Proof.Ffdh.GenerationBounds
+import VerifiedGarbage.Proof.Ffdh.GenerationBounds
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native controller's local transitions implement the complete search -/

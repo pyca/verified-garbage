@@ -1,27 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailHead
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTail
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailAdjust
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `ResidentRejTimingBlocks.lean` -/
 

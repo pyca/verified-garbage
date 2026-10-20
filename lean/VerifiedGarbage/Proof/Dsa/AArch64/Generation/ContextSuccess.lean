@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedSearch
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 
 /-! # Phase dispatch retains the complete generation state -/
 

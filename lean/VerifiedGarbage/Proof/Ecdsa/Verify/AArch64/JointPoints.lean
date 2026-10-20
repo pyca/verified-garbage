@@ -1,22 +1,38 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFlags
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointGenerator
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCache
 import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTable
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTable
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! ## `JointPrep` -/
 

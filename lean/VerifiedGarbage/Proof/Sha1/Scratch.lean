@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha1.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha1.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SHA-1's streaming postconditions read memory only within the buffers

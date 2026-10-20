@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Front
 
 /-! # FFDH on x86-64: scanning the public scalar bound -/
 

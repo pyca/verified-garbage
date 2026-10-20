@@ -1,5 +1,11 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.WordSemantic
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Word
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha3.Arith
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

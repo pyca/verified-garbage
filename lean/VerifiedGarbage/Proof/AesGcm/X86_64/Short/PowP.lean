@@ -1,13 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
-meta import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
-meta import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
 
 /-!
 # AES-GCM's short path on x86-64: the powers from a prepared context

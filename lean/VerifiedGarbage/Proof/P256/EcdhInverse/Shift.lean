@@ -1,7 +1,8 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Divstep.WordBasic
 
 @[expose] public section

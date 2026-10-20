@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDouble
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-! The exceptional equal-point branch uses the same forwarded field compiler. -/
 

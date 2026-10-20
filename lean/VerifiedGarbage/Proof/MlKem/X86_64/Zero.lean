@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: zeroing a Keccak state

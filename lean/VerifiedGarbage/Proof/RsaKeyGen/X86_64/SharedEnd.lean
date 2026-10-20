@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Candidate finalization with the shared callee's private stack -/
 

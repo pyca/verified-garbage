@@ -1,9 +1,9 @@
 module
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductMemory
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 
 /-! # Invariants for an exact wide product with fixed public row counts -/
 

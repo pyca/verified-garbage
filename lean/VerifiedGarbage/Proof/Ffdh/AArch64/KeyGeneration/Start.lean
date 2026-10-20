@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # After its entry, in the frame saving `x30`, the controller is at the tape's start -/
 

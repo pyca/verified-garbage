@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.Arm.Isa
 
-public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_add` and `vg_mldsa_sub`

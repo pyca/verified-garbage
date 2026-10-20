@@ -4,7 +4,18 @@ public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 /-!
 # Streaming ChaCha20 on x86 (32-bit): the entry state and the calls

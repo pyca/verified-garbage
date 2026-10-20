@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Streaming TDEA-CMAC on AArch64: the contracts the proofs are written against

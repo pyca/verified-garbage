@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
-import VerifiedGarbage.Proof.Dsa.X86_64.Range
-public import VerifiedGarbage.Proof.Dsa.X86_64.IsOne
-import VerifiedGarbage.Proof.Dsa.X86_64.Zero
-import VerifiedGarbage.Proof.Dsa.X86_64.Equal
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.Dsa.X86_64.CheckFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.LocalCallFrame
 import VerifiedGarbage.Proof.Dsa.Layout
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.MaskContext
 
 /-! # Preserving both DSA arithmetic contexts across validation checks -/
 

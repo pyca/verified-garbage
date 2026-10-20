@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.ExportBufferMasked
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Wide-result serialization keeps both the result and acceptance secret -/
 

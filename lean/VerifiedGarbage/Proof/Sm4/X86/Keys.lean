@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sm4.X86.Core
 
-public import VerifiedGarbage.Proof.Sm4.X86.Crypt8
-public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Sm4.X86.Crypt8
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced round keys on x86 (32-bit)

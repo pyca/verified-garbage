@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86.Finish
+import VerifiedGarbage.Proof.X25519.X86.Finish
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.X25519.X86.Invert
+public import VerifiedGarbage.Proof.X25519.X86.Contract
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.X25519.X86.Freeze
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.X25519.X86.Setup
 
 /-!
 # X25519 on x86 (32-bit): the whole function

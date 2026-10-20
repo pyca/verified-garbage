@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.Env
+public import VerifiedGarbage.Proof.X448.X86.Frame
+public import VerifiedGarbage.Proof.X448.X86.Save
 
-public import VerifiedGarbage.Proof.X448.X86.Restore
-import VerifiedGarbage.Proof.X448.X86.Setup
+import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.X448.X86.Output
 import VerifiedGarbage.Proof.X448.X86.Freeze
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X448 on x86 (32-bit): the result and restored registers

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.X25519.Field
 import Mathlib.Tactic.SplitIfs
 
 /-!

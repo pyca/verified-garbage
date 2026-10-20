@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEntry
 public import VerifiedGarbage.Proof.RsaOaep.Encode
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM`

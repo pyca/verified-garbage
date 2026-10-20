@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLoopState
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 
 @[expose] public section

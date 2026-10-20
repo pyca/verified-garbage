@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvSized
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvResult
-public import VerifiedGarbage.Proof.Rsa.X86.CvDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Rsa.X86.CvDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # CRT dispatch follows the public modulus length -/
 

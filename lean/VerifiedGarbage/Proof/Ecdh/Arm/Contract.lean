@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdh.P256
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Spec.P256
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Spec.Ecdh.Generic
 
 /-!
 # ECDH over P-256 on 32-bit ARM: the contract the proof is written against

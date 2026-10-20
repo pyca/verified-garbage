@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Spec.Ecdh.BrainpoolP256r1
 
 /-!
 # ECDH over brainpoolP256r1 on AArch64: the contract the proof is written against

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 public import VerifiedGarbage.Proof.Argon2.Arm.Divide
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
 
 /-!
 # Argon2 on ARMv7: the parameters

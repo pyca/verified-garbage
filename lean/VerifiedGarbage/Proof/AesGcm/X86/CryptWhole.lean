@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 
 /-!
 # AES-GCM on x86: whole blocks of the text (`cryptWhole`)

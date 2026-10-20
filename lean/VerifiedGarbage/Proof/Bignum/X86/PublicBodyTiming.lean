@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicModulusTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicCheckTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicModulusTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicCheckTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailureTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Checked public RSA branches only on public key validation -/
 

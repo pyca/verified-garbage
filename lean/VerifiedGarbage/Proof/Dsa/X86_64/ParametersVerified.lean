@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABI
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The x86-64 DSA domain check verified against the shared contract -/
 

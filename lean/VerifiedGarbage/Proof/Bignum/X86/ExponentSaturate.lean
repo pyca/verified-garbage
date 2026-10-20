@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
-public import VerifiedGarbage.Proof.Bignum.ExponentWords
+import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
+import VerifiedGarbage.Proof.Bignum.ExponentWords
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Saturate only the public exponent's upper word -/
 

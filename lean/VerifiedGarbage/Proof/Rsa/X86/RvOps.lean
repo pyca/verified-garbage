@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvWrite
-public import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
-public import VerifiedGarbage.Proof.Rsa.X86.KeyBits
-public import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.KeyHalf
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
 
 /-! # Array arithmetic on the two recovery workspace views -/
 

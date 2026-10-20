@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
-public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Combine the lower bound and low-bit checks as a secret mask -/
 

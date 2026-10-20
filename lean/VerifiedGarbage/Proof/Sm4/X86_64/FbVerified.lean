@@ -1,37 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
-meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Sm4.FbScratch
-meta import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Impl.Sm4.X86_64.Fb
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Modes.Fb
+public import VerifiedGarbage.Spec.Sm4.Cfb
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Fb
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-public import VerifiedGarbage.Proof.Modes.X86_64.Xor
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
+meta import VerifiedGarbage.Proof.Modes.Fb
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86-64 meet their contracts

@@ -1,23 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
-meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
-import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
+public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.First
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
+meta import VerifiedGarbage.Proof.X448.X86_64.Inv
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Ed448.Formulas
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Verification lookups reveal only public scalar digits. -/
 

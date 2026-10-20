@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import Mathlib.Data.Nat.GCD.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Lift the saved arithmetic body to actual Montgomery calls -/
 

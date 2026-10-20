@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Seal
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 
 /-!

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.NFin
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Key
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Rsa.X86_64.Div
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on x86-64: the entry and the head

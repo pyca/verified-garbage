@@ -1,8 +1,33 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.NormNum.Inv
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: by length

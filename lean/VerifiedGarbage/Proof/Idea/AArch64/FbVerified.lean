@@ -1,23 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
-meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Idea.FbScratch
-meta import VerifiedGarbage.Proof.Idea.FbScratch
 import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Impl.Idea.AArch64.Modes
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Idea.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.AArch64.ModesLit
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
+meta import VerifiedGarbage.Spec.Idea.Cfb
+meta import VerifiedGarbage.Impl.Idea.AArch64.Modes
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on AArch64 meet their contracts

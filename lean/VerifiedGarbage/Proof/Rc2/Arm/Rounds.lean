@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Rc2.Arm.Lookup
 import VerifiedGarbage.Proof.Rc2.Word32
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Rc2.Select32
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # RC2 mixing and mashing in Arm registers -/
 

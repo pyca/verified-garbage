@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 
-public import VerifiedGarbage.Proof.Mont.X86.DynamicAdd
 
 /-! # Memory frames for composing runtime-modulus operations -/
 

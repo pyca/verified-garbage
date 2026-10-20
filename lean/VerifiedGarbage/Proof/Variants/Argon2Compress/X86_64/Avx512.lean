@@ -4,6 +4,23 @@ public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Poly1305.X86_64.Avx512
+import VerifiedGarbage.Proof.Argon2.PermuteMany
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Ends
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # Argon2's G on x86-64 with AVX-512: the variant's code and proofs

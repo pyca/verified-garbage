@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 
 /-! # Preservation of the compact public RSA Montgomery context -/
 

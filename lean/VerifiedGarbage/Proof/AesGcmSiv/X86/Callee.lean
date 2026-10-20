@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Entry
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-meta import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 
 /-!
 # AES-GCM-SIV on x86: the functions called

@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillDep
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
-public import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Dimensions
 
 @[expose] public section
 

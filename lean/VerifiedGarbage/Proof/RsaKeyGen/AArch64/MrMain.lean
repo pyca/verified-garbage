@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A candidate on AArch64: Miller–Rabin's loop

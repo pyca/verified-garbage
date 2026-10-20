@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Contract
+public import VerifiedGarbage.Spec.Ffdh.Generation
+import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.CandidatePre
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
-public import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # The complete parameter-search controller: layout and observable result -/
 

@@ -1,17 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
-import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Aad
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records, in two runs

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseMath
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly

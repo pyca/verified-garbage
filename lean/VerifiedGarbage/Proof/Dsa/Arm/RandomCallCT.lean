@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
-public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
+import VerifiedGarbage.Proof.Dsa.Arm.SignCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # The signer's call leaks only what its contract allows (32-bit ARM)

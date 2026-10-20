@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Choice
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Tail
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
 /-! # One mixed vector/scalar rejection iteration, including early success -/
 

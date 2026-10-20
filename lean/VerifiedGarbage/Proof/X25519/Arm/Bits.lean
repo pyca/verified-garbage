@@ -1,8 +1,15 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.Arm.Ladder
+public import VerifiedGarbage.Spec.X25519.Contract
 
-public import VerifiedGarbage.Proof.X25519.Arm.Setup
+import VerifiedGarbage.Proof.X25519.Arm.Setup
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.X25519.Arm.Invert
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X25519 on 32-bit ARM: the bits of the scalar

@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
+import VerifiedGarbage.Proof.Rsa.Octets
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

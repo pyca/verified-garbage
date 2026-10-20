@@ -1,10 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.VerifyFormulas
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseStep
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 verification's equation on x86-64: `[S]B + [k](-A)`

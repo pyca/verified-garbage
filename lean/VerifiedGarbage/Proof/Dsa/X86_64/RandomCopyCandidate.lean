@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyWhole
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyWhole
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Spec.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The copied ISA bytes encode precisely the specification's candidate. -/

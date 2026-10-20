@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
+import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Convert a sampled witness to Montgomery form using the shared arithmetic. -/

@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Multiword arithmetic on AArch64: stack arguments into the header

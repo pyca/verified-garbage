@@ -1,10 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: constructing p minus one in constant time -/
 

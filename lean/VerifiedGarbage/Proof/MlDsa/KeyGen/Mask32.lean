@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Spec.MlDsa.Contract
 import VerifiedGarbage.Proof.Framework.Mem
 

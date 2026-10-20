@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.Field
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 
 /-! Canonical reduction preserves the field environment. -/
 

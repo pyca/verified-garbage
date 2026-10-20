@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareState
 public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Read-only inputs and the sampler context derived from the public ABI. -/
 @[expose] public section

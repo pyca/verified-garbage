@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
-meta import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.CompressAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.Contracts
+meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM-1024 on x86-64: `ByteEncode_d ∘ Compress_d` with AVX2, which the K-PKE functions inline

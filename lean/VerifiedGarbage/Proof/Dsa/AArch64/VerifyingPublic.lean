@@ -1,15 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInitialize
+public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingMain
-public import VerifiedGarbage.Proof.Dsa.AArch64.BodyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
 
 /-! # Public observations used to relate two complete verification calls
 

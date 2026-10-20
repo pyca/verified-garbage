@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Validate
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreOps
+public import VerifiedGarbage.Proof.Dsa.Arm.Checks
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: the checks of the validation

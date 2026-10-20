@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRange
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRange
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
 
 /-! Classify the complete truncated draw while preserving its original bytes. -/
 @[expose] public section

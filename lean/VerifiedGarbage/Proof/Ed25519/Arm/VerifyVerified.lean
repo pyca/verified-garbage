@@ -1,31 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
-meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
 import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
-meta import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
-public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-meta import VerifiedGarbage.Impl.Ed25519.Arm.Verify
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-meta import VerifiedGarbage.Proof.Ed25519.Arm.DecodeCTLit
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTRhs
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTRoot
+meta import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
+meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyCT`. -/
 

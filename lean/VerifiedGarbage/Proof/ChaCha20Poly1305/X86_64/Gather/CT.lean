@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 
 /-!

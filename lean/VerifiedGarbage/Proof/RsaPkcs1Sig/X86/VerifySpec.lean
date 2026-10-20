@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyAfter
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 
 /-! # The byte comparison is the RFC verification procedure -/
 

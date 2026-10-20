@@ -1,11 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
 import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 import VerifiedGarbage.Proof.Ed448.Recover
-import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.X448.X86_64.Freeze
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Ed448 verification's equation on x86-64: decoding a point

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Digest
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Digest
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-!
 # The arithmetic schedule used by the DSA implementation

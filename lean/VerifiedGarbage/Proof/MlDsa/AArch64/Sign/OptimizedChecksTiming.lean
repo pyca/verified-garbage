@@ -1,29 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEnd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseLCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

@@ -1,7 +1,16 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Cast5.AArch64
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.KeyHalf
+import VerifiedGarbage.Proof.Cast5.AArch64.KeyHalf
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 key expansion on AArch64

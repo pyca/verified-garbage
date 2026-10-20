@@ -1,9 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Copying a masked draw leaks addresses and width, not random bytes. -/
 @[expose] public section

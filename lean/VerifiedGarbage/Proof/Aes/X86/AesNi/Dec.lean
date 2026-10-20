@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Aes.X86.AesNi.Rounds
 public import VerifiedGarbage.Proof.Aes.InvRounds
 public import VerifiedGarbage.Impl.Aes.X86.AesNiBlocks
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # AES-NI on x86 (32-bit): decryption

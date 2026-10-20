@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCount
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The masks controlling the recovery squaring loop -/
 

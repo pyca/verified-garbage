@@ -5,9 +5,9 @@ public import Batteries.Tactic.PermuteGoals
 public import Batteries.Tactic.SeqFocus
 public import Batteries.Data.List.Basic
 public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import Lean.Elab.Tactic.Simp
 
 /-!
 # Memory: reads after writes, regions, frames

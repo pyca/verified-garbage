@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+public import VerifiedGarbage.Proof.Bignum.ExponentTestMath
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentTests
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentWords
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentTests
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The public-exponent decision matches the shared RSA limits exactly -/
 

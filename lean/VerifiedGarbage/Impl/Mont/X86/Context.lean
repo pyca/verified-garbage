@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Exponent
 public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Impl.Mont.X86.Dynamic
+public import VerifiedGarbage.Impl.Mont.X86.Power
 
 /-! # Runtime Montgomery workspace and exponentiation on 32-bit x86 -/
 

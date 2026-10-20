@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.InitPairs
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SHA-256 compression backends on AArch64

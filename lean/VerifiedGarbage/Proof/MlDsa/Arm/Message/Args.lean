@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Step
 public import VerifiedGarbage.Impl.MlDsa.Arm.Message
+public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Layout
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: the moves of a call's arguments

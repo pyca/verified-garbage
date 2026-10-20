@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # A register kept in a vector register around a core's code, on AArch64

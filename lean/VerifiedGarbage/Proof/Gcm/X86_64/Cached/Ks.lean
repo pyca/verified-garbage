@@ -1,6 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Aes.X86_64.VaesZ
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
 /-!
 # The keys of the rounds of the blocks after the last group

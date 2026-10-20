@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.Arm.Context
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ops
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Mul
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ops
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

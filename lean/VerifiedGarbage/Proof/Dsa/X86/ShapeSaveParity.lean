@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeParity
-public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Saving p's parity before reusing the context to inspect q -/
 

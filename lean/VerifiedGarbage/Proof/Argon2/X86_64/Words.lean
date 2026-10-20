@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The scratch block as a vector of words -/
 

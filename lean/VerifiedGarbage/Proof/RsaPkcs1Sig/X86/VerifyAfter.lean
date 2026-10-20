@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Padding checks retain the RSA result and the saved status -/
 

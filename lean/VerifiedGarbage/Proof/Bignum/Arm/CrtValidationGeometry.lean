@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductGeometry
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProduct
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
 
 /-! # Comparison-buffer bounds for private RSA factor validation -/
 

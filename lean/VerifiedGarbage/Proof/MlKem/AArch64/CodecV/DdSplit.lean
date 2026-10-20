@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
 
 /-!
 # ML-KEM on AArch64: `ddSplit`

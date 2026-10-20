@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Rem
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGD
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 
 /-!
 # The blocks after the last group, decrypted

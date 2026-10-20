@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourBytes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackLoads
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackField
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFourMath
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## From `KeygenPackFourInput.lean` -/
 

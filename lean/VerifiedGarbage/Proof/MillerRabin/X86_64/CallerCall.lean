@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.Keeps
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRound
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRestore
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerKept
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRound
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerRestore
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerKept
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerContext
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The actual x86-64 shared call preserves its RSA caller -/
 

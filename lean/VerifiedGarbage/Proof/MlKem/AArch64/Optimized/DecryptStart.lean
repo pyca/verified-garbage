@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptSeed
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptSeed
 public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptM
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # Decapsulation prologue and seed derivation with fused decryption -/
 

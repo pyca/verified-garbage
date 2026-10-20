@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Save
-public import VerifiedGarbage.Proof.CmacTripleDes.Cmac
 import VerifiedGarbage.Proof.Cmac.Frame
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # TDEA-CMAC on x86: `vg_cmac_triple_des_update`

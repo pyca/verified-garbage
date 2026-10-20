@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.XorPad
+import VerifiedGarbage.Proof.AesOcb.AArch64.XorPad
 import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on AArch64: the rest of the data and the tag (`rest`, `tag`)

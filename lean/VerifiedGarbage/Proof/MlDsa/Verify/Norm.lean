@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
 public import VerifiedGarbage.Spec.MlDsa.Poly
 public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

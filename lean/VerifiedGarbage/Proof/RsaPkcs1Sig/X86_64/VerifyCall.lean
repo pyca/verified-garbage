@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the call of `vg_rsa_public_checked`

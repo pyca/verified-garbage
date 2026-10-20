@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
-public import VerifiedGarbage.Proof.X448.Wide.Column
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: load eight wide limbs into the cached operand registers. -/
 

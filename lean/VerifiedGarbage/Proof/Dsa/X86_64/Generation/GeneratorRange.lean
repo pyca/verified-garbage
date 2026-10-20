@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
-public import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorLoads
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DecrementOdd
+import VerifiedGarbage.Proof.Dsa.X86_64.RangeMask
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Exact range filtering of each public generator input -/

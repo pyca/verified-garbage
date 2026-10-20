@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+public import VerifiedGarbage.Spec.Dsa.Random
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyCandidate
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopyCandidate
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! A complete draw from the random tape, with derived memory permissions. -/

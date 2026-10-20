@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundMeta
 public import VerifiedGarbage.Proof.Bignum.Arm.RowState
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
 /-! # Physical layout and postcondition of one Montgomery round -/
 

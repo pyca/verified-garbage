@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
-public import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # `vg_rsa_crt_values` on ARMv7: the division of `n` by `p` -/
 

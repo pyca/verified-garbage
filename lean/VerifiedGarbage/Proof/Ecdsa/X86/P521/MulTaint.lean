@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Proof.Framework.TaintSum
 import Mathlib.Tactic.SplitIfs
 
 /-!

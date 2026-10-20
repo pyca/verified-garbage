@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! Expanding the secret scalar's bits, the comb and the encoding have a public
 trace. The loops' counters (`x19`, and `x1` for the doublings) and the table index are

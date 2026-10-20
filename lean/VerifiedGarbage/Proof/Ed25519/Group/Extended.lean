@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Pratt
+import VerifiedGarbage.Proof.Framework.Pratt
 public import Mathlib.Tactic.NormNum.Prime
-public import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Edwards.Group
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Algebra.Group.Basic

@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Contract
 public import VerifiedGarbage.Proof.Ffdh.KeyGeneration
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
 
 /-! # The key-generation controller's public data and loop states
 

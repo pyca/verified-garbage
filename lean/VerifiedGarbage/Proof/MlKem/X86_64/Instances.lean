@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 
 /-!
 # ML-KEM on x86-64: the stack pointer, for each implementation of `Sample4`

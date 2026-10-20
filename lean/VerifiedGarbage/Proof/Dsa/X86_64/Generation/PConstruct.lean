@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructPlan
-public import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Dsa.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReduceFromFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PBuild
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Generation.PReduction
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Complete verified construction of p and its generator exponent -/
 

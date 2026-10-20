@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The scratch block as a vector of words -/
 

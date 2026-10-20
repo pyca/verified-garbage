@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
 public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # Ed448 verification's equation on x86-64: the contract the proof is written against

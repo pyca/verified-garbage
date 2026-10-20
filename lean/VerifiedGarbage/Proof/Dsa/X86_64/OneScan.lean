@@ -1,11 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 import VerifiedGarbage.Proof.Dsa.Words
-public import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
-public import VerifiedGarbage.Proof.Dsa.X86_64.ZeroMask
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.X86_64.OrWords
+import Mathlib.Tactic.Set
 
 /-! # DSA subgroup checks against the ordinary value one -/
 

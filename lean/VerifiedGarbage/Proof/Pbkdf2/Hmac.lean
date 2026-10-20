@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Pbkdf2
 public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Spec.Hmac
 
 /-!
 # PBKDF2-HMAC-SHA-256: one step as two compressions

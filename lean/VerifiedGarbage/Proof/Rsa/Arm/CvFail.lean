@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.CvState
 
-public import VerifiedGarbage.Proof.Rsa.Arm.CvEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_crt_values` on ARMv7: the outputs, an invalid modulus, and the return
 

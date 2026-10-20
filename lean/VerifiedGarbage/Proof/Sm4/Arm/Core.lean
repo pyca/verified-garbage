@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Round
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Eight blocks of bitsliced SM4 on ARMv7: the rounds

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
-public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Spec.MlKem.Kpke16
+import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64, of a polynomial stored with 16 bits: pass 1

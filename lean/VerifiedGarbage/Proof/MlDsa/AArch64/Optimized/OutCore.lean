@@ -1,13 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterSlice
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Core
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveInit
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `OuterOutLoop.lean` -/
 

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
-public import VerifiedGarbage.Proof.Bignum.Arm.Store64
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Store64
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One shared-header pointer store -/
 

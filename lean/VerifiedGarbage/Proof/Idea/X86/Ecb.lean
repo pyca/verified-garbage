@@ -1,7 +1,18 @@
 module
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.X86.Lit
+public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Idea.X86.Round
 
-public import VerifiedGarbage.Proof.Idea.X86.Invert
-public import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Invert
+import VerifiedGarbage.Proof.Idea.X86.Block
+import VerifiedGarbage.Proof.Idea.X86.Key
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # IDEA ECB on x86 (32-bit)

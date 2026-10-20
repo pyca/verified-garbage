@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Poly1305.X86.Buffer
 meta import VerifiedGarbage.Proof.Poly1305.X86.Buffer
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -14,6 +12,22 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
+import VerifiedGarbage.Proof.Poly1305.Stream
+meta import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # Poly1305 on x86 (32-bit): `finalize`

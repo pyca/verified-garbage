@@ -1,7 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Context
 
-public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
-public import VerifiedGarbage.Impl.Dsa.X86.Bytes
 
 /-! # Forming p - 1 and q - 2 for DSA domain checks and Fermat powers -/
 

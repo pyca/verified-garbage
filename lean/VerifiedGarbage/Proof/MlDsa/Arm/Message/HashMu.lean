@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Hash
 import VerifiedGarbage.Proof.MlKem.KPke
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `sign_message` and `verify_message`: `μ` and `tr`

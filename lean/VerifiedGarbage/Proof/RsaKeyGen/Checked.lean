@@ -1,7 +1,10 @@
 module
+public import Mathlib.FieldTheory.Finite.Basic
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.RsaKeyGen
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Generate
-public import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.RsaKeyGen.Generate
+import VerifiedGarbage.Proof.Rsa.Checked
 
 /-!
 # RSA key generation: generated keys and the checked private operation

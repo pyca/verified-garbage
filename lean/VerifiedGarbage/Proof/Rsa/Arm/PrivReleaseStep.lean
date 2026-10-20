@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # One masked private-result byte and clearing of its temporary source -/
 

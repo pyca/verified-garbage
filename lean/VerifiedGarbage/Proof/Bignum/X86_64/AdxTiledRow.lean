@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Frame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! A complete raw multiplication row, including carry propagation. -/
 

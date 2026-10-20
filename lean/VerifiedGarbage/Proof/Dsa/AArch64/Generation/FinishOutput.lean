@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputPlan
-public import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
+import VerifiedGarbage.Proof.Dsa.Generation.ParamsEncoding
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputZero
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OnSuccess
 
 /-! # Normalize every search outcome to the public output and status convention -/
 

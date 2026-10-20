@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenB
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Open
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64, interleaved: `open` up to the branch on the tag

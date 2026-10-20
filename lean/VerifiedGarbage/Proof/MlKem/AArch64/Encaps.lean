@@ -1,15 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
-public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`

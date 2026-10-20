@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CopyBytes
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Byte copying of ordinary disjoint byte buffers -/
 

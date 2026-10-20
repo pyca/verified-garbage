@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
 public import VerifiedGarbage.Proof.Camellia.Words
+public import VerifiedGarbage.Proof.Camellia.Arm.Round
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Eight blocks of bitsliced Camellia on ARMv7: the rounds

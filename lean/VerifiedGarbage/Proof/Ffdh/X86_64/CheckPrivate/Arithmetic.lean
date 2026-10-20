@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
-public import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH private-key validation on x86-64: generator exponentiation -/

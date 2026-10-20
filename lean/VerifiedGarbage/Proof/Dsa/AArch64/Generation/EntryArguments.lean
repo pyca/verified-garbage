@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameStores
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameCopies
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Save the public ABI arguments before any arithmetic uses their registers -/
 

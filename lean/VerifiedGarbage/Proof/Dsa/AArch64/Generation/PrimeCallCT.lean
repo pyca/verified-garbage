@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeReturnCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeReturnCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeReturnCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Native primality calls for exactly the supported DSA parameter sizes -/
 

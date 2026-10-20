@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
+import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse on lazily reduced words

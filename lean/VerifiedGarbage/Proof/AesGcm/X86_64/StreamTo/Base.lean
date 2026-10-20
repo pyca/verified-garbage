@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Base
 public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the setting

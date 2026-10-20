@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.Generation.Primality
+public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! # Instantiate the shared probable-prime engine for each shaped q -/
 

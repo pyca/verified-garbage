@@ -4,6 +4,9 @@ public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
 public import VerifiedGarbage.Proof.Ed25519.Recode
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The recoding's step on x86-64

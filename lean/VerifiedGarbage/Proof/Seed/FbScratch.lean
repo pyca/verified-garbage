@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Seed.Ofb
-public import VerifiedGarbage.Spec.Seed.Cfb
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Cfb
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Seed.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Seed.Cfb
 
 /-!
 # SEED-OFB and -CFB128 with their working space as an argument

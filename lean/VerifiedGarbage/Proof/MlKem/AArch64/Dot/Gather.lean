@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Accumulate
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvFail
+import VerifiedGarbage.Proof.Rsa.Arm.RvFail
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the body (`body_vp`)
 

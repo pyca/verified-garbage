@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the IFMA branch

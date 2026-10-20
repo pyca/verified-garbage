@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PowerSafety
 
 /-! # The final domain validator preserves stack and MXCSR control state -/
 

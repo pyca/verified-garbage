@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalLoop
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! ## From `InverseMemoryFinalValues.lean` -/
 

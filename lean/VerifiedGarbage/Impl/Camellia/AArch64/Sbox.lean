@@ -4,6 +4,8 @@ public import VerifiedGarbage.Impl.Camellia.Circuit
 meta import VerifiedGarbage.Impl.Camellia.Circuit
 public import VerifiedGarbage.Impl.Aes.AArch64.Sbox
 meta import VerifiedGarbage.Impl.Aes.AArch64.Sbox
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 
 /-!
 # The bitsliced Camellia S-box on AArch64

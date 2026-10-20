@@ -1,8 +1,8 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: `Verified`

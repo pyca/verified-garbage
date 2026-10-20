@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignCallArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
-public import VerifiedGarbage.Proof.Rsa.X86.PrivABI
+public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncoding
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateRegions
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
 
 /-! # The signing call satisfies the checked RSA contract -/
 

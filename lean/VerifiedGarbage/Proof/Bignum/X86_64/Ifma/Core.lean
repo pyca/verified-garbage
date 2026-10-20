@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
+import VerifiedGarbage.Proof.Camellia.Arm.Crypt8
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyLin
+public import VerifiedGarbage.Proof.Camellia.Arm.Core
+public import VerifiedGarbage.Proof.Camellia.Arm.StoreFrame
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Arm.Fl
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # Camellia's key schedule on ARMv7: a pair of rounds on one value

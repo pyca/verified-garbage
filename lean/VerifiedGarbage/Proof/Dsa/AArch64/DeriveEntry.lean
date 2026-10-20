@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.KeygenEntry
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.EntryFieldsFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # AAPCS64 argument capture for DSA key derivation -/
 

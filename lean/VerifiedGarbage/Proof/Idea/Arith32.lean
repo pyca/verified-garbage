@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Idea
 
-public import VerifiedGarbage.Proof.Idea.Arith
 
 /-!
 # IDEA: word arithmetic on 32-bit registers

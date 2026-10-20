@@ -4,10 +4,14 @@ import VerifiedGarbage.Proof.X448.Arm.Bits
 import VerifiedGarbage.Proof.X448.Arm.Finish
 import VerifiedGarbage.Proof.X448.Arm.Ladder
 import VerifiedGarbage.Proof.X448.Arm.FinalSwap
-public import VerifiedGarbage.Proof.X448.Arm.Inv
+import VerifiedGarbage.Proof.X448.Arm.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.X448.Arm.Env
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.Arm.Setup
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on ARMv7: the whole function

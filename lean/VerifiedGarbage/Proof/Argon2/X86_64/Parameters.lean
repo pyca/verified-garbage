@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Parameters
 public import VerifiedGarbage.Proof.Argon2.X86_64.Divide
+public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 import VerifiedGarbage.Proof.Argon2.X86_64.DivideCT
-public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.ParametersSteps`. -/
 

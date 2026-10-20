@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlKem.Mem16
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
-import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Save and reload rejection continuation cursors -/
 

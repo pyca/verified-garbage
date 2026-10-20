@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
+public import Mathlib.Data.Int.ModEq
 
 /-! # The checks of an RSA key on ARMv7: the state between the steps
 

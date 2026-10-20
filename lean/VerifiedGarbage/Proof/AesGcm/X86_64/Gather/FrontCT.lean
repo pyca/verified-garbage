@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.FrontFast
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of the path of a TLS record's text

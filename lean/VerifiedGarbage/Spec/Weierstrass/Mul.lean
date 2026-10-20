@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
-public import VerifiedGarbage.Spec.P192
-public import VerifiedGarbage.Spec.Secp256k1
-public import VerifiedGarbage.Spec.BrainpoolP256r1
-public import VerifiedGarbage.Spec.BrainpoolP384r1
-public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # The multiplication of a point, in a curve's working space, as a function

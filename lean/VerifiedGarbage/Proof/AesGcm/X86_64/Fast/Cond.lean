@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
-meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Cond
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Cond
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: the condition

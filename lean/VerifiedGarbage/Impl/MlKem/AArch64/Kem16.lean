@@ -6,7 +6,9 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
 public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
 public import VerifiedGarbage.Impl.MlKem.AArch64.DotW
 public import VerifiedGarbage.Impl.MlKem.AArch64.Widen16
-public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
 
 /-! # AArch64 ML-KEM with 16-bit coefficients
 

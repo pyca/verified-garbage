@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
 
 /-!
 # AES-GCM-SIV on x86: the tag in and out

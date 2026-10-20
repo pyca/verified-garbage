@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
-public import VerifiedGarbage.Spec.BrainpoolP384r1
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-! # brainpoolP384r1 on AArch64, using complete general addition -/

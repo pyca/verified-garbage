@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Probe
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Store
+public import VerifiedGarbage.Proof.MlKem.CoeffW
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Advance
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One complete eight-candidate rejection batch -/
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 public import VerifiedGarbage.Spec.MlDsa.Contract
+public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign_message` and `_verify_message`

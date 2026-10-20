@@ -1,9 +1,21 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
-public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.X448.AArch64.Square
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's blocks

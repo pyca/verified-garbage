@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Seed
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Words
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadMem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.PadMem
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Tail
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

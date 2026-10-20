@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Mul
-public import VerifiedGarbage.Proof.Framework.CallLay
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.CallLay
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # IDEA on AArch64: a round

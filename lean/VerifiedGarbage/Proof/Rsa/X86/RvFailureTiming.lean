@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
+import VerifiedGarbage.Proof.Rsa.X86.RvFailure
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Clearing all recovery outputs has a trace determined by their public lengths -/
 

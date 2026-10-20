@@ -1,7 +1,17 @@
 module
+public import Batteries.Logic
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.AesOfb.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 import VerifiedGarbage.Proof.AesCbc.Arm.Verified
-public import VerifiedGarbage.Proof.AesOfb.Arm.Body
+import VerifiedGarbage.Proof.AesOfb.Arm.Body
 
 /-!
 # AES-OFB on ARMv7: `Verified`

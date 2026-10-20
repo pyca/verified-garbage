@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WriteUsed
 import VerifiedGarbage.Proof.Ffdh.X86_64.Exit
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: the callable's final store and ABI return -/
 

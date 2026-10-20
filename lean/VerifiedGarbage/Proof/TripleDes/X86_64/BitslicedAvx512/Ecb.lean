@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Wide
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The AVX-512 function

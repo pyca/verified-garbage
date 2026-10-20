@@ -1,21 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
+import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.Prune
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! Merged from `Proof.Ed25519.Arm.PublicKey.Correct`. -/
 

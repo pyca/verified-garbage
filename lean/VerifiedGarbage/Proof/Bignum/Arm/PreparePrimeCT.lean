@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.R2CT
+import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Secret-factor preparation has only public workspace-dependent traces -/
 

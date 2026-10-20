@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.NonceBlock
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-OCB on x86-64: `Offset_0` is constant time

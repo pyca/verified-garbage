@@ -1,17 +1,19 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
-public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarStep
-public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Ed25519.AArch64.BaseAccumulate`. -/
 

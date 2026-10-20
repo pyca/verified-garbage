@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGeneratorPlanCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishDomainCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedGenerator
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
 
 /-! # Generator selection supplies public inputs to the final validation gate -/
 

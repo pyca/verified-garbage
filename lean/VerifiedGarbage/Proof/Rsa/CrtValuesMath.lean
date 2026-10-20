@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.KeyMath
-public import VerifiedGarbage.Proof.Rsa.KeyParts
+import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Rsa.KeyParts
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
-public import VerifiedGarbage.Spec.Rsa.Contract
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-! # `vg_rsa_crt_values` on 32-bit targets: the checks are `crtKey`
 

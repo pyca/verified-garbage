@@ -5,11 +5,11 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
 import VerifiedGarbage.Proof.Mont.X86_64.SqrM
 import VerifiedGarbage.Proof.Mont.X86_64.MulS
 import VerifiedGarbage.Proof.Mont.X86_64.CsubR
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # P-384's product modulo `p` as a function, on x86-64

@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductRow
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductMemory
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductNext
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # The product loop maintains its exact prefix product and public counters -/
 

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Modes.Ctr
 
-public import VerifiedGarbage.Proof.Modes.Cbc
+import VerifiedGarbage.Proof.Modes.Cbc
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CBC encryption's result, for any block cipher and target

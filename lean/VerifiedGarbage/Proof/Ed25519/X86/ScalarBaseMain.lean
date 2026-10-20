@@ -2,18 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonFinish
-public import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
+import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
-import VerifiedGarbage.Proof.Ed25519.X86.InputBits
-public import VerifiedGarbage.Proof.Ed25519.X86.PointMul
 public import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
-public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Ed25519.X86.PointMultiplyFrame
+public import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseContract`. -/
 

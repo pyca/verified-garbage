@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 
 @[expose] public section
 

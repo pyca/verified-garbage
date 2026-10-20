@@ -2,22 +2,22 @@ module
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-import VerifiedGarbage.Proof.Ed25519.WindowConstants
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
-import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.Group.Double
-import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ed25519.Recode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Ed25519.X86_64.WindowTables`. -/
 

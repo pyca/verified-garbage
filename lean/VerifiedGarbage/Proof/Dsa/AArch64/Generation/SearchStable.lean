@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchLoop
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Controller updates preserve the persistent search payload -/

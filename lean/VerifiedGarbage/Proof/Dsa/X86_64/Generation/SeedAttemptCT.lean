@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedCTState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrimeFinishCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPrimeFinishCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedPhaseStableCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
 
 /-! # Timing of the complete native DSA seed attempt -/
 

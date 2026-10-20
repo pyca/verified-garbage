@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The ARMv7 RSA arithmetic phase implements the shared modular-exponentiation specification -/
 

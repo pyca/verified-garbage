@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Body
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ChaCha20 and Poly1305 together (AArch64): the whole chunks

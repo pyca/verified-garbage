@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Minv64
+public import VerifiedGarbage.Proof.Bignum.Arm.Newton64
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
+import VerifiedGarbage.Proof.Bignum.Arm.Minv64Steps
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # ARMv7 proves the same 64-bit Montgomery inverse as the native 64-bit targets -/
 

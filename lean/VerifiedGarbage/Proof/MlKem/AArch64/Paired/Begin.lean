@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Start
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Initial
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # Initialize and parse the first three paired matrix blocks -/
 @[expose] public section

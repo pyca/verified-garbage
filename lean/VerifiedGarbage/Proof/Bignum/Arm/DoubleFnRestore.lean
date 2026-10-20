@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBody
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBody
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnBodyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Compose modular doubling inside the outer RSA stack frame -/
 

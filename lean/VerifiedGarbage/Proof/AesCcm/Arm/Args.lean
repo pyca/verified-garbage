@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Crypt
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on ARMv7: the arguments, and what the pieces write

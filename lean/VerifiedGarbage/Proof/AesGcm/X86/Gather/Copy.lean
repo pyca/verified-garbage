@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Cmac.Stream
 import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: copying a slice

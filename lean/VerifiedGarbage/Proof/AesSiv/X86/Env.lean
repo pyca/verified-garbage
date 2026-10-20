@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.AesSiv.X86.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
-public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesSiv.X86
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on x86: where everything is

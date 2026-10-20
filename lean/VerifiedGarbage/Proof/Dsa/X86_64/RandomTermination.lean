@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDraw
 
 /-! Memory-safe termination of the actual bounded sampling loop. -/
 @[expose] public section

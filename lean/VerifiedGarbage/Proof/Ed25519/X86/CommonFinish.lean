@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86.CommonContract
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.X25519.X86.Arith
 
 /-! Merged from `Proof.Ed25519.X86.CommonOutput`. -/
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.Dsa.Generation.Primality
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # DSA's trial-division policy with a padded Montgomery workspace -/

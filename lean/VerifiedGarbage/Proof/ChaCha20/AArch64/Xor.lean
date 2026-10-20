@@ -1,25 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.ChaCha20.Spec
-import VerifiedGarbage.Impl.ChaCha20.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.ChaCha20.Contract
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
-import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorContract
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

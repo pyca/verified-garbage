@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Open
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-GCM on ARMv7: constant time, the combinators

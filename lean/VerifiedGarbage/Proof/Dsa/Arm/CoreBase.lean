@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.ContextCall
 public import VerifiedGarbage.Impl.Dsa.Arm.Core
-public import VerifiedGarbage.Proof.Dsa.Arm.Bytes
+import VerifiedGarbage.Proof.Dsa.Arm.Bytes
 public import VerifiedGarbage.Proof.Dsa.Arm.Stream
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Exponent
-public import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.Arm.Row
 
 /-!
 # DSA on 32-bit ARM: operands

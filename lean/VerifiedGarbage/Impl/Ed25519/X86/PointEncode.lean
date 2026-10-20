@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.X86.Power
+public import VerifiedGarbage.Impl.Ed25519.X86.Field
 
 /-! Canonical Edwards encoding is left in the eight words of slot1. -/
 

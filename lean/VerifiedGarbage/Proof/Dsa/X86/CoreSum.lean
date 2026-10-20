@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreInputs
+import VerifiedGarbage.Proof.Dsa.X86.CoreStore
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 
 /-! # Complete reduced modular addition call, including byte I/O -/
 

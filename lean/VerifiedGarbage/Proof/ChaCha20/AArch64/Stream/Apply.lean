@@ -1,11 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Calls
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Calls
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
 public import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Bytes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on AArch64: `apply`, correctness

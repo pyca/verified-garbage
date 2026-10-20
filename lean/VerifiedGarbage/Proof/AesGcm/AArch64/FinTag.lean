@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+import VerifiedGarbage.Proof.AesGcm.AArch64.Body
 import VerifiedGarbage.Proof.Gcm.Be64
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64: the tag of a whole message (`finBody`)

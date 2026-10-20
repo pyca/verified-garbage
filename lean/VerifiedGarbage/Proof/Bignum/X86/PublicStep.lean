@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The exponentiation iteration with its public countdown -/
 

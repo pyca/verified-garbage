@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import Mathlib.Tactic.SplitIfs
 

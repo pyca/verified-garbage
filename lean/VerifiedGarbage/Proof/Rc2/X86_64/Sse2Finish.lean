@@ -5,6 +5,9 @@ import VerifiedGarbage.Proof.Rc2.RestoreMemory
 import VerifiedGarbage.Proof.Rc2.Word
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Reducing a scan and restoring its temporary memory -/
 

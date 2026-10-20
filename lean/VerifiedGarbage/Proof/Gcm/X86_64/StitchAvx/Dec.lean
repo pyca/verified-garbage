@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
 /-!
 # Interleaved counter mode and GHASH in AVX: decryption

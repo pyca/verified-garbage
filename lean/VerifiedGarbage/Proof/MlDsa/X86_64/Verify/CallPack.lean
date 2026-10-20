@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallSample
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
 
 /-!
 # ML-DSA verification on x86-64: calls of the rounding and encoding primitives

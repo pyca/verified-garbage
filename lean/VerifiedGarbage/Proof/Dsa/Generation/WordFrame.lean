@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Bignum.Words
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Unchanged frame words imply unchanged frame bytes -/

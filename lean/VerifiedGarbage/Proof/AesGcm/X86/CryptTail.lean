@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.Cmac.Block32
 
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 
 /-!
 # AES-GCM on x86: the last bytes of the text (`cryptTail`), and `crypt`

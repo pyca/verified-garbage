@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.RandomSign
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! The randomized-signing ABI, including the wrapper and callee stack allowance. -/
 @[expose] public section

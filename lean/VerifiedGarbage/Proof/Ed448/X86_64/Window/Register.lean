@@ -1,8 +1,14 @@
 module
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86_64.Basic
 
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Digit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Impl.Ed448.X86_64.Window
 
 /-! Select one coordinate in registers, storing it only after scanning the table. -/
 

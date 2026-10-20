@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Impl.AesSiv.Arm
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on ARMv7: the calls of `vg_cmac_aes_finalize`

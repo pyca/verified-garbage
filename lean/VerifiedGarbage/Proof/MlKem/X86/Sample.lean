@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.SampleLoop
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlKem.Bits
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_sample_ntt`

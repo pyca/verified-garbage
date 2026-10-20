@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeSlice
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawPrepared
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawPrepared
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # A whole tape draw supplies the sampler and preserves all loop arguments -/
 

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Rc2.Memory
 import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Key-expansion loops and their byte-array representation -/

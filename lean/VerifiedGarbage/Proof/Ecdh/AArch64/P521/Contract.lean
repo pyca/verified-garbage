@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdh.P521
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.P521
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Spec.Ecdh.P521
 
 /-!
 # ECDH over P-521 on AArch64: the contract the proof is written against

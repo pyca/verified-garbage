@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBody
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvModulusTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvModulusTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvValidTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The wrapper exposes only the public modulus and declared attempt count -/
 

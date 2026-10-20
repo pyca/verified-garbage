@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldCheck
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 public import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.FieldCheck`. -/
 

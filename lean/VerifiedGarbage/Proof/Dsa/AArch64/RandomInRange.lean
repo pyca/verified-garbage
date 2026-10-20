@@ -1,7 +1,12 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRange
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomRange
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Whole range-check correctness, including reads of the sampler's frame. -/

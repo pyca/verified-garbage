@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Current and preceding columns in the filling loop. The public slice,
 segment length and offset are in `x22`, `x21` and `x23`, and the lane length

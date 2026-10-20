@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Spec.GcmSiv.Contract
 
 /-!
 # AES-GCM-SIV on x86: the contracts the proofs are written against

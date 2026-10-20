@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Halve
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Residue
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Framework.Omega
 

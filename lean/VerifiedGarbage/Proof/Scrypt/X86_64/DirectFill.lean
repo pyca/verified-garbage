@@ -4,10 +4,46 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixCT
 public import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
 meta import VerifiedGarbage.Impl.Scrypt.X86_64.RoMixDirect
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Scrypt.Memory
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.RoMixLoops
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedVerified
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCT
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedBody
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCT
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedCorrect
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedHalf
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedSetup
+meta import VerifiedGarbage.Proof.Scrypt.X86_64.FusedTail
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! Direct V-table filling, keeping the intermediate X in V[i]. -/
 

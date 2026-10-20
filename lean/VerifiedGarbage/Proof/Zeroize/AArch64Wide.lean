@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.Zeroize.AArch64
 meta import VerifiedGarbage.Proof.Zeroize.AArch64
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

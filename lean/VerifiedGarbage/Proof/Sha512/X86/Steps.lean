@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Sha512.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.X86.Rounds
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: the rounds

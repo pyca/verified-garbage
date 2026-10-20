@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QRangeCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupCT
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ScanCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Divides
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH domain validation on x86-64: public stages before reduction -/
 

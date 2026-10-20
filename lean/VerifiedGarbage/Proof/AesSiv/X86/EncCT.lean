@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.X86.CtrCT
+public import VerifiedGarbage.Proof.AesSiv.X86.Enc
 
-public import VerifiedGarbage.Proof.AesSiv.X86.Dec
+import VerifiedGarbage.Proof.AesSiv.X86.Dec
+import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
+import VerifiedGarbage.Proof.AesSiv.X86.Finish
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesSiv.X86.CtrCT
+meta import VerifiedGarbage.Proof.AesSiv.X86.Enc
 meta import VerifiedGarbage.Proof.AesSiv.X86.Dec
+meta import VerifiedGarbage.Proof.AesSiv.X86.FinishCT
+meta import VerifiedGarbage.Proof.AesSiv.X86.Finish
+meta import VerifiedGarbage.Proof.AesSiv.X86.Run
 
 /-!
 # AES-SIV on x86: `encrypt` and `decrypt` are constant time

@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailO
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Tail
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds3
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailRounds3
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Out3
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailKL
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the last 257 to 511 bytes of `open`

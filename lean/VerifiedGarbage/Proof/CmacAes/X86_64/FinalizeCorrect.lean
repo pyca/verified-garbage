@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-CMAC on x86-64: `vg_cmac_aes_finalize` is correct

@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Output
 import VerifiedGarbage.Proof.X448.AArch64.Freeze
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.X448.Wide.TailMul
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X448 on AArch64: the result and restored registers

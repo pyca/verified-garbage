@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
-import VerifiedGarbage.Impl.CmacAes.X86_64
+public import VerifiedGarbage.Impl.CmacAes.X86_64
 
 /-!
 # Streaming AES-CMAC: x86-64 implementation

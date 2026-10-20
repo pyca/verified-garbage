@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesCtr.Arm.Steps
-meta import VerifiedGarbage.Proof.AesCtr.Arm.Steps
+import VerifiedGarbage.Proof.AesCtr.Arm.Steps
 public import VerifiedGarbage.Proof.AesCbc.Arm.CT
-meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Impl.AesCtr.Arm
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesCtr.Arm.Steps
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.AesCtr.Spec
+meta import VerifiedGarbage.Impl.AesCtr.Arm
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CTR on ARMv7: one block, and constant time

@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawControl
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomMask
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Dsa.DomainShape
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDraw
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The sampler state retained across rejected draws. -/

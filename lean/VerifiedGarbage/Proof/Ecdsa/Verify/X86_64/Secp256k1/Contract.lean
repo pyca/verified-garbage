@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 
 /-!
 # ECDSA verification over secp256k1 on x86-64: the contract the proof is written against

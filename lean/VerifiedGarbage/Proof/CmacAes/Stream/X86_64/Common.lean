@@ -1,9 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming AES-CMAC on x86-64: arithmetic and memory

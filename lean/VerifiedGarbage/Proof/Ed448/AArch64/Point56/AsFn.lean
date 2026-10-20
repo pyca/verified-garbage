@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448 on AArch64: field code as a function

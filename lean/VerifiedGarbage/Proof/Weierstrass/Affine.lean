@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 public import Mathlib.Tactic.LinearCombination
-public import VerifiedGarbage.Proof.Weierstrass.RcbIdent
+public import VerifiedGarbage.Proof.Weierstrass.Rcb
+import VerifiedGarbage.Proof.Weierstrass.RcbIdent
 
 /-!
 # The affine group law and the complete formulas over a field

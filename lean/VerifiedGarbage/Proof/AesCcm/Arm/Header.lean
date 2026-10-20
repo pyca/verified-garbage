@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.Arm
+public import VerifiedGarbage.Proof.AesCcm.Arm.Env
+public import VerifiedGarbage.Proof.AesCcm.Mac
+public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Absorb
 import VerifiedGarbage.Proof.AesCcm.Arm.Words
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesCcm.Arm.Ctrs
+import VerifiedGarbage.Proof.AesCcm.Arm.Compare
+import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesCcm.BytesAt
 
 /-!
 # AES-CCM on ARMv7: the encoding of the length of the associated data

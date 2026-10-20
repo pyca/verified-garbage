@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Proof.X448.Field
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ed448
 
 /-!
 # Ed448: decoding a point, from its bytes

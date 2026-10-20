@@ -1,21 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
-meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
-public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Lit
-meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Lit
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdh.X86.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Lit
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.X86
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDH over brainpoolP512r1 on x86 (32-bit): `Verified`

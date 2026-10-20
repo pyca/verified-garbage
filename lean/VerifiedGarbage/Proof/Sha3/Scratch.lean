@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The SHA-3 sponge with its working space on the stack: locality

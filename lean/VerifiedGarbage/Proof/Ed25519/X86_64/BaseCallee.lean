@@ -1,16 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # The base-point multiplications the Ed25519 functions call

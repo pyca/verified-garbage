@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
-public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! One triangular cross-product row, including its final carry word. -/
 

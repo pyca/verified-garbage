@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarLoop
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.X448.X86_64.Comba
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
-import VerifiedGarbage.Proof.X448.X86_64.Field
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
 
 /-!
 # Ed448 scalar multiply-add on x86-64

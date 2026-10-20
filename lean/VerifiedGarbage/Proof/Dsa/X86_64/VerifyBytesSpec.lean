@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyCompute
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
+import VerifiedGarbage.Proof.Dsa.X86_64.AcceptedSpec
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.MdStream.Spec
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # The verification mask implements the packed DSA verification spec -/
 

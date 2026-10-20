@@ -1,10 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuild
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ReduceFromFrame
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 
 /-! # Layout for native p construction and its saved generator exponent -/
 

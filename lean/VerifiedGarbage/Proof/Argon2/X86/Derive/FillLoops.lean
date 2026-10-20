@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillBlock
 public import VerifiedGarbage.Proof.Argon2.SegmentStart
-public import VerifiedGarbage.Proof.Argon2.Slices
+import VerifiedGarbage.Proof.Argon2.Slices
 public import VerifiedGarbage.Proof.Argon2.Iterations
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillState
+public import VerifiedGarbage.Proof.Argon2.Lanes
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillPtr
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCache
 
 /-!
 # Argon2 on x86 (32-bit): the filling loops

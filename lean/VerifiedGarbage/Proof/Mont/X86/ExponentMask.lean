@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Exponent
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.Mont.X86.WordOps
-public import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-public import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
+import VerifiedGarbage.Proof.Mont.X86.ExponentWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Saving and consuming a secret exponent bit -/
 

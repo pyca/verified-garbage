@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHead
-public import VerifiedGarbage.Proof.Dsa.X86.PowCall
+public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Loading shared exponentiation's operands without duplicating setup -/
 

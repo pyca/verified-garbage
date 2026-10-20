@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Steps
-public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Spec.Cbc
-import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Modes.X86_64.Ctr
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # What the modes need of a block cipher's core, on x86-64

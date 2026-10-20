@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! Executable certificate and environment data. The original proof modules
 validate every generated certificate and execution using the kernel. -/

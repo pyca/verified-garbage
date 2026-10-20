@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.ExponentCheckTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Public exponent argument loading and scanning share a common trace -/
 

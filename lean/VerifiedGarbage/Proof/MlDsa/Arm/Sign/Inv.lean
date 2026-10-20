@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Top
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
 
 /-!
 # ML-DSA signing on ARMv7: what holds of the state between the pieces

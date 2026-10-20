@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Step
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 import VerifiedGarbage.Proof.X448.X86_64.Bits
 
 /-! The recoder changes only its bounded digit array. -/

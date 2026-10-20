@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Copy
-public import VerifiedGarbage.Proof.Gcm.SealGather
+public import VerifiedGarbage.Spec.Gcm.OutOfPlace
+import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.AesGcm.X86.Env
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: gathering the slices

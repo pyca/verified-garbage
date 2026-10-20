@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
+public import VerifiedGarbage.Proof.Camellia.Common
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.KeyPair
-import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.AArch64.KeyPair
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Camellia.AArch64.Group
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # `KA` and `KB` on AArch64

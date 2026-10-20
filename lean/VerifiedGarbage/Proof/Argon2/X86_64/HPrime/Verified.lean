@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Setup
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Setup
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Length
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Input
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Input
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Space
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
@@ -20,8 +20,48 @@ import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Absorb
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
+meta import VerifiedGarbage.Proof.Blake2.Spec
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.OutputCT`. -/
 

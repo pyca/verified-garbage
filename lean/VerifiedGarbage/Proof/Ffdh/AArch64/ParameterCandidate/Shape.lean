@@ -5,6 +5,11 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # An FFDH parameter candidate on AArch64: the candidate `p`

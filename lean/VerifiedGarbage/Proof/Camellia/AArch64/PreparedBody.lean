@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Ecb
-public import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 public import VerifiedGarbage.Impl.Camellia.AArch64.Prepared
-public import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Camellia's prepared subkeys and batches on AArch64: the code

@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
+import VerifiedGarbage.Proof.Dsa.AArch64.OneScanCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Range-check timing in the complete DSA workspace -/
 

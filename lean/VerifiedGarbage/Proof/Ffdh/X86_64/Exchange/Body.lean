@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Data
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Main
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.DomainHead
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH exchange on x86-64: entry and modulus validation -/
 

@@ -4,12 +4,35 @@ public import VerifiedGarbage.Proof.Rc4.X86.Contract
 meta import VerifiedGarbage.Proof.Rc4.X86.Contract
 public import VerifiedGarbage.Proof.Rc4.X86.Lit
 meta import VerifiedGarbage.Proof.Rc4.X86.Lit
-public import VerifiedGarbage.Proof.Rc4.X86.Apply
+import VerifiedGarbage.Proof.Rc4.X86.Apply
 meta import VerifiedGarbage.Proof.Rc4.X86.Apply
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rc4.X86.ApplyLoop
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Rc4.Dword
+import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Rc4.X86.Init
+import VerifiedGarbage.Proof.Rc4.X86.Save
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.Rc4.Dword
+meta import VerifiedGarbage.Proof.Rc4.Table
+meta import VerifiedGarbage.Proof.Rc4.X86.Init
+meta import VerifiedGarbage.Proof.Rc4.X86.Save
 
 /-! # RC4 on x86 (32-bit): constant time
 

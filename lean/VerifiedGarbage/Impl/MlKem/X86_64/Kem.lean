@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-public import VerifiedGarbage.Spec.MlKem
 public import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!

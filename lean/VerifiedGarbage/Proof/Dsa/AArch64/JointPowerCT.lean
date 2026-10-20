@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointRunCT
-import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
 import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
+import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepareCT
 
 /-! # Constant time of complete joint DSA exponentiation -/
 

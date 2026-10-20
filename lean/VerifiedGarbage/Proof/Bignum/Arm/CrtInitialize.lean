@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAll
-public import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAll
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize all CRT workspaces while preserving the saved input arguments -/
 

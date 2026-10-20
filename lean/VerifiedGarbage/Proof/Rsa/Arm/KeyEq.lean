@@ -1,7 +1,10 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
-public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Equality of two arrays of the working space, as a slot -/
 

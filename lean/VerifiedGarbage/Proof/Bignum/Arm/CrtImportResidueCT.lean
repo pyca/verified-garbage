@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtQSourceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSourceCT
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
 
 /-! # Copying the q residue has a trace independent of both secret residues -/
 

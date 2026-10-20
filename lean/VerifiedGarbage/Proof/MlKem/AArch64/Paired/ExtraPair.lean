@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Resume
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraStep
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraStep
 
 /-! # Complete the paired matrix sampler within the shared five-block bound -/
 @[expose] public section

@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 
 /-!
 # ECDSA on 32-bit ARM: the checks, and `s = k⁻¹ (e + r d) mod n`

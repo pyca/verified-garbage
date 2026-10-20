@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRow
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Public quotient and remainder counters for four-word square rows. -/
 

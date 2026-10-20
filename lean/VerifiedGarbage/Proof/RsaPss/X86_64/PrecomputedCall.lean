@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
-public import VerifiedGarbage.Impl.RsaPss.X86_64.Precomputed
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyCall
 import VerifiedGarbage.Proof.RsaPss.X86_64.SignCall
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 @[expose] public section
 

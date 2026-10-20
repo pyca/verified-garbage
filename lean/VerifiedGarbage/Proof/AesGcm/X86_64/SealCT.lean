@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_seal` is constant time

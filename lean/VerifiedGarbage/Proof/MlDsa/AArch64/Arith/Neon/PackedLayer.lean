@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layer
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedTable
 import Mathlib.Tactic.SplitIfs
 
 @[expose] public section

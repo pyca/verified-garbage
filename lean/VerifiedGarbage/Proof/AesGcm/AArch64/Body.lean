@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Text
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 
 /-!
 # AES-GCM on AArch64: the bodies of `encrypt` and `decrypt`

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Rolled
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # SHA-512 on x86-64, rolled: a round, and `Kₜ` from the table

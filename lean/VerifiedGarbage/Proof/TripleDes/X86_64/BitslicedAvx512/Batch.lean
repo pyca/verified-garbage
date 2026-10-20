@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Passes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Pass
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # An AVX-512 batch

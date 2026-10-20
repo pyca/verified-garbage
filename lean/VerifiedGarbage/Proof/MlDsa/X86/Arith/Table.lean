@@ -1,7 +1,29 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Ntt
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86.Mmx
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Bfly
+import VerifiedGarbage.Proof.MlKem.X86.Red
 
 /-!
 # ML-DSA on x86 (32-bit): writing a table of constants

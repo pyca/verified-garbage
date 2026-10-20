@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Window
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH on x86-64: what the whole function needs of its scalar multiplication

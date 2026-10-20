@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
-public import VerifiedGarbage.Proof.Rsa.ZeroTest32
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Rsa.ZeroTest32
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The private-result comparison becomes a branchless equality bit -/
 

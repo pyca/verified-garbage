@@ -1,29 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyDecode
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyLit`. -/
 

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Prepare
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Chunk
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Zero
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Chunk
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ChaCha20-Poly1305 on AArch64, 64 to 256 bytes: the prologue

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
-public import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Chain
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Modular subtraction for a runtime modulus -/
 

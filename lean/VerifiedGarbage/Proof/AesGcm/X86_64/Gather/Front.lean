@@ -1,11 +1,26 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitPath
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the test of a TLS record's text

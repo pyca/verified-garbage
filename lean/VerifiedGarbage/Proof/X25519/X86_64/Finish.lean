@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Setup
-import VerifiedGarbage.Proof.X25519.X86_64.Bits
+public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.X86_64.Iter
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64: the last swap and the result

@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Arm.Add
 public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.MlKem.Arm.Ntt
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.MlKem.Arm.Common
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on 32-bit ARM: Barrett reduction, the tables and the saved registers

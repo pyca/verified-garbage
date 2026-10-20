@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Spec.X25519
 
 /-!

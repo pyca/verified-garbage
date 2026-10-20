@@ -1,8 +1,14 @@
 module
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.X86_64.Step
 
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Bounds and addresses of the eight public odd-multiple table entries. -/
 

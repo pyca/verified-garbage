@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB2
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltHash
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
+import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltHash
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPss.AArch64.Select
 
 /-! A known salt length changes only the hash of already rejected encodings. -/
 

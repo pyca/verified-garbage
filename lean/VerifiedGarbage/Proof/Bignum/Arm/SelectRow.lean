@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Select
+public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
+import VerifiedGarbage.Proof.Bignum.Arm.SelectBody
 
 /-! # Termination and exact value of a runtime-length selection -/
 

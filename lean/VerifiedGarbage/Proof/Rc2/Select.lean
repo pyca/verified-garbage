@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.Mem
 
 /-! # Arithmetic selection lemmas for RC2's constant-time lookups -/
 

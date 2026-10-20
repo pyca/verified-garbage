@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Group
-import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.SboxTable
+public import VerifiedGarbage.Proof.Framework.Block
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Camellia.AArch64.Keys
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Storing the subkeys on AArch64

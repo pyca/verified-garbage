@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSample
-public import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomCopy
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The supplied-nonce signer's precondition (x86)

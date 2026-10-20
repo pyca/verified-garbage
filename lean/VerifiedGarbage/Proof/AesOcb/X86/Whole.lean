@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Pass
+public import VerifiedGarbage.Proof.AesOcb.X86.Calls
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86.Run
 
 /-!
 # AES-OCB on x86: the whole blocks (`whole`)

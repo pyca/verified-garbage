@@ -1,9 +1,10 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!

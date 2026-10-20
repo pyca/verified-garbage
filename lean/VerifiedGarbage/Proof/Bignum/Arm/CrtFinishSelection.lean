@@ -2,6 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtOutputArgs
+public import VerifiedGarbage.Proof.Bignum.Arm.ExportBufferMasked
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Retain the secret acceptance bit and result bound until masked export -/
 

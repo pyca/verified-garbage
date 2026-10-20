@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Spec.Gcm.Precomputed
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: GHASH in registers

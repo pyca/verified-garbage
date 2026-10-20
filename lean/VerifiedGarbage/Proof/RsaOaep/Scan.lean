@@ -2,7 +2,8 @@ module
 
 public import Batteries.Tactic.Init
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Mgf1.Bytes
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # RSAES-OAEP decryption: the masks and the scan, whatever the target

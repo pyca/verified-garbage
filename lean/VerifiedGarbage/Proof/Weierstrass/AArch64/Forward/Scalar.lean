@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Pure scalar effects used by the checked doubling schedule. The semantics
 below run the existing ISA; no arithmetic operation is redefined. -/

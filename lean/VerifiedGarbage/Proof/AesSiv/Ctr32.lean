@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.AesSiv.Words
 public import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-SIV: CTR with `vg_aes_ctr32`

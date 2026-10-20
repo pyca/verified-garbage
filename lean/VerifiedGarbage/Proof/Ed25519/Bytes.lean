@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! Reuse the shared little-endian memory lemmas. -/
 

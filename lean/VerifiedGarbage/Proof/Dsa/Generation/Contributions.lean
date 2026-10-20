@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
+import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Radix bounds for the accumulated p-candidate hash contributions -/

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Impl.Ed448.AArch64.Point56
 
 /-!
 # X448 of the base point on AArch64: the function

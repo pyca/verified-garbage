@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTimingState
+public import VerifiedGarbage.Proof.Rsa.X86.RvNumbers
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvRest
+import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
+import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
+import VerifiedGarbage.Proof.Rsa.X86.RvHalving
 
 /-! # Arithmetic preparation supplies the candidate search's public context -/
 

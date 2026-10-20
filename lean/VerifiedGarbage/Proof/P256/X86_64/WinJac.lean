@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
+public import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
+import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-!
 # P-256 on x86-64: the Jacobian window method with the doubling by halving

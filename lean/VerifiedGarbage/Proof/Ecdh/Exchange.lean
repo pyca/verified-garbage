@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Spec.Ecdh
+public import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # ECDH from a projective representative

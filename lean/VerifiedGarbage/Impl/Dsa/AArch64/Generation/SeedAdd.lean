@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
 /-! # Wrapped addition of a public offset to a DSA seed
 

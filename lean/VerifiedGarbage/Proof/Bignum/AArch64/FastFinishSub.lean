@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSubTile
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCount
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.FastFinish

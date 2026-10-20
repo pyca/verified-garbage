@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLinear
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvRed
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Divstep.Tc32Words
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! ## `InvCoeff` -/
 

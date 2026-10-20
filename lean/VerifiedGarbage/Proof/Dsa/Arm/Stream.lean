@@ -1,12 +1,25 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Dsa.Arm.Stream
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Doubling
-public import VerifiedGarbage.Proof.Dsa.Arm.Checks
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
-public import VerifiedGarbage.Proof.Dsa.StreamBytes
+import VerifiedGarbage.Proof.Dsa.Arm.Doubling
+import VerifiedGarbage.Proof.Dsa.Arm.Checks
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
+import VerifiedGarbage.Proof.Dsa.StreamBytes
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Mont.Arm.Ops
 
 /-!
 # DSA on 32-bit ARM: the arithmetic on slots

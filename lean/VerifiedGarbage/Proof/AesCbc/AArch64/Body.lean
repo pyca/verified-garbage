@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
+public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.AesCbc.Mem
 
 /-!
 # AES-CBC on AArch64: one block

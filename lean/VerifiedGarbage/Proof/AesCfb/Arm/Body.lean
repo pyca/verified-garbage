@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb.Spec
-meta import VerifiedGarbage.Proof.AesCfb.Spec
-public import VerifiedGarbage.Proof.AesOfb.Arm.Body
-meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
+import VerifiedGarbage.Proof.AesOfb.Arm.Body
 public import VerifiedGarbage.Impl.AesCfb.Arm
+public import VerifiedGarbage.Proof.AesCbc.Arm.CT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesCfb.Spec
+meta import VerifiedGarbage.Proof.AesOfb.Arm.Body
 meta import VerifiedGarbage.Impl.AesCfb.Arm
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CFB128 on ARMv7: one block, and constant time

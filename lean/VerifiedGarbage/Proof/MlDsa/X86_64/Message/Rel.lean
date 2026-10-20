@@ -1,13 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Args
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
-public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: relating two runs

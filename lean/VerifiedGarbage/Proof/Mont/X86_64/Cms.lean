@@ -2,10 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86_64.Cms
 import VerifiedGarbage.Proof.Mont.X86_64.MulS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.Adx
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
+import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # P-384's `C [a] - D [b] mod p` on x86-64 with BMI2 and ADX

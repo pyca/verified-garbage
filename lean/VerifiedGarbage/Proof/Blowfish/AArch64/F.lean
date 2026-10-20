@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
 public import VerifiedGarbage.Proof.Blowfish.F
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # F on sixteen words

@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Input
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+import VerifiedGarbage.Proof.X25519.AArch64.Main
 
 /-! Canonical field encoding and restoration of the caller's registers. -/
 

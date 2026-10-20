@@ -1,23 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Spec.MlDsa.Poly
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Spec.MlDsa.Poly
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskAccess
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Spec.MlDsa.Poly
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskBytes
 meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## From `ResidentMaskDecode.lean` -/
 

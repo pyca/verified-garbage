@@ -1,12 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailModel
-public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
 import VerifiedGarbage.Proof.MlKem.Mem
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `CommitTailHashPadding.lean` -/
 

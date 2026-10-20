@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Wide
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Ecb
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # The AVX2 function

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Sm4.AArch64.Core
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced round keys on AArch64

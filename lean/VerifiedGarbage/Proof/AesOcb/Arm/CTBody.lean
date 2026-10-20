@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
-meta import VerifiedGarbage.Proof.AesOcb.Arm.CTPre
+import VerifiedGarbage.Proof.AesOcb.Arm.Body
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Body
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on ARMv7: the data and the tag in two runs

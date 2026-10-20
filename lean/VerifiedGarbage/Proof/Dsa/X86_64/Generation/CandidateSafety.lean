@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashSafety
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSafety
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeSafety
 
 /-! # Instruction safety of subgroup candidates and bounded prime search -/
 

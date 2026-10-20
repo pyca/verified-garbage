@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Exact memory effects of copying stack argument slots. -/

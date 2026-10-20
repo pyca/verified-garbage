@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupModCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.SetupModCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupModCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: the domain front in constant time -/
 

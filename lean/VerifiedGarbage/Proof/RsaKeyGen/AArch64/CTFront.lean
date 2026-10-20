@@ -1,9 +1,43 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # A candidate on AArch64: constant time, the stages before Montgomery setup

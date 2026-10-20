@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Spec.X25519
 
 /-!

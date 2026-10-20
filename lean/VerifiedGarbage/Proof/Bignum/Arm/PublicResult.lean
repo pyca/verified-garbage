@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicControls
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhase
+import VerifiedGarbage.Proof.Bignum.Arm.ExpPhase
 import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The exponentiation result fits the RSA output buffer and retains acceptance -/
 

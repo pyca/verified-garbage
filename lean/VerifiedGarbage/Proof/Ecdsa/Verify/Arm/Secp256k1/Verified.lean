@@ -1,19 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.Arm
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.Arm
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Secp256k1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDSA verification over secp256k1 on 32-bit ARM: `Verified`

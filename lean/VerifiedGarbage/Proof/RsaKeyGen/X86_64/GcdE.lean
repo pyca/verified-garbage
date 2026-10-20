@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!

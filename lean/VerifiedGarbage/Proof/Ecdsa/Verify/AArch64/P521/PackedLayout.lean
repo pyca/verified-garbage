@@ -1,6 +1,10 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

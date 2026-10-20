@@ -3,9 +3,19 @@ module
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 meta import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # The AdvSIMD S-box circuits' and transposition's code, and the circuits' output registers, as literals -/
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Call
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Contracts
 
 /-!
 # ML-DSA on 32-bit ARM: calling the multiplications, additions and subtractions

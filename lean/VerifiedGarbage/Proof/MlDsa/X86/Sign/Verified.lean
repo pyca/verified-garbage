@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Top
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA signing on x86 (32-bit): verified

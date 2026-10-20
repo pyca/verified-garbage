@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Base
-public import VerifiedGarbage.Proof.RsaKeyGen.Generate
-public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-! # A candidate on ARMv7: the numbers, as the specification has them
 

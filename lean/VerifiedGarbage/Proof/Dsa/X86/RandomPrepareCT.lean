@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
+import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Preparing leaks only public data (x86)

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqPhase
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.SqFrame
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 

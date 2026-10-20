@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFinish
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 

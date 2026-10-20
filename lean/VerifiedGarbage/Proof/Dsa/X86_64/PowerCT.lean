@@ -1,16 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Power
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Power
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Impl.Dsa.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
+import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
+import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EncodePower
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Exponent
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time components of DSA exponentiation -/
 

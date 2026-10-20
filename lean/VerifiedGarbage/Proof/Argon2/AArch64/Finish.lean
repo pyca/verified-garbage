@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # XOR the permuted block with R and write the output -/
 

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.SignCached
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
+public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Layout
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 signing with a cached public key on x86-64: where everything is

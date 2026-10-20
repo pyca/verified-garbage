@@ -1,19 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 
 /-!
 # AES-GCM `open`'s path for TLS records, in two runs

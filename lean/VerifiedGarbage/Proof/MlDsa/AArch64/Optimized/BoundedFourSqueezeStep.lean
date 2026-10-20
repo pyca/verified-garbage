@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeArgs
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourPairFour.lean` -/
 

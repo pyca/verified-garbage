@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCall
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivArgs
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the call of the CRT

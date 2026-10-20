@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.Instr
 
 import VerifiedGarbage.Proof.X448.X86.ByteMem
-public import VerifiedGarbage.Proof.X448.X86.Args
+import VerifiedGarbage.Proof.X448.X86.Args
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.Ladder
 import VerifiedGarbage.Spec.X25519
 
 /-!

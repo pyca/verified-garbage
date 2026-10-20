@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Exec
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.ChaCha20.Spec
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
 public import VerifiedGarbage.Impl.ChaCha20.X86.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86.Vqr
-public import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.ChaCha20.X86.Bytes
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20 on x86 (32-bit): four blocks at once with SSE2

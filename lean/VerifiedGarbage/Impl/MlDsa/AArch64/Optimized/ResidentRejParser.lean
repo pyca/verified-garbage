@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 
 /-! Fixed-address vector parsing for the matrix sampler. Failed vector
 acceptance falls back to the existing ordered scalar acceptance operation. -/

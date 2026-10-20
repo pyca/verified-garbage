@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Argon2
 
 /-! # Binary division used by Argon2's index arithmetic -/
 

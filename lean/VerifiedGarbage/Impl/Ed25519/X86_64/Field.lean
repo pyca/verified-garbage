@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86_64
-public import VerifiedGarbage.Spec.Ed25519
 
 /-!
 # Ed25519 field operations on x86-64

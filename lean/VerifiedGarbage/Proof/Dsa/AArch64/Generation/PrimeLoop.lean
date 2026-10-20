@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopInit
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopInit
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The complete DSA witness loop implements RSA's blinded primality loop -/

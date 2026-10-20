@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Bits
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldMemory
 
 /-! Base-point multiplication for the complete unsigned 256-bit input scalar: the
 frame around an engine (`scalarBaseWith`), which the comb

@@ -2,10 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import Mathlib.Data.Nat.Prime.Defs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Inversion by divsteps on AArch64: what it computes

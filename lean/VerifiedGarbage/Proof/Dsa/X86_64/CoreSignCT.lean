@@ -1,10 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleAddCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleAddCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleAddCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of the complete DSA signing arithmetic schedule -/
 

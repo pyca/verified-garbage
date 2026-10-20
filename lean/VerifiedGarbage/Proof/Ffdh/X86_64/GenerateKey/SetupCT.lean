@@ -1,8 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.TailCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.TailCT
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ScalarCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.TailCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ScalarCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.StagesCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH on x86-64: set up the private-scalar core in constant time -/
 

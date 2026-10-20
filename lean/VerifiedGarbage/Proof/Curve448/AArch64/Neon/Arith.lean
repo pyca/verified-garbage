@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Macs
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 
 /-!
 # Lanes of the 64-bit lane arithmetic

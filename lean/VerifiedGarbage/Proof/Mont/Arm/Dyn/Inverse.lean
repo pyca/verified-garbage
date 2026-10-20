@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.Arm.Context
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 

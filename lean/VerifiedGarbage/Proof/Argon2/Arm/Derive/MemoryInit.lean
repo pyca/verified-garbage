@@ -3,7 +3,13 @@ module
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 on ARMv7: the memory's initialization

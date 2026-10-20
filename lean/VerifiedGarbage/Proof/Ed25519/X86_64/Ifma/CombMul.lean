@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Double4
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLoop
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the multiplication

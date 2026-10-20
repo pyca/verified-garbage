@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.Cmac.Block32
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.AesGcm.X86.Top
-public import VerifiedGarbage.Proof.AesGcm.X86.Tag
+import VerifiedGarbage.Proof.AesGcm.X86.Tag
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
+meta import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: checking a tag

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.X448.X86_64.Env
 public import VerifiedGarbage.Proof.X448.Invert
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X448 on x86-64: the inversion

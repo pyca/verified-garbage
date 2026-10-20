@@ -1,10 +1,15 @@
 module
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `[v]Q` by the public NAF, in the verifier's slots

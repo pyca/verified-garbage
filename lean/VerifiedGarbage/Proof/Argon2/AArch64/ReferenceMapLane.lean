@@ -2,12 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
-public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-meta import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
-meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
 public import VerifiedGarbage.Proof.Argon2.AArch64.Divide
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Divide
 import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
@@ -16,6 +10,26 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Argon2.Reference
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.AArch64.ReferenceLane`. -/
 

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelList
 
 /-!
 # `vg_ffdh_exchange` on AArch64: the contract the proofs use

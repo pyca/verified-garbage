@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseA
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Hash
 
 /-!
 # ML-DSA signing on ARMv7: two runs

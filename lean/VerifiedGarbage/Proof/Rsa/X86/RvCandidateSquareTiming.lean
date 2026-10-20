@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquareInit
-public import VerifiedGarbage.Proof.Rsa.X86.RvSquareTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
+import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquareInit
+import VerifiedGarbage.Proof.Rsa.X86.RvSquareTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # A candidate's squaring search keeps its private values secret -/
 

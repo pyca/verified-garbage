@@ -2,10 +2,10 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackIndex
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

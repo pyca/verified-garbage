@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTFront
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Lcm
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Front
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # An RSA key from its primes on x86-64: constant time, `lcm(p − 1, q − 1)`

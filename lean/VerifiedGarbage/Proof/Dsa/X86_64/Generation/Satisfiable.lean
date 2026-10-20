@@ -1,6 +1,18 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Spec.Dsa.Generate
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
 
 /-! # The native parameter-generation contract admits concrete inputs -/
 

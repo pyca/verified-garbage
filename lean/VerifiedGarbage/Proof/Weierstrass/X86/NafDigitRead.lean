@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.Naf
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafPrep
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! Read public signed digits and test their sign and zero case. -/
 

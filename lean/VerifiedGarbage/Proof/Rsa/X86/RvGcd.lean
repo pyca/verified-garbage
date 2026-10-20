@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvGcdSet
-public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 
 /-! # The first recovered factor from the verified binary GCD -/
 

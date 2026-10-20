@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
-import VerifiedGarbage.Proof.X448.Wide.CarryRegs
-public import VerifiedGarbage.Proof.X448.AArch64.Step
+import VerifiedGarbage.Proof.X448.AArch64.Step
 import Mathlib.Tactic.SplitIfs
+import Batteries.Logic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.X448.Wide.Limbs
 
 /-! Untrusted: split a wide digit into two normalized interface limbs. -/
 

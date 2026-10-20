@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Ecb
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Copy
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The loop

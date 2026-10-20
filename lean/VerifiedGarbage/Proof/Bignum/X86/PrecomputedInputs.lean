@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
 /-! # Packed-key call geometry preserved while the RSA scratch arrays change -/
 

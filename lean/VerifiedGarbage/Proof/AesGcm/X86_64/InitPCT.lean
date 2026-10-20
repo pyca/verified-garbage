@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
 import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_init_precomputed` is constant time

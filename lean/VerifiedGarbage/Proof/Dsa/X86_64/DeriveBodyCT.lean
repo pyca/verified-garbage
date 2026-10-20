@@ -1,20 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Derive
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
-meta import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Derive
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 
 /-! # Constant time of derivation's computation: x's range, g^x, y's copy and the key checks
 

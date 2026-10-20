@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ExtraPairTiming
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Public completion flags and fixed-address restoration -/
 @[expose] public section

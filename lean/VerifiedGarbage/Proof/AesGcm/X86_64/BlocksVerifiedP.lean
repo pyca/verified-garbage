@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 
 /-!
 # AES-GCM on whole blocks, x86-64: the `_precomputed` functions

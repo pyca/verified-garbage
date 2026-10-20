@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 
 /-!
 # ML-DSA on x86-64: the primitives key generation calls

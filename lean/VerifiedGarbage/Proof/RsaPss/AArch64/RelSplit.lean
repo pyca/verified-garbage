@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # Splitting the first block of a sequence

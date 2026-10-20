@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Dsa.X86.SigningOperation
+import VerifiedGarbage.Proof.Dsa.X86.SigningOperation
+import VerifiedGarbage.Proof.Dsa.X86.VerifyingOperation
 
 /-! # Whole-operation functional correctness against the shared DSA contracts -/
 

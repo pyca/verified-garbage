@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
 public import VerifiedGarbage.Proof.Rc4.Iterate
+public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A group of sixteen bytes

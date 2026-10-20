@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.EcKey.P521
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 
 /-!
 # P-521 public keys on AArch64: the contract the proof is written against

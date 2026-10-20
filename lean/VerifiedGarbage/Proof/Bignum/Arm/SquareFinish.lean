@@ -1,7 +1,11 @@
 module
+public import Batteries.Logic
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
-public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+import VerifiedGarbage.Proof.Bignum.Arm.SquareState
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The square's canonical result, and the whole square -/
 

@@ -1,14 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Cmac.Mem32
-meta import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Cmac.Block32
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: padding the buffer (`flush`) and the lengths block (`lens`)

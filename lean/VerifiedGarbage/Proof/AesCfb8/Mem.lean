@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Spec
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CFB8: bytes in memory

@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCorrect
 public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Relate recovery calls with equal public pointers, lengths, and stack position -/
 

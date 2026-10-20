@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseByteStep
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.X86.ReverseByteStep
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-! # Runtime endian conversion, with byte-exact output and memory preservation -/
 

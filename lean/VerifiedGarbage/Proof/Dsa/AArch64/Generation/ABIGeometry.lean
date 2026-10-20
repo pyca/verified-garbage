@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABI
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Layout
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The nested ABI frames and scratch allocation realize the search geometry -/
 

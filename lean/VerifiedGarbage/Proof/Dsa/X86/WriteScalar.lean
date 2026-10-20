@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.X86.OutputPointer
-public import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.OutputPointer
+import VerifiedGarbage.Proof.Dsa.X86.Bytes
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Masked writes of the two fixed-width signature scalars -/
 

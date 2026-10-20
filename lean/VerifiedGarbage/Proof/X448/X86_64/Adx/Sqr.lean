@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.X448.X86_64.Adx
+public import VerifiedGarbage.Proof.X448.X86_64.Env
 
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Mul
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.X448.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X448 on x86-64: squaring with BMI2 and ADX

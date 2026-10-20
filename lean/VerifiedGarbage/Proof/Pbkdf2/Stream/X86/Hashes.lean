@@ -1,23 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Init
-meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
 public import VerifiedGarbage.Proof.Md5.X86.Stream.Md
-meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 public import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Sha512.X86.Compress
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Md5.X86.Stream.Md
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Md5.X86.Lit
-meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Compress
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions

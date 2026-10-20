@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.LaneU
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceCount
+import VerifiedGarbage.Proof.Dsa.AArch64.ReduceRead
+import VerifiedGarbage.Proof.Dsa.AArch64.Arithmetic
 
 /-! # A complete byte step of DSA's streaming modular reduction -/
 

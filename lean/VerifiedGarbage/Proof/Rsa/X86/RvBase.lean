@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvViews
+import VerifiedGarbage.Proof.Rsa.X86.RvViews
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
+public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
 
 /-! # Workspace geometry and tracked stages for i686 prime recovery -/
 

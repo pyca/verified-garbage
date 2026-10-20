@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Proof.Ocb.Spec
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
 import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.AesOcb.AArch64.LNtz
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-OCB on AArch64: filling the buffer of `HASH` (`hashFill`)

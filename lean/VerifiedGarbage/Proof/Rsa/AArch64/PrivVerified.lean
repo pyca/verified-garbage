@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCorrect
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivCT
 import Mathlib.Tactic.SplitIfs
 
 /-!

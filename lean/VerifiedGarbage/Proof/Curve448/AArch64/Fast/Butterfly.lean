@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The ladder's sums and differences, of conditionally swapped coordinates

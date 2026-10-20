@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.MinusCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.MinusCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QPrepareCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: testing the shared reduction -/
 

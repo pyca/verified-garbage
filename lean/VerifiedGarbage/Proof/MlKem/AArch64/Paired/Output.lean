@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SeedSpec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # Memory bytes of the initial paired matrix streams -/
 @[expose] public section

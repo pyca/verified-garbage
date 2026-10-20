@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.EncapsTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Start
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Tail
 
 /-!
 # The hashing encapsulation: its constant tables

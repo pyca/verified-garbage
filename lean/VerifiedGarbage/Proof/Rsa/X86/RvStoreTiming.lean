@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvPair
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Selecting and exporting a recovered factor does not reveal its acceptance mask -/
 

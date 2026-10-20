@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Prefix
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Decode
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Decode
 import Mathlib.Tactic.SplitIfs
 
 /-! # Stable vector rejection agrees with successive scalar sampling steps -/

@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
+import VerifiedGarbage.Proof.AesOcb.Arm.Hash
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 meta import VerifiedGarbage.Proof.AesOcb.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
+meta import VerifiedGarbage.Proof.AesOcb.Arm.Hash
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.Ocb.State
 
 /-!
 # AES-OCB on ARMv7: `Offset_0` and `HASH` in two runs

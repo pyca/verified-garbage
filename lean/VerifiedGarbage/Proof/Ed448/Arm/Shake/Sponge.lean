@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Layout
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 public import VerifiedGarbage.Impl.Ed448.Arm.Shake
+public import VerifiedGarbage.Proof.Sha3.Arm.Permute
 import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 on ARMv7: the calls of the sponge functions

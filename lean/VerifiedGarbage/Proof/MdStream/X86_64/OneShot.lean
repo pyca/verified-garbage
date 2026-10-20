@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.Common
-public import VerifiedGarbage.Proof.MdStream.OneShot
+import VerifiedGarbage.Proof.MdStream.OneShot
 public import VerifiedGarbage.Impl.MdStream.X86_64.OneShot
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # One-shot Merkle–Damgård digests on x86-64

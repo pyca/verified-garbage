@@ -1,17 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.Arm.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Verified
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.Arm
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.Ecdsa.P256
+meta import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDSA verification over P-256 on 32-bit ARM: `Verified`

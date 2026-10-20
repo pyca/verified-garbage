@@ -1,6 +1,11 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Scrypt.Contract
 
-public import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! Byte-level correctness of 128-bit XOR stores used by the SSE2 loops. -/
 

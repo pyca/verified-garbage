@@ -1,8 +1,14 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Spec.RsaPss
 
-public import VerifiedGarbage.Proof.RsaPss.SignCases
-public import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.RsaPss.SignCases
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
 import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.RsaPss.Encoding
 
 /-!
 # RSASSA-PSS verification, byte by byte

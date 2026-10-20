@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.PolyvalCT
-meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.PolyvalCT
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.PolyvalCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 
 /-!
 # AES-GCM-SIV on AArch64: the tag, counter mode and the functions are constant time

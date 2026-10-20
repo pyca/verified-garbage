@@ -1,6 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 @[expose] public section
 namespace VG.Proof.Weierstrass.AArch64.PubNaf
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

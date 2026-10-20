@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.InvStep
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # `inverse` on ARMv7: `32 w` iterations of two steps
 

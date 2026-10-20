@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 
 /-! # Undersized p candidates retry without consuming witness bytes -/
 

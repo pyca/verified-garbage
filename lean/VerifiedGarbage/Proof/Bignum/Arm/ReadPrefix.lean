@@ -1,6 +1,11 @@
 module
-
+public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+
 
 /-! # Shared prefix-read lemmas for ARMv7 RSA array exports -/
 

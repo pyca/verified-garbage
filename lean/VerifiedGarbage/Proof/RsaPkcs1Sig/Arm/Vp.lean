@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSetupCT
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: pieces correct and constant time at once

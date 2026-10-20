@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcLoadList
+public import VerifiedGarbage.Proof.Rsa.X86.KcStart
+import VerifiedGarbage.Proof.Rsa.X86.KcZero
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # Initialized RSA key workspace from the caller's byte arrays -/
 

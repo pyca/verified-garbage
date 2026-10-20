@@ -2,17 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Correct
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CT
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Contract
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Correct
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.CT
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # One key-generation attempt: `vg_ffdh_generate_key`, called
 

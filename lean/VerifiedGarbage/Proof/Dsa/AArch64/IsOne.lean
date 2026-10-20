@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Dsa.AArch64.CheckFrame
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
+import VerifiedGarbage.Proof.Dsa.AArch64.CheckCall
 import VerifiedGarbage.Proof.Dsa.AArch64.LoadOne
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Complete checks of DSA subgroup exponentiation results -/
 

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Message.HashMu
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Impl.MlDsa.X86.Message
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.Layout
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Impl.MlKem.X86.Sample
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.Piece
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the preconditions and the layouts

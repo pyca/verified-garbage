@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top1
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front3
 
 /-! # An RSA key on ARMv7: the body's start (`in_k`)
 

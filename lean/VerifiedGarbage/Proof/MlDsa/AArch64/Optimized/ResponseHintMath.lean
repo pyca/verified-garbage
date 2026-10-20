@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly

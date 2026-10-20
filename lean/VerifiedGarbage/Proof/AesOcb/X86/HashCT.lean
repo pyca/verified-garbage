@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.HashChunk
 
-public import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
-meta import VerifiedGarbage.Proof.AesOcb.X86.FrontCT
+import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+import VerifiedGarbage.Proof.AesOcb.X86.Hash
+import VerifiedGarbage.Proof.AesOcb.X86.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesOcb.X86.HashChunk
+meta import VerifiedGarbage.Proof.AesOcb.X86.CTBase
+meta import VerifiedGarbage.Proof.AesOcb.X86.Hash
+meta import VerifiedGarbage.Proof.AesOcb.X86.PadTo
+meta import VerifiedGarbage.Proof.AesOcb.X86.LNtz
+meta import VerifiedGarbage.Proof.AesOcb.X86.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on x86: `HASH` in constant time

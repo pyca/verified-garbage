@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Tag
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Tag
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
+meta import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM-SIV on x86-64: relating two runs, the tag and counter mode

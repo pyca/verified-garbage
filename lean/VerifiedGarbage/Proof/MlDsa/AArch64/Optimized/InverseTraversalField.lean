@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttSpec
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 
 @[expose] public section
 

@@ -6,6 +6,9 @@ import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 import VerifiedGarbage.Proof.TripleDes.Arm.Initial
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## `Store` -/
 

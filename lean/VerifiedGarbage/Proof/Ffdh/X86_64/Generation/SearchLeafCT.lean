@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Native acceptance and rejection use only public memory addresses -/
 

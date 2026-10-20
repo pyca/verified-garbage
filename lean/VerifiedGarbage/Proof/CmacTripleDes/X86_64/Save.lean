@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Impl.CmacTripleDes.X86_64
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacTripleDes.X86_64.Round
 
 /-!
 # TDEA-CMAC on x86-64: saving and restoring the registers

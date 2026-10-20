@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+public import VerifiedGarbage.Proof.TripleDes.Bitslice.Tdea
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Pass
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact import of private-key bytes using the saved call arguments -/
 

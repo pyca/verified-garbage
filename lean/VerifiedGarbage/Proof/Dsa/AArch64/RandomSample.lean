@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRemaining
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFunctional
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomNonceEncoding
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomFunctional
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomNonceEncoding
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Entry and exit of the complete 128-draw sampler. -/
 @[expose] public section

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Argon2.X86_64.AddressCache
+public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Read exactly the public indexed word of the cached address block. -/
 

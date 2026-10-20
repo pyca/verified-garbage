@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Head
+import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: correctness

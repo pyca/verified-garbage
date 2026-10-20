@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Value
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Halves
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Convert
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Prep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Two field multiplications in AdvSIMD

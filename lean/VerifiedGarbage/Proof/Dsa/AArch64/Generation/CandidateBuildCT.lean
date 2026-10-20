@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmeticCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStoresCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
 
 /-! # The complete byte-to-byte p-candidate builder has a public trace -/
 

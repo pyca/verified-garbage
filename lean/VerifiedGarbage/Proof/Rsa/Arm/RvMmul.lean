@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvMM
-public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a Montgomery product on a stage
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: one and powers of two

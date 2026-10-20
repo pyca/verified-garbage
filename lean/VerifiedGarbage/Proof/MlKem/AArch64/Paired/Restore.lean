@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
 
 /-! # Restore the sampler caller while retaining its accumulated success flag -/
 @[expose] public section

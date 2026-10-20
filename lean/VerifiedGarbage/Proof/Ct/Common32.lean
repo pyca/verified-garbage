@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Ct.Common
 
 @[expose] public section
 

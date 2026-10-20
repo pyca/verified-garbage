@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryGeneratorWork
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Concrete generator plan over the saved p and exponent buffers -/
 

@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Common
+meta import VerifiedGarbage.Proof.AesGcm.X86.Common
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Flush
-meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 
 /-!
 # AES-GCM on x86: calling `vg_aes_ctr32` from the pieces

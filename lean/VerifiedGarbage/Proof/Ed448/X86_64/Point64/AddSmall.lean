@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Specializing the affine addition's fixed curve constant, without changing its contract. -/
 

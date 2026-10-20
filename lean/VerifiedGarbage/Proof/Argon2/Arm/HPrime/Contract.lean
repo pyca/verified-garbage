@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.HPrime
 public import VerifiedGarbage.Proof.Argon2.Arm.Push
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+public import VerifiedGarbage.Spec.Argon2
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Argon2 H′ on ARMv7: the contract of the proof

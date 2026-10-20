@@ -2,14 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 public import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord
-import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
-import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Argon2.AArch64.DependentWordPointer`. -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # Bounded modular doublings, including termination -/
 

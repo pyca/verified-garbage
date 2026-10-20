@@ -3,7 +3,16 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
 import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

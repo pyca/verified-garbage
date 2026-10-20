@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlKem.Bits
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
-public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
+import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
 

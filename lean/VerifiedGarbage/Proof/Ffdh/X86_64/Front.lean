@@ -2,13 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Pow
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
-public import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Bignum.X86_64.Valid
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Ffdh.X86_64.Setup
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # FFDH on X86_64: the front of the domain operations

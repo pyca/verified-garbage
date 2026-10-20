@@ -1,13 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeStep
+public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Verification's windows: a doubling and the digits at each position

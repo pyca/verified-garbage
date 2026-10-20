@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Open
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Ok
+meta import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM-SIV on x86-64: `vg_aes_gcm_siv_open` with the interleaved loop is constant time

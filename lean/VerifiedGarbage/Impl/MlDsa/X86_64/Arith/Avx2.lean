@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt5
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
 
 /-!

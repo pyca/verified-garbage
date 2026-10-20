@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverSign
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverSign
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Projective comparison implements the specification's pointEqual. -/
 

@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Sha512.Spec
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # SHA-512 with AVX2 on x86-64: the message schedule of one lane

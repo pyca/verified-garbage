@@ -1,31 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
-meta import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
 public import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
-meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
+public import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
 import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceLane
 import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
-import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ReducePointers
-public import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
-meta import VerifiedGarbage.Impl.Argon2.AArch64.ReductionInit
 import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
 import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
-meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
-import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
-meta import VerifiedGarbage.Impl.Argon2.AArch64.ReduceLanes
 import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FinalOutputReady
+meta import VerifiedGarbage.Impl.Argon2.AArch64.FinalReduction
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlockLit
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionLoopState
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillLaneAdvance
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Argon2.AArch64.ReduceLanesBody`. -/
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateBuildCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateBuildCT
 import VerifiedGarbage.Proof.Framework.Omega
 

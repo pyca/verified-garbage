@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCall
 import VerifiedGarbage.Proof.MlDsa.Arm.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.Arm.Message.HashMu
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on ARMv7, `verify_message`: correctness

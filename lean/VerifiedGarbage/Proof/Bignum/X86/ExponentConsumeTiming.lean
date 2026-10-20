@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.ExponentAccumulate
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Public exponent bytes determine the scanner's saturation branches -/
 

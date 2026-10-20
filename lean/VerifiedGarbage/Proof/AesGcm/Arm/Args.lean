@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on ARMv7: stack arguments read after other code

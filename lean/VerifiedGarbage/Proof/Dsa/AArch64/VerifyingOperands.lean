@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingInput
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
+public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyBody
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningOperands
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Packed verification operands after workspace initialization -/
 

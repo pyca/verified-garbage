@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointTableLoad
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+public import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
 
 /-!

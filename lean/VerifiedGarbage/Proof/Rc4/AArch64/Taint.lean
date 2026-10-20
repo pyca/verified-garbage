@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.TCB.AArch64.Target
 
 @[expose] public section
 

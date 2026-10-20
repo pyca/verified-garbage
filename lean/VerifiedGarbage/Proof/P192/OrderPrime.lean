@@ -1,6 +1,11 @@
 module
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Nat.Find
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.P192
 
-public import VerifiedGarbage.Proof.P192.Prime
+import VerifiedGarbage.Proof.Framework.Pratt
 
 /-! # Primality of the P-192 subgroup order
 

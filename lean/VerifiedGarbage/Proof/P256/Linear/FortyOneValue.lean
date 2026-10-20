@@ -3,9 +3,10 @@ module
 public import VerifiedGarbage.Proof.P256.Linear.FortyOneWords
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.NatPairs
-import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.P256.VerifyArithmetic
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

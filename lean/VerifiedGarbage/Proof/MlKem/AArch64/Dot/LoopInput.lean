@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.LoopState
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

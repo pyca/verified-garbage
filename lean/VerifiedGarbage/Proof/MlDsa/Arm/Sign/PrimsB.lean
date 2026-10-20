@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Prims
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha512.Arm.Word64
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 
 /-!
 # ML-DSA signing on ARMv7: calls of the NTTs, products and two samplers

@@ -1,10 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
-import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Impl.Rc2.AArch64.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Impl.Rc2.AArch64.Block
 
 /-!
 # RC2 words in 32-bit lanes

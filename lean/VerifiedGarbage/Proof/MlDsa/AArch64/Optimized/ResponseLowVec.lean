@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackLoad
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
 
 @[expose] public section
 

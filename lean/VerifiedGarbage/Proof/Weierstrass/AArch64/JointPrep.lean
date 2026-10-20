@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Joint
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
 public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
+public import VerifiedGarbage.Proof.Weierstrass.FastNaf
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
-public import VerifiedGarbage.Proof.Dsa.RandomSignResult
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
+import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.RandomSign
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Basic.Logic.Basic
 
 /-!
 # The randomized signer's body (x86)

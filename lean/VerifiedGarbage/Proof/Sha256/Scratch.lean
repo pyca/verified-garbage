@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Sha256.Stream
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # SHA-256's streaming postconditions read memory only within the buffers

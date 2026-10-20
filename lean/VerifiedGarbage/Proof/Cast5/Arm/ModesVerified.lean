@@ -1,23 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
-meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
-public import VerifiedGarbage.Proof.Modes.Arm.CbcChained
-meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
+import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
+meta import VerifiedGarbage.Proof.Cast5.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Arm.Linear
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
-meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 
 /-!
 # CAST5-CBC, CAST5-OFB and CAST5-CFB64 on ARMv7 meet their contracts

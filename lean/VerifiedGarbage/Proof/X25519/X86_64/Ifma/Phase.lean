@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the blocks of an iteration

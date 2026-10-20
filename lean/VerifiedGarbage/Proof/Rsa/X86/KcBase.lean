@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.MulMod
 public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
-public import VerifiedGarbage.Proof.Rsa.X86.KeyEq
-public import VerifiedGarbage.Proof.Rsa.X86.KeyWord
-public import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # The checks of an RSA key on i686: the state between the steps
 

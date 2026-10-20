@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.ShapeOctets
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Byte-level characterization shared by native subgroup candidate shapers. -/
 @[expose] public section

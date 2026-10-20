@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Recover
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: `Verified`

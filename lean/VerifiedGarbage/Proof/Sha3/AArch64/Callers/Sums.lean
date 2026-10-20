@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 public import VerifiedGarbage.Proof.Framework.TaintSumGeneric
-public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.TCB.AArch64.Target
 
 /-!
 # The summaries of the sponge's callers, for any Keccak backend

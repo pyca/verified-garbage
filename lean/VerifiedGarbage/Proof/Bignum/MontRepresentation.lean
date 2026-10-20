@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-public import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Fin
 

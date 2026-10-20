@@ -3,8 +3,12 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CopyArray
 public import VerifiedGarbage.Impl.Bignum.X86.CheckedPrimePower
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRecombine
-public import VerifiedGarbage.Proof.Bignum.X86.CrtArithmeticTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrimePowerTiming
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtArithmeticTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrimePowerTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Fixed traces for private RSA transfers, powers and recombination -/
 

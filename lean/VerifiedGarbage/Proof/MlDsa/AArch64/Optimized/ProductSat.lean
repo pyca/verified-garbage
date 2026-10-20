@@ -5,7 +5,12 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductFullTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 public import VerifiedGarbage.Spec.MlDsa.RawInverse
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `ProductStatic.lean` -/
 

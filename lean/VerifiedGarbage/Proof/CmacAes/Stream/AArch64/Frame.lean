@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Verified
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 /-!
 # Streaming AES-CMAC on AArch64, with its working space on the stack

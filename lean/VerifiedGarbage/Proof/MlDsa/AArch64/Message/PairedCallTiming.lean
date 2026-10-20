@@ -3,14 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.PairedCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

@@ -2,11 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFields
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFields
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Timing of fresh generator modulus setup -/
 

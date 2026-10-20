@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedChecks
-public import VerifiedGarbage.Proof.Bignum.X86.ArrayCompare
+import VerifiedGarbage.Proof.Bignum.X86.ArrayCompare
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Reject packed moduli below two before Montgomery arithmetic -/
 

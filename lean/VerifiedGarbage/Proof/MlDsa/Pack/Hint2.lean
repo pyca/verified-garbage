@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
 import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA: `HintBitPack` and `HintBitUnpack` in memory, for every target

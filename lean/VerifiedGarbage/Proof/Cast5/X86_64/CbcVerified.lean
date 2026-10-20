@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
+meta import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 
 /-!
 # CAST5-CBC on x86-64 meets its contracts

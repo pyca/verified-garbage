@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
-public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
+import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # GHASH with PMULL: the instruction groups

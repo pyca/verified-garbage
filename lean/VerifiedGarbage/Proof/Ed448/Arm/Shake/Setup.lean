@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Ed448 on ARMv7: setting up a call's arguments

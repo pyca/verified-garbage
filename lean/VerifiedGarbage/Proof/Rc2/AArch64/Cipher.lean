@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Composition of RC2's sixteen rounds -/
 

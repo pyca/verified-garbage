@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.CT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
-public import VerifiedGarbage.Proof.AesGcm.ScratchTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesGcm.ScratchTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: `Verified`

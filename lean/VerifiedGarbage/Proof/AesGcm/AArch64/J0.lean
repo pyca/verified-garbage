@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
-import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.Cmac.Mem32
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Flush
 import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on AArch64: the pre-counter block (`j0`)

@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackInput
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackTail
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackFields
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

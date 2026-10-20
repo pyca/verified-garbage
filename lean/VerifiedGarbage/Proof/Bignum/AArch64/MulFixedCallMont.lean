@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.MulFixedCall
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCallCT
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCall
 
 /-! # The eight-limb Montgomery products, the repeated ones by calls
 

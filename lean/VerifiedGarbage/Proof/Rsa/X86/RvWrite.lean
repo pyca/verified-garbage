@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvFrames
+import VerifiedGarbage.Proof.Rsa.X86.RvFrames
+import VerifiedGarbage.Proof.Rsa.X86.RvViews
 
 /-! # Updating the arrays and scalar words tracked by a recovery stage -/
 

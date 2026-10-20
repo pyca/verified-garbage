@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Cold branches

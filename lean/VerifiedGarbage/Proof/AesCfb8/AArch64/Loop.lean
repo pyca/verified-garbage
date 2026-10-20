@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.Mem
+import VerifiedGarbage.Proof.AesCfb8.Mem
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
 public import VerifiedGarbage.Impl.AesCfb8.AArch64
+public import VerifiedGarbage.Proof.AesCfb8.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CFB8 on AArch64: the contracts, and the loop

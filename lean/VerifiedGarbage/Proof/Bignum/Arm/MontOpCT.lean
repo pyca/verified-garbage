@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-! # Fixed-index Montgomery operations have public traces -/
 

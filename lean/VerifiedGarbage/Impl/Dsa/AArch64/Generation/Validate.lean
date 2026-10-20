@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Pack
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 

@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
 public import VerifiedGarbage.Spec.Gcm.Contract
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Gcm.Precomputed
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: the function called

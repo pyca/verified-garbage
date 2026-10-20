@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86.KeyGen
+public import VerifiedGarbage.Proof.MlKem.X86.Extra
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenG
 
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 import VerifiedGarbage.Proof.MlKem.X86.TopSeq2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlKem.X86.TopSeq
+import VerifiedGarbage.Proof.MlKem.X86.TopPrim2
+import VerifiedGarbage.Proof.MlKem.X86.Table
 
 /-!
 # ML-KEM on x86 (32-bit): `t̂` in key generation

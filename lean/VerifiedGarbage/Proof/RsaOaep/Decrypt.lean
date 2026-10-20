@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.Encoding
+import VerifiedGarbage.Proof.RsaOaep.Encoding
 import VerifiedGarbage.Proof.RsaPss.Sign
 public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.Mgf1.Basic
 import Mathlib.FieldTheory.Finite.Basic
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSAES-OAEP decryption: one error, and the round trip

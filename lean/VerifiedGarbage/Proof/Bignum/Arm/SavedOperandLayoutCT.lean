@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandArgs
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Saved private operand imports reveal no source bytes -/
 

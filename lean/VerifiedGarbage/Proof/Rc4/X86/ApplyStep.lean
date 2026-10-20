@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
-public import VerifiedGarbage.Proof.Rc4.X86.Init
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.X86.Replace
+import VerifiedGarbage.Proof.Rc4.X86.Save
 
 /-! # RC4 on x86 (32-bit): one PRGA step -/
 

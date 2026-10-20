@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Cast5.AArch64.Scan
+public import VerifiedGarbage.Proof.Cast5.KeyMem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Cast5.AArch64.Block
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Cast5.AArch64.Block
+public import VerifiedGarbage.Proof.Cast5.Memory
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5 key expansion on AArch64: groups of four lines

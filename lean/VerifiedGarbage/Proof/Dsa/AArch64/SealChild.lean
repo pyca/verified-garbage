@@ -3,8 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.InitInverse
 public import VerifiedGarbage.Proof.Dsa.AArch64.Return
 import VerifiedGarbage.Proof.Dsa.AArch64.EnterLeave
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Finishing a child modulus and returning a reusable workspace -/
 

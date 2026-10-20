@@ -1,13 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Round
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MrDraw
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrRound
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Round
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
+meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # An FFDH parameter candidate on AArch64: constant time of a draw

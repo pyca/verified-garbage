@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Composition of public windows into byte-string exponentiation -/
 

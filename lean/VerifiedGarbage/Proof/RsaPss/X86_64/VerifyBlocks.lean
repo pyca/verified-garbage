@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSASSA-PSS verification on x86-64: the blocks

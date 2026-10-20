@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
 public import VerifiedGarbage.Proof.MlDsa.Sample.RejBounded
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.RejBounded
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 
 /-!
 # ML-DSA on 32-bit ARM: the loop of `vg_mldsa_rej_bounded_poly`

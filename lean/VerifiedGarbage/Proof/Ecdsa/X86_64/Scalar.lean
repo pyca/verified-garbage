@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 
 /-!
 # ECDSA on x86-64: the checks, and `s = k⁻¹ (e + r d) mod n`

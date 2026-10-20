@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.TripleDes.X86.Key.Permutation
 import VerifiedGarbage.Proof.TripleDes.X86.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
-import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
 public import VerifiedGarbage.Impl.TripleDes.X86.ExpandKey
 import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 import VerifiedGarbage.Proof.TripleDes.X86.Word
@@ -11,7 +10,9 @@ import VerifiedGarbage.Proof.TripleDes.X86.Key.Compare
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## `Load` -/
 

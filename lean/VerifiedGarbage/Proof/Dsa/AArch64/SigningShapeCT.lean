@@ -3,12 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.WorkspaceBridge
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningPublic
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.EntryCT
 
 /-! # Constant time of signing argument capture and domain validation -/
 

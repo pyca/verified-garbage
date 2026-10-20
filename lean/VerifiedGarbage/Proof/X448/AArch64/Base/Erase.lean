@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+public import VerifiedGarbage.Impl.X448.AArch64.Base
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # X448 of the base point on AArch64: the comb's code, erased

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.X448.X86.Field
+public import VerifiedGarbage.Proof.X448.X86.Instr
 
-public import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.Copy
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 

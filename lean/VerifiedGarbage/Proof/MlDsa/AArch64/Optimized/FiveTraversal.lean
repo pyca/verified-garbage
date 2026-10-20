@@ -1,14 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Word
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.FiveCore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableMemory
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailTraversal
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-! ## From `Mem.lean` -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Divstep.Hull
 public import VerifiedGarbage.Proof.Divstep.Steps
+import VerifiedGarbage.Proof.Divstep.Incl
 
 /-!
 # The divstep bound: runs of the relaxed iteration

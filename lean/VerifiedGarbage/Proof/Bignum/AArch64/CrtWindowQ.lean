@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFrameWide
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPow
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtPow
 
 /-!
 # RSA with the CRT on AArch64: `q`'s phase

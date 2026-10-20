@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Modes.Ctr
 public import VerifiedGarbage.Proof.Modes.Steps
-public import VerifiedGarbage.Proof.AesCtr.Spec
+public import Mathlib.Data.List.Induction
+import VerifiedGarbage.Proof.AesCtr.Spec
 
 /-! # The operations of CTR meet the existing CTR specification -/
 

@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack

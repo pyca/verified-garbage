@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtInverseInput
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+import VerifiedGarbage.Proof.Bignum.Arm.MontMixedProduct
+import VerifiedGarbage.Proof.Bignum.Arm.MontEncode
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact multiplication by qInv in the factor workspace -/
 

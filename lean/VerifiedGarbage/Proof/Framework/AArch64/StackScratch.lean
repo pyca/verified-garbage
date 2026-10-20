@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
 import Mathlib.Tactic.SplitIfs
 
 /-!

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Theta
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 @[expose] public section
 

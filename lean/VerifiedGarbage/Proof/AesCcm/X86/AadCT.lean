@@ -1,11 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.AesCcm.X86.Aad
-meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
 public import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
-meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesCcm.X86.Aad
+meta import VerifiedGarbage.Proof.AesCcm.X86.AbsorbCT
+meta import VerifiedGarbage.Proof.AesCcm.Mac
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+meta import VerifiedGarbage.Proof.AesCcm.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-CCM on x86: the associated data is chained in constant time

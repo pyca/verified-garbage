@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivTail
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivArgsCT
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseTailCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CompareBuffer
 
 /-! # Fault checking and private release reveal no secret-dependent trace -/
 

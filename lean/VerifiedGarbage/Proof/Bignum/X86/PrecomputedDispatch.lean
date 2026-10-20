@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Dispatch every permitted RSA modulus width using only its public length -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Reset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.R2
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
 
 /-! # FFDH domain validation on x86-64: generator subgroup relation -/
 

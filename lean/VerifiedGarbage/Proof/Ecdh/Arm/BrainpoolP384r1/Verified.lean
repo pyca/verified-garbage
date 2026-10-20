@@ -1,19 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
 public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Contract
-meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Contract
-public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
-meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
-meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
+public import VerifiedGarbage.Spec.Ecdh.Generic
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdh.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.Arm
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP384r1
+meta import VerifiedGarbage.Spec.Ecdh.Generic
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDH over brainpoolP384r1 on 32-bit ARM: `Verified`

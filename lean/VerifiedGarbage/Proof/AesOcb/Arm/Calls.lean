@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Words
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-OCB on ARMv7: the calls

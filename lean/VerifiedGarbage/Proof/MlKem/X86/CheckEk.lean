@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
-import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Spec.MlKem.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.Common
 
 /-!
 # ML-KEM-768 on x86 (32-bit): `vg_mlkem768_check_ek`

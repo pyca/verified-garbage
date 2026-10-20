@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86.SealGather
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the function called

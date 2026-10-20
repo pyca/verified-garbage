@@ -1,21 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.CallSp
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Avx512
-import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: the function called

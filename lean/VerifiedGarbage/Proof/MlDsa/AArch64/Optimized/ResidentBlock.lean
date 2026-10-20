@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

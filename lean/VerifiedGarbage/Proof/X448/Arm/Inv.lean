@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Arm.Square
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on ARMv7: inversion

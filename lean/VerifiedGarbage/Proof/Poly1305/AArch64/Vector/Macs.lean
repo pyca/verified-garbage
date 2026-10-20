@@ -6,6 +6,8 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: rows of products

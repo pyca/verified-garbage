@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Squeeze
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! # The serialized pair output is the specified ML-KEM noise PRF -/
 

@@ -1,6 +1,9 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Loop
 
 /-! # Public positions in the key search
 

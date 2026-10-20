@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.PcCall
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 
 /-!
 # RSAES-PKCS1-v1_5 encryption with a precomputed public key on AArch64: correctness

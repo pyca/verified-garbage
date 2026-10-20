@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
-public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Import the public modulus while preserving the saved call frame -/
 

@@ -1,15 +1,25 @@
 module
+public import VerifiedGarbage.Proof.AesSiv.X86.Env
+public import VerifiedGarbage.Proof.Cmac.Block32
+public import VerifiedGarbage.Spec.Siv
 
-public import VerifiedGarbage.Proof.AesSiv.X86.Entry
-meta import VerifiedGarbage.Proof.AesSiv.X86.Entry
 import VerifiedGarbage.Proof.AesSiv.CtrPart
-meta import VerifiedGarbage.Proof.AesSiv.CtrPart
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.AesSiv.X86.Callee
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesSiv.X86.Env
+meta import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Spec.Siv
+meta import VerifiedGarbage.Proof.AesSiv.CtrPart
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 meta import VerifiedGarbage.Proof.Cmac.Block
 meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.AesSiv.X86.Callee
+meta import VerifiedGarbage.Proof.AesSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-SIV on x86: the CMAC of a string (`cmacOf`)

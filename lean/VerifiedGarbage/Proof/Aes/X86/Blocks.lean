@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Aes.X86.Ecb
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
+import VerifiedGarbage.Proof.Aes.X86.Keys
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES on whole blocks on x86 (32-bit): the whole functions

@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.P256.X86_64.Half
-public import VerifiedGarbage.Spec.P256
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Arithmetic and instruction proofs for the branchless P-256 halving block. -/
 

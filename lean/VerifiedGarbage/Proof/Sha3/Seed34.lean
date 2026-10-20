@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha3.Arith
+import Mathlib.Tactic.Conv
 
 @[expose] public section
 

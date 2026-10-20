@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBlock
 public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! Doubling the cross products and adding the diagonal of an ADX square. -/
 

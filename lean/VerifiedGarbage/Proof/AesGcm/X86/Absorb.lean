@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
+public import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.Gcm.Stream
-meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-GCM on x86: GHASH absorbing a piece (`absorb`)

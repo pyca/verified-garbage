@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Field
-import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.X448.X86_64.Chain
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # X448 on x86-64: addition, subtraction, `a24` and the swap

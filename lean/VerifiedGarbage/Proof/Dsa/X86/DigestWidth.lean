@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Selecting the digest width from mutually exclusive subgroup masks -/
 

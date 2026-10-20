@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Spec.Dsa.Derive
 
-public import VerifiedGarbage.Proof.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # The packed generated domain denotes exactly its mathematical parameters -/
 

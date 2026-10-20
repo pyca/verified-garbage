@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.Circuit
+public import VerifiedGarbage.TCB.Arm.Isa
 meta import VerifiedGarbage.Impl.TripleDes.Circuit
 public import VerifiedGarbage.Impl.Aes.Arm.Alloc
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+public meta import VerifiedGarbage.TCB.Arm.Isa
 
 @[expose] public section
 

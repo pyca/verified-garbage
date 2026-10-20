@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Finalize
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFin
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `finalize`, constant time

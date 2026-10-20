@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulFn
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Curve448's field product on AArch64: calls of `vg_gf448_r56_mul`

@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractGeometry
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivContractInput
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivContractInput
+import VerifiedGarbage.Proof.Rsa.Arm.PrivFn
+import VerifiedGarbage.Proof.Rsa.Arm.PrivFnCT
 
 /-! # Checked private RSA implements the shared contract and its permitted leakage -/
 

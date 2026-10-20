@@ -1,37 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarStep
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParsePublic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoopTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoopTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoopTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoopTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegment
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegment
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoopTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoopTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRowStep
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRowStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+import Std.Tactic.BVDecide.Normalize.BitVec
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejScalarLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideLoopTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFourLoopTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPhase
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejParse
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+meta import Std.Tactic.BVDecide.Normalize.BitVec
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! ## From `ResidentRejScalarTiming.lean` -/
 

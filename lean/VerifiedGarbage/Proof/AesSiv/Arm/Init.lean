@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.AesSiv.Arm
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+public import VerifiedGarbage.Spec.Siv
 
-public import VerifiedGarbage.Proof.AesSiv.Arm.Env
-public import VerifiedGarbage.Proof.AesSiv.Key
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_init`

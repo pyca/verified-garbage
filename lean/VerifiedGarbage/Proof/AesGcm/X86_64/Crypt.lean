@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+public import VerifiedGarbage.Proof.Gcm.Ctr
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM on x86-64: counter mode over a piece (`crypt`)

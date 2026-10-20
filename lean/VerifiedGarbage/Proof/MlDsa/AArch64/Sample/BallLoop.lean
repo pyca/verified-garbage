@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on AArch64: the loop of `vg_mldsa_sample_in_ball`

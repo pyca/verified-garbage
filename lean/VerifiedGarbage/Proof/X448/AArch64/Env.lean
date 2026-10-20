@@ -2,12 +2,10 @@ module
 
 import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
 import VerifiedGarbage.Proof.X448.Wide.TailMul
-import VerifiedGarbage.Proof.X448.AArch64.AddSub
-import VerifiedGarbage.Proof.X448.AArch64.Small
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 public import Mathlib.Logic.Function.Basic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.Copy
 
 /-!
 # X448 on AArch64: the working space as field-element slots

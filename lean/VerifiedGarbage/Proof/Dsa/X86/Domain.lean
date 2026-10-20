@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
 
-public import VerifiedGarbage.Proof.Dsa.X86.StageMinus
-public import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.StageMinus
+import VerifiedGarbage.Proof.Dsa.X86.StageArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.StageChecks
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
 
 /-! # Public component ranges and divisibility checks -/
 

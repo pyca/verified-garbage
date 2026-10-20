@@ -1,9 +1,13 @@
 module
+public import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Data.BitVec
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-public import VerifiedGarbage.Proof.Divstep.Tc32Words
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
 
 /-! # Truncated products and signed corrections -/
 

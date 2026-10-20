@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+import VerifiedGarbage.Proof.Gcm.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+meta import VerifiedGarbage.Proof.Gcm.SealGather
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: gathering the slices

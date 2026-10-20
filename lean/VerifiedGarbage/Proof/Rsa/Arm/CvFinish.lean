@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CvDivD
+public import VerifiedGarbage.Proof.Rsa.Arm.CvFin
+import VerifiedGarbage.Proof.Rsa.Arm.CvStore
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
 
 /-! # `vg_rsa_crt_values` on ARMv7: the results written out -/
 

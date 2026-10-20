@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: gathering in constant time

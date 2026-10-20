@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Entry
 
 /-!
 # AES-GCM-SIV on x86-64: the keys and POLYVAL are constant time

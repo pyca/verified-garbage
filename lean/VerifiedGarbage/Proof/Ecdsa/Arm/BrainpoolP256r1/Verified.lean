@@ -1,19 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Contract
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Lit
-public import VerifiedGarbage.Proof.BrainpoolP256r1.Point
-meta import VerifiedGarbage.Proof.BrainpoolP256r1.Point
+import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP256r1
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.Arm
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Contract
+meta import VerifiedGarbage.Proof.BrainpoolP256r1.Point
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.Law
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP256r1
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.Arm
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ECDSA over brainpoolP256r1 on 32-bit ARM: `Verified`

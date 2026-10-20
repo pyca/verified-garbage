@@ -1,8 +1,10 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Correct
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Correct
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.CompiledShapes
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedules
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.CompiledShapes
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Schedules
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

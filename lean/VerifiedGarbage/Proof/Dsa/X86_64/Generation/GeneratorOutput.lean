@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorPlan
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorFromFrame
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # Accept precisely nontrivial generator powers, preserving their bytes -/
 

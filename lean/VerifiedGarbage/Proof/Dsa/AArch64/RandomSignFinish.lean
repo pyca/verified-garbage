@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublish
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! All exits clear failed output, wipe the nonce, and publish consumption. -/
 @[expose] public section

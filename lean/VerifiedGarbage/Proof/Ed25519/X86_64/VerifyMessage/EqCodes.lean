@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # The equations the verification over SHA-512 calls

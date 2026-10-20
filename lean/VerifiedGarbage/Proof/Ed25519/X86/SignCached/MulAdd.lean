@@ -2,8 +2,32 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddVerified
+public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Sha256.X86.Stream
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarStep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.X86.Freeze
 
 @[expose] public section
 

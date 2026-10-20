@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder's loop

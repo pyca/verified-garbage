@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.Mem32
-public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 public import VerifiedGarbage.Impl.AesCbc.Arm
+public import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CBC on ARMv7: the contracts, and the loop for any mode on whole blocks

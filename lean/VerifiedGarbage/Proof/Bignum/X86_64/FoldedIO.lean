@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
-public import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
+public import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
+public import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOStore
+import VerifiedGarbage.Proof.Bignum.X86_64.Compare8
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.WordIOLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
 
 @[expose] public section
 

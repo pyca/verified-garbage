@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Small-prime rejection returns composite without consuming witness bytes. -/
 @[expose] public section

@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckedState
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishSelection
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Retain safe private arithmetic and output bounds between the computation stages -/
 

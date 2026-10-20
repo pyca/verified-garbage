@@ -1,15 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailSqueezeRate
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailFirst
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 
 /-! ## From `CommitTailPaddingWord.lean` -/
 

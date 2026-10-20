@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Decode
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Decode
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # Public ByteDecode12 proof using eight-coefficient blocks -/
 

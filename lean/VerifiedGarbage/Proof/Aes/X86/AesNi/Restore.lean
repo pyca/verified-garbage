@@ -1,12 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Setup
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

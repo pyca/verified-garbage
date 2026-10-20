@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.ReadDigit
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+public import VerifiedGarbage.Proof.X448.X86_64.Env
 import VerifiedGarbage.Proof.X448.X86_64.Setup
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.X448.X86_64.Chain
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Conditional point negation for balanced window digits. -/
 

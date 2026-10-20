@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructPlan
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PBuildValue
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWorkspaceCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeValue
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Public data connecting p hashing to native reduction -/
 

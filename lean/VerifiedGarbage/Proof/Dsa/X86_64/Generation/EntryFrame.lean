@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ABI
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInitial
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Allocate and release the nested parameter-generation stack frames -/

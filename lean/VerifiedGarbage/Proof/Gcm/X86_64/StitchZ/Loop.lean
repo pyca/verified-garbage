@@ -2,7 +2,13 @@ module
 
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Gh
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the loops

@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ModulusWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! The modulus and witness-buffer context retained throughout sampling. -/
 @[expose] public section

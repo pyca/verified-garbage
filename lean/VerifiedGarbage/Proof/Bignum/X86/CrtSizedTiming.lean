@@ -1,8 +1,17 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImportTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtExportTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtPrepared
+import VerifiedGarbage.Proof.Bignum.X86.CrtImportTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtExportTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtPrepared
+import VerifiedGarbage.Proof.Bignum.X86.CrtValidationTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtCoreTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The complete fixed-width CRT operation keeps every private component secret -/
 

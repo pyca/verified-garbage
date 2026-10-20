@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
-import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
-import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ECDSA on 32-bit ARM: the curve, the arguments and the working space

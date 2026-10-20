@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.P256.VerifySparse.Correct
+import VerifiedGarbage.Proof.P256.VerifySparse.Correct
 public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Impl.P256.VerifySparse
+public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 @[expose] public section
 

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryDepth
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeDepth
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Instruction safety and stack use of the shared Miller–Rabin backend -/

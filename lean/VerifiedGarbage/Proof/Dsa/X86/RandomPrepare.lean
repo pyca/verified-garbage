@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
+public import VerifiedGarbage.Proof.Dsa.X86.RandomMask
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Preparing to sample (x86)

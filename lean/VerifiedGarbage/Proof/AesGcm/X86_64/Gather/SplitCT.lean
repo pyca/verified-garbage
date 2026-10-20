@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCall
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time of a short copy to `vg_aes_gcm_seal_split`

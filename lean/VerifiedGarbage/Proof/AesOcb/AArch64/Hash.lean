@@ -1,6 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.HashChunk
+import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on AArch64: `HASH` (`hash`)

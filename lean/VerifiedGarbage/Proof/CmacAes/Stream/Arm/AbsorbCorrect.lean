@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Absorb
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_absorb` is correct

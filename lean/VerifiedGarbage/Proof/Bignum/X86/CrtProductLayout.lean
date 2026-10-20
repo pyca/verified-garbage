@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # The full product and its multiplier are disjoint from both source slots -/
 

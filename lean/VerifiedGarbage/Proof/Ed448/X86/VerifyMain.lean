@@ -2,12 +2,42 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyBits
+import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
 import VerifiedGarbage.Proof.X448.X86.FnLit
 import VerifiedGarbage.Proof.X448.X86.Iter
+import VerifiedGarbage.Proof.Ed448.X86.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.X86.VerifyS
+import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeY
+import VerifiedGarbage.Proof.Ed448.X86.VerifySign
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.X86.BitStep
+import VerifiedGarbage.Proof.X448.X86.BitWrite
+import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Columns
+import VerifiedGarbage.Proof.X448.X86.Copy
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.Decode
+import VerifiedGarbage.Proof.X448.X86.FnVerified
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Restore
+import VerifiedGarbage.Proof.X448.X86.Select
+import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.Step
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the whole function

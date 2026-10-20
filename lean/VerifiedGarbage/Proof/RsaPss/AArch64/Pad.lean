@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS on AArch64: the padding of a message of secret length

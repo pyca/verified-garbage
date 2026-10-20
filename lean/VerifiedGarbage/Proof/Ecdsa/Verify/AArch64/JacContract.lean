@@ -1,17 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 
 /-! The Jacobian verifier's relational proof uses only the bytes already
 exposed as public by the shared ECDSA verification specification. -/

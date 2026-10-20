@@ -3,13 +3,9 @@ module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.AddSub
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.BallDispatch
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub

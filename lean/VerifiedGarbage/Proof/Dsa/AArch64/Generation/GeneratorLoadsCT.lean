@@ -1,10 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoads
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorLoads
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorRange
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Public-address loads for generator range checks -/
 

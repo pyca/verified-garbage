@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Establishing the arithmetic workspace while preserving the caller ABI -/
 

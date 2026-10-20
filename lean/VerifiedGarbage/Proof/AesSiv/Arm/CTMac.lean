@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.Arm.Open
-meta import VerifiedGarbage.Proof.AesSiv.Arm.Open
 public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+public import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.AesSiv.Arm.S2vLoop
 
 /-!
 # AES-SIV on ARMv7: the CMAC of a string is constant time

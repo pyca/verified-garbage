@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import Mathlib.Order.Lattice
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Digest-prefix selection and the public domain-check result -/
 

@@ -1,7 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCT
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
+import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
+import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CkCT
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CkCTMain
+meta import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `vg_rsa_check_key` on AArch64: constant time but for `n` and `e`

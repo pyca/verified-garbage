@@ -2,10 +2,14 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Entry
 import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.Hash
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay
 
 /-!
 # ML-DSA on x86-64, `verify_message`: correctness

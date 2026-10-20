@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Sm3
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming SM3: facts about the specification

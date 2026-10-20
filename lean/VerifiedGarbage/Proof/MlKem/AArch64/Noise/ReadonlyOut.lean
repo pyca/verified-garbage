@@ -1,8 +1,11 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.OutWith
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cbd16Call
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Spec.MlKem

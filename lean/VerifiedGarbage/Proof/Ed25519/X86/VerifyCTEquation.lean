@@ -1,31 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Group.Double
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
 
-public import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+import VerifiedGarbage.Proof.Framework.X86.TaintSym
+import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Ed25519.Group.Double
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointEqual
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyPoints
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Proof.Ed25519.Window
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # Verification's equation: what its traces depend on

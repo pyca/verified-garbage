@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Dsa.X86.RunBytes
 
 /-! # Constructing caller-buffer invariants from ABI-owned byte ranges -/
 

@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Squaring preserves the existing Montgomery contract, including allowed aliases. -/

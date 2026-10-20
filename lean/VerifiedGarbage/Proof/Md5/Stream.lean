@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Md5
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming MD5: facts about the specification

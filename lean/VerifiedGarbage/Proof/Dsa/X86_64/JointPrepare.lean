@@ -1,8 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/
 

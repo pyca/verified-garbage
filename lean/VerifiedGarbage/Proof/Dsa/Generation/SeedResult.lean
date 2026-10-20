@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.Generation.Search
+import VerifiedGarbage.Proof.Dsa.Generation.Search
 
 /-! # One seed result, retaining the witness suffix for the outer retry -/
 

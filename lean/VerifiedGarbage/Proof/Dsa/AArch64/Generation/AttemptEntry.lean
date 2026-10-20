@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructPlan
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PAttemptArgs
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PAttemptArgs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # Enter a p attempt from the persistent frame and controller offset -/
 

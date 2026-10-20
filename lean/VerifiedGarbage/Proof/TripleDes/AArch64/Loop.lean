@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundStep
 public import VerifiedGarbage.Proof.TripleDes.Core
 public import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

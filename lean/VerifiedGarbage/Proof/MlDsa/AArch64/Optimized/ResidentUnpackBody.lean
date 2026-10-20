@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackOne
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackValue
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackConst
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `ResidentUnpackLoad.lean` -/
 

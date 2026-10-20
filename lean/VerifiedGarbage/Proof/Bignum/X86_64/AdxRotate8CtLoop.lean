@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtTile
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tile
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tile
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! The outer iteration count and each tile's workspace are public. -/
 

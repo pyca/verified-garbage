@@ -5,9 +5,42 @@ public import VerifiedGarbage.Proof.Cast5.ModeCipher
 public import VerifiedGarbage.Proof.Modes.X86_64.Core
 public import VerifiedGarbage.Proof.Modes.X86_64.Words
 public import VerifiedGarbage.Impl.Cast5.X86_64.Modes
+public import VerifiedGarbage.Proof.Cast5.X86_64.Block
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Modes.X86_64.Setup
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCbc.Spec
+public import VerifiedGarbage.Proof.Cast5.Memory
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Proof.Modes.X86_64.Counter
+public import VerifiedGarbage.Proof.Modes.X86_64.Setup
+public import VerifiedGarbage.Proof.Modes.X86_64.Steps
+public import VerifiedGarbage.Spec.Cast5.Contract
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Modes.X86_64.Counter
+import VerifiedGarbage.Spec.Cast5.Contract
 
 /-!
 # CAST5's core for the modes on x86-64

@@ -1,12 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeFrame
+public import VerifiedGarbage.Proof.Dsa.DomainShape
 
 import VerifiedGarbage.Proof.Dsa.AArch64.ShapeSizes
-public import VerifiedGarbage.Proof.Dsa.AArch64.ShapeTail
-public import VerifiedGarbage.Proof.Dsa.DomainWidths
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.ShapeTail
+import VerifiedGarbage.Proof.Dsa.DomainWidths
 
 /-! # Functional correctness of the public DSA domain-shape check -/
 

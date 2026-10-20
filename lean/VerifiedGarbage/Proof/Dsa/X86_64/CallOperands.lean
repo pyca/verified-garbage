@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCalls
-public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Dsa.X86_64.LocalCallFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.BufferFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Reading and preserving operands across the DSA arithmetic schedule -/

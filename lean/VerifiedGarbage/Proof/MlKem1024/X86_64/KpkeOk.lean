@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
-import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
+import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA16
 
 /-! # ML-KEM-1024 on x86-64: the K-PKE functions, safe to call -/
 

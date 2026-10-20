@@ -5,7 +5,51 @@ public import VerifiedGarbage.Proof.Idea.ModeBytes
 public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Proof.Modes.AArch64.Words
 public import VerifiedGarbage.Impl.Idea.AArch64.Modes
-import Mathlib.Tactic.SplitIfs
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Idea.AArch64.Lit
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Idea.Cbc
+import VerifiedGarbage.Proof.Idea.AArch64.Block
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.Blocks
+public import VerifiedGarbage.Proof.AesCtr.Ctr32
+public import VerifiedGarbage.Proof.AesCtr.Spec
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Idea.AArch64.Block
+public import VerifiedGarbage.Proof.Idea.KeyBits
+public import VerifiedGarbage.Proof.Idea.Memory
+public import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Modes.Addr
+public import VerifiedGarbage.Spec.Ctr.Contract
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.AesCtr.Ctr32
+import VerifiedGarbage.Proof.AesCtr.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Spec.Ctr.Contract
 
 /-!
 # IDEA's core for the modes on AArch64

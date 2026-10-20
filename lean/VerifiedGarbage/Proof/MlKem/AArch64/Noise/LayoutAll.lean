@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Writes
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.All
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Complete paired sampling of all secrets and retained errors -/
 @[expose] public section

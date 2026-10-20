@@ -1,25 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
-meta import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha512.AArch64.OneShot
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Shared
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Spec.Sha512.Contract
-meta import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 
 /-!
 # The SHA-512 family on AArch64, as Merkle–Damgård hash functions

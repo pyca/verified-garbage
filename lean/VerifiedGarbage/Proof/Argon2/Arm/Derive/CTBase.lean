@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Correct
-import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.Arm.CompressContract
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # Argon2 on ARMv7: the derivation's taint analysis

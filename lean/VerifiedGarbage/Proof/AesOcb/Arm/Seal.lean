@@ -1,6 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.Arm.Contract
+public import VerifiedGarbage.Proof.AesOcb.Arm.HashChunk
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.Front
+import VerifiedGarbage.Proof.AesOcb.Arm.Front
+import VerifiedGarbage.Proof.AesOcb.Arm.Body
+import VerifiedGarbage.Proof.AesOcb.Arm.RestTag
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on ARMv7: `vg_aes_ocb_seal`

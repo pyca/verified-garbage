@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Steps
-meta import VerifiedGarbage.Proof.AesXts.Arm.Steps
+import VerifiedGarbage.Proof.AesXts.Arm.Steps
 public import VerifiedGarbage.Proof.AesCbc.Arm.CT
-meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 public import VerifiedGarbage.Proof.AesXts.Spec
+public import VerifiedGarbage.Impl.AesXts.Arm
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesXts.Arm.Steps
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Proof.AesXts.Spec
+meta import VerifiedGarbage.Impl.AesXts.Arm
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # XTS-AES on ARMv7: one block, and constant time

@@ -5,7 +5,10 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.SampleH
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ML-KEM on x86-64: `Sample4.sampleH`, the sponge of `H` in the fourth state

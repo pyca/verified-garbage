@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTail
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgTaint
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.EncodeTaint
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: the body

@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
-public import VerifiedGarbage.Proof.Bignum.X86.CrtTransferTiming
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtTransferTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrimePowerTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtArithmeticTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # The complete CRT arithmetic trace is independent of private components -/
 

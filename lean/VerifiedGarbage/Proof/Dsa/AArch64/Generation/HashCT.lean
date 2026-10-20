@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Hash
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Hash
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.CtBase
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Label
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hash
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Seed hashing's trace depends only on its public location and width -/
 

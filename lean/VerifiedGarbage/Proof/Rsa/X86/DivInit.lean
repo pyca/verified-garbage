@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.DivContext
+public import VerifiedGarbage.Impl.Mont.X86.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Initialize division with a zero remainder and public iteration count -/
 

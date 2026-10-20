@@ -1,8 +1,13 @@
 module
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The static's words are its entries

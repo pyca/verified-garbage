@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemB
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
+import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
+import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_decaps` and `vg_mlkem1024_decaps`

@@ -1,11 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
-public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
-meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Fn
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Polyval
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Keys
+meta import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Derive
 
 /-!
 # AES-GCM-SIV on AArch64: relating two runs, the keys and POLYVAL

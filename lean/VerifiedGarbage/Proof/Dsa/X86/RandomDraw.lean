@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCandidate
-public import VerifiedGarbage.Proof.Dsa.RandomResult
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # One draw (x86)

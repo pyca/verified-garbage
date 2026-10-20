@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inv
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Correct
 
 /-!
 # ML-DSA signing on ARMv7: verified

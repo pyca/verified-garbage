@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 
 /-!
 # ML-KEM-1024 on AArch64: `dd5Half`

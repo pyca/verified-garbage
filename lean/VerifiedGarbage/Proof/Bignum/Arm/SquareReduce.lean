@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareDiag
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Bignum.Arm.AddCarry
+import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
+import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The square's Montgomery reduction, in place
 

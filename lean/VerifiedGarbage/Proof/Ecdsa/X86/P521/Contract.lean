@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.P521
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P521
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): the contract the proof is written against

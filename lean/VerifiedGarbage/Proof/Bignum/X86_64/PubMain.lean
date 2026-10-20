@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!

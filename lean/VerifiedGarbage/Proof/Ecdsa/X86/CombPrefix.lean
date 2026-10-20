@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
 public import VerifiedGarbage.Proof.Framework.X86.SymFrame
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Main
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Public static tables at the x86 P-256 entry points -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # The complete paired matrix sampler -/
 @[expose] public section

@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
+import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
 public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+public import VerifiedGarbage.Proof.AesCfb8.X86_64.Loop
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-CFB8 on x86-64: one byte

@@ -1,10 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Key
-public import VerifiedGarbage.Proof.Idea.Arm.Block
+import VerifiedGarbage.Proof.Idea.Arm.Block
 public import VerifiedGarbage.Proof.Idea.Inverse
 public import VerifiedGarbage.Proof.Idea.Scratch32
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
+public import VerifiedGarbage.TCB.Arm.Target
+public import VerifiedGarbage.Proof.Idea.Arm.Round
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Idea.KeyBits32
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # IDEA decryption subkeys on ARMv7

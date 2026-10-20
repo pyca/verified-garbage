@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.AArch64.Row
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Montgomery arithmetic on AArch64: the first row

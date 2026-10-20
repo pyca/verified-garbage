@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Reduce
+import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # P-384's Montgomery product modulo `p` as a function on AArch64

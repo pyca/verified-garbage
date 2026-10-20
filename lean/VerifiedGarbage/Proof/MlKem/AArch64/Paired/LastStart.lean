@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullSample
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Begin
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Start
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Env
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # The initial three-block singleton sample -/
 @[expose] public section

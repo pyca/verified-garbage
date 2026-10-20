@@ -1,13 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Spec.Rc4
 meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
 meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+import VerifiedGarbage.Proof.Rc4.Stream
+import VerifiedGarbage.Proof.Rc4.Table
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Group
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
+meta import VerifiedGarbage.Proof.Rc4.Stream
+meta import VerifiedGarbage.Proof.Rc4.Table
 
 /-!
 # The PRGA's constant time

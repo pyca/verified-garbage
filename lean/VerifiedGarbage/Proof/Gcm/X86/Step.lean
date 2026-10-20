@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Gcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.Common
 public import VerifiedGarbage.Proof.Gcm.Spec
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86.Wp
 
 /-!
 # GHASH on x86 (32-bit): one step of Algorithm 1

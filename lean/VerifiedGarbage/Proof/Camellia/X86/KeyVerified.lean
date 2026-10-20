@@ -1,13 +1,45 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.X86.Verified
 meta import VerifiedGarbage.Proof.Camellia.X86.Verified
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Camellia.Planes32
+import VerifiedGarbage.Proof.Camellia.X86.Copy
+import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86.Fl
+import VerifiedGarbage.Proof.Camellia.X86.KaKb
+import VerifiedGarbage.Proof.Camellia.X86.KeyInit
+import VerifiedGarbage.Proof.Camellia.X86.KeyLoad
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Camellia.Planes32
+meta import VerifiedGarbage.Proof.Camellia.X86.Copy
+meta import VerifiedGarbage.Proof.Camellia.X86.Crypt8
+meta import VerifiedGarbage.Proof.Camellia.X86.Fl
+meta import VerifiedGarbage.Proof.Camellia.X86.KaKb
+meta import VerifiedGarbage.Proof.Camellia.X86.KeyInit
+meta import VerifiedGarbage.Proof.Camellia.X86.KeyLoad
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Mmx
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The Camellia key schedule on x86 (32-bit) meets its contracts

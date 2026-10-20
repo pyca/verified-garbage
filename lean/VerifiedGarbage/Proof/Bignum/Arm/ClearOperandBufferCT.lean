@@ -1,12 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import Batteries.Logic
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBuffer
-public import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferArgs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Clearing an extended operand buffer reveals only its public pointer and width -/
 

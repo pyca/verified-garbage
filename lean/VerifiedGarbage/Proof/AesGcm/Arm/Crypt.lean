@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Env
+public import VerifiedGarbage.Proof.AesGcm.Arm.Run
+public import VerifiedGarbage.Proof.Gcm.Ctr
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Flush
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!
 # AES-GCM on ARMv7: counter mode over a piece (`crypt`)

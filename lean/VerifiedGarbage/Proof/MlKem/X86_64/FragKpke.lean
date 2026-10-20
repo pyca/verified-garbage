@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeKg
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.PolyW
 
 /-!
 # ML-KEM on x86-64: the calls of the K-PKE functions

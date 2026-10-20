@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvMont
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the stage of the candidates
 

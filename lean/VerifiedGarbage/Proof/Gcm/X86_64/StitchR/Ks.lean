@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
-import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 
 /-!
 # The keystream of the blocks after the last group, eight at a time

@@ -1,13 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamAad
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_stream_aad` is constant time

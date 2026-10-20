@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Load the public encoder arguments without changing memory -/
 

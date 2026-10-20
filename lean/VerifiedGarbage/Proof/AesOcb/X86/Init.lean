@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Calls
-meta import VerifiedGarbage.Proof.AesOcb.X86.Calls
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86.Contract
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Setup
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesOcb.X86.Callee
+meta import VerifiedGarbage.Proof.AesOcb.X86.Contract
 meta import VerifiedGarbage.Proof.Ocb.State
+meta import VerifiedGarbage.Proof.AesOcb.X86.Setup
+meta import VerifiedGarbage.Proof.AesOcb.X86.Run
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-OCB on x86: `vg_aes_ocb_init`

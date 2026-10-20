@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+import VerifiedGarbage.Spec.X25519
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA on x86 (32-bit): where the ladder's and the powers' slots are

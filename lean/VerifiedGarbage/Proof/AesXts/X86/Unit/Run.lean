@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Steps
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.CmacAes.X86.Save
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesCbc.X86.CT
+import VerifiedGarbage.Proof.AesXts.Batch
 
 /-!
 # XTS-AES of data units on x86: the tweak, and what every piece keeps

@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Compress
-public import VerifiedGarbage.Proof.Pbkdf2.MdStep
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on ARMv7: the hash function

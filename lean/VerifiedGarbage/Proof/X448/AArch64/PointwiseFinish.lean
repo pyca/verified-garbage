@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
-public import VerifiedGarbage.Proof.X448.AArch64.Carry
+import VerifiedGarbage.Proof.X448.AArch64.Carry
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
 

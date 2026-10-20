@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
-meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCTEnc
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignCorrect
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # RSASSA-PSS signing on AArch64: constant time

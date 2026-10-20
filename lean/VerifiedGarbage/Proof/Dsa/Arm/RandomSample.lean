@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomDraw
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-!
 # Sampling a nonce (32-bit ARM)

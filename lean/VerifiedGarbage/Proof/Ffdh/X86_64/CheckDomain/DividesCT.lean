@@ -1,7 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.DividesStagesCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QTestCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.MinusCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.DividesStagesCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.SubgroupCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.QTestCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.MinusCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: divisibility in constant time -/
 

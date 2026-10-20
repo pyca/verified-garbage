@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! # FFDH private-key validation on x86-64: compare the generated public value -/
 

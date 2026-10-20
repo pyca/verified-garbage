@@ -1,37 +1,61 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
-import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+public import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
 meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+meta import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 
 /-! Merged from `Proof.Ed25519.X86_64.VerifyCTPublic`. -/
 

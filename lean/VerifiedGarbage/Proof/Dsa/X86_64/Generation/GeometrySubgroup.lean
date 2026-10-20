@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BufferSeparate
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Concrete q-phase layout inside the shared generation arena -/
 

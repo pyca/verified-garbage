@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeValues
+import VerifiedGarbage.Proof.MillerRabin.X86_64.NormalizeValues
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Normalize
 
 /-! # Public bookkeeping after normalization is fixed by the limb count -/
 

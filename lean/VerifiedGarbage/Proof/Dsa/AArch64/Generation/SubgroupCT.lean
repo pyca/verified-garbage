@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupReadyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBaseCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupCTState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
 
 /-! # Constant time of subgroup hashing, shaping and native primality testing -/
 

@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Contract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-public import VerifiedGarbage.Spec.Gcm.Precomputed
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the functions called

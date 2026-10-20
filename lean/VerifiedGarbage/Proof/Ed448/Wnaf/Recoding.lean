@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.Wnaf
-public import VerifiedGarbage.Proof.Ed448.SignedWindow
+public import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Tactic.NormNum.Prime
+public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Exact recoding, including the carry beyond bit 455. -/
 

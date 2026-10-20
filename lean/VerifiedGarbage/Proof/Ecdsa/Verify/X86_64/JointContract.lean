@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitErase
+public import VerifiedGarbage.Spec.Ecdsa.P256
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Tables
 
 /-! The existing verification contract makes all inputs to the joint routine public. -/
 

@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Sm4.AArch64.KeyLoop
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.Planes
+import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
+import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The SM4 key schedule on AArch64: the whole function

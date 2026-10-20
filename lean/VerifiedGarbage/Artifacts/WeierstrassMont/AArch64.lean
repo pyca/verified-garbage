@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqr521Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 

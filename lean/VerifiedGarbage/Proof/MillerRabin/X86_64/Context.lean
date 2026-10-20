@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # A prepared x86-64 workspace supplies the shared round's context -/
 

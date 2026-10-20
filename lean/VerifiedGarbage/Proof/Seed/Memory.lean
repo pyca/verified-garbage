@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Seed
 public import VerifiedGarbage.Proof.Seed.Rounds
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SEED's contracts' views of memory, as loads

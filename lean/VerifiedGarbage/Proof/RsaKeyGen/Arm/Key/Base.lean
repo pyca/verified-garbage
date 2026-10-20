@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # An RSA key on ARMv7: the public parameters and the stages
 

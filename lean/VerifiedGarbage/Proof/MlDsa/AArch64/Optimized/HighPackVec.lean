@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 

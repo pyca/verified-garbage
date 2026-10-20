@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestP
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestP
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyResult
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HalveOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup
@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadOutput
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LeavePhase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ModulusPolicy
 
 /-! # FFDH parameter generation on x86-64: q followed by p -/
 

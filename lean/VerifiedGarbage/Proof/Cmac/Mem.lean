@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CMAC: blocks in memory as 64-bit words

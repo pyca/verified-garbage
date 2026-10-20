@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
+public import VerifiedGarbage.Proof.Cmac.Block32
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Polyval
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcmSiv.X86.Run
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 
 /-!
 # AES-GCM-SIV on x86: a block encrypted with the encryption key (`tag`)

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # One-shot Merkle–Damgård digests: facts that do not depend on the target

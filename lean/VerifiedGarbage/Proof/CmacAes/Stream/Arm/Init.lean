@@ -1,9 +1,36 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Proof.Cmac.Mem
+meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
+meta import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_init`

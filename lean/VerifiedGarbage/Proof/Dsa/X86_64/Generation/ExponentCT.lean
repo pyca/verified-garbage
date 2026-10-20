@@ -1,13 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyR1CT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeConstantsCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeConstantsCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyR1CT
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time preparation of the windowed Miller–Rabin exponent -/
 

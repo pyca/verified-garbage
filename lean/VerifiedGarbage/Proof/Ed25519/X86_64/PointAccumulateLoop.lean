@@ -1,12 +1,16 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulate
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointTableAddr
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointAccumulateLoop
+public import VerifiedGarbage.Proof.Ed25519.ScalarMul
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Ed25519.X86_64.PointAccumulate`. -/
 

@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Ecdsa.Generic
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Weierstrass.Arm.Bits
+import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: the ladder

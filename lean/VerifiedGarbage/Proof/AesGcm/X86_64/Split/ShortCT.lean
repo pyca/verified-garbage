@@ -1,15 +1,11 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 
 /-!
 # AES-GCM `seal_split` on x86-64 with AVX-512: the short path, in two runs

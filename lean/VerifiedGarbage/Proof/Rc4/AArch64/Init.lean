@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
+import VerifiedGarbage.Proof.Rc4.AArch64.KsaSetup
 import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
+import VerifiedGarbage.Proof.Rc4.Memory
 
 /-!
 # The key schedule

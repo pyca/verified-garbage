@@ -3,6 +3,20 @@ module
 public import VerifiedGarbage.Impl.Rc4.X86_64
 public import VerifiedGarbage.Proof.Rc4.Qword
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Rc4.Memory
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Rc4.Memory
+public import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Rc4.Table
 
 /-! # RC4 on x86-64: the table lookup, a quadword at a time -/
 

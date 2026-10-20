@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Execution
 public import VerifiedGarbage.Proof.Dsa.AArch64.Workspaces
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Establishing the persistent DSA context from caller scratch -/

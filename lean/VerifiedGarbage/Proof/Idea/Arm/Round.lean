@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Idea.Arm.Mul
 import VerifiedGarbage.Proof.Idea.Memory32
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # IDEA on ARMv7: a round

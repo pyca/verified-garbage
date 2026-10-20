@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
+public import VerifiedGarbage.Spec.MlDsa.CachedVerify
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.MlKem.Mem
 
 @[expose] public section
 

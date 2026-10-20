@@ -1,13 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Head
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## AdxRotate8CtViews -/
 

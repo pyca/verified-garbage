@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86.Env
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
-meta import VerifiedGarbage.Proof.AesGcm.X86.Ghash1
 
 /-!
 # AES-GCM on x86: pieces shared by GHASH and counter mode

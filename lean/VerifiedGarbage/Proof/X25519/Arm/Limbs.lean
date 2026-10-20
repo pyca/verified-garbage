@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.X25519
 
-public import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.Field
 
 /-!
 # X25519 on 32-bit ARM: numbers of 16-bit limbs

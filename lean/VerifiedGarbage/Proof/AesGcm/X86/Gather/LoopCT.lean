@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 meta import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Gathering a list of slices, x86: constant time

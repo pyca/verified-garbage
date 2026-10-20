@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.CbcEnc
+import VerifiedGarbage.Proof.Modes.CbcEnc
 public import VerifiedGarbage.Impl.Modes.FbMode
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
+public import VerifiedGarbage.Proof.Modes.Ctr
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # OFB's and CFB's results, for any block cipher and target

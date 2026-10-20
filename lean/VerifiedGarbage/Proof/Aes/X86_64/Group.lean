@@ -4,8 +4,10 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 public import VerifiedGarbage.Proof.Aes.Blocks
 public import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 @[expose] public section
 

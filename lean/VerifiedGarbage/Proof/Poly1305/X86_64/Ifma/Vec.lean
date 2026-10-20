@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Load
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Mul
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the short vector blocks

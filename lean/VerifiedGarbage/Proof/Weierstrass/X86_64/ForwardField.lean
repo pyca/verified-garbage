@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Forward
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Double4
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! The forwarded program preserves field values, memory frames and its output cache. -/
 

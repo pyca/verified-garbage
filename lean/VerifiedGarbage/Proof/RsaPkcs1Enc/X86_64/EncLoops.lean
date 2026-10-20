@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!

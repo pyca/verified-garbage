@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Arith
 public import VerifiedGarbage.Proof.Aes.Blocks
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 public import VerifiedGarbage.Impl.Aes.X86.AesNi
+public import VerifiedGarbage.Proof.Framework.Semantics
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 @[expose] public section
 

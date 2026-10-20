@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the arguments

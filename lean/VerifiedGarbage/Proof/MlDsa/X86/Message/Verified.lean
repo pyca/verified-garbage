@@ -1,17 +1,27 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
+public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlKem.X86.TopKem
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inst
+meta import VerifiedGarbage.Impl.MlDsa.X86.Verify.Inst
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Verify
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
 meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
-meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.MlKem.X86.TopKem
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions

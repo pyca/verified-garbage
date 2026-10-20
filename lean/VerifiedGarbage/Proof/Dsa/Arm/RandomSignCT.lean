@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.Arm.Entry
+public import VerifiedGarbage.Impl.Dsa.Arm.RandomSign
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+public import VerifiedGarbage.Proof.Framework.Arm.Call
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # The randomized signer is constant time (32-bit ARM)

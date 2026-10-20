@@ -1,6 +1,35 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
 
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
+public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
 /-!
 # AES-GCM on x86: what every function does

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptance
 public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # The saved validation bit establishes the sanitized-factor precondition -/
 

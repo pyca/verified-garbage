@@ -1,6 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.WindowBuildCT
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowSelect
+import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Selecting `T[digit]` reads every entry: its trace does not depend on the digit -/
 

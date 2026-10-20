@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ReverseBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.StoreBE
+import VerifiedGarbage.Proof.Bignum.Arm.StoreBE
+import VerifiedGarbage.Proof.Bignum.Arm.ReverseRegion
 
 /-! # Serialize a nonempty native integer buffer as exact big-endian octets -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86
-public import VerifiedGarbage.Spec.P521
 
 /-! # ECDSA over P-521 on x86 (32-bit): nine-word field elements and scalars -/
 

@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Glue
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Region
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.VecR
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: `ifma`

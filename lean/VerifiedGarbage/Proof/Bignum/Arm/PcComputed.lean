@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportState
+import VerifiedGarbage.Proof.Bignum.Arm.Precompute
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # The arithmetic result is ready for serialization to the caller's buffer -/
 

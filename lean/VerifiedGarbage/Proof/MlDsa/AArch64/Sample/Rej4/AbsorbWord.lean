@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
-import VerifiedGarbage.Proof.Sha3.Seed34
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

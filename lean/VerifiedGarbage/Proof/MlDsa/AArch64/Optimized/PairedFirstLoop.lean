@@ -1,12 +1,16 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirst
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFirstLoop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstRoots
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTableMemory
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-! ## From `PairedAdvance.lean` -/
 

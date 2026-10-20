@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerivations
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameDerived
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Initialize the three workspace pointers and the witness cursor -/
 

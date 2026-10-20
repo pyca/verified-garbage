@@ -1,9 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointBatch
-import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.Arm.PointPowersLoop`. -/
 

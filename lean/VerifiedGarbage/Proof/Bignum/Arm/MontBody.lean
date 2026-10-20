@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontBody
 public import VerifiedGarbage.Proof.Bignum.Arm.MontInit
-public import VerifiedGarbage.Proof.Bignum.Arm.MontCore
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+import VerifiedGarbage.Proof.Bignum.Arm.MontCore
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete Montgomery arithmetic from pointers and a packed-word count -/
 

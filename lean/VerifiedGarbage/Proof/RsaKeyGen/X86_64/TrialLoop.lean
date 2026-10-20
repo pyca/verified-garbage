@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import Mathlib.Data.Nat.GCD.Basic
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # A candidate on x86-64: the trial division's table and loop

@@ -1,16 +1,41 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Input
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Lit
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
+import VerifiedGarbage.Proof.Ed25519.AArch64.FieldBound
+import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarWord
+import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Field64
+import VerifiedGarbage.Proof.Ed25519.Scalar
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Add
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Cmadd
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mux
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sqr
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Sub
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
+import VerifiedGarbage.Proof.X25519.AArch64.Invert
+import VerifiedGarbage.Proof.X25519.AArch64.Main
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
 
 /-!
 # X25519 on AArch64: the `_alt` ladder's whole function

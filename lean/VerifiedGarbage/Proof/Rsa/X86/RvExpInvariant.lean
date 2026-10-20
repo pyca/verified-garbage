@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
-public import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Rsa.RecoverExp
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # The exponentiation invariant for a recovery candidate -/
 

@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.Zero
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.ClearOperandBufferArgs
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Impl.Bignum.Arm.ClearOperandBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Zero a complete extended arithmetic operand while preserving all other bytes -/
 

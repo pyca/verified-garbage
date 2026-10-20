@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcBase
+public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 
 /-! # The checks of an RSA key on ARMv7: the steps on `Stg`
 

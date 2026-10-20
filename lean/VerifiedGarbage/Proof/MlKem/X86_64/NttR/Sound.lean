@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sym
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, word by word, agrees

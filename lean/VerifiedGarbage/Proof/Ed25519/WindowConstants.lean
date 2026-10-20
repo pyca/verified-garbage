@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
 public import VerifiedGarbage.Proof.Ed25519.BaseTable
-public import VerifiedGarbage.Proof.Ed25519.Group.Decode
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 /-!
 # The small multiples of the base point represent `[i + 1]B`

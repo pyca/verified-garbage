@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Block
 import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.X86_64.ConstantTime
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

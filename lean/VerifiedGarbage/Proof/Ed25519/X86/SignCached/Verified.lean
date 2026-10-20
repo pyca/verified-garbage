@@ -1,31 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
-meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
-meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Rc2
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ed25519.X86.SignCached
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CT
 meta import VerifiedGarbage.Spec.Ed25519.CachedSign
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Spec.Rc2
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Contract`. -/
 

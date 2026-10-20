@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.TapeLoop
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Check a complete seed or h chunk without cursor overflow -/

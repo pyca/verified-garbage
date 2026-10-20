@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InitMetaMemory
-public import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
-public import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.InitMetaMemory
+import VerifiedGarbage.Proof.Bignum.Arm.PrepareZero
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
 public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
+public import VerifiedGarbage.Impl.Bignum.Arm.MontInit
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize the complete Montgomery core without changing its operands -/
 

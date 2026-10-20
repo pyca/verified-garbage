@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Samp
-import VerifiedGarbage.Proof.MlKem.Encode
-meta import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Inv
+meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers

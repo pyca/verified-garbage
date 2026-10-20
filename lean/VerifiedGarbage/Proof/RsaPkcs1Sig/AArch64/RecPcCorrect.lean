@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
 import Mathlib.Tactic.SplitIfs
 
 /-!

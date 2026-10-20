@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointAffine
 import VerifiedGarbage.Proof.X25519.X86_64.Freeze
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Canonical point encoding in four machine words. -/
 

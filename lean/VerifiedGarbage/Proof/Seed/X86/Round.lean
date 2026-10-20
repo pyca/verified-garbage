@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86.Steps
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A round on x86 (32-bit)

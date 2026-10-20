@@ -1,11 +1,19 @@
 module
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Ed25519.WindowNibble
+public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed25519.Contract
+public import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Ed25519.AArch64.Bits
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Verification's nibbles, split with vector instructions

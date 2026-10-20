@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSeedCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAddCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 
 /-! # Streaming hash contributions for the public p-candidate search -/
 

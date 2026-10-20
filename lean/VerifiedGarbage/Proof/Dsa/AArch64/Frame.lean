@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Product
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 public import VerifiedGarbage.Proof.Bignum.CrtExp
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
 
 /-! # Framing the DSA child workspaces -/
 

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+public import VerifiedGarbage.Proof.AesGcm.X86.Flush
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.AesGcm.X86.Top
+meta import VerifiedGarbage.Proof.AesGcm.X86.CtrCall
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 
 /-!

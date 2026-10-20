@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
+public import VerifiedGarbage.Proof.Dsa.X86.RandomMask
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Copying a draw into the nonce (x86)

@@ -1,15 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
+import VerifiedGarbage.Proof.Dsa.AArch64.JointEncodeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
+import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
+import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointEncodeCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Joint
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEncodeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPrepare
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEncode
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time preparation of the joint exponentiation table -/
 

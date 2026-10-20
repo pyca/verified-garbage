@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Rsa.Octets
 public import Mathlib.Data.Fintype.Card
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
+public import VerifiedGarbage.Spec.RsaPkcs1Enc
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the steps of an implementation

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestPack
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the rows of `t`

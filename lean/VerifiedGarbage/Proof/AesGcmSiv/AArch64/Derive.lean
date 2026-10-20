@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Env
 public import VerifiedGarbage.Proof.GcmSiv.Spec
+public import VerifiedGarbage.Impl.AesGcmSiv.AArch64
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV on AArch64: the message keys (`derive`)

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 
 /-! Exact field values after the public odd-table store. -/

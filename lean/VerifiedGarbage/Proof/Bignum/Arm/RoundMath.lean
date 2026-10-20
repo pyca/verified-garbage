@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontMath
+import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Packed-word Montgomery coefficients, capacity bounds, and exact division -/

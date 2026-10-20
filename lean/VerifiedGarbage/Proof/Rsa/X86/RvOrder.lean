@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvDivide
-public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! # Ordering the recovered factors, larger first -/
 

@@ -1,18 +1,21 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalStore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldRun
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFinalBankFieldFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryFinalField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TraversalBank
+public import VerifiedGarbage.Spec.MlDsa.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryOuterPass
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemorySchedule
 
 /-! ## From `InverseFinalBankFieldCanonical.lean` -/
 

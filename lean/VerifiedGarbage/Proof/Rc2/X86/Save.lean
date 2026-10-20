@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
-import VerifiedGarbage.Proof.Rc2.Memory32
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Rc2.Memory32
 
 @[expose] public section
 

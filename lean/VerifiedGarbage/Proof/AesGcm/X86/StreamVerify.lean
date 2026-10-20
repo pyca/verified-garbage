@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
-meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!

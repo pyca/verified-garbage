@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-DSA verification on AArch64: the comparison of `c̃′` with `c̃`

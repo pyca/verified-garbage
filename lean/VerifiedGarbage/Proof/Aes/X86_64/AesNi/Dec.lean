@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
-public import VerifiedGarbage.Proof.Aes.InvBitsliced
 public import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+public import VerifiedGarbage.Proof.Aes.InvRounds
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-NI: decryption

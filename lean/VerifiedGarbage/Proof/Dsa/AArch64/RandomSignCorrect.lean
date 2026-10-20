@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomSignResult
 
 /-! Randomized signing's functional correctness against its shared contract. -/
 @[expose] public section

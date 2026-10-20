@@ -1,7 +1,7 @@
 module
-
 public import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Spec.TripleDes
+
 
 /-!
 # DES's S-boxes, packed for evaluation

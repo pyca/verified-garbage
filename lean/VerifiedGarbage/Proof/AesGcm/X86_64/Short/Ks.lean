@@ -1,9 +1,20 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Copy
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Rounds
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 
 /-!
 # AES-GCM's short path on x86-64: the keystream

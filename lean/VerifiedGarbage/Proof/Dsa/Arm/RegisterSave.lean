@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Pow
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Workspace register saves and byte/word conversions shared by DSA helpers -/
 

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
 
 @[expose] public section
 

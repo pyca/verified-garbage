@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallLoop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Sponge
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttLoop
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_sample_in_ball`, correctness

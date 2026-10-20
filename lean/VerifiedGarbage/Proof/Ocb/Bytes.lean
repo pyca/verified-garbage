@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Spec.Aes
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # OCB: the bytes of a buffer after writes

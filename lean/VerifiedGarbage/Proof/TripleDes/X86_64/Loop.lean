@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundStep
 public import VerifiedGarbage.Proof.TripleDes.Core
 public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

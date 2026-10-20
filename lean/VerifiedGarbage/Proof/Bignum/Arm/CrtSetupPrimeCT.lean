@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrime
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtEnterPrimeCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtEnterPrime
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 
 /-! # Factor workspace initialization has no secret-dependent accesses -/
 

@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
-public import VerifiedGarbage.Proof.Bignum.X86.PublicApply
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExport
-public import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicImport
+import VerifiedGarbage.Proof.Bignum.X86.PublicApply
+import VerifiedGarbage.Proof.Bignum.X86.PublicExport
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Complete checked public arithmetic for the selected modulus width -/
 

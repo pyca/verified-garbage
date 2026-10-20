@@ -1,7 +1,23 @@
 module
+public import VerifiedGarbage.Impl.AesCcm.AArch64
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.AesCcm.AArch64
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on AArch64: the CBC-MAC in two runs

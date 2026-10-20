@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Proof.Framework.Arm.Exec
 import Mathlib.Tactic.SplitIfs
 
 /-! Relational composition restores public metadata from checked functional proofs. -/

@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.X86.Derive.HCall
+import VerifiedGarbage.Proof.Argon2.X86.Derive.Initial
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Argon2.X86.Compress
 
 @[expose] public section
 

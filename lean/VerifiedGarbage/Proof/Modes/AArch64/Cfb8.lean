@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Loop
+import VerifiedGarbage.Proof.Modes.AArch64.Cfb8Loop
 public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+public import VerifiedGarbage.Impl.Modes.AArch64.Cfb8
+public import VerifiedGarbage.Proof.Modes.Cfb8
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import VerifiedGarbage.Proof.Modes.AArch64.CbcGroup
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CFB8 on AArch64, for any core: the whole function

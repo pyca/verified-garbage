@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM on whole blocks, x86-64: correctness

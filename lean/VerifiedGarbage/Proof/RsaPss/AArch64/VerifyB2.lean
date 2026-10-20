@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Mgf
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyShift
+public import VerifiedGarbage.Spec.RsaPss
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPss.CtPad
 
 /-!
 # RSASSA-PSS verification on AArch64: hashing `M'` and comparing

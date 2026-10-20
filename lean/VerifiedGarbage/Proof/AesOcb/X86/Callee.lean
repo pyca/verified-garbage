@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Entry
 public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Proof.Ocb.State
+public import VerifiedGarbage.Impl.AesOcb.X86
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86.Keys
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 
 /-!
 # AES-OCB on x86: the calls

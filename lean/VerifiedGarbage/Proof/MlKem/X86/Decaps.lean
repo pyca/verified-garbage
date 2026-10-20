@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.DecapsBody
-public import VerifiedGarbage.Proof.MlKem.X86.EncInst
-public import VerifiedGarbage.Spec.MlKem.Contract
+import VerifiedGarbage.Proof.MlKem.X86.EncInst
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

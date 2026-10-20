@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Correct
 
 /-!
 # ML-DSA signing on AArch64: verified

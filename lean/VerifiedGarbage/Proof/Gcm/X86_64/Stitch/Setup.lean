@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Loop
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Interleaved counter mode and GHASH: the setup

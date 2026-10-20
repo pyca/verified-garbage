@@ -1,31 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
-meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.MulBase
-meta import VerifiedGarbage.Spec.Weierstrass.MulBase
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Order.RelClasses
+import Batteries.Data.List.Lemmas
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.MulBaseLit
+meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Tables
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Order.RelClasses
+meta import Batteries.Data.List.Lemmas
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 
 /-!
 # `vg_p384_mul_base` on x86-64: `Verified`

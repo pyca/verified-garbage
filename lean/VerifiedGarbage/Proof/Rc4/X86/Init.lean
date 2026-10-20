@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 import VerifiedGarbage.Proof.Rc4.X86.Schedule
-public import VerifiedGarbage.Proof.Rc4.X86.Save
+import VerifiedGarbage.Proof.Rc4.X86.Save
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # RC4 on x86 (32-bit): checked initialization -/
 

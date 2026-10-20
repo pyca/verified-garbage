@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: correctness

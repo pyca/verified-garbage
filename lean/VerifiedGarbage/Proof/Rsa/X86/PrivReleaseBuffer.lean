@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivRelease
-public import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
-public import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
+import VerifiedGarbage.Proof.Rsa.X86.PrivRelease
+import VerifiedGarbage.Proof.Bignum.X86.CopyRegion
+import VerifiedGarbage.Proof.Rsa.AcceptanceMask32
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Private-result release writes masked output and erases its temporary buffer -/
 

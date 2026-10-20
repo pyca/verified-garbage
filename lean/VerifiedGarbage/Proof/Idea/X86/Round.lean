@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.Mul
+public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Idea.Memory32
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # IDEA on x86 (32-bit): a round

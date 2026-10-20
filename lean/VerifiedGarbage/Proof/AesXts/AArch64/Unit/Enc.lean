@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Run
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.AesXts.Unit
 import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Steps
+import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Pre
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.AesCbc.AArch64.Loop
 
 /-!
 # XTS-AES of data units on AArch64: encryption

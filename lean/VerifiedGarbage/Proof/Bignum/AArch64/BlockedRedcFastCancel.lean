@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastWord
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastWord
 public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancel
+public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedcFast
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFastMath
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.BlockedRedcFast

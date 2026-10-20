@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+public import VerifiedGarbage.Proof.Framework.AArch64.Linear
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
 import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.KeysLit
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Round
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # DES's key schedule on AArch64

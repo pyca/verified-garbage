@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.J0
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_init`

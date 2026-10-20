@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Impl.MlKem.AArch64.OptimizedUsing
+public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.FixedHashDecaps
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

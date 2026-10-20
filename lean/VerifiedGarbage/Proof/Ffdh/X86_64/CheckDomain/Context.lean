@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Data
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 import VerifiedGarbage.Proof.Framework.Omega
 

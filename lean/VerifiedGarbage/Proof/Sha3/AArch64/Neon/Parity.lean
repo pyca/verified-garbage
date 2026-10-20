@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 public import VerifiedGarbage.Proof.Sha3.Spec
+public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Vector
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.Range
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

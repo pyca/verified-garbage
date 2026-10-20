@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dword
 
 /-!
 # ML-KEM-1024 on AArch64: `ce5Math`

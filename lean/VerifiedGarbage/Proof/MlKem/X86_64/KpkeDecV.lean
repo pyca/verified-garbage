@@ -1,19 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
-import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.RowEY
-import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem768_kpke_decrypt`, verified

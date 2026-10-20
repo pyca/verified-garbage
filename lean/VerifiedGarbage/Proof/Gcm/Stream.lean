@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Gcm
 
 import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # GCM: GHASH and counter mode over a message given in pieces

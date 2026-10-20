@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Convert arithmetic offset ranges into a region frame -/
 

@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOut
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeImport
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeOut
+import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Correct precomputation for a validated modulus of a fixed width -/
 

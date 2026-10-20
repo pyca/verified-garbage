@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Instantiate the public width guard and primality call for a p candidate -/
 

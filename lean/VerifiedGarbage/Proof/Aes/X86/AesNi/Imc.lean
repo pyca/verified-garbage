@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Dec
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 public import VerifiedGarbage.Proof.Aes.X86.Common
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-NI on x86 (32-bit): the round keys through `aesimc`

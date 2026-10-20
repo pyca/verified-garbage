@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.KeyBody
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Register setup and scratch saves for key expansion -/
 

@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Frame
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

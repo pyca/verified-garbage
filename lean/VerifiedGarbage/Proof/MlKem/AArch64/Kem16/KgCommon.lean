@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-public import VerifiedGarbage.Proof.MlKem.CoeffW
 
 /-! # The 16-bit key generation's invariants
 

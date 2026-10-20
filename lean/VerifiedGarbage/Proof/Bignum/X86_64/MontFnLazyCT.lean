@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazy
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledLazyCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledLazyCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_lazy_mont_mul_adx`: constant time

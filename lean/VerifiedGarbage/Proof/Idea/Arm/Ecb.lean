@@ -1,15 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Idea.Arm.Block
+import VerifiedGarbage.Proof.Idea.Arm.Block
 public import VerifiedGarbage.Proof.Idea.Arm.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.Arm.Spill
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Idea.Scratch32
+public import VerifiedGarbage.Proof.Idea.Arm.Mul
+public import VerifiedGarbage.TCB.Arm.Target
 import Batteries.Logic
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # IDEA ECB on ARMv7

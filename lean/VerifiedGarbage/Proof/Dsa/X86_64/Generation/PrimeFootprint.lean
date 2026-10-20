@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Bound every write of the complete native primality operation -/

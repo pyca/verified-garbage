@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyOut
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyOut
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.PairTail
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.OutWith
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Output
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
+import VerifiedGarbage.Proof.MlKem.CoeffW
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Paired PRF call, both polynomial outputs and register restoration -/
 @[expose] public section

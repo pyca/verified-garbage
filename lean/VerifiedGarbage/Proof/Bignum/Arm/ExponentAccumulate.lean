@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # Read the next public exponent byte into a pair of native words -/
 

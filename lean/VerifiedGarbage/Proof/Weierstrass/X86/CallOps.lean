@@ -1,12 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Ops
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
+public import VerifiedGarbage.Proof.Mont.X86.Loop
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Mont.X86.Ops
 
 /-!
 # Field operations by calls, on x86 (32-bit)

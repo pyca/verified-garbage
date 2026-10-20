@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseArgs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFallback
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInit
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

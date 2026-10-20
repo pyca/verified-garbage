@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejBounded
-import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Round
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Encode
+public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
+import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.KeyGen
 
 /-!
 # ML-DSA key generation on x86-64, with this library's primitives

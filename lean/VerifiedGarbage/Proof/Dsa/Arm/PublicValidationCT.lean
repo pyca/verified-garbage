@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationABI
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The validator's constant-time ABI contract -/

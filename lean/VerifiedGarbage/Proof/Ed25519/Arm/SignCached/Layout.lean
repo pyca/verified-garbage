@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section

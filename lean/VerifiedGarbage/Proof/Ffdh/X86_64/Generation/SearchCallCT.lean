@@ -1,12 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Internal candidate calls retain the existing public-tape timing contract -/
 

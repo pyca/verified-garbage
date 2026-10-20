@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.Round
 
-public import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Montgomery arithmetic on AArch64: the operations

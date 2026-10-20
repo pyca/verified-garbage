@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
+import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # The comb signing implementation satisfies the shared API contract -/
 

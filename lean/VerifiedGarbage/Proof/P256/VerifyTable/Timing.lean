@@ -1,16 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
-meta import VerifiedGarbage.Proof.P256.VerifyTable.Build
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.P256.EcdhJac.Masks
-meta import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+meta import VerifiedGarbage.Proof.P256.VerifyTable.Build
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.P256.EcdhJac.Masks
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! The co-Z table's timing: its addresses and loop depend on the scratch
 pointer alone, so runs from field environments that agree keep them

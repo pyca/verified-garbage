@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
 
 /-! Complete mixed Jacobian addition with called field arithmetic, including doubling. -/
 

@@ -1,6 +1,8 @@
 module
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Streaming Merkle–Damgård hash functions: prefixes of the digest

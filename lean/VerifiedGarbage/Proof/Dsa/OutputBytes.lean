@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Accepted
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # DSA's output bytes, on any target
 

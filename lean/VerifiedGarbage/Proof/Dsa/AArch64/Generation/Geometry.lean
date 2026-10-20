@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Impl.RsaOaep.AArch64
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Spec.Dsa.Generate
 
-public import VerifiedGarbage.Proof.Dsa.Generation.Layout
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
-public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Impl.Dsa.Layout
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-! # Shared concrete arena geometry for composing parameter-generation phases -/
 

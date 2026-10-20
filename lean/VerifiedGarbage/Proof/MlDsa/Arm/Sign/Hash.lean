@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Keccak
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 
 /-!
 # ML-DSA signing on ARMv7: `H` of pieces of memory

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # The low half of a double-width integer -/
 

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
+public import VerifiedGarbage.Spec.Dsa.Random
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! Apply sampler leakage to contexts with independent secret tapes and memories. -/
 @[expose] public section

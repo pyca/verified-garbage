@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.State
+public import Mathlib.Data.BitVec
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Divstep.Batch
-public import VerifiedGarbage.Proof.Divstep.Word
 
 /-!
 # Inversion by batches of divsteps

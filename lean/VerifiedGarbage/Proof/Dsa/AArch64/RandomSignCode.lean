@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishResult
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Whole-entry execution, frame restoration, and stack bounds. -/
 @[expose] public section

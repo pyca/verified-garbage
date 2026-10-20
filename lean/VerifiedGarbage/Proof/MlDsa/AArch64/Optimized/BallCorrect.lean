@@ -1,12 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
+import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-! ## From `BallMath.lean` -/
 

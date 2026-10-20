@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
 public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Lane
 public import VerifiedGarbage.Impl.MlKem.AArch64.AddSubW
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.MlKem.Arith
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
 
 /-!
 # Sums of polynomials stored with 16 bits, on AArch64

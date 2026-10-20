@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
 import VerifiedGarbage.Proof.AesGcm.X86.Top
-meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 import VerifiedGarbage.Proof.Gcm.Be64
+meta import VerifiedGarbage.Proof.AesGcm.X86.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.Gcm.Be64
 
 /-!

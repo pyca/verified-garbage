@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
-public import VerifiedGarbage.Proof.Hmac.Generic.Implies
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on x86-64: constant time

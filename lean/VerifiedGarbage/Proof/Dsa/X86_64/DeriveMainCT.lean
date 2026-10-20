@@ -1,18 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveBodyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveBodyCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveWrite
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
+import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveBodyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveWrite
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DeriveCopy
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Dsa.SizeBounds
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
 
 /-! # Constant time of the complete x86-64 key derivation -/
 

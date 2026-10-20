@@ -1,9 +1,25 @@
 module
 
+public import VerifiedGarbage.Proof.X25519.Bytes
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.Ed25519.Arm.Packed
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.X25519.Arm.Pass
+import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.X25519.Arm.Pass
+public import VerifiedGarbage.Spec.Ed25519
 
 /-! The compact point-table representation. -/
 

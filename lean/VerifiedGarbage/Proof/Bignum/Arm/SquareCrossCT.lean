@@ -1,11 +1,45 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareCTBase
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
-public import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
+import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.Square
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Bignum.Arm.ArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ProductArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.RowBody
+import VerifiedGarbage.Proof.Bignum.Arm.RowBody2
+import VerifiedGarbage.Proof.Bignum.Arm.RowFullCT
+import VerifiedGarbage.Proof.Bignum.Arm.RowStep
+import VerifiedGarbage.Proof.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftCT
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftStep
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideMath
+import VerifiedGarbage.Proof.Bignum.Arm.WideValue
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.ZeroStep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.TCB.Arm.Target
 
 /-! # The square's setup and rows of cross products leak only the width -/
 

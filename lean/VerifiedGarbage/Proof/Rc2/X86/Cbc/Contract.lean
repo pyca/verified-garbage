@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Rc2.Contract
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-public import VerifiedGarbage.Proof.Rc2.X86.KeyIO
+public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Rc2.X86.RoundSteps
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

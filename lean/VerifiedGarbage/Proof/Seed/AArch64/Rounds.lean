@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Seed.AArch64.Round
 public import VerifiedGarbage.Proof.Seed.Rounds
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Sixteen rounds on AArch64

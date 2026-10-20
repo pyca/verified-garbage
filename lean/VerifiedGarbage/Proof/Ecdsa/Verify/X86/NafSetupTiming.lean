@@ -1,13 +1,35 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+public import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+public import VerifiedGarbage.Proof.Weierstrass.X86.Pow
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+meta import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+meta import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+meta import VerifiedGarbage.Proof.Weierstrass.X86.FieldTiming
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86Comb
+meta import VerifiedGarbage.Proof.Weierstrass.X86.Pow
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 @[expose] public section
 

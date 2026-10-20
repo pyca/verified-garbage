@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Native-word arithmetic for the public-exponent accumulator -/
 

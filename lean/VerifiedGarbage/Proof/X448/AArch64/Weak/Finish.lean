@@ -1,12 +1,15 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Weak
+public import VerifiedGarbage.Proof.X448.AArch64.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
 
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Finish
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 import VerifiedGarbage.Proof.Curve448.AArch64.Square
 import VerifiedGarbage.Proof.X448.AArch64.Freeze
 import VerifiedGarbage.Proof.X448.AArch64.Output
+import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

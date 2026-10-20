@@ -1,9 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMulAddMain
+import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
+import VerifiedGarbage.Impl.Ed448.Formulas
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448's complete operations on AArch64: calls of the Ed448 primitives

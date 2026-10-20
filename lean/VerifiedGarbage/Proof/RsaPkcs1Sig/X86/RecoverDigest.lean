@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverGeometry
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Locate the trailing digest within the recovered encoding -/
 

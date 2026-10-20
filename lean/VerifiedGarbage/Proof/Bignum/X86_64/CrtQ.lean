@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # RSA with the CRT on x86-64: `q`'s phase

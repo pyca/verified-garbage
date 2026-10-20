@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
 

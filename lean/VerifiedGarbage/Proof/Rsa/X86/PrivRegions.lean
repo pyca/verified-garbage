@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivGeometry
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Disjoint wrapper, callee, saved-register, and argument stack regions -/
 

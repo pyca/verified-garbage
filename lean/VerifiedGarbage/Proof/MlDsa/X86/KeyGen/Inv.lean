@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-DSA key generation on x86 (32-bit): what holds between the pieces

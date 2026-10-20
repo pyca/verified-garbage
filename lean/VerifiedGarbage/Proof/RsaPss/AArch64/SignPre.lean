@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
+public import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Impl.RsaPss.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PSS signing on AArch64: the precondition and the frame

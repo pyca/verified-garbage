@@ -1,12 +1,29 @@
 module
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 import VerifiedGarbage.Impl.MdStream.AArch64
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Argon2.HPrime
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Zeroing the Argon2 matrix, independently of its initial contents -/
 

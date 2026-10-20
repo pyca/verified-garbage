@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Fn
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: constant time

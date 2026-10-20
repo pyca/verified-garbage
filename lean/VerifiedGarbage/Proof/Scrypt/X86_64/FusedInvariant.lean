@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedInit
 public import VerifiedGarbage.Proof.Scrypt.X86_64.BlockMixCT
+public import VerifiedGarbage.Proof.Scrypt.X86_64.FusedLoop
 import VerifiedGarbage.Proof.Scrypt.Memory
 
 @[expose] public section

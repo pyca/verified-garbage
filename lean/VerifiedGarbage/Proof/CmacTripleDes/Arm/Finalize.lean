@@ -1,8 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
-import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Save
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_finalize`, the last block

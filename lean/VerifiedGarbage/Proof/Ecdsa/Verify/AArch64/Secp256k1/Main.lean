@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Points
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.AArch64
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Secp256k1.Points
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! # secp256k1 signature verification -/
 

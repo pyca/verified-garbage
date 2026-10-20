@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Recover
-public import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
-public import VerifiedGarbage.Proof.Rsa.X86.PrivBytes
-public import VerifiedGarbage.Proof.Rsa.X86.PrivWorkspace
-public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
 /-! # Public buffers and the two encoding buffers used by i686 verification -/
 

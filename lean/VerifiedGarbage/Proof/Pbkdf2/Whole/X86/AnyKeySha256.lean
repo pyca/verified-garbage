@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyEntry
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha224
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # HMAC-SHA-256's and HMAC-SHA-224's `init` for a key of any length on x86 (32-bit), for every backend

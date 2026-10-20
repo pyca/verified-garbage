@@ -2,29 +2,17 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ed25519.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
-public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.MdStream.Prefix
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
 

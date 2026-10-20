@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # Initial state of the 256-bit divstep inversion -/
 

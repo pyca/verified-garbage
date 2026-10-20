@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Generate
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishOutput
-public import VerifiedGarbage.Proof.Dsa.Generation.ByteResult
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputPlan
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishOutput
+import VerifiedGarbage.Proof.Dsa.Generation.ByteResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeParameters
 
 /-! # The native search and output implement the reviewed byte-level generator -/
 

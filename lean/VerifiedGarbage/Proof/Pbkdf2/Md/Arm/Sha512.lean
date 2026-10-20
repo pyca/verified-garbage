@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Words
-import VerifiedGarbage.Proof.Sha512.Md
-public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha512.Md
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The SHA-512 family's digest on ARMv7

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Rsa
-public import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # A saturating upper word preserves every public-exponent validity check -/
 

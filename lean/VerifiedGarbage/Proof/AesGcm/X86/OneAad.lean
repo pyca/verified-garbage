@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
-meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 public import VerifiedGarbage.Proof.AesGcm.X86.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86.OneEntry
 meta import VerifiedGarbage.Proof.AesGcm.X86.J0
 
 /-!

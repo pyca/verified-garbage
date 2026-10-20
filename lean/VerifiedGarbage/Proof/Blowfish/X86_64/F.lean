@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Lookup
 public import VerifiedGarbage.Proof.Blowfish.F
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! # F: four lookups, combined in the low doubleword of `fReg` -/
 

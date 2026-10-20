@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.TagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 
 /-!
 # AES-GCM on x86-64: the pieces of `seal` and `open` in two runs

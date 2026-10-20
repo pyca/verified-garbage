@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Blocks
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+import Mathlib.Tactic.Tauto
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86-64: signing with a candidate

@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Symmetric
+public import VerifiedGarbage.Proof.X448.Wide.CacheRegs
+public import VerifiedGarbage.Proof.X448.Wide.Memory
+public import VerifiedGarbage.Proof.X448.Wide.Product
 
-public import VerifiedGarbage.Proof.X448.Wide.SymmetricColumn
+import VerifiedGarbage.Proof.X448.Wide.SymmetricColumn
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Impl.X448.AArch64
 
 /-! Untrusted: the complete two-word coefficient array of a wide product. -/
 

@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Streaming BLAKE2 on x86-64: `init`

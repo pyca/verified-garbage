@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Geometry of the generator's parent and arithmetic workspaces -/

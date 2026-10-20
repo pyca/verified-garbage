@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.VerifyEq
-public import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.VerifyEq
 public import Mathlib.Tactic.Abel
+public import VerifiedGarbage.Proof.Ed448.Group.Projective
+import VerifiedGarbage.Proof.Ed448.Group.Decode
 
 /-!
 # Ed448: the reference computations agree with the specification

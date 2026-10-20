@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvGcd
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Preparing the division of the modulus by the recovered GCD -/
 

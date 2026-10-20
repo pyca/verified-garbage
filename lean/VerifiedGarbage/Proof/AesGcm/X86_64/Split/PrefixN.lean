@@ -4,6 +4,12 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.PreG
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.OnePass
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 
 /-!
 # AES-GCM `seal_split` on x86-64: the whole groups in one pass
