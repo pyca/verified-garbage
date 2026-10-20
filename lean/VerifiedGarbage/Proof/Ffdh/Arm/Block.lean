@@ -8,6 +8,7 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 
 /-! Symbolic execution of the short ARMv7 FFDH argument and controller blocks. -/
@@ -108,6 +109,13 @@ theorem withRest {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg)
   have perms := VG.Arm.Exec.rdwr run
   exact ⟨trace, t, run, done, fun r hr => VG.Arm.Exec.gpr (hc r hr) run (.inl noCalls),
     perms.1, perms.2.1, perms.2.2⟩
+
+theorem withAllRest {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) :
+    WP isa c s fun t => Q t ∧ VG.Proof.X25519.Arm.Rest VG.Proof.Bignum.Arm.roundClobbers s t := by
+  obtain ⟨trace, t, run, done⟩ := h
+  have perms := VG.Arm.Exec.rdwr run
+  exact ⟨trace, t, run, done,
+    (by intro r hr; exact False.elim (hr (by cases r <;> decide))), perms.1, perms.2.1, perms.2.2⟩
 
 tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   apply WP.of_runBlock

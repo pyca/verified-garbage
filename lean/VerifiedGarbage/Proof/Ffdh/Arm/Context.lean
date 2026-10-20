@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Spec.Ffdh.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Offset
@@ -91,38 +92,58 @@ theorem qLength (p : Inputs) (hasQ : p.hasQ = true) : ((p.dom.drop (2 * p.k)).ta
 
 end Inputs
 
-structure Context (p : Inputs) (slots : List Nat) (s : State) : Prop where
+structure ArgumentMemory (p : Inputs) (slots : List Nat) (s : State) : Prop where
   workspace : Workspace s p.base (8 * p.len)
   locals : Locals p.base p.len s
-  ptr : s.gpr .r0 = p.base
   domain : Octets p.base p.domain p.len p.dom s
   domainStack : Region.Disjoint ⟨State.addr p.domain, p.dom.length⟩ ⟨State.addr s.sp, 72⟩
   saved : ∀ d ∈ slots, s.mem.readW (off (State.addr s.sp) d) 32 = p.slotValue d
 
-theorem Context.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
-    {regions : List Region} (h : Context p slots s) (frame : Frame regions s.mem t.mem)
-    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base)
+theorem ArgumentMemory.domainSliceStack {p : Inputs} {slots : List Nat} {s : State}
+    (h : ArgumentMemory p slots s) {d k : Nat} (positive : 0 < k) (fit : d + k ≤ p.dom.length) :
+    Region.Disjoint ⟨State.addr (p.domain + BitVec.ofNat 32 d), k⟩ ⟨State.addr s.sp, 72⟩ := by
+  rw [VG.Arm.addr_add (by have := h.domain.fits; omega)]
+  exact h.domainStack.sub_left (Offset.sub_base _ fit)
+
+theorem ArgumentMemory.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    {regions : List Region} (h : ArgumentMemory p slots s) (frame : Frame regions s.mem t.mem)
+    (rest : Rest rs s t)
     (domainSep : ∀ r ∈ regions, (⟨State.addr p.domain, p.dom.length⟩ : Region).Disjoint r)
     (savedSep : ∀ d ∈ slots, ∀ r ∈ regions, (⟨off (State.addr s.sp) d, 4⟩ : Region).Disjoint r) :
-    Context p slots t := by
-  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, ptr, h.domain.after_frame frame rest domainSep,
+    ArgumentMemory p slots t := by
+  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, h.domain.after_frame frame rest domainSep,
     by rw [rest.sp]; exact h.domainStack, ?_⟩
   intro d hd
   rw [rest.sp, frame.readW (r := ⟨off (State.addr s.sp) d, 4⟩) (Region.contains_self _ _)
     (savedSep d hd) (by decide)]
   exact h.saved d hd
 
-theorem Context.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
-    (h : Context p slots s) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
-    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) (fit : ∀ d ∈ slots, d + 4 ≤ 72) :
-    Context p slots t := by
+theorem ArgumentMemory.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    (h : ArgumentMemory p slots s) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
+    (rest : Rest rs s t) (fit : ∀ d ∈ slots, d + 4 ≤ 72) :
+    ArgumentMemory p slots t := by
   have stack := WorkspaceEq.of_frame (by decide : 72 < 2 ^ 64) frame
     (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.locals.separate)
-  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, ptr, h.domain.after_workspace frame rest,
+  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, h.domain.after_workspace frame rest,
     by rw [rest.sp]; exact h.domainStack, ?_⟩
   intro d hd
   rw [rest.sp, stack.word (bits := 32) (fit d hd)]
   exact h.saved d hd
+
+structure Context (p : Inputs) (slots : List Nat) (s : State) : Prop extends ArgumentMemory p slots s where
+  ptr : s.gpr .r0 = p.base
+
+theorem Context.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    {regions : List Region} (h : Context p slots s) (frame : Frame regions s.mem t.mem)
+    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base)
+    (domainSep : ∀ r ∈ regions, (⟨State.addr p.domain, p.dom.length⟩ : Region).Disjoint r)
+    (savedSep : ∀ d ∈ slots, ∀ r ∈ regions, (⟨off (State.addr s.sp) d, 4⟩ : Region).Disjoint r) :
+    Context p slots t := ⟨h.toArgumentMemory.after_frame frame rest domainSep savedSep, ptr⟩
+
+theorem Context.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    (h : Context p slots s) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
+    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) (fit : ∀ d ∈ slots, d + 4 ≤ 72) :
+    Context p slots t := ⟨h.toArgumentMemory.after_workspace frame rest fit, ptr⟩
 
 theorem Context.pBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
     Octets p.base p.domain p.len (p.dom.take p.k) s := by

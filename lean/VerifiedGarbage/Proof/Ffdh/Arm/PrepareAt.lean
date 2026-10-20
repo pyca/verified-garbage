@@ -15,6 +15,31 @@ open VG.Proof.X25519.Arm (Rest)
 def prepareAtWrites (p : Inputs) (s : State) : List Region :=
   ⟨State.addr p.base, 8 * p.len⟩ :: prepareWrites s
 
+theorem prepareArgs_input (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bs : List Byte}
+    (h : Context p slots s) (stable : stableSlots slots = true)
+    (hs : slot ∈ slots) (hk : 32 ∈ slots) (h0 : 0 ∈ slots)
+    (source : Octets p.base (p.slotValue slot) p.len bs s) (length : bs.length = p.k)
+    (sourceStack : Region.Disjoint ⟨State.addr (p.slotValue slot), p.k⟩ ⟨State.addr s.sp, 72⟩)
+    (large : 1 < Spec.Rsa.os2ip bs) (odd : Spec.Rsa.os2ip bs % 2 = 1) :
+    WP isa (.block (VG.Impl.Ffdh.Arm.Domain.prepareArgs slot)) s
+      (PrepareInput p.base (p.slotValue slot) p.len p.k) := by
+  refine WP.mono (prepareArgs_ok s slot h stable hs hk h0) ?_
+  rintro u ⟨contextU, stack, _, countU, _, frameU, restU⟩
+  have sourceU := source.after_frame frameU restU (by
+    intro r hr
+    rw [length]
+    apply sourceStack.sub_right
+    simp only [prepareWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by decide))
+  have bytes : Spec.Rsa.bytesAt u.mem (State.addr (p.slotValue slot)) p.k = bs := by
+    simpa only [length] using sourceU.bytes
+  exact ⟨contextU.workspace, by rw [stack.savedOutput]; exact stack, contextU.ptr, countU,
+    p.minLength, p.maxLength, p.publicSpace,
+    by rw [← length]; exact sourceU.fits,
+    by rw [← length]; exact sourceU.readable,
+    by rw [← length]; exact sourceU.separate,
+    by rw [bytes]; exact large, by rw [bytes]; exact odd⟩
+
 theorem prepareAt_ok (s : State) {p : Inputs} {slots : List Nat} (slot : Nat) {bs : List Byte}
     (h : Context p slots s) (stable : stableSlots slots = true)
     (hs : slot ∈ slots) (hk : 32 ∈ slots) (h0 : 0 ∈ slots)
