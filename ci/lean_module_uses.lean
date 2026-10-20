@@ -40,10 +40,11 @@ unsafe def usesOf (mods : Array Name) (publicView : Bool) : IO (Array (Name × A
   let mut exported : Std.HashMap Name (Array (Name × Bool)) := {}
   if publicView then
     for mod in mods do
-      let (data, region) ← readModuleData (← findOLean mod)
+      -- Not freed: the names kept point into the module's data. The process
+      -- is short-lived, and exits after printing.
+      let (data, _region) ← readModuleData (← findOLean mod)
       exported := exported.insert mod <| data.constants.map fun ci =>
         (ci.name, (valueOf? ci).isSome && !ci.isTheorem)
-      region.free
   let env ← importModules imports {} (level := .private)
   try
     let mut result := #[]
@@ -82,9 +83,10 @@ unsafe def main (args : List String) : IO UInt32 := do
   if args.head? == some "names" then
     let mut out : Array (String × Json) := #[]
     for m in args.tail do
-      let (data, region) ← readModuleData (← findOLean m.toName)
+      -- Not freed: the names' strings may point into the module's data
+      -- until they are printed.
+      let (data, _region) ← readModuleData (← findOLean m.toName)
       out := out.push (m, toJson (data.constNames.map toString))
-      region.free
     IO.println (Json.mkObj out.toList).compress
     return 0
   let publicView ← match args.head? with

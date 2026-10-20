@@ -31188,54 +31188,8 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
 lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm1, XMMWORD PTR [rax+16]
-movdqu xmm7, XMMWORD PTR [r13+240]
-pshufb xmm7, xmm0
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm13, XMMWORD PTR [rax+32]
-movabs rax, -1
-movq xmm14, rax
-punpcklqdq xmm14, xmm14
-movdqa xmm3, xmm7
-psllq xmm3, 1
-movdqa xmm11, xmm7
-psrlq xmm11, 63
-pslldq xmm11, 8
-por xmm3, xmm11
-pshufd xmm11, xmm7, 255
-psrld xmm11, 31
-paddd xmm11, xmm14
-pandn xmm11, xmm13
-pxor xmm3, xmm11
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 16
-pxor xmm9, xmm11
-movdqa xmm11, xmm9
-psrldq xmm11, 8
-pxor xmm10, xmm11
-pslldq xmm9, 8
-pxor xmm8, xmm9
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm6, xmm10
-pxor xmm6, xmm8
+movdqu xmm3, XMMWORD PTR [r13+272]
+movdqu xmm6, XMMWORD PTR [r13+256]
 movdqu xmm5, XMMWORD PTR [r14]
 movdqu xmm7, XMMWORD PTR [r14+48]
 mov rdi, r13
@@ -87700,54 +87654,8 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm0, XMMWORD PTR [rax]
 lea rax, [rip + {VG_GCM_CONSTS}]
 movdqu xmm1, XMMWORD PTR [rax+16]
-movdqu xmm7, XMMWORD PTR [r13+240]
-pshufb xmm7, xmm0
-lea rax, [rip + {VG_GCM_CONSTS}]
-movdqu xmm13, XMMWORD PTR [rax+32]
-movabs rax, -1
-movq xmm14, rax
-punpcklqdq xmm14, xmm14
-movdqa xmm3, xmm7
-psllq xmm3, 1
-movdqa xmm11, xmm7
-psrlq xmm11, 63
-pslldq xmm11, 8
-por xmm3, xmm11
-pshufd xmm11, xmm7, 255
-psrld xmm11, 31
-paddd xmm11, xmm14
-pandn xmm11, xmm13
-pxor xmm3, xmm11
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 0
-pxor xmm8, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 17
-pxor xmm10, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 1
-pxor xmm9, xmm11
-movdqa xmm11, xmm3
-pclmulqdq xmm11, xmm3, 16
-pxor xmm9, xmm11
-movdqa xmm11, xmm9
-psrldq xmm11, 8
-pxor xmm10, xmm11
-pslldq xmm9, 8
-pxor xmm8, xmm9
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm11, xmm8
-pclmulqdq xmm11, xmm1, 16
-pshufd xmm8, xmm8, 78
-pxor xmm8, xmm11
-movdqa xmm6, xmm10
-pxor xmm6, xmm8
+movdqu xmm3, XMMWORD PTR [r13+272]
+movdqu xmm6, XMMWORD PTR [r13+256]
 vmovdqu xmm5, XMMWORD PTR [r14]
 vmovdqu xmm7, XMMWORD PTR [r14+48]
 vinserti128 ymm5, ymm5, xmm7, 1

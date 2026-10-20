@@ -314,7 +314,14 @@ namespace VG.Proof.Md5.X86_64
   it is for another reason `-- shake: keep`, saying why. Shake does not see
   uses that leave nothing in the `.olean` (an `open` of a namespace, what
   `#guard`, `materialize_*` or `taint_decide` evaluate): import what those
-  need directly.
+  need directly. For a change the check does not cover (more than 3,000
+  modules, a refactor of many headers) or a sweep of the library,
+  `ci/trim_lean_imports.py` (`-m`, `--base REV` or `--all`) does the same
+  for every import of those modules, in rounds until nothing is left: it
+  never edits registrations or variants, keeps what it found by Lake's hash
+  of each module's build, and does not retry what it undid
+  (`lean/.lake/trim-imports.json`). `--batch` bounds the memory `lake shake`
+  takes, about 3 GB per 1,000 modules.
 * A file that only defines tactics, elaborators or commands is a
   `public meta section`, and imports each module both ways
   (`public import X` and `public meta import X`; `Lean` only as

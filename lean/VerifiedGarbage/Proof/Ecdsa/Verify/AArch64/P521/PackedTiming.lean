@@ -72,7 +72,8 @@ theorem packedNafMul_relCT (hc : CfgOk c) (hn9 : c.n = 9) (hC : Law c.C)
     rw [← hp.left.scalar]; exact wordsVal_lt _ _ _ _
   obtain ⟨hw, post⟩ := PubNaf.window_relCT (packedNafLay hc hn9) (unitMod_pow_two hc.p_odd (64 * c.n))
     hC hc.am3 hc.p_lt (hmont 1) (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl)
-    hwin hO hn17 hP hk zs _ _ _ _ _ _ ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
+    hwin hO hn17 hP hk zs PubNaf.NafDblOk.none PubNaf.NafDblCT.none _ _ _ _ _ _
+    ⟨pair, ⟨ss, ms, Fs⟩, ⟨st, mt, Ft⟩⟩ ws wt
   exact ⟨by rw [he, hw], post⟩
 
 /-- The recoding of `v` and `[v]Q`. -/

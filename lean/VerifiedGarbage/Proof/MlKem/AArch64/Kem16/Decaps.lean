@@ -8,13 +8,11 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
 
 import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encrypt
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
-import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptStart
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemMatrix
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart

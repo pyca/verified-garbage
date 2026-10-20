@@ -6,8 +6,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Absorb
-import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 

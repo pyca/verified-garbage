@@ -37,12 +37,13 @@ abbrev aRegs : List Reg := P384Mul.bRegs384
 /-- Row `i`'s words of the accumulator: `2i + 1` to `6 + i`. -/
 def sqRowRegs (i : Nat) : List Reg := (P384Mul.accRegs.drop (2 * i + 1)).take (6 - i)
 
-/-- Row `i`: `a_i [a_(i+1) … a_5]` added at word `2i + 1`. -/
-def sqRow (i : Nat) : List Instr :=
-  row .x27 (aRegs.getD i .x4) (sqRowRegs i) ((aRegs.drop (i + 1)).map fun r => .gen (.reg r))
+/-- Row `i`: `a_i [a_(i+1) … a_5]` added at word `2i + 1`. Its words are
+registers, so the row's base register `rm` is never read. -/
+def sqRowAt (rm : Reg) (i : Nat) : List Instr :=
+  row rm (aRegs.getD i .x4) (sqRowRegs i) ((aRegs.drop (i + 1)).map fun r => .gen (.reg r))
 
 /-- The products of distinct words, from a cleared accumulator. -/
-def offDiag : List Instr := zeros P384Mul.accRegs ++ (List.range 5).flatMap sqRow
+def offDiagAt (rm : Reg) : List Instr := zeros P384Mul.accRegs ++ (List.range 5).flatMap (sqRowAt rm)
 
 /-- `ts += ts`: `adds` on the first word, `adcs` on the others. -/
 def dblIn (first : Bool) : List Reg → List Instr
@@ -62,7 +63,10 @@ def diagIn (first : Bool) : List Reg → List Reg → List Instr
 /-- The squares of the words added. -/
 def diag : List Instr := diagIn true aRegs P384Mul.accRegs
 
-/-- The square, `[acc] = [a]^2`. -/
-def sq : List Instr := offDiag ++ dbl ++ diag
+/-- The square, `[acc] = [a]^2`, its rows on the base register `rm`. -/
+def sqAt (rm : Reg) : List Instr := offDiagAt rm ++ dbl ++ diag
+
+/-- The square, as `vg_p384_sqr_mod_p` computes it. -/
+def sq : List Instr := sqAt .x27
 
 end VG.Impl.Mont.AArch64.P384Sqr

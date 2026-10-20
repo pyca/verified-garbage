@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Points
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
@@ -25,10 +26,11 @@ open VG.Impl.Ecdsa.Verify.AArch64 (SM' EM' RM' UM VM U V UX UY UZ)
 
 variable {c : Cfg}
 
-theorem pubNafPoints_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c =
+theorem pubNafPoints_eq (c : Cfg) (dd : Option (Prog isa)) :
+    Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c dd =
     .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg true)
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq (PubNaf.prep (winQ c) (c.sl V))
-      (.seq (PubNaf.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
+      (.seq (PubNaf.window (winQ c) dd) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
 
 /-- `[u]G + [v]Q`, `[v]Q` by the public NAF, into `R`. -/
 theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
@@ -41,9 +43,10 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (hQ₂ : ∀ X Y Z, Rep c.C X Y Z (mul (sv c base s V) P) → Q₂ 0 X Y Z)
+    {dd : Option (Prog isa)} (hD : PubNaf.NafDblOk (winQ c) c.C base 8192 dd)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base g Q₁ Q₂ s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.pubNafPoints c dd) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -108,7 +111,7 @@ theorem pubNafPoints_ok (hc : CfgOk c) (hn4 : c.n ≠ 4) (hn6 : c.n ≤ 6) {s₀
   refine pubNafMul_ok hc hn4 hn6 hC hO hn17 hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]
-        exact hrep) fun s₅ W => ?_
+        exact hrep) hD fun s₅ W => ?_
   have hs₅ := W.scr
   have F₅ := F₃.unch h7 hn ((fixedOk_winX.append (fixedOk_slW (by decide))).append (fixedOk_cacheQ hc hn6))
     W.unch

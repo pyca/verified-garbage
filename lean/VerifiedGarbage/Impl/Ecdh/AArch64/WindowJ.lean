@@ -25,12 +25,14 @@ variable (c : Impl.Ecdsa.AArch64.Cfg)
 signature's power (`pPow`), then into the selected entry's `x`. -/
 def invJ : Prog isa := .seq c.pPow (.block (copy c.n (c.sl TX) (c.sl ACC)))
 
-/-- `d + offset J` and its bits, then `[d]P` into `R` by `windowJ`. -/
-def mulJ4 : Prog isa :=
-  .seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY) (invJ c) c.padd)
+/-- `d + offset J` and its bits, then `[d]P` into `R` by `windowJ`, its
+doublings `dd`'s blocks if given, its mixed additions `ma`'s. -/
+def mulJ4 (dd : Option (Prog isa × Prog isa) := none) (ma : Option (Prog isa) := none) : Prog isa :=
+  .seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY) (invJ c) c.padd dd ma)
 
 /-- `vg_ecdh_<curve>` by windows with a Jacobian accumulator and an affine
 table, for a curve of prime order. -/
-def exchangeJ4 : Prog isa := exchangeWith c (mulJ4 c)
+def exchangeJ4 (dd : Option (Prog isa × Prog isa) := none) (ma : Option (Prog isa) := none) : Prog isa :=
+  exchangeWith c (mulJ4 c dd ma)
 
 end VG.Impl.Ecdh.AArch64.Cfg
