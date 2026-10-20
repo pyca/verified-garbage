@@ -131,6 +131,9 @@ def Sym.step (σ : Sym) : Instr → Option Sym
     { σ with
       mem := fun b' i' => if b' = b ∧ i ≤ i' ∧ i' < i + 16 then σ.reg (xidx r) (i' - i) else σ.mem b' i'
       dirty := true }
+  | .vpbroadcastdZ d m => (slot m 1 bsize).map fun (b, i) => σ.setReg (xidx d) fun _ => σ.mem b i
+  | .zbcstd .vpaddd d a m =>
+    (slot m 1 bsize).map fun (b, i) => σ.setReg (xidx d) fun p => .add (σ.reg (xidx a) p) (σ.mem b i)
   | _ => none
 
 def Sym.run (σ : Sym) : List Instr → Option Sym
@@ -246,6 +249,13 @@ theorem sel2_lt (o i : Nat) : sel2 o i < 4 := Nat.mod_lt _ (by decide)
 
 theorem pick4_same (v : BitVec 128) {i : Nat} (hi : i < 4) : pick4 v v v v i = v := by
   rcases cases4 hi with rfl | rfl | rfl | rfl <;> rfl
+
+theorem dword_rep4 (v : BitVec 32) {k : Nat} (hk : k < 4) : dword (v ++ v ++ v ++ v) k = v := by
+  change dword (ofDwords v v v v) k = v
+  rcases cases4 hk with rfl | rfl | rfl | rfl <;> simp
+
+theorem pick4_fn (f : Nat → BitVec 128) {l : Nat} (hl : l < 4) : pick4 (f 0) (f 1) (f 2) (f 3) l = f l := by
+  rcases cases4 hl with rfl | rfl | rfl | rfl <;> rfl
 
 theorem pick4_ext (v : BitVec 512) {l : Nat} (hl : l < 4) :
     pick4 (v.extractLsb' 0 128) (v.extractLsb' 128 128) (v.extractLsb' 256 128) (v.extractLsb' 384 128) l =
@@ -381,6 +391,38 @@ theorem sstep_ok {s₀ : State} (hc : Ctx s₀) {σ σ' : Sym} {s : State} (h : 
         simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
       · simp only [regn, baseR, Region.Contains, show (2 : Nat) ≠ 1 by decide, ite_false]
         simp only [wsize] at hi; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega
+  · rename_i d m
+    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+    have hin := in_regn' hc hb h.wr hi
+    have hv := h.mem b i hb (by omega)
+    generalize hvd : s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
+    refine ⟨s.setZ d (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v) (v ++ v ++ v ++ v), ?_,
+      h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
+    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, hvd]
+    · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
+      split
+      · rw [pick4_same _ (div4_lt hp), dword_rep4 _ (mod4_lt p)]; exact hv
+      · rfl
+  · rename_i d a m
+    obtain ⟨⟨b, i⟩, hs, rfl⟩ := Option.map_eq_some_iff.1 e
+    obtain ⟨hb, hi, hea⟩ := slot_ok hs
+    have ea : s.ea m = (regn s₀ b).base + BitVec.ofNat 64 (4 * i) := by rw [hea, h.gpr]; rfl
+    have hin := in_regn' hc hb h.wr hi
+    have hv := h.mem b i hb (by omega)
+    generalize hvd : s.mem.readW ((regn s₀ b).base + BitVec.ofNat 64 (4 * i)) 32 = v at hv
+    refine ⟨s.setZ d (XBinOp.eval .paddd (s.zlane a 0) (v ++ v ++ v ++ v))
+      (XBinOp.eval .paddd (s.zlane a 1) (v ++ v ++ v ++ v)) (XBinOp.eval .paddd (s.zlane a 2) (v ++ v ++ v ++ v))
+      (XBinOp.eval .paddd (s.zlane a 3) (v ++ v ++ v ++ v)), ?_,
+      h.setReg (fun r p hp => ?_) (by simp) (by simp) (by simp) (by simp)⟩
+    · simp only [exec, ea, State.load32, hin, ite_true, Option.map_some, ZBcstDOp.sse, hvd]
+    · rw [zw_split, State.zlane_setZ _ _ _ _ _ _ _ (div4_lt hp)]
+      split
+      · rw [pick4_fn (fun l => XBinOp.eval .paddd (s.zlane a l) (v ++ v ++ v ++ v)) (div4_lt hp),
+          dword_paddd _ _ (mod4_lt p), dword_rep4 _ (mod4_lt p), T.eval, ← hv, ← zw_split]
+        exact congrArg (· + v) (h.reg a p hp)
+      · rfl
   · cases e
 
 /-- A block of instructions. -/
