@@ -24,8 +24,10 @@ def pow : Prog isa := VG.Impl.Bignum.Arm.windowExpPhase
 /-- Install the exponent controls before importing the base, so the import
 may use every scratch register. Source pointer and count are r4 and r6;
 the exponent pointer and count are r1 and r2. -/
-def power : Prog isa := .seq (.block VG.Impl.Bignum.Arm.expControls)
-  (.seq (VG.Impl.Bignum.Arm.importOperand 1) pow)
+def powerImport : Prog isa := .seq (.block VG.Impl.Bignum.Arm.expControls)
+  (VG.Impl.Bignum.Arm.importOperand 1)
+
+def power : Prog isa := .seq powerImport pow
 
 /-- Preserve AAPCS registers and reserve native locals without putting
 secret-dependent state in the ABI argument area. -/

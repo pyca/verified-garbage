@@ -63,6 +63,22 @@ theorem ldr_exec (s : State) (t n : Reg) (d : Nat) :
     split <;> rfl
   · rfl
 
+theorem ldrSp_exec (s : State) (r : Reg) (d : Nat) :
+    exec (.ldrSp r d) s =
+      if d < 4096 then
+        if InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 d)) 4 then
+          some (s.setReg r (s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 d)) 32))
+        else none
+      else none := by
+  simp only [exec]
+  split
+  · simp only [State.load32]
+    split <;> rfl
+  · rfl
+
+theorem addSp_exec (s : State) (r : Reg) (d : Nat) :
+    exec (.addSp r d) s = if d < 256 then some (s.setReg r (s.sp + BitVec.ofNat 32 d)) else none := rfl
+
 theorem logic_exec (s : State) (op : DpOp) (d n : Reg) (o : Op2) :
     exec (.dp op d n o) s = (o.eval s).map (fun v => s.setReg d
       (match op with
@@ -97,7 +113,7 @@ tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `
   apply WP.of_runBlock
   set_option linter.unusedSimpArgs false in
   simp (config := { decide := true }) (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil,
-    mov_exec, movw_exec, mul_exec, add_exec, cmp_exec, adc_exec, logic_exec, str_exec, ldr_exec, Op2.eval,
+    mov_exec, movw_exec, mul_exec, add_exec, cmp_exec, adc_exec, logic_exec, str_exec, ldr_exec, ldrSp_exec, addSp_exec, Op2.eval,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     gpr_subFlags, mem_subFlags, c_subFlags, z_subFlags, RegUpd.c_setReg,
     gpr_putMem, mem_putMem, wr_putMem, rd_putMem, sp_putMem, z_putMem,

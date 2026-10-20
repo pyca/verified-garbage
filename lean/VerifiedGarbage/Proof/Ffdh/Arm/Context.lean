@@ -1,0 +1,140 @@
+module
+
+public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Offset
+
+/-! Common argument and memory invariants of the native FFDH operations. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm
+open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.Mont
+open VG.Proof.X25519.Arm (Rest)
+
+structure Inputs where
+  base : BitVec 32
+  domain : BitVec 32
+  publicValue : BitVec 32
+  privateValue : BitVec 32
+  output : BitVec 32
+  entropy : BitVec 32
+  len : Nat
+  k : Nat
+  privateLength : Nat
+  hasQ : Bool
+  dom : List Byte
+  minLength : 64 ≤ k
+  maxLength : k ≤ 1024
+  space : Spec.Rsa.scratchWords k ≤ len
+  domainLength : dom.length = if hasQ then 3 * k else 2 * k
+
+namespace Inputs
+
+def g (p : Inputs) : BitVec 32 := p.domain + BitVec.ofNat 32 p.k
+def q (p : Inputs) : BitVec 32 := p.domain + BitVec.ofNat 32 (2 * p.k)
+def P (p : Inputs) : Nat := Spec.Rsa.os2ip (p.dom.take p.k)
+def G (p : Inputs) : Nat := Spec.Rsa.os2ip ((p.dom.drop p.k).take p.k)
+def Q (p : Inputs) : Nat := Spec.Rsa.os2ip ((p.dom.drop (2 * p.k)).take p.k)
+def w (p : Inputs) : Nat := Spec.Rsa.modulusWords p.k
+
+def slotValue (p : Inputs) : Nat → BitVec 32
+  | 0 => p.base
+  | 4 => p.output
+  | 24 => p.domain
+  | 28 => BitVec.ofNat 32 p.dom.length
+  | 32 => BitVec.ofNat 32 p.k
+  | 36 => p.publicValue
+  | 40 => p.privateValue
+  | 44 => BitVec.ofNat 32 p.privateLength
+  | 48 => p.entropy
+  | 56 => p.g
+  | 60 => p.q
+  | _ => 0
+
+theorem publicSpace (p : Inputs) : Spec.Rsa.publicScratchWords p.k ≤ p.len := by
+  have := p.space
+  have := p.minLength
+  simp only [Spec.Rsa.scratchWords, Spec.Rsa.publicScratchWords, Spec.Rsa.modulusWords] at *
+  omega
+
+theorem width (p : Inputs) : 2 ≤ p.w ∧ p.w < 2 ^ 31 ∧
+    Spec.Rsa.Mont.arrAt p.w 16 ≤ 8 * p.len ∧ p.k ≤ 8 * p.w ∧ 128 * p.w < 2 ^ 32 := by
+  have dims := pc_dimensions (k := p.k) (len := p.len) p.minLength p.maxLength (by
+    have := p.space
+    have := p.minLength
+    simp only [Spec.Rsa.scratchWords, Spec.Rsa.publicScratchWords,
+      Spec.Rsa.modulusWords] at *
+    omega)
+  refine ⟨dims.1, dims.2.1, ?_, dims.2.2.2.1, dims.2.2.2.2⟩
+  have := p.space
+  have := p.minLength
+  simp only [Spec.Rsa.scratchWords, Spec.Rsa.Mont.arrAt, w,
+    Spec.Rsa.modulusWords, Spec.Rsa.Mont.hdrBytes] at *
+  omega
+
+theorem pLength (p : Inputs) : (p.dom.take p.k).length = p.k := by
+  simp only [List.length_take, p.domainLength]
+  split <;> omega
+
+theorem gLength (p : Inputs) : ((p.dom.drop p.k).take p.k).length = p.k := by
+  simp only [List.length_take, List.length_drop, p.domainLength]
+  split <;> omega
+
+theorem qLength (p : Inputs) (hasQ : p.hasQ = true) : ((p.dom.drop (2 * p.k)).take p.k).length = p.k := by
+  simp only [List.length_take, List.length_drop, p.domainLength, hasQ, ite_true]
+  omega
+
+end Inputs
+
+structure Context (p : Inputs) (slots : List Nat) (s : State) : Prop where
+  workspace : Workspace s p.base (8 * p.len)
+  locals : Locals p.base p.len s
+  ptr : s.gpr .r0 = p.base
+  domain : Octets p.base p.domain p.len p.dom s
+  domainStack : Region.Disjoint ⟨State.addr p.domain, p.dom.length⟩ ⟨State.addr s.sp, 72⟩
+  saved : ∀ d ∈ slots, s.mem.readW (off (State.addr s.sp) d) 32 = p.slotValue d
+
+theorem Context.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    {regions : List Region} (h : Context p slots s) (frame : Frame regions s.mem t.mem)
+    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base)
+    (domainSep : ∀ r ∈ regions, (⟨State.addr p.domain, p.dom.length⟩ : Region).Disjoint r)
+    (savedSep : ∀ d ∈ slots, ∀ r ∈ regions, (⟨off (State.addr s.sp) d, 4⟩ : Region).Disjoint r) :
+    Context p slots t := by
+  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, ptr, h.domain.after_frame frame rest domainSep,
+    by rw [rest.sp]; exact h.domainStack, ?_⟩
+  intro d hd
+  rw [rest.sp, frame.readW (r := ⟨off (State.addr s.sp) d, 4⟩) (Region.contains_self _ _)
+    (savedSep d hd) (by decide)]
+  exact h.saved d hd
+
+theorem Context.after_workspace {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
+    (h : Context p slots s) (frame : Frame [⟨State.addr p.base, 8 * p.len⟩] s.mem t.mem)
+    (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) (fit : ∀ d ∈ slots, d + 4 ≤ 72) :
+    Context p slots t := by
+  have stack := WorkspaceEq.of_frame (by decide : 72 < 2 ^ 64) frame
+    (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.locals.separate)
+  refine ⟨h.workspace.congr rest.wr, h.locals.after rest, ptr, h.domain.after_workspace frame rest,
+    by rw [rest.sp]; exact h.domainStack, ?_⟩
+  intro d hd
+  rw [rest.sp, stack.word (bits := 32) (fit d hd)]
+  exact h.saved d hd
+
+theorem Context.pBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
+    Octets p.base p.domain p.len (p.dom.take p.k) s := by
+  have fit : 0 + p.k ≤ p.dom.length := by rw [p.domainLength]; split <;> have := p.minLength <;> omega
+  simpa only [List.drop_zero, BitVec.add_zero] using h.domain.slice (by have := p.minLength; omega) fit
+
+theorem Context.gBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s) :
+    Octets p.base p.g p.len ((p.dom.drop p.k).take p.k) s :=
+  h.domain.slice (by have := p.minLength; omega) (by rw [p.domainLength]; split <;> omega)
+
+theorem Context.qBytes {p : Inputs} {slots : List Nat} {s : State} (h : Context p slots s)
+    (hasQ : p.hasQ = true) : Octets p.base p.q p.len ((p.dom.drop (2 * p.k)).take p.k) s :=
+  h.domain.slice (by have := p.minLength; omega) (by rw [p.domainLength, hasQ]; simp only [ite_true]; omega)
+
+end VG.Proof.Ffdh.Arm

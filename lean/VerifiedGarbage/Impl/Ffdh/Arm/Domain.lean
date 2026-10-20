@@ -32,23 +32,29 @@ def prepareArgs (slot : Nat) : List Instr := [
 def prepareAt (slot : Nat) : Prog isa :=
   .seq (.block (prepareArgs slot)) VG.Impl.Ffdh.Arm.prepare
 
+def importArgs (slot countSlot : Nat) : List Instr := [.ldrSp .r4 slot, .ldrSp .r6 countSlot]
+
 def importAt (a slot countSlot : Nat) : Prog isa :=
-  .seq (.block [.ldrSp .r4 slot, .ldrSp .r6 countSlot]) (importOperand a)
+  .seq (.block (importArgs slot countSlot)) (importOperand a)
 
 /-- Both the base and public q are padded to p_len. Private exponents keep
 all supplied bytes, including leading zeroes. -/
+def powerArgs (baseSlot exponentSlot exponentLength : Nat) : List Instr := [
+  .ldrSp .r4 baseSlot, .ldrSp .r6 32, .ldrSp .r1 exponentSlot, .ldrSp .r2 exponentLength]
+
 def powerAt (baseSlot exponentSlot exponentLength : Nat) : Prog isa :=
-  .seq (.block [.ldrSp .r4 baseSlot, .ldrSp .r6 32,
-    .ldrSp .r1 exponentSlot, .ldrSp .r2 exponentLength]) VG.Impl.Ffdh.Arm.power
+  .seq (.block (powerArgs baseSlot exponentSlot exponentLength)) VG.Impl.Ffdh.Arm.power
 
 def subgroup (baseSlot : Nat) : Prog isa :=
   .seq (powerAt baseSlot 60 32) (VG.Impl.Ffdh.Arm.isOne 6)
 
+def domainPointers : List Instr := [
+  .dp .add .r3 .r4 (.reg .r6), st .r3 56,
+  .dp .add .r3 .r3 (.reg .r6), st .r3 60]
+
 /-- The public modulus shape check precedes all Montgomery preparation. -/
 def head (body : Prog isa) : Prog isa :=
-  .seq (.block (prepareArgs 24 ++ [
-    .dp .add .r3 .r4 (.reg .r6), st .r3 56,
-    .dp .add .r3 .r3 (.reg .r6), st .r3 60]))
+  .seq (.block (prepareArgs 24 ++ domainPointers))
     (.seq (.block modulusCheck) (.ite .eq body (ret 0)))
 
 def finishFlag : Prog isa := .block [.mov .r0 (.reg .r11)]

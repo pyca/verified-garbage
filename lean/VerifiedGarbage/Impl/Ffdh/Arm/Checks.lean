@@ -40,6 +40,6 @@ def inRange (a : Nat) : Prog isa := .seq (greaterOne a)
   (.seq (.block saveFlag) (.seq (belowP a) (.block andFlag)))
 
 def odd (a : Nat) : Prog isa := .block [
-  .ldr .r4 .r0 (64 + 8 * a), .ldr .r11 .r4 0, .dp .and .r11 .r11 (.imm 1)]
+  .ldr .r4 .r0 (64 + 8 * a), .ldrb .r11 .r4 0, .dp .and .r11 .r11 (.imm 1)]
 
 end VG.Impl.Ffdh.Arm
