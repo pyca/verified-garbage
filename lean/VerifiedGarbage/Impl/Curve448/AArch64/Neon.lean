@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.TCB.AArch64.Isa
-public import VerifiedGarbage.Impl.X448.AArch64.Common
+import VerifiedGarbage.Impl.X448.AArch64.Common
 
 
 /-!
