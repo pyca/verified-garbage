@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Rsa.X86.RvZero
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Zero
 public import VerifiedGarbage.Proof.Rsa.X86.RvProductCore
 public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -41,10 +41,11 @@ structure LS (g : CallGeometry) (s0 : State) (A : Nat → Nat) (s : State) : Pro
   rest : Keeps opRegs s0 s
   full : ∀ j < nArr, val32 s.mem g.B (arr g.toGeo.w j) (g.toGeo.w + 2) = A j
 
-theorem LS.load {g : CallGeometry} {s0 s : State} {A : Nat → Nat} (h : LS g s0 A s)
-    (i : Fin 3) {j : Nat} (hj : j < nArr) :
-    WP isa (load g.n (4 + 2 * i.val) j) s fun t => LS g s0 (upd A j (inputValue g s0.mem i)) t := by
-  refine WP.mono (load_ok h.inputs i hj) fun t ⟨inputs, k, v, r⟩ => ?_
+theorem LS.load {g : CallGeometry} {s0 s : State} {A : Nat → Nat} (h : LS g s0 A s) (len : Lengths g)
+    (i : Fin 3) {j : Nat} (hj : j < nArr) (zero : A j = 0) :
+    WP isa (VG.Impl.Rsa.X86.KeyRt.load VG.Impl.Rsa.X86.RecoverRt.nar (4 + 2 * i.val) j) s fun t =>
+      LS g s0 (upd A j (inputValue g s0.mem i)) t := by
+  refine WP.mono (load_ok h.inputs len i hj (by rw [h.full j hj, zero])) fun t ⟨inputs, k, v, r⟩ => ?_
   have value : val32 t.mem g.B (arr g.toGeo.w j) (g.toGeo.w + 2) = inputValue g s0.mem i := by
     change _ = Spec.Rsa.os2ip (inputBytes g s.mem i) at v
     rw [h.inputs.inputFrame (h.inputs.scratchFrame h.frame) i] at v
@@ -55,27 +56,32 @@ theorem LS.load {g : CallGeometry} {s0 s : State} {A : Nat → Nat} (h : LS g s0
   · subst l; rw [upd_self]; exact value
   · rw [upd_ne _ _ eq, k.full (by simpa using Ne.symm eq) (by simp) (h.inputs.ws.fit64 hl), h.full l hl]
 
-theorem zero_ls {g : CallGeometry} {s : State} (h : Inputs g s) :
-    WP isa (VG.Impl.Mont.X86.Dynamic.zerosW hdr (nArr * (g.toGeo.w + 2))) s (LS g s (fun _ => 0)) := by
-  refine WP.mono (zeroArrays_ok h) fun t ⟨ht, f, z, r⟩ => ?_
+theorem zero_ls {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa (VG.Impl.Rsa.X86.KeyRt.zeroArrays VG.Impl.Rsa.X86.RecoverRt.nar nArr) s (LS g s (fun _ => 0)) := by
+  refine WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroArrays_ok (h.rt len) (n := nArr) (by decide) (by decide))
+    fun t ⟨_, f, z, r⟩ => ?_
+  rw [kw_nar] at f z
   have fit := h.ws.fits
-  change hdr + nArr * (4 * (g.toGeo.w + 2)) ≤ g.Z at fit
-  refine ⟨ht, f.mono (by unfold hdr; omega) ?_, r.mono (by decide), z⟩
-  have fit' : hdr + 4 * (nArr * (g.toGeo.w + 2)) ≤ g.Z := by simpa only [Nat.mul_left_comm] using fit
-  have := h.ws.hdr_le
-  unfold hdr at *
-  omega
+  change hdr + nArr * (4 * (width g.n + 2)) ≤ g.Z at fit
+  have fit' : hdr + 4 * (nArr * (width g.n + 2)) ≤ g.Z := by simpa only [Nat.mul_left_comm] using fit
+  have a0 : arr (width g.n) 0 = hdr := by simp [arr]
+  rw [a0] at f
+  have header := h.ws.hdr_le
+  have O : Outside g.B 16 (g.Z - 16) s.mem t.mem := f.mono (by unfold hdr; omega) (by unfold hdr at *; omega)
+  exact ⟨h.after (r.mono (rs' := [.eax, .ecx, .edx, .ebp]) (by decide)) (by decide) (by decide) (h.scratchFrame O),
+    O, r.mono (by decide), z⟩
 
 def Aload (n e d : Nat) : Nat → Nat := upd (upd (upd (fun _ => 0) aN n) (2 * wE) e) (2 * wD) d
 
-theorem loads_ls {g : CallGeometry} {s : State} (h : Inputs g s) :
-    WP isa (loads g.n) s (LS g s (Aload (inputValue g s.mem 0) (inputValue g s.mem 1) (inputValue g s.mem 2))) := by
-  unfold loads
+theorem loads_ls {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa VG.Impl.Rsa.X86.RecoverRt.loads s
+      (LS g s (Aload (inputValue g s.mem 0) (inputValue g s.mem 1) (inputValue g s.mem 2))) := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.loads
   simp only [seqs]
-  refine WP.seq (WP.mono (zero_ls h) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (h1.load 0 (j := aN) (by decide)) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (h2.load 1 (j := 2 * wE) (by decide)) fun s3 h3 => ?_)
-  exact h3.load 2 (j := 2 * wD) (by decide)
+  refine WP.seq (WP.mono (zero_ls h len) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (h1.load len 0 (j := aN) (by decide) rfl) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (h2.load len 1 (j := 2 * wE) (by decide) (by simp [upd, aN, wE])) fun s3 h3 => ?_)
+  exact h3.load len 2 (j := 2 * wD) (by decide) (by simp [upd, aN, wE, wD])
 
 theorem LS.number {g : CallGeometry} {s0 s : State} {A : Nat → Nat} (h : LS g s0 A s)
     {j : Nat} (hj : j < nArr) (bound : A j < 2 ^ (32 * g.toGeo.w)) :
@@ -89,14 +95,16 @@ theorem LS.wide {g : CallGeometry} {s0 s : State} {A : Nat → Nat} (h : LS g s0
   apply numW_of (h.full (2 * j) (by unfold nArr; omega))
   rw [h.number (by unfold nArr; omega) (by rw [zero]; exact Nat.two_pow_pos _), zero]
 
-theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) :
-    WP isa (loads g.n) s fun t =>
+theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    WP isa VG.Impl.Rsa.X86.RecoverRt.loads s fun t =>
       KS g.toGeo s (fun _ => inputValue g s.mem 0) [aN]
         (AW1 (inputValue g s.mem 1) (inputValue g s.mem 2)) [wZ, wE, wD, wM, wMod]
         (fun _ => 0) [] t := by
-  refine WP.mono (loads_ls h) fun t ht => ?_
-  refine ⟨ht.inputs.ws, h.lower, h.upper, ht.frame, ht.rest, ?_, ?_, by simp,
-    by decide, by decide, by simp⟩
+  refine WP.mono (loads_ls h len) fun t ht => ?_
+  have header := h.ws.hdr_le
+  have nw := h.ws.workspace.nowrap
+  refine ⟨ht.inputs.rt len, h.lower, h.upper, outside_stage ht.frame (by omega) (by unfold hdr at header; omega),
+    ht.inputs.esp, ht.rest, ?_, ?_, by simp, by decide, by decide, by simp⟩
   · intro j hj
     simp only [List.mem_singleton] at hj
     subst j

@@ -26,7 +26,7 @@ open VG.Impl.Rsa.X86.KeyRt (Lay Shape arrPtr bytesB sub3 copy sel half bitOf set
   mulMod inverse div load restoreEdi)
 open VG.Impl.Rsa.X86.Recover (sTc sCand sK sDone sOk sBit sLive sE1 sE2 sCnt sLt sInv sMask sWin sEq mAcc
   mBase mY mR2 mG mXm mX aN aOne aZ aO aNg aW aU aQ aRm aDv aDt nArr wZ wE wD wM wMod wT wH wU wR wRc
-  entry skipTest cntBits cntNext sqInit sqMasks sqNext candNext)
+  entry skipTest cntBits cntNext sqInit sqMasks sqNext candNext prodCount windowCount)
 
 /-- The modulus's length (argument 5) and the working space (argument 10), with `k` words pushed. -/
 def lay (shape : Shape) (k : Nat := 0) : Lay := { len := 5 + k, ws := 10 + k, shape }
@@ -47,9 +47,6 @@ def loads : Prog isa := seqs [zeroArrays nar nArr, load nar 4 aN, load nar 6 (w 
 def setTop : List Instr :=
   arrPtr wid .eax wMod .edx ++ [.alu .add .eax (.reg .edx), .alu .sub .eax (.imm 12),
     .mov .ecx (.imm 0x80000000), .store (at_ .eax 0) .ecx]
-
-def prodCount : List Instr := [.mov .esi (.mem (PublicFn.argument 7)),
-  .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi), .alu .add .esi (.reg .esi)]
 
 def prod : Prog isa := .seq (.block (setTop ++ prodCount)) (mulMod wid wZ wE wD wM wMod wT)
 
@@ -142,10 +139,6 @@ def shiftUp : Prog isa :=
 def alignBody : Prog isa := .seq shiftUp (.block cntNext)
 
 def alignStart : Prog isa := .seq candSet (.block alignCount)
-
-/-- `c / 4` windows. -/
-def windowCount : List Instr := [.mov .eax (.mem (PublicFn.argument 7)),
-  .alu .add .eax (.mem (PublicFn.argument 9)), .alu .add .eax (.reg .eax), .store (sc sCnt) .eax]
 
 /-- The table of the candidate's powers `0` to `15` (Montgomery form) in narrow arrays `0` to `15`. -/
 def table : Prog isa := seqs ([copy nar 0 aO, copy nar 1 mG, copy nar mXm mG] ++
