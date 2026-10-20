@@ -24,16 +24,16 @@ open VG.Proof.Poly1305.X86_64 (off off_eq M0 M1 Keeps ea_at se1 se3)
 open VG.Proof.Poly1305.X86_64.Avx2 (vec vec_gpr vec_mem vec_rd vec_wr)
 open VG.Proof.Poly1305.X86_64.Avx512 (VKeep)
 
-theorem se40 : BitVec.signExtend 64 (BitVec.ofNat 32 40) = 40 := by decide
+theorem se32 : BitVec.signExtend 64 (BitVec.ofNat 32 32) = 32 := by decide
 
 set_option simprocs false in
 theorem cmp_ok (s : State) :
     WP isa (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) s fun s' =>
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ VKeep s s' ∧
-      s'.cf = some (decide ((s.gpr .rdx).toNat < 40)) := by
+      s'.cf = some (decide ((s.gpr .rdx).toNat < 32)) := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags,
-    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', minBlocks, se40]
+    State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left', minBlocks, se32]
   exact ⟨trivial, trivial, ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
 
 theorem loadR_ok (s : State) (r₁ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 24) 8)

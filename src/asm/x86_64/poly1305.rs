@@ -1629,7 +1629,7 @@ pub(crate) const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_ifma(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r"cmp rdx, 40
+        r"cmp rdx, 32
 jb 20f
 stmxcsr DWORD PTR [rdi+120]
 mov eax, DWORD PTR [rdi+120]

@@ -541,7 +541,7 @@ theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : Sta
 theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksIfma s₀ (Post s₀) := by
   have hb := hp.avx2.bpre.nb_lt
   refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
-  refine WP.ite (decide (nb s₀ < 40)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
+  refine WP.ite (decide (nb s₀ < 32)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
   · refine Avx512.avx2_ok hp ⟨by omega, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
       fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
       fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩

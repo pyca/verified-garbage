@@ -62,11 +62,11 @@ open VG.X86_64
 open VG.Impl.Poly1305.X86_64 (at_)
 open VG.Impl.Poly1305.X86_64.Avx512 (z srl sll mov shuf bcast zb)
 
-/-- Below this many blocks, `vg_poly1305_blocks_avx2` is as fast or faster
-(on a Sapphire Rapids Xeon: a quarter faster at 28–31 blocks, which it absorbs
-with `vg_poly1305_blocks`, and up to 4% at 36–39; from 40 on this code is up to
-4% faster, and from 48 on 7% or more). -/
-def minBlocks : Nat := 40
+/-- Below this many blocks, `vg_poly1305_blocks_avx2` is faster: it absorbs
+fewer than 32 with `vg_poly1305_blocks`, a quarter faster at 28–31 blocks on a
+Sapphire Rapids Xeon than this code with its powers of `r`. From 32 blocks on
+the two are within a few percent of each other, depending on the CPU. -/
+def minBlocks : Nat := 32
 
 /-! ## Registers -/
 
