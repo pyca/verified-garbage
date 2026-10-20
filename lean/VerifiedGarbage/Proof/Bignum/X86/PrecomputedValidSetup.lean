@@ -1,10 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Proof.Mont.Words32
+
 import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
@@ -20,10 +22,11 @@ theorem precomputedValidSetup_ok {s : State} {base : Addr} {bytes len : Nat} {ar
       PrecomputedInputs base bytes len args t ∧ t.gpr .esp = s.gpr .esp ∧
       t.gpr .eax = BitVec.ofNat 32 (Spec.Rsa.modulusWords len) ∧
       Spec.Rsa.wordsAt t.mem (byteAddr (args 2)) (2 * Spec.Rsa.modulusWords len) =
-        Spec.Rsa.wordsAt s.mem (byteAddr (args 2)) (2 * Spec.Rsa.modulusWords len) := by
+        Spec.Rsa.wordsAt s.mem (byteAddr (args 2)) (2 * Spec.Rsa.modulusWords len) ∧
+      val32 t.mem base 128 2 = (s.gpr .ebx).toNat + 2 ^ 32 * (s.gpr .edx).toNat := by
   have size := H.space
   rw [PublicContext.size_eq] at size
-  refine WP.seq (WP.mono (saveExponent_frame H.scratch (by omega)) fun u ⟨O, K⟩ => ?_)
+  refine WP.seq (WP.mono (saveExponent_value H.scratch (by omega)) fun u ⟨X, O, K⟩ => ?_)
   have O' : Outside base 0 bytes s.mem u.mem := O.mono (by omega) (by omega)
   have Hu := H.keep K (by decide) (by decide) O'
   refine WP.mono (precomputedWidth_ok H.upper (by rw [← H.outLen]; exact (Hu.stack 1 (by decide)).readSrc))
@@ -31,6 +34,7 @@ theorem precomputedValidSetup_ok {s : State} {base : Addr} {bytes len : Nat} {ar
   have Kst := (K.mono (by simp : ([] : List Reg) ⊆ [.eax])).trans Kt
   have Ost : Outside base 0 bytes s.mem t.mem := by rw [M]; exact O'
   exact ⟨H.keep Kst (by decide) (by decide) Ost, Kst.1 _ (by decide), W,
-    scratch_words Ost (by have := H.scratch.nowrap; omega) (by have := H.upper; simp only [Spec.Rsa.modulusWords]; omega) (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega] using H.preApart)⟩
+    scratch_words Ost (by have := H.scratch.nowrap; omega) (by have := H.upper; simp only [Spec.Rsa.modulusWords]; omega) (by simpa only [show 8 * (2 * Spec.Rsa.modulusWords len) = 16 * Spec.Rsa.modulusWords len by omega] using H.preApart),
+    by rw [M]; exact X⟩
 
 end VG.Proof.Bignum.X86

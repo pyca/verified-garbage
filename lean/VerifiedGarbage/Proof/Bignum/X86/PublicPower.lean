@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
-import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponent
+
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 import VerifiedGarbage.Proof.Mont.X86.ContextLayout
@@ -50,9 +50,10 @@ theorem publicPower_ok {n bytes m : Nat} {base : Addr} {s : State}
       Keeps powerClob s t := by
   unfold publicPower
   refine WP.seq (WP.mono (setup_ok hs hn hn32 hz hv hm1 hodd) fun u ⟨C, One, R2, O, K⟩ => ?_)
-  refine WP.mono (exponentiate_ok C One R2) fun t ⟨Ct, Vt, Ot, Kt⟩ => ?_
+  refine WP.mono (precomputedExponent_ok C One
+    (by rw [R2]; exact Nat.mod_lt _ (by omega))) fun t ⟨Ct, _, Vt, Ot, Kt⟩ => ?_
   refine ⟨Ct, ?_, ?_, K.trans Kt⟩
-  · rw [Vt, setup_input O (by have := hs.nowrap; omega), setup_exponent O]
+  · rw [Vt R2, setup_input O (by have := hs.nowrap; omega), setup_exponent O]
   · exact (O.mono (by intros; exact List.mem_append_left _ ‹_›)).trans
       (Ot.mono (by intros; exact List.mem_append_right _ ‹_›))
 

@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 
 /-! Public and private CRT RSA on baseline i686. -/
 
@@ -44,6 +45,10 @@ def artifacts : List Artifact := [
     spSafe := Proof.Bignum.X86.Crt.code_sp
     stack := 20 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
+    notes := ["The exponent (at most 33 bits) is scanned from its low bit, branching on each \
+      bit: a multiplication by the base for a set bit, a square of the base for every bit, and \
+      the loop ends once no set bit is left (for `e = 65537`, 17 squares and 2 \
+      multiplications)."]
     code := Impl.Bignum.X86.PrecomputedFn.code
     verified := Proof.Bignum.X86.precomputed_verified
     stack := 20 },
@@ -54,7 +59,9 @@ def artifacts : List Artifact := [
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["Public lengths select the limb width. Runtime-modulus Montgomery arithmetic \
       uses 32-bit limbs in the shared public scratch layout. The input acceptance mask is \
-      applied after a fixed 64-step exponentiation. Callee-saved registers reside in scratch."]
+      applied after the exponentiation, which is `vg_rsa_public_precomputed_checked`'s: it \
+      branches on each bit of the exponent and ends after its top bit. Callee-saved registers \
+      reside in scratch."]
     code := Impl.Bignum.X86.PublicFn.code
     verified := Proof.Bignum.X86.public_verified
     stack := 20 }]
