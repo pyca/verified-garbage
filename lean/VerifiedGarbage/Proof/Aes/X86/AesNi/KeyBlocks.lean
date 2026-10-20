@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
 import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 
 @[expose] public section
 

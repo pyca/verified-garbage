@@ -4,11 +4,7 @@ public import VerifiedGarbage.Proof.Aes.X86.AesNi.Invariant
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
 import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.Sse
-import VerifiedGarbage.TCB.X86.State
 
 @[expose] public section
 

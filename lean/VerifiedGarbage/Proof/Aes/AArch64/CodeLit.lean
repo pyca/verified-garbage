@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Impl.Aes.AArch64.Blocks
 meta import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
