@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryPrimality
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Concrete bounded p-search controller and its unchanged seed and q -/
 

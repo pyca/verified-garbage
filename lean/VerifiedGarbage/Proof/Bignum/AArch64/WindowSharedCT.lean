@@ -1,11 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelper
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContract
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTCore
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTFast
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCorrect
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelperContext
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

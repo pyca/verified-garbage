@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointInit
+import VerifiedGarbage.Proof.Dsa.AArch64.JointInit
 public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointBuildContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Joint exponentiation and conversion out of Montgomery representation -/
 

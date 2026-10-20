@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCalls
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 
 /-! # Buffer separation in the complete DSA arithmetic schedules -/
 

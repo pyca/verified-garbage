@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Spec.MlDsa.Poly
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: polynomials in memory, for every target

@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Execute a pair using only the public scratch allocation -/
 @[expose] public section

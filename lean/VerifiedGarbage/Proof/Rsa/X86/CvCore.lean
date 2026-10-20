@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvDivD
+public import VerifiedGarbage.Proof.Rsa.X86.CvDivN
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # Complete CRT parameter arithmetic and its workspace frame -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.X86.MaskOutput
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Result masking preserves the call header and stays within scratch -/
 

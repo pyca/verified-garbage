@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Dsa.Generation.Primality
+import VerifiedGarbage.Proof.Rsa.Octets
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.CutOctets
+public import VerifiedGarbage.Spec.RsaKeyGen
 import Mathlib.Data.List.Induction
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSA's blinded witness transformation on big-endian bytes
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha384
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.AnyKeyInstances
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit

@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.CrtPost
+public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.CrtBody
-public import VerifiedGarbage.Proof.Bignum.X86.CrtReturn
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSpecFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
+import VerifiedGarbage.Proof.Bignum.X86.CrtBody
+import VerifiedGarbage.Proof.Bignum.X86.CrtReturn
+import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+import VerifiedGarbage.Proof.Bignum.X86.CrtResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.EntrySave
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA -/
 

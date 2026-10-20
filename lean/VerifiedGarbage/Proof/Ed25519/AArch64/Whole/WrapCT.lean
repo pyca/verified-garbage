@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wrap
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! # Arithmetic facts for ARM64's subtraction carry -/

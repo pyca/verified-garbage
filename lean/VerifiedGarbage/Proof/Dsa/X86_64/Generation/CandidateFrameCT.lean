@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateBuildCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArguments
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArgumentBlocksCT
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Candidate arithmetic accepts the persistent frame's actual words -/

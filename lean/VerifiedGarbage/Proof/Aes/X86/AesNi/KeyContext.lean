@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 
 @[expose] public section
 

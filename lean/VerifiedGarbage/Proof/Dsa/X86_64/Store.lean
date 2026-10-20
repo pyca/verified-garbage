@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.Digest
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Encoding a DSA arithmetic result into its separate output buffer -/
 

@@ -1,9 +1,49 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeParametersCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishOutput
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FinishOutput
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.Proof.RsaOaep.X86_64.CtBase
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Push
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.RsaKeyGen.Table
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.TCB.Registration
 
 /-! # Output copying and failure zeroing use public frame inputs -/
 

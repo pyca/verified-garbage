@@ -3,11 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 public import VerifiedGarbage.Spec.MlDsa.Canonicalize
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `CanonicalizeCorrect.lean` -/
 

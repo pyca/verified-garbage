@@ -2,8 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddVerified
+public import VerifiedGarbage.Impl.Ed25519.X86.SignCached
+public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 @[expose] public section
 

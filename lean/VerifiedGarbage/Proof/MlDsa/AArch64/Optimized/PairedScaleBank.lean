@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStageRun
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseScale
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Batch
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `PairedScale.lean` -/
 

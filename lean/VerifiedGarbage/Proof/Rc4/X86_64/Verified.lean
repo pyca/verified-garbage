@@ -1,17 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86_64.Lit
-meta import VerifiedGarbage.Proof.Rc4.X86_64.Lit
 import VerifiedGarbage.Proof.Rc4.X86_64.Apply
-meta import VerifiedGarbage.Proof.Rc4.X86_64.Apply
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Rc4.X86_64.Init
+import VerifiedGarbage.Proof.Rc4.X86_64.Lit
+public import VerifiedGarbage.Impl.Rc4.X86_64
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Apply
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Spec.Rc4.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Init
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Lit
+meta import VerifiedGarbage.Impl.Rc4.X86_64
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 
 /-! # RC4 on x86-64: verified against the shared contracts -/
 

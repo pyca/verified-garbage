@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import VerifiedGarbage.Spec.P521
 
 /-! # ECDSA over P-521 on 32-bit ARM: nine-word field elements and scalars -/
 

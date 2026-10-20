@@ -1,11 +1,68 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Message
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTCompute
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTSample
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verifying messages

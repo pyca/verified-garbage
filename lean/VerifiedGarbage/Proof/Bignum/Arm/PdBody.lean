@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PdChecked
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdImported
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
+import VerifiedGarbage.Proof.Bignum.Arm.PdImported
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentFlag
+import VerifiedGarbage.Proof.Bignum.Arm.PdFail
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete ARMv7 checked public RSA body, including invalid-key failures -/
 

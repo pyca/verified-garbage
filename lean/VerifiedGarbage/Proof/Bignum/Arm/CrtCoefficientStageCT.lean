@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientSelection
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # The coefficient phase hides both residues, p and qInv -/
 

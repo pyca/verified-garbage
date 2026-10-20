@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.Arm.Fill
+public import VerifiedGarbage.Impl.Argon2.Arm.MemoryInit
 
 /-!
 # Argon2 on ARMv7: the derivation

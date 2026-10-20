@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.WinJac
-public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! In-place doubling for the secret-scalar Jacobian window loop. -/
 

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PackedNaf
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNafWide
 
 @[expose] public section

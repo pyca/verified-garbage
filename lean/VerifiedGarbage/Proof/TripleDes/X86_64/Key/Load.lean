@@ -1,16 +1,16 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Permutation
-import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
 import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

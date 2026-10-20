@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 public import VerifiedGarbage.Proof.Bignum.Square
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
 
 /-! The complete diagonal-addition loop for an ADX square. -/
 

@@ -1,17 +1,29 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.MdStream.AArch64.Common
-meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Sm3.AArch64.Compress
-meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
-import VerifiedGarbage.Impl.Sm3.AArch64.Stream
-meta import VerifiedGarbage.Impl.Sm3.AArch64.Stream
 import VerifiedGarbage.Proof.Sm3.Stream
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Sm3.StateMem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+meta import VerifiedGarbage.Proof.MdStream.AArch64.Common
 meta import VerifiedGarbage.Proof.Sm3.Stream
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Contract
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.Sm3.StateMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Lit
+import VerifiedGarbage.Proof.Sm3.AArch64.Compress
+meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 
 /-!
 # Streaming SM3 on AArch64: `init`

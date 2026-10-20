@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.AArch64.B0
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
+import VerifiedGarbage.Proof.AesCcm.AArch64.Mac
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-CCM on AArch64: `vg_aes_ccm_seal`

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ed448.AArch64.Scalar
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarIO
 import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 scalar multiply-add on AArch64: the operands

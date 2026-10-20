@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Close
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint3
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Inv
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Loads
 
 /-! # A candidate on ARMv7: `gcd(c − 1, e)` (`gcdCheck_vp`)
 

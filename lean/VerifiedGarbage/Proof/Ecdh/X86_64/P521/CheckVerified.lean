@@ -1,23 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.CheckFn
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P521Literals
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_p521_check_point` on x86-64: `Verified`

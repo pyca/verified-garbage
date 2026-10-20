@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Aes.Arm.Ctr32
 public import VerifiedGarbage.Impl.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Impl.Gcm.Arm
 

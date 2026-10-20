@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Layout
-public import VerifiedGarbage.Impl.Dsa.Arm.Stream
 public import VerifiedGarbage.Impl.Dsa.Arm.Arith
+public import VerifiedGarbage.Impl.Dsa.Arm.Bytes
 
 /-! # DSA arithmetic composition on 32-bit ARM
 

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportArray
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Address and byte-count setup for RSA array export -/
 

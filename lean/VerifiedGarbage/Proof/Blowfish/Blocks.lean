@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Spec.Blowfish
 
-public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Blocks and their halves, byte by byte

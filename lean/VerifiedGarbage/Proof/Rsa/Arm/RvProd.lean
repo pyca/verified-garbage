@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+public import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvNumbers
-public import VerifiedGarbage.Proof.Rsa.Arm.MulMod
-public import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Rsa.Arm.CvLoad
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.RvViews
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `M = d e`
 

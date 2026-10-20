@@ -1,11 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Copy
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Modes.AArch64.Core
+import VerifiedGarbage.Proof.Modes.AArch64.Copy
 import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Unchaining CBC blocks on AArch64

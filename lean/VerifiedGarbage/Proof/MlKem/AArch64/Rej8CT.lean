@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Finish
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8LoopCT
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The complete SIMD/scalar rejection loop has public-seed-only timing -/
 

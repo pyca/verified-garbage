@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.PEncoding
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Radix bounds for the accumulated p-candidate hash contributions -/
 

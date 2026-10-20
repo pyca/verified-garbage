@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Optimized

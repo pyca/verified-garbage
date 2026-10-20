@@ -1,12 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignLoopCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInitCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInitCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignLoopCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInitCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Compose initialization, retries, and publication for valid subgroup moduli. -/
 @[expose] public section

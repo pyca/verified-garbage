@@ -1,17 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
-public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
 
 /-! The complete verifier satisfies the reviewed message-level contract. -/
 

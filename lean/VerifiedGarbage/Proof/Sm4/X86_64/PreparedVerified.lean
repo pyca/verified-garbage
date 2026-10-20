@@ -1,18 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.PreparedBody
-meta import VerifiedGarbage.Proof.Sm4.X86_64.PreparedBody
-public import VerifiedGarbage.Proof.Sm4.X86_64.Lit
-meta import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.PreparedBody
+meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sm4.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # SM4's batches under prepared round keys on x86-64 meet their contract

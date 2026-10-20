@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Loop
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Hmac.Common
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: constant time

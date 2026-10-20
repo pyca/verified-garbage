@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
 
 /-! A nonce sample advances consumption while preserving the signing-loop state. -/
 @[expose] public section

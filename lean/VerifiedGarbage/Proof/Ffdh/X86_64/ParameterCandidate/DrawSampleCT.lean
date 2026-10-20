@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestoreCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestoreCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRangeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRange
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawPrefix
 
 /-! # FFDH parameter generation on x86-64: timing of one sampled witness -/
 

@@ -1,14 +1,20 @@
 module
 
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixed
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
+public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
 
 /-! ## `JointLayout` -/
 

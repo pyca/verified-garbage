@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafSetupTiming
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafFinish
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafLayout
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
 
 @[expose] public section
 

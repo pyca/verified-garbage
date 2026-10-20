@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Verified
-import VerifiedGarbage.Proof.Rc2.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Spill
 
 /-!
 # RC2-CBC's streaming functions on AArch64, with their working space on the stack

@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ed25519
 public import VerifiedGarbage.Spec.Ed25519.Point64
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Ed25519's point addition and doubling in radix `2^32`, as functions

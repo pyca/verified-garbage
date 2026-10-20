@@ -1,9 +1,13 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrepTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindowTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPoints
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrepTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindowTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSource
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrep
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

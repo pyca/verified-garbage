@@ -1,15 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedInput
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-! ## `JointMain` -/
 

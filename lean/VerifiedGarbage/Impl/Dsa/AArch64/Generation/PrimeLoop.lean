@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.DrawCopy
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SampleRound
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 /-! Consume whole witness draws until the shared policy finishes or the tape ends. -/
 @[expose] public section

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 
-public import VerifiedGarbage.Proof.Cast5.Arm.KeyHalf
-public import VerifiedGarbage.Proof.Cast5.Arm.Ecb
+import VerifiedGarbage.Proof.Cast5.Arm.KeyHalf
+import VerifiedGarbage.Proof.Cast5.Arm.Ecb
+public import VerifiedGarbage.Proof.Cast5.Arm.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # CAST5 key expansion on ARMv7

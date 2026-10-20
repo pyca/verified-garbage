@@ -1,9 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.AesSiv.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.TCB.X86_64.Gpr
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Impl.AesSiv.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.TCB.X86_64.Gpr
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-SIV on x86-64: CTR is constant time

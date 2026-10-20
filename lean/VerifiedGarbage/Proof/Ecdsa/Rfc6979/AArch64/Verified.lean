@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.CT
 import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Deterministic ECDSA on AArch64: `Verified`

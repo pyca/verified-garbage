@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.WeakWords
-import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
+import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 

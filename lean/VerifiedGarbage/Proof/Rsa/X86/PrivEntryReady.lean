@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivEntryInput
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Entering the wrapper preserves all sources and incoming arguments -/
 

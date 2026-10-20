@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtProductLayout
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSlotFrame
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Validation changes only its full product and two mask words -/
 

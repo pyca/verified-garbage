@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Aes
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Keep
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # GCM groups with cached round keys -/
 

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks2
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
+public import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A pair of rounds of the key schedule on AArch64

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/
 

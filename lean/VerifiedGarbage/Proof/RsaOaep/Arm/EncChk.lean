@@ -1,9 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
-public import VerifiedGarbage.Proof.RsaOaep.Encode
+public import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+import VerifiedGarbage.Proof.RsaOaep.Encode
 import all Init.Data.Nat.Bitwise.Basic
-meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
+meta import VerifiedGarbage.Proof.RsaOaep.Arm.Mgf
+meta import VerifiedGarbage.Proof.RsaOaep.Encode
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the checks

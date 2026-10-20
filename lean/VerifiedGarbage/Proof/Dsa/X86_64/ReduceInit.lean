@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceLoop
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # Initial source and count for DSA modular reduction -/
 

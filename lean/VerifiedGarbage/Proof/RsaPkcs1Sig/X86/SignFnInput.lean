@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Entry state and preserved saved-register words for checked private RSA -/
 

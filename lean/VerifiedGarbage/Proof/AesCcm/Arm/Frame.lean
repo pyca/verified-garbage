@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 
 /-!
 # AES-CCM on ARMv7, with its working space on the stack

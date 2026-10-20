@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytesCT
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Discharge the primality timing certificates at every supported DSA width -/
 

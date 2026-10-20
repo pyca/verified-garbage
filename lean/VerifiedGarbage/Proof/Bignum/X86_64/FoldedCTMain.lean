@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

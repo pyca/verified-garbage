@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Wide
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Core
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Search
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy

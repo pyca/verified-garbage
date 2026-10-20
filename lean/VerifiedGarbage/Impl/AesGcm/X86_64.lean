@@ -1,9 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Impl.Aes.X86_64.Callee
-public import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
-public import VerifiedGarbage.Impl.Gcm.X86_64
-public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 
 /-!
 # AES-GCM: x86-64 implementation

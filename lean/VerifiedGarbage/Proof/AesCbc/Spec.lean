@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Cbc.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Cmac.Mem
-public import VerifiedGarbage.Proof.Cmac.Frame
+public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CBC: the mode one block at a time, and blocks in memory

@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivReduce
-public import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Rsa.WordRanges
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public geometry for fixed-width native RSA division -/
 

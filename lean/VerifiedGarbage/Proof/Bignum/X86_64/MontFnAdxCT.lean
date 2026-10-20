@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_mont_mul_adx`: constant time

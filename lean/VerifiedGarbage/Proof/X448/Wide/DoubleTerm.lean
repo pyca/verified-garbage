@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Wide
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.Wide.Word
 
-public import VerifiedGarbage.Proof.X448.Wide.Term
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: one doubled cross product in symmetric X448 squaring. -/
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 public import VerifiedGarbage.Impl.Weierstrass.Slots

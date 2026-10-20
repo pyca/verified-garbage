@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
-public import VerifiedGarbage.Proof.Framework.Covers
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Dot

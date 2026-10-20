@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareState
-public import VerifiedGarbage.Proof.Bignum.Arm.Zero
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareMath
+import VerifiedGarbage.Proof.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The square's metadata and its cleared product -/
 

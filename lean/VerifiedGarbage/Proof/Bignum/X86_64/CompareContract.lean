@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 

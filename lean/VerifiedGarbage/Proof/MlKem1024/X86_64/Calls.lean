@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncodeAvx2
+import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompressAvx2
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
 /-!
 # ML-KEM-1024 on x86-64: the compressions its functions run

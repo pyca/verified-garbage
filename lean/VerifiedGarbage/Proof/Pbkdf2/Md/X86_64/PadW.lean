@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
-public import VerifiedGarbage.Proof.MdStream.X86_64.Pad
+import VerifiedGarbage.Proof.Pbkdf2.X86_64.Iterate
 import VerifiedGarbage.Proof.Pbkdf2.Memory
 import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
+public import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: the outer block's padding

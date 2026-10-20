@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.AddSub
+public import VerifiedGarbage.Impl.MlDsa.Arm.Arith.Common
 
 /-!
 # ML-DSA on 32-bit ARM: rounding and hints

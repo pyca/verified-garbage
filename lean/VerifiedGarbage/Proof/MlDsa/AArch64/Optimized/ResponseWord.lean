@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Butterfly
 
 @[expose] public section
 

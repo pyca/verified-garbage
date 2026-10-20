@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitness
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitness
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
+public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! The forced branch changes the draw and preserves its nonuniform flag. -/
 @[expose] public section

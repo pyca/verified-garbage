@@ -1,10 +1,19 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.OnePass
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PhaseOne
+import VerifiedGarbage.Proof.Framework.X86_64.HighKeep
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.LoopTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48To
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Loop48
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The 512-bit loop in one pass over a source and then in place

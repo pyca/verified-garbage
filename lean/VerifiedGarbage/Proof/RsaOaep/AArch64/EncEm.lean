@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM` before masking

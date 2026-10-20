@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.Framework.Scratch
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A scratch buffer on the stack, wiped after use (AArch64)

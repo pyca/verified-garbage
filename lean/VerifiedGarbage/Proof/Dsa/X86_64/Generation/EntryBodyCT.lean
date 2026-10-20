@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DispatchCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryReady
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryReady
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySetupCT
 
 /-! # Entry initialization composes with dispatch and the complete generator -/
 

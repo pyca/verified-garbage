@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.MlDsa.X86_64.Round.Avx2
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Words
 
 /-!
 # ML-DSA on x86-64: what the AVX2 rounding code computes in a doubleword

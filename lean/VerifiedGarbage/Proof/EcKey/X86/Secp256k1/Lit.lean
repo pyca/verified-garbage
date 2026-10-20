@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
-meta import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+meta import VerifiedGarbage.Impl.EcKey.Secp256k1.X86
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # secp256k1 public keys on x86 (32-bit): the code as a literal

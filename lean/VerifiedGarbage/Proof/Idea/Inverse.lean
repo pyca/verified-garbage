@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.Idea
-public import VerifiedGarbage.Proof.Framework.Pratt
+public import Mathlib.Data.Nat.Prime.Defs
+import VerifiedGarbage.Proof.Framework.Pratt
 
 /-!
 # IDEA: the ⊙-inverse by squaring and multiplying

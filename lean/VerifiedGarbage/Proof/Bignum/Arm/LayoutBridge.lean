@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
-public import VerifiedGarbage.Proof.Bignum.Arm.MontBody
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # RSA's shared array layout supplies every ARMv7 separation obligation -/
 

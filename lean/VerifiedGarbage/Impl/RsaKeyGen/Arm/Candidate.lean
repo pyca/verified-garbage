@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
-public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
-public import VerifiedGarbage.Impl.Bignum.Arm.Store64
 
 /-!
 # A candidate for a prime of an RSA key on ARMv7

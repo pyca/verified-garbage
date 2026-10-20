@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha512
-public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # SHA-512 compression function: x86-64 implementation

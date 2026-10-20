@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr1
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.Arm.RvLoads
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # A candidate on ARMv7: a witness's octets (`witnessLoad_vp`)
 

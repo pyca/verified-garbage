@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Init
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Init
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Init
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_init` is constant time

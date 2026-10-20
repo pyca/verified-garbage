@@ -2,14 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRound
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRound
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTailCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundTailCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRoundCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SampleRound
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRoundCT
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Sample
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-! # Timing of witness selection, the shared round, and completion policy -/
 

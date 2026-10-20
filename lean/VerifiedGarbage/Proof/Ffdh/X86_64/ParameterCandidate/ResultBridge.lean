@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CandidateTest
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 

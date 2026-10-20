@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
+public import VerifiedGarbage.Proof.Dsa.X86.RandomDraw
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
-public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-public import VerifiedGarbage.Proof.Dsa.RandomSign
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The signer's state between attempts (x86)

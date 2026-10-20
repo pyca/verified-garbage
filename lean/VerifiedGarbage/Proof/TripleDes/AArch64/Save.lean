@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundStep
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Spills
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 @[expose] public section
 

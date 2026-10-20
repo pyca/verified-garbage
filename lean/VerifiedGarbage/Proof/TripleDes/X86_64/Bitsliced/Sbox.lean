@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Sbox
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.X86_64.Straight
+public import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The bitsliced S-box circuits' machine code

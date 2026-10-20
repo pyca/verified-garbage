@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Spec.X25519
 
-public import VerifiedGarbage.Proof.X25519.X86.Fold
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Fold
+import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86 (32-bit): the field operations

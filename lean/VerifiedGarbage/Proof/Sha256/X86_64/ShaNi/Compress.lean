@@ -1,21 +1,27 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
-meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
-meta import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
 public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
+meta import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-256 compression function on x86-64 with the SHA extensions

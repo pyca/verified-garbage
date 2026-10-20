@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.EntryFields
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.KeyPointers
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Saved arguments and the memory footprint of DSA entry stores -/
 

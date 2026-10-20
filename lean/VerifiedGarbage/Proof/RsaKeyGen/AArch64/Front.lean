@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Contract
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-!
 # A candidate on AArch64: the precondition, the zeros to `out`, and the ends

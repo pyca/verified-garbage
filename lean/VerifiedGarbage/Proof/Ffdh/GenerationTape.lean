@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
-public import VerifiedGarbage.Spec.Ffdh.Generation
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Complete generation consumes prefixes, including every rejected witness -/

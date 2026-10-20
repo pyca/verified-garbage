@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Multiword arithmetic on AArch64: `acc := (acc + u m) / 2⁶⁴`

@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvProduct
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
+import VerifiedGarbage.Proof.Rsa.X86.RvProductCount
+import VerifiedGarbage.Proof.Rsa.X86.RvSetTop
+import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Rsa.X86.RvRestFacts
 
 /-! # The exponent product uses the public exponent's byte length -/
 

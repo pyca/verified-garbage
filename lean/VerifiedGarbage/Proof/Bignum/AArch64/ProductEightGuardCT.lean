@@ -1,13 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
-meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
+public import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
+meta import VerifiedGarbage.Impl.Bignum.AArch64.ProductDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCallMont
+meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductDispatch

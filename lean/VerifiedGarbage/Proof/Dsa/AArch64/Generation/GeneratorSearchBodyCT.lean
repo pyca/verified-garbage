@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchCTState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStepCT
 
 /-! # A complete generator attempt preserves the tape and returns a public status -/
 

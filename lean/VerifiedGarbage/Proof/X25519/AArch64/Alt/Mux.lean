@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
 public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mem
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `mux_4`
 

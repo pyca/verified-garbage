@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.StepsCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Lay
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA key generation on 32-bit ARM: masking a sampled polynomial

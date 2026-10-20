@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.ExternalWords
+import VerifiedGarbage.Proof.Bignum.ExternalWords
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Constants
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Montgomery
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Rsa.Ranges
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter candidates on x86-64: a prepared shared Miller–Rabin modulus -/
 

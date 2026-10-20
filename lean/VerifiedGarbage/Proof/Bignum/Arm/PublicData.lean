@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Immutable input buffers shared by ordinary and precomputed public RSA -/
 

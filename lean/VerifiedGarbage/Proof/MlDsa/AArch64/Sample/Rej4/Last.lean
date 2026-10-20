@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt4
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

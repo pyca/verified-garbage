@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundStatus
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResult
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter generation on x86-64: run only an accepted witness -/

@@ -2,6 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Row
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.NormNum.Pow
 
 /-! # The inversion's rows' results
 

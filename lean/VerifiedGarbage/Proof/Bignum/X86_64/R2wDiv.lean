@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Bignum.WordStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.MulAdd
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # `R² mod m` by word steps on x86-64: the estimate of the quotient

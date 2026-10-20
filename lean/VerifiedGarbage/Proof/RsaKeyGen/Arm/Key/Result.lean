@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Vals
+public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 
 /-! # An RSA key on ARMv7: the result, as the body computes it
 

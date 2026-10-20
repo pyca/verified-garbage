@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+public import VerifiedGarbage.Proof.AesCfb8.X86_64.Loop
 
-public import VerifiedGarbage.Proof.AesCfb8.X86_64.Body
+import VerifiedGarbage.Proof.AesCfb8.X86_64.Body
+import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+meta import VerifiedGarbage.Proof.AesCfb8.X86_64.Loop
 meta import VerifiedGarbage.Proof.AesCfb8.X86_64.Body
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.AesCfb8.X86_64.Steps
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+meta import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+meta import VerifiedGarbage.Proof.Aes.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB8 on x86-64: constant time

@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructTest
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructTest
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptEntry
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControllerFrame
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityPlan
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchControl
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControllerFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
 
 /-! # A complete native p-search body, including controller entry and return -/
 

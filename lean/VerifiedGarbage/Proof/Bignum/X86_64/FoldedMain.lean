@@ -3,12 +3,17 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86_64.Folded
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
-public import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.Bignum.PdRanges
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Bignum.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.X86_64.PcMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import Mathlib.Logic.Relator
+import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.Set
 
 @[expose] public section
 

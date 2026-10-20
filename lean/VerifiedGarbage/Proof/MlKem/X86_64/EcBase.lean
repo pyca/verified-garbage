@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-KEM on x86-64: encapsulation, its contract, layout, entry and hashes

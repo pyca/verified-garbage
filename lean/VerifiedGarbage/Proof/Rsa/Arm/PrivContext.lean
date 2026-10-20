@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivGeometry
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Immutable sources and incoming arguments survive calls and local frame writes -/
 

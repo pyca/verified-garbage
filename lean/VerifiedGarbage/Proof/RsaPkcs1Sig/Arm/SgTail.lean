@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.SgCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on ARMv7: after the call

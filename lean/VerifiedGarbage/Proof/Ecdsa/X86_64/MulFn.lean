@@ -3,11 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
 
 /-!
 # `vg_<curve>_mul` on x86-64, and `R = [k]G` by its call

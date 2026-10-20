@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
+import VerifiedGarbage.Impl.MlKem.AArch64.Dot
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Dot
 
 /-!
 # ML-KEM on AArch64: the fused dot product of polynomials stored with 16 bits

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackGather
-public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

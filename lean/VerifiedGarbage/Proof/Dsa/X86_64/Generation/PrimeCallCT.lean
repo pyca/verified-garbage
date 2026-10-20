@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeCT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeReturnCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeReturnCT
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrimeReturnCT
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Native primality calls for exactly the supported DSA parameter sizes -/
 

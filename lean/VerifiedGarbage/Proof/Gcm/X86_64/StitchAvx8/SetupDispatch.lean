@@ -1,14 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Pipeline
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-import Mathlib.Data.List.Induction
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## Ready -/
 

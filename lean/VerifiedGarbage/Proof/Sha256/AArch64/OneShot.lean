@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 public import VerifiedGarbage.Spec.Sha256.Contract
+public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha256.Md
 
 /-!
 # The one-shot SHA-256 and SHA-224 digests on AArch64, against their shared contracts

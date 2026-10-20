@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
-meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Common
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming AES-CMAC on ARMv7: `vg_cmac_aes_init`

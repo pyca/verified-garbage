@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Cmac
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # CMAC: blocks in memory as 64-bit words

@@ -1,9 +1,26 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeParameters
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputZero
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OutputCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryWork
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # The caller's output is disjoint from every parameter-search workspace -/
 

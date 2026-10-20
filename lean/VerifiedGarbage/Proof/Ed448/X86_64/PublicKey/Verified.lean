@@ -1,17 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
-meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Base
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+meta import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseVerified
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed448.Ref
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Ed448 public-key derivation on x86-64: `Verified`

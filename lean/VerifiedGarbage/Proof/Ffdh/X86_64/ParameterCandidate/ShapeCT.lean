@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter candidates on x86-64: fixed-time shaping and halving -/
 

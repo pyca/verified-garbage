@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
 
 /-! # Public observations of both RSA key-validation contracts -/
 

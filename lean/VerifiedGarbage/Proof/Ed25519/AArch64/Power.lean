@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
-import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Proof.Ed25519.RootPower
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.Covers
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Merged from `Proof.Ed25519.AArch64.PowerEnv`. -/
 

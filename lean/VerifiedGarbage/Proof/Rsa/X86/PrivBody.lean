@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86.PrivRetained
+import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The complete private-operation body satisfies the shared RSA outcome -/
 

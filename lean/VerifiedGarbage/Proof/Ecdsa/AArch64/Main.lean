@@ -1,11 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-public import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Ecdsa.Sign
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ECDSA on AArch64: the whole function

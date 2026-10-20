@@ -1,16 +1,14 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Optimized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedTimingBase
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedRestTiming
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPieceTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 
 @[expose] public section
 

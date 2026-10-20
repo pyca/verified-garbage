@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivBody
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
-public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-! # Entry state and saved-register separation for the callable private wrapper -/
 

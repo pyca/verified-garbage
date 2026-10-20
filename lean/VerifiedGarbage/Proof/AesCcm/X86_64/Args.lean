@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Entry
+public import VerifiedGarbage.Proof.AesCcm.X86_64.Contract
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-CCM on x86-64: the arguments

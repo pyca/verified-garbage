@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Recover
 import VerifiedGarbage.Proof.Ed25519.AArch64.Power
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverSign
-import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.AArch64.RecoverCandidate`. -/
 

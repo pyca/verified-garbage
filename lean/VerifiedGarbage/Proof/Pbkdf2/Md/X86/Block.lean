@@ -1,21 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.MdHmac
-meta import VerifiedGarbage.Proof.Pbkdf2.MdHmac
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
-meta import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
-meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import VerifiedGarbage.Impl.Pbkdf2.Md.X86
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Pbkdf2.MdStep
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Pbkdf2.Memory
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+meta import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 meta import VerifiedGarbage.Impl.Pbkdf2.Md.X86
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Pbkdf2.MdStep
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Hmac.Generic.Common
+meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 
 /-!
 # HMAC and PBKDF2-HMAC over a Merkle–Damgård hash function on x86 (32-bit): the block

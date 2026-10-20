@@ -5,6 +5,13 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.CopyKeep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FprogJ
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
 
 /-!
 # Windows in Jacobian coordinates on AArch64: an iteration

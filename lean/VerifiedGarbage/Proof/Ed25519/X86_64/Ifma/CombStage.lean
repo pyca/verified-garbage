@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 public import VerifiedGarbage.Impl.Ed25519.X86_64.CombIfma
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed25519's comb with AVX512_IFMA: the blocks, run symbolically

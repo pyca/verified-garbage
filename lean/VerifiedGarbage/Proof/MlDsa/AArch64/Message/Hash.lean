@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Args
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: SHAKE256 through the sponge functions

@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitCorrect
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitCorrect
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitCT
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
-public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Verified native parameter-generation initialization -/
 

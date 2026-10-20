@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowArithmetic
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawTriangle
-import VerifiedGarbage.Proof.Bignum.AArch64.WindowLazyBound
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLayout
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
 import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareFinish
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowArithmetic

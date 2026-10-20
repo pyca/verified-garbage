@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 
-public import VerifiedGarbage.Proof.Dsa.Arm.Sign
+import VerifiedGarbage.Proof.Dsa.Arm.Sign
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

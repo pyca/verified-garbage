@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Contract
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Update
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64

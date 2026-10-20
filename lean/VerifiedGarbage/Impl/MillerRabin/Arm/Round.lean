@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
-public import VerifiedGarbage.Impl.Bignum.Arm.Square
 
 /-!
 # A prepared Miller–Rabin round on ARMv7

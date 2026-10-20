@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.RcPieces
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Callees
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSASSA-PKCS1-v1_5 recovery with a precomputed public key on ARMv7: the call

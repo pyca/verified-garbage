@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Csub
 
-import VerifiedGarbage.Proof.Mont.X86_64.WideMul
-public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in memory

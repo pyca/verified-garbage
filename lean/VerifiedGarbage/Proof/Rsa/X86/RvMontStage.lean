@@ -1,7 +1,9 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontMul
-public import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvMontMul
+import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 
 /-! # A Montgomery multiplication advances the tracked recovery stage -/
 

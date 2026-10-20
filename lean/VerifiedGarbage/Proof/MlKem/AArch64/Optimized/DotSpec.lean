@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Field
 public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! # Fused accumulators compute the existing K-PKE dot product -/
 

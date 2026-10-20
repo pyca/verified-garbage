@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptRun
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallFacts
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CallEntry
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-! # The attempt, from the controller's loop state -/
 

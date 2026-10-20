@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoreCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoreCT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateArithmetic
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Save p and its exponent with public addressing -/
 

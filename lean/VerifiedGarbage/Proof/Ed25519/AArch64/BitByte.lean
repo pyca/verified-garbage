@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-public import VerifiedGarbage.Proof.Framework.BitByte
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.BitByte
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
 
 /-! Byte stores and expansion of one scalar byte into eight bits. -/
 

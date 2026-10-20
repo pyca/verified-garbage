@@ -1,14 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.AccY
+public import VerifiedGarbage.Spec.MlKem.Kpke16
 
-import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
-import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR101
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.TopAcc16
-public import VerifiedGarbage.Proof.MlKem.PolyW
-public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
+import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.FinY
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunA
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR100
 
 /-!
 # ML-KEM on x86-64: the AVX2 arithmetic without its MXCSR region

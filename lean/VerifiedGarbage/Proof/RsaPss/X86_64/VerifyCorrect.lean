@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyPadding
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Sha256.StateMem
 
 /-! # RSASSA-PSS verification: the public operation and padding check -/
 

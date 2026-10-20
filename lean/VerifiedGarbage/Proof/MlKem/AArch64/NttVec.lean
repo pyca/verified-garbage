@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.Ntt
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM on AArch64: polynomials in vectors

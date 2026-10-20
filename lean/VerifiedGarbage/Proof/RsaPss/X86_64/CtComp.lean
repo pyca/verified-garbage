@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSASSA-PSS on x86-64: compressing every block, selecting the last

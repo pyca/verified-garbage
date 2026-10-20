@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-public import VerifiedGarbage.Proof.Ecdh.X86.Peer
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.InvLays
+public import VerifiedGarbage.Impl.Ecdh.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # ECDH on x86 (32-bit): the peer's point, `[d]P` and `Z^(p-2)`

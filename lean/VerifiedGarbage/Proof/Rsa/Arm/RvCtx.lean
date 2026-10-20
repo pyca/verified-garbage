@@ -1,6 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.RvBase
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvMmul
+import VerifiedGarbage.Proof.Rsa.Arm.KcStart
+import VerifiedGarbage.Proof.Rsa.Arm.RvKS
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the working space's registers
 

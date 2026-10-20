@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.ExportArray
-public import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Point the byte-copy loop at a packed workspace array -/
 

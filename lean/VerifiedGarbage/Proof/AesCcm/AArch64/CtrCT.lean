@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Chunk
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Chunk
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.AesCcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Crypt
+meta import VerifiedGarbage.Proof.AesCcm.AArch64.Tag
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-CCM on AArch64: the tag and counter mode in two runs

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportMasked
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutputCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ExportMasked
+public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Serialization and rejection masking reveal no result or acceptance bits -/
 

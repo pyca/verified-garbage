@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToDual
 
 /-! # Return a p-attempt result to the bounded search controller -/
 

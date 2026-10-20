@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailMul
 public import VerifiedGarbage.Proof.X448.Wide.Representation
-public import VerifiedGarbage.Impl.Curve448.AArch64
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

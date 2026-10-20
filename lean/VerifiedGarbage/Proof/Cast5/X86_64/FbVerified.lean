@@ -1,25 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
-meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
-meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
-meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
-meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
-meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
+meta import VerifiedGarbage.Impl.StackScratch.X86_64
+meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
+meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 
 /-!
 # CAST5-OFB and -CFB64 on x86-64 meet their contracts

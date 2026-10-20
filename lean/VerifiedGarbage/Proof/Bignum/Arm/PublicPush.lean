@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicInput
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Geometry and input preservation across the public RSA stack push -/
 

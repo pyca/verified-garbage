@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Contract
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # An RSA key from its primes on AArch64: the precondition, as the code uses it

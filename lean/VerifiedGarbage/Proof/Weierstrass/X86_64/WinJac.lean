@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacIter
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Scalar multiplication by 5-bit windows in Jacobian coordinates on x86-64

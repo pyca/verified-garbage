@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecPriv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Mgf
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # RSAES-OAEP decryption on AArch64: correctness

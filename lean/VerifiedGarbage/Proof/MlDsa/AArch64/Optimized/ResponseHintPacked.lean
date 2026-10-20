@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFlags
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintFinish
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
 
 @[expose] public section
 

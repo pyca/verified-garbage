@@ -1,10 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdh.X86.Peer
+import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # ECDSA verification on x86 (32-bit): `x` and the result

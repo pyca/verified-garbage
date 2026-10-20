@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+public import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Loop
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Chunk
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

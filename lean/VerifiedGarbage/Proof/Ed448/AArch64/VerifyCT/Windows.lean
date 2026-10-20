@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Erase
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the windows and the comparison

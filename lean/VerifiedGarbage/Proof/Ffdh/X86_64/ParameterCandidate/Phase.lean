@@ -5,8 +5,6 @@ public import VerifiedGarbage.Spec.Ffdh
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Masks
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 import VerifiedGarbage.Proof.Framework.Omega
 

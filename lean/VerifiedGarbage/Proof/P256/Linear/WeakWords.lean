@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Arithmetic
 public import VerifiedGarbage.Proof.Ed25519.Word64
+public import VerifiedGarbage.Spec.P256
 
 @[expose] public section
 

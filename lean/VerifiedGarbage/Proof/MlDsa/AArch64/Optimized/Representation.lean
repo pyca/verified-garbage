@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 
 /-! Internal storage relations for lazy arithmetic. The canonical public
 `Reduced` and `PolyIs` predicates retain their original meanings. -/

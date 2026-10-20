@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleFnRestore
-public import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopSteps
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # Workspace and stack invariants shared by repeated modular doublings -/
 

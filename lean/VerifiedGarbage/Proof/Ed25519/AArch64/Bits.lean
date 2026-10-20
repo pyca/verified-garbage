@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
+import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Tactic.ToDual
 
 /-! Merged from `Proof.Ed25519.AArch64.BitRead`. -/
 

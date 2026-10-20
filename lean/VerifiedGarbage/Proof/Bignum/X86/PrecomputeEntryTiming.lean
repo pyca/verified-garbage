@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputePair
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
-public import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Saving and restoring registers has a trace fixed by public addresses -/
 

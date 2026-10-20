@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 public import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
-import VerifiedGarbage.Impl.Weierstrass.X86.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86.Window
+public import VerifiedGarbage.Impl.Weierstrass.X86.Jacobian
+import VerifiedGarbage.Impl.Weierstrass.X86.NafPrep
 
 /-! Width-five NAF multiplication for public P-256 verification scalars. -/
 

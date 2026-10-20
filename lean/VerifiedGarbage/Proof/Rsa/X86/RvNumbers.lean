@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvLoads
-public import VerifiedGarbage.Proof.Rsa.X86.RvProduct
-public import VerifiedGarbage.Proof.Rsa.X86.RvArguments
-public import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
-public import VerifiedGarbage.Proof.Rsa.X86.RvSkip
+import VerifiedGarbage.Proof.Rsa.X86.RvProduct
+import VerifiedGarbage.Proof.Rsa.X86.RvArguments
+import VerifiedGarbage.Proof.Rsa.X86.RvSubWrap
+import VerifiedGarbage.Proof.Rsa.X86.RvSkip
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.TCB.X86.Target
 
 /-! # Exact exponent product and the positive-even precondition for recovery -/
 

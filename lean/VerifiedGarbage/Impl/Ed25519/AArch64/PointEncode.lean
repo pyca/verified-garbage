@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
 
 /-! Affine conversion (by the inversion by divsteps) and canonical point encoding into x4–x7. -/

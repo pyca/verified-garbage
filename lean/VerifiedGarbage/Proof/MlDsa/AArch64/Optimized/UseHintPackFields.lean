@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackEncode
-public import VerifiedGarbage.Spec.MlDsa.UseHintPack
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackEncode
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

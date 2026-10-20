@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Power
-public import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Initializing powers for runtime-modulus arithmetic -/
 

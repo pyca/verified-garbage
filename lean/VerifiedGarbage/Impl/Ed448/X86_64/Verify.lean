@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-public import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 public import VerifiedGarbage.Impl.Sha3.X86_64.Stream
 
 /-!

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hint
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
 import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt

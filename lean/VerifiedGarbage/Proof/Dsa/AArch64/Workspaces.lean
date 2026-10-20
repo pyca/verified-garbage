@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Child
+import VerifiedGarbage.Proof.Dsa.AArch64.Child
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Dsa.AArch64.Workspace
+public import VerifiedGarbage.Proof.Dsa.AArch64.InitFrame
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.Parent
 
 /-! # Initializing both DSA moduli in the shared scratch allocation -/
 

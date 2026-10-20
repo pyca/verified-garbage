@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.MaskFrame
+import VerifiedGarbage.Proof.Bignum.X86.MaskFrame
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.MaskOutput
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Apply the saved acceptance mask after exponentiation -/
 

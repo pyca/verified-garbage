@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
+public import VerifiedGarbage.Impl.Rsa.AArch64.Folded
 import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCodeCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCode
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCode
 import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section

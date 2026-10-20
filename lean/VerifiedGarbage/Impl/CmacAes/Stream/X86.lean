@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.CmacAes.X86
-public import VerifiedGarbage.Impl.Aes.X86.Callee
 
 /-!
 # Streaming AES-CMAC: x86 (32-bit) implementation

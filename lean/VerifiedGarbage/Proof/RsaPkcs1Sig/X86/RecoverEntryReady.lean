@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEntryInput
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Entering the wrapper preserves all sources and incoming arguments -/
 

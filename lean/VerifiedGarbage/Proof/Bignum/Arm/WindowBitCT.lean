@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowScanCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowScanCT
+import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # An exponent bit's trace depends only on the count of pending bits
 

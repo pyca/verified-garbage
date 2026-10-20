@@ -4,8 +4,14 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseFrame
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! ## From `AddSubVec.lean` -/
 

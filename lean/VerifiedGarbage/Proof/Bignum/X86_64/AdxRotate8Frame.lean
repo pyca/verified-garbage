@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.TCB.X86_64.State
 
 /-! The reduction block writes one carry word and a separate output range. -/
 

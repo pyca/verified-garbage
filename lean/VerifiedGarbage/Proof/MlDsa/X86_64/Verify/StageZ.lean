@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.PrimsOk
 public import VerifiedGarbage.Proof.MlDsa.Verify.Spec
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Verify.Verify
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CallPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Top
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!
 # ML-DSA verification on x86-64: the hint and `z`

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCtx
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyChecks
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces in the checks' context

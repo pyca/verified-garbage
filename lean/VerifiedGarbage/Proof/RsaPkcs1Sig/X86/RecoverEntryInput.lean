@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
 
 /-! # Native cdecl inputs before reserving the two wrapper frames -/
 

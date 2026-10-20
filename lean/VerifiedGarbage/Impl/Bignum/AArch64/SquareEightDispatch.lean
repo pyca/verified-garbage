@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
-public import VerifiedGarbage.Impl.Bignum.AArch64.BlockedRedc
 
 @[expose] public section
 namespace VG.Impl.Bignum.AArch64.SquareEightDispatch

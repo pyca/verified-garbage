@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Impl.Subst
 public import VerifiedGarbage.TCB.Artifact
 

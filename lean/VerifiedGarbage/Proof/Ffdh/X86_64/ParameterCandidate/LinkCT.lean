@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HeaderCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HeaderCT
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.HeaderCT
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of the outer-frame link -/
 

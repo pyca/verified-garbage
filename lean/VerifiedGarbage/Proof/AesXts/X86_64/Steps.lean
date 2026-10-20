@@ -1,10 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Alpha
-import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesXts.Alpha
 public import VerifiedGarbage.Impl.AesXts.X86_64
-import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Cmac.Mem
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Spec.Xts
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES on x86-64: the tweak in registers

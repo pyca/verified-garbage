@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Words
 
-public import VerifiedGarbage.Impl.Dsa.X86.Bytes
 
 /-! # Branch-free integer checks for DSA components -/
 

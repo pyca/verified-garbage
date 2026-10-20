@@ -1,11 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Result
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
 
 /-! # Saving System V callee-saved registers in caller scratch -/
 

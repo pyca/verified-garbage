@@ -1,14 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.Arm.Cbc
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
 public import VerifiedGarbage.Spec.Ofb
 public import VerifiedGarbage.Spec.Cfb
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Modes.Arm.SeqBody
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # OFB and CFB as modes one block at a time on ARMv7

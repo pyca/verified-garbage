@@ -1,9 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Arm.Header
+import VerifiedGarbage.Proof.AesCcm.Arm.Header
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+public import VerifiedGarbage.Proof.AesCcm.Arm.Absorb
+public import VerifiedGarbage.Proof.AesCcm.Arm.Contract
+public import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-CCM on ARMv7: the associated data (`aad y`)

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Reduce
 
 /-! Exact nonwrapping fused accumulation of one polynomial term. -/
 

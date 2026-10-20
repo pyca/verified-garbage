@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Complete Montgomery setup and RSA public-power correctness -/
 

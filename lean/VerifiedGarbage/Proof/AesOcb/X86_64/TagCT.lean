@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.AesOcb.X86_64.CTBase
-import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
-meta import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+meta import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86-64: the tag is constant time

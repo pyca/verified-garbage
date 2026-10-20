@@ -1,19 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+public meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
 
 @[expose] public section
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivStatusMask
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.PrivStatusMask
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Complete branchless private-result release decision -/
 

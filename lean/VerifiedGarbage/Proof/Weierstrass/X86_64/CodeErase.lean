@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Checks of every instruction, on code without its displacements

@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Scalar
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4CT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly4` and `vg_mldsa_expand_mask_poly4_avx2`, verified

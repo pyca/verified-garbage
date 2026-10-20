@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! Byte-subtraction lemma used by the scalar range check. -/
 @[expose] public section

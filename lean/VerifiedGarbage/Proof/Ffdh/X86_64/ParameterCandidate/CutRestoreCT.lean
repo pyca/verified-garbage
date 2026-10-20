@@ -1,12 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestore
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestore
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of masking and workspace restoration -/
 

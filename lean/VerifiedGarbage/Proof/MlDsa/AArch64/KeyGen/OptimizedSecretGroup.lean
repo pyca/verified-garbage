@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretGood
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretSeeds
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCallTiming
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
 
 @[expose] public section
 

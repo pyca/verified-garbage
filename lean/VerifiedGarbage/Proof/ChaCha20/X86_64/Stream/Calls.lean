@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Bytes
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 
 /-!

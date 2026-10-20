@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPre
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdPre
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Private intermediates and status slots survive the check's calls -/
 

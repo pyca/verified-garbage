@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Select
-import VerifiedGarbage.Proof.Ed448.X86_64.Window.Round
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Coords
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Optional additions for the nonzero signed digits. -/
 

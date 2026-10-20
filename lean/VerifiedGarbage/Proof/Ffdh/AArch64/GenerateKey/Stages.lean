@@ -3,14 +3,14 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Contract
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Bound
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Cut
-public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
-public import VerifiedGarbage.Proof.Ffdh.Domain
-public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-public import VerifiedGarbage.Proof.Bignum.AArch64.Store
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Out
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the stages of a run up to the scalar

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvSkip
+public import VerifiedGarbage.Proof.Rsa.RecoverMath
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvCnt
-public import VerifiedGarbage.Proof.Rsa.RecoverHalving
+import VerifiedGarbage.Proof.Rsa.Arm.RvCnt
+import VerifiedGarbage.Proof.Rsa.RecoverHalving
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a halving of `m` (`halfBody_ok`)
 

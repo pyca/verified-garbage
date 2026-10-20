@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchBodyCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorInvariant
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeState
 
 /-! # Public retry condition and strictly advancing generator tape cursor -/
 

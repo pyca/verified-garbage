@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Entry
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Message
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: the preconditions and the layouts

@@ -1,10 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.QShape
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
-public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.HalveOctets
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomCopy
 
 /-! Correctness of the two subgroup-candidate endpoint writes. -/
 @[expose] public section

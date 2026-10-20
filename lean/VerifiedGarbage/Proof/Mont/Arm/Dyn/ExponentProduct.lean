@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.ExponentParts
 import VerifiedGarbage.Proof.Dsa.Arithmetic
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Select
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: the conditional product

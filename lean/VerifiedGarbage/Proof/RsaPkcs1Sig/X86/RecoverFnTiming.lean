@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBodyTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBodyTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverNoSp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+import VerifiedGarbage.Proof.Rsa.X86.PrivFnTiming
 
 /-! # Stack allocation and saved-register restoration reveal only public addresses -/
 

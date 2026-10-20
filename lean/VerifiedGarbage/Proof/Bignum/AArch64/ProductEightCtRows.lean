@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtContext
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

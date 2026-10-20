@@ -1,13 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Impl.Sha512.X86_64.Rolled
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Compress
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Impl.Sha512.X86_64.Rolled
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-512 on x86-64, rolled: verified

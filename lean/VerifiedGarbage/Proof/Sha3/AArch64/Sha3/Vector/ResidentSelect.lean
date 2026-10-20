@@ -2,10 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.ResidentCore
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.AbsorbBlock
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

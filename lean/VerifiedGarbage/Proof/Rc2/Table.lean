@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.Table
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Rc2.PiLit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RC2: PITABLE's bytes in the table of constants

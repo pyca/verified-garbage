@@ -1,8 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.AArch64.Crypt16
+public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
+import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sm4.AArch64.Keys
+import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # The loop of the SM4 key schedule on AArch64

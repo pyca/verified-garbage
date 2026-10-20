@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTBase
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Public arithmetic headers within the DSA generation arena -/
 

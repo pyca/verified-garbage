@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
 import VerifiedGarbage.Proof.AesCcm.X86_64.Open
+import VerifiedGarbage.Proof.AesCcm.X86_64.CryptCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.SealCT
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Open
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CryptCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # AES-CCM on x86-64: `vg_aes_ccm_open` is constant time

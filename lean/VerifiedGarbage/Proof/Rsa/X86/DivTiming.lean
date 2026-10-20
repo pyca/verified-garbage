@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivLoop
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Impl.Rsa.X86.Div
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The division schedule is independent of all array contents -/
 

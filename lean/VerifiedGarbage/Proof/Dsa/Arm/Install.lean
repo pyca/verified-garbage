@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.EntrySave
 public import VerifiedGarbage.Proof.Dsa.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # DSA on 32-bit ARM: the entries

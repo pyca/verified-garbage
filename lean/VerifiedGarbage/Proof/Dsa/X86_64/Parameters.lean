@@ -1,20 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.KeygenEntry
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningKey
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceBridge
-public import VerifiedGarbage.Proof.Dsa.Derive
+public import VerifiedGarbage.Spec.Dsa.Derive
+import VerifiedGarbage.Proof.Dsa.Derive
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningShape
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningOperands
-import VerifiedGarbage.Proof.Dsa.X86_64.SourceSlices
 import VerifiedGarbage.Proof.Dsa.X86_64.WorkspaceReady
 import VerifiedGarbage.Proof.Dsa.X86_64.Result
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
-import VerifiedGarbage.Proof.Dsa.X86_64.Sequences
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Functional correctness of the x86-64 DSA domain check
 

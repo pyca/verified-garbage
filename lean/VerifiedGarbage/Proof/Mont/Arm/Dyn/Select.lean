@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
 import VerifiedGarbage.Proof.Mont.Arm.Csub
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: selecting words

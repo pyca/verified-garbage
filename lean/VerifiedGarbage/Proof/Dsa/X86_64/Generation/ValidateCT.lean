@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
+import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DomainCallCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-! # Timing of final parameter validation and its success/retry decision -/
 

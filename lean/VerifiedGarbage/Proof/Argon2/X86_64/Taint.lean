@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
-meta import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Argon2.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Impl.Argon2.X86_64.Compress
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! Merged from `Proof.Argon2.X86_64.Lit`. -/
 

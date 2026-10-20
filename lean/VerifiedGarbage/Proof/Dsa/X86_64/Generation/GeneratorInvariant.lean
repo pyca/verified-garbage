@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeLoop
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeIteration
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Search invariant and exact successful generator output -/
 

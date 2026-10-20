@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdFinish
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportMaskedCT
+public import VerifiedGarbage.Proof.Bignum.Arm.PdResult
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! # The final RSA output and status are released without input-dependent leakage -/
 

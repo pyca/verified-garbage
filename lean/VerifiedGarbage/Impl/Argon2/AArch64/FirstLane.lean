@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-! Force the current lane on the first slice of the first pass.
 

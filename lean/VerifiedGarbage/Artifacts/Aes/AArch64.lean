@@ -5,6 +5,28 @@ public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Frame
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
+public import VerifiedGarbage.Proof.Aes.Scratch
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
+import VerifiedGarbage.Proof.Aes.Scratch
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-! # AES on AArch64 -/
 

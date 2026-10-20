@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtInput
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBodyScope
+import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtEntryReady
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The callable private RSA operation leaks only public geometry and modulus -/
 

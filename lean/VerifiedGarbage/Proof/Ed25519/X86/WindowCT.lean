@@ -1,27 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
-meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTInputs
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+meta import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # Verification's windows: what their traces depend on

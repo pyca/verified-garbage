@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
-public import VerifiedGarbage.Proof.Poly1305.Stream
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Poly1305.Stream
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Poly1305 on x86 (32-bit): the buffer

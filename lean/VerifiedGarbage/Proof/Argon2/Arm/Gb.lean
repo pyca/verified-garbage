@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Argon2.Arm.Compress
+public import VerifiedGarbage.Proof.Argon2.Spec
+public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Mix
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Argon2 on ARMv7: GB on the permuted block

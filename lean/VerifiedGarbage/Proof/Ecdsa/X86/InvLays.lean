@@ -1,8 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
-import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Working space for P-256 divstep inversion -/
 

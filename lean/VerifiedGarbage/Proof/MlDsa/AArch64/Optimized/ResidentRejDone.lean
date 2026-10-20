@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlags
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPrefix
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs

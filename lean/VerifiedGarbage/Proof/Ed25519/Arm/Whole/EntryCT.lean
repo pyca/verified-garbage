@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Entry
 public import VerifiedGarbage.Proof.Framework.RelCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

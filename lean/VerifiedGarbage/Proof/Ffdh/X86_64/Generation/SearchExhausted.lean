@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClear
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminate
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClear
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 
 /-! # Exhausted native searches return zero output and a terminal controller -/
 

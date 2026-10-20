@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
-public import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.WordsFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # Public width selection retains all input buffers and caller resources -/
 

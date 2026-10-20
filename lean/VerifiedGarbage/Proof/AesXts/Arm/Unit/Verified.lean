@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.Arm.Unit.CT
+import VerifiedGarbage.Proof.AesXts.Arm.Unit.CT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Batteries.Logic
+public import Mathlib.Tactic.Conv
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesXts.Arm.Unit.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.AesXts.Arm.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.Arm.Verified
 
 /-!
 # XTS-AES of data units on ARMv7: `Verified`

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.Select
+import VerifiedGarbage.Proof.RsaPss.AArch64.Select
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hash
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Compress
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on AArch64: compressing every block

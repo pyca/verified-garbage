@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Site
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 
 /-!

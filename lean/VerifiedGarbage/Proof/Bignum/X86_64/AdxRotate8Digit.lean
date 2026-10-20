@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcRow
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Selecting and storing a cancellation digit without changing the columns. -/
 

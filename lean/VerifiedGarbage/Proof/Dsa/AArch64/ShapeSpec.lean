@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.DomainShape
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.DomainWidths
+import Mathlib.Tactic.Attr.Core
 import VerifiedGarbage.Proof.Dsa.AArch64.Run
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Public shape acceptance and early rejection in the DSA specification -/
 

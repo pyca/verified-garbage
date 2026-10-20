@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Dispatch every permitted RSA modulus width using only its public length -/
 

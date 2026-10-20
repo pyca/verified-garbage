@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrimeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrimeCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytes
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrimeCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeBytes
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Test saved candidate bytes using the shared native primality operation. -/
 @[expose] public section

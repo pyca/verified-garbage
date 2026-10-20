@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.RandomSignRemaining
 
-public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
-public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Dsa.RandomSignTrace
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! A signing attempt's status and continuation are determined by its public trace. -/

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryPost
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryPost
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Spec.Dsa.Generate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryRun
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Native parameter generation satisfies the shared functional contract -/
 

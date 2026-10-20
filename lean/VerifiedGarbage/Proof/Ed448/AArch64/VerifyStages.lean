@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyDecode
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+public import VerifiedGarbage.Proof.Ed448.Formulas
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.X448.AArch64.Main
 
 /-!
 # Ed448 verification's equation on AArch64: decoding `A`

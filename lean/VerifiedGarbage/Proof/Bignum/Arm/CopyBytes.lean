@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyByteStep
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.Arm.CopyByteStep
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime byte copying, with byte-exact output and memory preservation -/
 

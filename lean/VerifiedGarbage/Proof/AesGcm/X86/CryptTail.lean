@@ -1,7 +1,29 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+public import VerifiedGarbage.Proof.AesGcm.X86.Loops
+public import VerifiedGarbage.Proof.Cmac.Block32
 
-public import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
 
 /-!
 # AES-GCM on x86: the last bytes of the text (`cryptTail`), and `crypt`

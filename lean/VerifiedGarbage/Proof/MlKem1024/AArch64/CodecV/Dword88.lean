@@ -6,6 +6,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 
 /-!
 # ML-KEM-1024 on AArch64: groups of 88 bits

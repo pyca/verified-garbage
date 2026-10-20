@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Base
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.X86.Verify.Top
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on x86 (32-bit): the contract

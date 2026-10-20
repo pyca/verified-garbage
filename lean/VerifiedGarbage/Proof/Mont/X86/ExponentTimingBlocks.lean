@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! # Secret arithmetic blocks preserve the public exponent counter -/

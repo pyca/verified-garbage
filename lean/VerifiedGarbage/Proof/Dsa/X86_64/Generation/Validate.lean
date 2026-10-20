@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateCore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Domain-check results control native seed retry or acceptance -/
 

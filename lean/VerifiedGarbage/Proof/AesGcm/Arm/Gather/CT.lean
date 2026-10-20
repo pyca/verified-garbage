@@ -1,9 +1,29 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.AesGcm.Arm.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Gather.LoopCT
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: constant time

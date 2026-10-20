@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
-meta import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
-public import VerifiedGarbage.Proof.Framework.PowLit
-meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Poly1305.Spec
 import VerifiedGarbage.Proof.Poly1305.Arm.Lit
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Spec.Poly1305.Contract
+meta import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

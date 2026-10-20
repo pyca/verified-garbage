@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundHeader
 
 /-! A complete witness iteration retains its immutable generation arguments. -/
 @[expose] public section

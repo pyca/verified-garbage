@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Seed
 public import VerifiedGarbage.Impl.Seed.Layers
 public import VerifiedGarbage.Proof.Aes.SboxSpec
 public import VerifiedGarbage.Proof.Seed.SboxLit

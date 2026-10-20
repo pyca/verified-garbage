@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SanitizeModulus
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Load the secret CRT validation bit -/
 

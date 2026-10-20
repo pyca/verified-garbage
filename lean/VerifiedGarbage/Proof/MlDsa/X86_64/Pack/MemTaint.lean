@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

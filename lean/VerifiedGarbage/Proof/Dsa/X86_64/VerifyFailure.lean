@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
 
-public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import Aesop.BuiltinRules
+import Mathlib.Tactic.ToAdditive
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Early verification failure restores System V registers -/
 

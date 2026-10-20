@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Bulk
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `cryptS`

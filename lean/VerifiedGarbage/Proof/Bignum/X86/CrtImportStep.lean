@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImportComponent
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSlotFrame
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Bignum.X86.CrtImportComponent
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 
 /-! # An imported private component preserves the complete call resources -/
 

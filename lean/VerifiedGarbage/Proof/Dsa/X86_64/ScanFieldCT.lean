@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignificantCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 import VerifiedGarbage.Proof.Dsa.Layout
 import VerifiedGarbage.Proof.Dsa.X86_64.Operands
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-! # Constant-time public width scans through the saved field bindings -/
 

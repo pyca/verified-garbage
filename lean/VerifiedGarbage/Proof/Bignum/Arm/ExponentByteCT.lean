@@ -1,10 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckMath
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentAccumulate
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The exponent scanner's saturation branch uses only the public prefix -/
 

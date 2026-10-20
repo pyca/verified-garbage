@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.DecodeSteps
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+public import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Ed448.Recover
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+import VerifiedGarbage.Proof.Ed448.AArch64.DecodeOps
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifySign
 
 /-!
 # Ed448 verification's equation on AArch64: decoding a point

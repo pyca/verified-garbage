@@ -1,14 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
-public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Frag
+public import VerifiedGarbage.Proof.MlDsa.Sign.Leak
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA signing on AArch64: the function's contract, layout, entry and exit

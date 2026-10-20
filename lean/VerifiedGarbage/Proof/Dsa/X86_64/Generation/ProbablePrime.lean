@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ProbablePrime
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeTrial
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeReject
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoop
-public import VerifiedGarbage.Proof.Dsa.Generation.Primality
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawRound
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeReject
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoop
+import VerifiedGarbage.Proof.Dsa.Generation.Primality
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The complete native primality operation matches DSA's specification -/

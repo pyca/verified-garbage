@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Core
+import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
-import VerifiedGarbage.Proof.Dsa.X86_64.Finish
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Finish
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Core
+meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreSuffix
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of arithmetic result storage and return -/
 

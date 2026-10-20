@@ -1,12 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
-meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTMr
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrTab
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSelW
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+meta import VerifiedGarbage.Proof.Bignum.CrtExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A candidate on x86-64: constant time of a window of Miller–Rabin

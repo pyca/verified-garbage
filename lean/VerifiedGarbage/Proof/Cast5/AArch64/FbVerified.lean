@@ -1,19 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
-meta import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
-meta import VerifiedGarbage.Proof.Cast5.ModeScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
+meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
+meta import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.ModeScratch
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
+meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # CAST5-OFB and -CFB64 on AArch64 meet their contracts

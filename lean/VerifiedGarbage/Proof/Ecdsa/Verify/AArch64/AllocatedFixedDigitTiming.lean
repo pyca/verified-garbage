@@ -1,36 +1,32 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
+import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
 public import Mathlib.Algebra.Group.Nat.Defs
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-public import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Weierstrass.JacInplace
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticCachedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Tactic.ClearExcept
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## `AllocatedMixedTiming` -/
 

@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideCT
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWideCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductStart
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Complete factor-product validation arithmetic conceals both factors -/
 

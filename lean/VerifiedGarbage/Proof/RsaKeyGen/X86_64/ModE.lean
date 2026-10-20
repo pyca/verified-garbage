@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
-public import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
 import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!
 # A candidate on x86-64: `(c − 1) mod e`

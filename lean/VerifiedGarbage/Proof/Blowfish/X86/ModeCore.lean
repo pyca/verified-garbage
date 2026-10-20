@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 public import VerifiedGarbage.Proof.Modes.X86.Core
 public import VerifiedGarbage.Impl.Blowfish.X86.Modes
 public import VerifiedGarbage.Proof.Blowfish.ModeBytes
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.X86.Cipher
 import VerifiedGarbage.Proof.Blowfish.Blocks
+import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.X86.Ecb
 
 /-!
 # Blowfish's core for the modes on x86 (32-bit)

@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.MillerRabin.X86_64.Round
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Core
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Restore one saved bookkeeping word -/
 

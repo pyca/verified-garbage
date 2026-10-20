@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
-import VerifiedGarbage.Proof.MdStream.Spec
 
 @[expose] public section
 

@@ -1,9 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Ecb
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Lit
+public import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedAvx2
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-! # The AVX2 bitsliced ECB functions are correct
 

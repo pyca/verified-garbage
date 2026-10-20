@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
 import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.FrontCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH domain validation on x86-64: parity uses public addresses -/
 

@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: an iteration of `ce4Body`

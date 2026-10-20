@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Stream
 public import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
+public import VerifiedGarbage.Proof.Dsa.X86.StreamStep
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-!
 # Secret-independent byte reduction

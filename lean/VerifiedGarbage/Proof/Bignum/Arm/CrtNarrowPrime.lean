@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayout
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Import and prepare a factor in the narrow workspace
 

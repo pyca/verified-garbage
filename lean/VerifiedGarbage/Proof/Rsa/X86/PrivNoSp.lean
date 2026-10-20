@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Checked private RSA preserves the stack pointer inside its frames -/
 

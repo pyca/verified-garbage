@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.J0
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.J0
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_init`

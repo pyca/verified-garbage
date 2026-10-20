@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: the NTT as butterflies, for every target

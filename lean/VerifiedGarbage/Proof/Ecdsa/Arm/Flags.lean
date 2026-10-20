@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Bytes
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Mont.Arm.Csub
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Weierstrass.Words32
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 
 /-!
 # ECDSA on 32-bit ARM: the masks of the checks, and the flag

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's field operations

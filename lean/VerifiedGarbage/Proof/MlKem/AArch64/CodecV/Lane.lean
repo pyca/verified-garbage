@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
 # ML-KEM on AArch64: the lanes of the vector codecs

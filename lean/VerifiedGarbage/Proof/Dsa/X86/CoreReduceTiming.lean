@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
 public import VerifiedGarbage.Proof.Dsa.X86.StreamTiming
 public import VerifiedGarbage.Proof.Dsa.X86.CoreReduce
+import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStreamSource
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Complete streaming reduction calls have secret-independent traces -/
 

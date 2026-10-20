@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallObserve
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallObserve
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingle
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallObserve
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! One complete signing call leaks its public key and success bit only. -/
 @[expose] public section

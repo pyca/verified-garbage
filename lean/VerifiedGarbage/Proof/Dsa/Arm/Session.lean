@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.ValidateOps
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # DSA on 32-bit ARM: values across operations

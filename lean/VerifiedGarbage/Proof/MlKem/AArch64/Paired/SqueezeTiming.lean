@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullStart
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.MlKem.AArch64.Paired
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullInit
+import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Paired
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullInit
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Public-address timing for paired and singleton SHAKE128 generation -/
 @[expose] public section

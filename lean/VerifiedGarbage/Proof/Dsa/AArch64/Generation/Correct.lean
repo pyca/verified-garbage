@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Spec.Dsa.Generate
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryPost
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryPost
 
 /-! Complete native generation satisfies the shared functional contract. -/
 @[expose] public section

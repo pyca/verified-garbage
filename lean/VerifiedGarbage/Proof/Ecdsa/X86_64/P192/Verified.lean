@@ -1,38 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Contract
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
-public import VerifiedGarbage.Proof.P192.Point
-meta import VerifiedGarbage.Proof.P192.Point
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
-meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+import VerifiedGarbage.Proof.P192.Point
 import VerifiedGarbage.Proof.P192.OrderPrime
-meta import VerifiedGarbage.Proof.P192.OrderPrime
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
-public import VerifiedGarbage.Proof.Framework.LitShare
-meta import VerifiedGarbage.Proof.Framework.LitShare
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
+import VerifiedGarbage.Proof.P192.Prime
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
+public import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
+import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Contract
+meta import VerifiedGarbage.Proof.P192.Point
+meta import VerifiedGarbage.Proof.P192.OrderPrime
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.P192.Prime
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Lit
+meta import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
+meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! # p192 signing on x86-64: correctness, memory safety and constant time
 

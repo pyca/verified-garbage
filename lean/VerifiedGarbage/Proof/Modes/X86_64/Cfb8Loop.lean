@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
+import VerifiedGarbage.Proof.Modes.X86_64.Cfb8Steps
 import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Modes.Cfb8
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Modes.X86_64.Cfb8
+public import VerifiedGarbage.Proof.Modes.X86_64.FbLoop
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Modes.X86_64.Words
+import VerifiedGarbage.Proof.Modes.X86_64.Steps
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # CFB8 on x86-64, for any core: the data loop

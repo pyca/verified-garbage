@@ -2,14 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
 public import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCtContext
 meta import VerifiedGarbage.Impl.Bignum.AArch64.FastFinish
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.FastFinish

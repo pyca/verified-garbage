@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Base
 
 /-!
 # ML-DSA on 32-bit ARM: pieces of code, correct and constant time together

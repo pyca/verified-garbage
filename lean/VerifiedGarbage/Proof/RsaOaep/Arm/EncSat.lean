@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.EncBase
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on ARMv7: the contract is satisfiable

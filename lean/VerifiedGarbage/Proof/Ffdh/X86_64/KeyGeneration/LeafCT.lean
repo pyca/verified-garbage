@@ -1,10 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CTData
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.CTData
 meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-meta import VerifiedGarbage.Impl.Rsa.X86_64.Keys
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ZeroOut
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # The key search's exits and rejections use only public addresses -/
 

@@ -1,11 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 public import VerifiedGarbage.Proof.Framework.AArch64.StraightV
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bitslice.Vars
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Simd
 
 /-!
 # The AdvSIMD machine state of a batch

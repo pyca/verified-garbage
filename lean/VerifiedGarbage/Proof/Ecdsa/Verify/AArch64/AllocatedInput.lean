@@ -1,19 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedScalars
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 
 @[expose] public section
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRound
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The invariant and result of DSA's finite blinded witness loop -/

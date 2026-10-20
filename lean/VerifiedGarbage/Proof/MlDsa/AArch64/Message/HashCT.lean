@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Rel
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: two runs of the hashing

@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.FrameStore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Sha256.X86_64
 
 /-! # Save a list of argument registers into the persistent frame -/
 

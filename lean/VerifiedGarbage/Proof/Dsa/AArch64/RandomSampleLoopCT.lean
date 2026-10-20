@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleStep
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleStep
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoop
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The sampling loop reveals only the specified sequence of draw decisions. -/
 @[expose] public section

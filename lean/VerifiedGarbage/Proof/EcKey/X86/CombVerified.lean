@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.X86.CombContract
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSat
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Verified P-256 public-key generation using the x86 comb -/
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Ladder
-import VerifiedGarbage.Proof.X25519.Invert
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Proof.X25519.Invert
+public import VerifiedGarbage.Proof.X25519.AArch64.Slots
 
 /-! Kernel-checked ref10 inversion chain, reusing the ladder's dead slots. -/
 

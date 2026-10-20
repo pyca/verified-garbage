@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.Arm.Point16
 
 /-! Sixteen exact doublings, with a public counter in r10. -/

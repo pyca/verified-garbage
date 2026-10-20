@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.PointTableIO
 import VerifiedGarbage.Proof.Ed25519.Arm.LrSlot
-import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
+public import VerifiedGarbage.Proof.Ed25519.Arm.PointKeep
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarPass
-import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
 public import VerifiedGarbage.Impl.Ed25519.Arm.Verify
 public import VerifiedGarbage.Proof.Ed25519.Arm.DecodeKeep
+public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyContext`. -/
 

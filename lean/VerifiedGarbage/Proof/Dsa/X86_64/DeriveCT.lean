@@ -1,28 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Derive
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Derive
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ParametersCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
-import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
-meta import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.Layout
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Derive
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EntryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ABIRegions
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+meta import VerifiedGarbage.Proof.Dsa.Layout
 
 /-! # Constant time of x86-64 DSA key derivation
 

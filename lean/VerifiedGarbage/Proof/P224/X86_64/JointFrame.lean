@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.P224.X86_64.Joint
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointFrame
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The joint multiplication's writes are apart from the final check's fixed inputs. -/
 

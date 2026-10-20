@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentSaturate
-public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.X86.ExponentSaturate
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Consume one public exponent byte and advance the public scan -/
 

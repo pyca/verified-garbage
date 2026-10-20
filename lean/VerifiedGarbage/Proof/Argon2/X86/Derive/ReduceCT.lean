@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+public import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
+import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Argon2.X86.Derive.FillCT1
+meta import VerifiedGarbage.Proof.Argon2.X86.Derive.Correct
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Argon2 on x86 (32-bit): the final block and the tag, in two runs

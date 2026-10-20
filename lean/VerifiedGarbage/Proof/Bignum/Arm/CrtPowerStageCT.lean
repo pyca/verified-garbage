@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPowerSelection
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPowerCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPowerCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # A selected factor power hides factor, exponent, input, and acceptance -/
 

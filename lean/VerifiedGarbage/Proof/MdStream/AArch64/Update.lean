@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64: `update`

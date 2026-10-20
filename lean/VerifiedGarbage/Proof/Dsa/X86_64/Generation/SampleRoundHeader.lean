@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleRound
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.RoundHeader
 
 /-! # Header slots retained by a complete DSA witness iteration -/
 

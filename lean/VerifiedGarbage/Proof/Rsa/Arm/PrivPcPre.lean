@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Rsa.Scratch
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The public precomputation call satisfies the shared buffer contract -/
 

@@ -1,12 +1,22 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafChoose
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import Mathlib.Logic.Function.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+import VerifiedGarbage.Proof.Mont.AArch64.Blocks
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 /-!
 # The public NAF's recoding, for any word count

@@ -1,10 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PdImport
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportEncoding
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Import both public precomputation arrays in the shared 64-bit word format -/
 

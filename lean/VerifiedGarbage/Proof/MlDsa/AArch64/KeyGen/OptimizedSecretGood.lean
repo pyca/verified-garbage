@@ -1,13 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretMath
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecretMath
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Spec.MlDsa.BoundedFour
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 @[expose] public section
 

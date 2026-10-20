@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedTail
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedTail
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedEnd
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
 
 /-! # All candidate checks followed by the shared prepared round -/
 

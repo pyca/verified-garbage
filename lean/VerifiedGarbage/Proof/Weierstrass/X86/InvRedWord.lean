@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## `InvRedSumMath` -/
 

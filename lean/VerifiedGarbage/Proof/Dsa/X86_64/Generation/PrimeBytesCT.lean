@@ -1,11 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrimeCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrimeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrimeCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytes
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PaddedLoadCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TrialCT
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrimeCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeBytes
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PaddedLoadCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TrialCT
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Timing of primality testing directly from the saved candidate bytes -/
 

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorStep
-public import VerifiedGarbage.Proof.Dsa.AArch64.SourceSlices
-public import VerifiedGarbage.Proof.Dsa.Generation.Chunks
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
+public import VerifiedGarbage.Spec.Dsa.Generate
+import VerifiedGarbage.Proof.Dsa.Generation.Chunks
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Original h tape and per-chunk plans for the native generator loop -/
 

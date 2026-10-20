@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Ws
+public import VerifiedGarbage.Proof.Mont.Arm.Words
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Zeros
-public import VerifiedGarbage.Proof.Mont.Arm.Step
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Step
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: digits of a sum

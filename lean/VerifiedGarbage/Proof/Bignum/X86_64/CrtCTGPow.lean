@@ -1,11 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: `G = 2^E mod n` is constant time

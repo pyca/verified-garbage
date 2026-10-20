@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Montgomery
+public import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Montgomery
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # FFDH parameter generation on x86-64: public entry to the selected R² implementation -/
 

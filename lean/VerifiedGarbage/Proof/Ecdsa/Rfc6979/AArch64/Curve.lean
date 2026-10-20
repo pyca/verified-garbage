@@ -1,15 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.AArch64
-public import VerifiedGarbage.Spec.Ecdsa.Generic
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.AArch64
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Contract
-public import VerifiedGarbage.Impl.Pbkdf2.AArch64
 import Mathlib.Tactic.SplitIfs
 
 /-!

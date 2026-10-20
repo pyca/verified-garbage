@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-meta import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Spec.Poly1305.Contract
-meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Poly1305 on x86-64: `init`

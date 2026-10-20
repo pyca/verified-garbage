@@ -1,9 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.BitPack
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`

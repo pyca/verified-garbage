@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.Shift
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundFinish
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
+import VerifiedGarbage.Proof.Bignum.Arm.ShiftArgs
+import VerifiedGarbage.Proof.Bignum.Arm.Shift
+import VerifiedGarbage.Proof.Bignum.Arm.RoundFinish
+import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact division and state advance after Montgomery cancellation -/
 

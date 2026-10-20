@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Stitch
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # ChaCha20-Poly1305 with the AVX2 code (x86-64): padding

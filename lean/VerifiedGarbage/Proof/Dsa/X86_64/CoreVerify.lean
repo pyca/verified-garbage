@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
+public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Correctness of the complete six-operation DSA verification core -/

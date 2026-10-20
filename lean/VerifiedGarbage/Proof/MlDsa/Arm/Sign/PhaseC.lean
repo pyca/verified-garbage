@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
-import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
-public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: the commitment of an iteration

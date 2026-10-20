@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFirst
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFinish
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFirst
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFinish
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedAcceptance
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedChecks
+import VerifiedGarbage.Proof.Bignum.X86.ArrayCompare
+import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # Packed RSA values enter Montgomery arithmetic only with safe bounds -/
 

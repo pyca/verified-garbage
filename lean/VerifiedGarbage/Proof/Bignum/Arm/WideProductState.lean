@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductMemory
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Invariants for an exact wide product with fixed public row counts -/
 

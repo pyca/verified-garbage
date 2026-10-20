@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.EntryCTData
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Core
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # FFDH parameter generation on x86-64: constant-time ABI entry -/
 

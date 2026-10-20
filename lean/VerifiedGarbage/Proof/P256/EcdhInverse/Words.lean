@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhInverse.Packed
+import VerifiedGarbage.Proof.P256.EcdhInverse.Packed
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Impl.P256.EcdhInverse
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

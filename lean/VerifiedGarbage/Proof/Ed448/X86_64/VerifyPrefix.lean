@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyMain
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Timing
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.X448.X86_64.Main
 
 /-! The fixed-address prefix initializes all public verification digits. -/
 

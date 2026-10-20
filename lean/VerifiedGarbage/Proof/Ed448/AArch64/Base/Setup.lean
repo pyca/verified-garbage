@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Spec.Ed448.Contract
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
-import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Ed448.AArch64.BaseBits
+import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.X448.AArch64.Bits
 
 /-!
 # Ed448 base-point multiplication on AArch64: the setup

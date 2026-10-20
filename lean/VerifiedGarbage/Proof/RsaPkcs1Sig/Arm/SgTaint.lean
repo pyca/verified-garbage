@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Sign
-meta import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Sign
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Sign
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSASSA-PKCS1-v1_5 signing on ARMv7: the pieces the taint analysis checks -/
 

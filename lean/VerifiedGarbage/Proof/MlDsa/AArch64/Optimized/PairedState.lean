@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

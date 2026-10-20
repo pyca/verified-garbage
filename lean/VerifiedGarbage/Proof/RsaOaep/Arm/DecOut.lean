@@ -1,8 +1,20 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecShift
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecFail
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.RsaOaep.Arm.DecSpec
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the output

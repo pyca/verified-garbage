@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackMath
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackSpec
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackTail
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

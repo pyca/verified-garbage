@@ -1,6 +1,8 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidInput
 
 /-! # Private RSA body state before validating the public modulus -/
 

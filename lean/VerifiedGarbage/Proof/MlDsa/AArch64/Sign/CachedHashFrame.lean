@@ -1,14 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
+public import VerifiedGarbage.Spec.MlDsa.CommitTail
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! ## From `CachedHashPost.lean` -/
 

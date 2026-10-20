@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
-meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.AesGcm.X86.SealGather
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Contract
+meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.LoopCT
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: constant time

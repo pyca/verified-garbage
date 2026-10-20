@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
 public import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 
 /-!
 # ECDSA on x86 (32-bit): the point functions' slots

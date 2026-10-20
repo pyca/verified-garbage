@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
-meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_check_key` on x86-64: constant time

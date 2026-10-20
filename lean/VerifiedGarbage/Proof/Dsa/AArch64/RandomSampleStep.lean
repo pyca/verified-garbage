@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSamplePublic
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawResult
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomDrawResult
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! A draw's public status and the trace suffix retained after rejection. -/
 @[expose] public section

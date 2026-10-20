@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Spec.Sha256
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
-public import VerifiedGarbage.Proof.Hmac.Common
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): copying words

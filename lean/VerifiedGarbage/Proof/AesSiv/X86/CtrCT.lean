@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86.Ctr
+import VerifiedGarbage.Proof.AesSiv.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.AesSiv.X86.Ctr
+meta import VerifiedGarbage.Proof.AesSiv.X86.Run
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 /-!
 # AES-SIV on x86: CTR is constant time

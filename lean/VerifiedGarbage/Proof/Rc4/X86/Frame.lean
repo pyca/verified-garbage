@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.Verified
+import VerifiedGarbage.Proof.Rc4.X86.Verified
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Rc4.X86.Lit
-import VerifiedGarbage.Proof.Rc4.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Rc4.Contract
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rc4.X86.Lookup
 
 /-!
 # RC4 on x86, with the working space on the stack

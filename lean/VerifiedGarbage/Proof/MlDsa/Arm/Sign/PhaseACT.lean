@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: `ExpandA` leaks only `ρ`

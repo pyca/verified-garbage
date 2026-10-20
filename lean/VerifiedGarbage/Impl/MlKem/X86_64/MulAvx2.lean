@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Mul
-public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 
 /-!
 # ML-KEM on x86-64: products of NTTs with AVX2, the shared pieces

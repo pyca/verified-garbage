@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesZH.Rounds
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Loading the AES schedule into the high registers -/
 

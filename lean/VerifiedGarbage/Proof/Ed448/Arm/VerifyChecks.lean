@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyField
 import VerifiedGarbage.Proof.X448.Arm.Freeze
-import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.X448.Arm.Copy
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 verification's equation on ARMv7: accumulating checks

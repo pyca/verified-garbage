@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
+import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # RSAEP from the modulus on AArch64: correctness

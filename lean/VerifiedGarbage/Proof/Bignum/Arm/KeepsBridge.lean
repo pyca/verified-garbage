@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.TCB.Arm.Isa
 
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The native arithmetic frame implies the shared RSA workspace frame -/
 

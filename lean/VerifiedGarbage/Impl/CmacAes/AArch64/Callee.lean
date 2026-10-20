@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.CmacAes.AArch64
 
 @[expose] public section
 

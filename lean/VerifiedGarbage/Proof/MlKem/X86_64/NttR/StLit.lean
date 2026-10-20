@@ -2,6 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sym
 public meta import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sym
+public import Lean.ToExpr
+public meta import Lean.ToExpr
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.GetElem
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: the NTT on registers, the machine's states as literals

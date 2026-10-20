@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvBody
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The shared scratch allowance covers the native-word CRT arrays -/
 

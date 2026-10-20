@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Camellia.X86.CbcLit
+meta import VerifiedGarbage.Proof.Camellia.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Camellia.CbcScratch
-public import VerifiedGarbage.Proof.Camellia.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia-CBC on x86 (32-bit) meets its contracts

@@ -1,33 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.TCB.Axioms
 
 @[expose] public section
 

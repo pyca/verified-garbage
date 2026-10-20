@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfAny
+public import VerifiedGarbage.Proof.RsaPss.Arm.VfFixed
 
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfLogic
+import VerifiedGarbage.Proof.RsaPss.Arm.VfLogic
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the body

@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallPre
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
 /-! # Public positions in a native search; saved caller registers stay private -/
 

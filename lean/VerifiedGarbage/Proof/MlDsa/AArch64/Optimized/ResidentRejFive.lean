@@ -1,10 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejCounts
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMemory
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueeze
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `ResidentRejFiveFrame.lean` -/
 

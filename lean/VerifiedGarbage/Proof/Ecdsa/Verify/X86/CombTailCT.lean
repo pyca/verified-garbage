@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.WinLay
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ECDSA verification over P-256 on x86 (32-bit): the tail's constant time

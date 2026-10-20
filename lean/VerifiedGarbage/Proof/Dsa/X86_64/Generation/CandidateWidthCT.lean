@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
+meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Spec.Rsa.Contract
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateWidth
-public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The candidate-width guard has public addressing and a public decision -/
 

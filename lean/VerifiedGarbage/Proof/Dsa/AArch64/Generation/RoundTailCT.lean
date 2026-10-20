@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstantsCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstantsCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTail
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTail
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.RoundTail
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Completion branches only on the shared round's public result. -/
 @[expose] public section

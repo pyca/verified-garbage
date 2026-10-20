@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedCT
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedRun
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedCT
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBoundedRun
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_bounded_poly`, constant time and `Verified`

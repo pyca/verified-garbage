@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Arithmetic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! The forwarded field programs of P-256 verification are the optimizer's
 output (`Forward.Arithmetic.optimized`), whose literals the Forward framework

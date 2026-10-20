@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
+public import VerifiedGarbage.Proof.Rsa.X86.KcValidTiming
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBranchTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcBranchTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcPublic
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Key-validation timing reveals only the public modulus and exponent -/
 

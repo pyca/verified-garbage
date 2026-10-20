@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.HeaderControl
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Increment a fixed-offset workspace pointer or counter -/
 

@@ -1,13 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
-meta import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
-meta import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.Impl.StackScratch.Arm
+public import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Camellia.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.StackScratch.Arm
+meta import VerifiedGarbage.Proof.Camellia.Scratch
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Camellia.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The Camellia key schedule on ARMv7 meets its contracts

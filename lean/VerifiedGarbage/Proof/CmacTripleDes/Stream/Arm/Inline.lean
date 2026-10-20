@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.Arm
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: the code of `init`, `update` and `finalize`, inline

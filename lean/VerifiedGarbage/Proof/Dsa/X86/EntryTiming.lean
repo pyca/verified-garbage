@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 public import VerifiedGarbage.Proof.Dsa.X86.StackArgument
-public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Entry and return traces depend only on caller stack and scratch addresses -/
 

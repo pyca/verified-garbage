@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtBothPowers
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientStage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishStage
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtResultBound
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Private RSA computation through exact masked output -/
 

@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCtx
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Order.Basic
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-!
 # RSAES-OAEP encryption on x86-64: the precondition by name, and the frame

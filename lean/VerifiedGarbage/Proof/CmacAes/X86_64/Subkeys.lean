@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
+public import VerifiedGarbage.Proof.Cmac.Dbl
+public import VerifiedGarbage.Proof.Cmac.Mem
 
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.X86_64.Dbl
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-CMAC on x86-64: `vg_cmac_aes_subkeys`

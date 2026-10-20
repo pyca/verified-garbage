@@ -1,6 +1,12 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
+public import VerifiedGarbage.Spec.Weierstrass
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivContract
+import VerifiedGarbage.Proof.Rsa.X86.PrivContract
+import VerifiedGarbage.Proof.Rsa.X86.PrivObservations
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete i686 certificate for checked private RSA -/
 

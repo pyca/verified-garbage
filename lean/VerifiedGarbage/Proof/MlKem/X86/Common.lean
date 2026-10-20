@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.Proof.MlKem.Mem
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlKem.X86.Basic
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-KEM on x86 (32-bit): common lemmas

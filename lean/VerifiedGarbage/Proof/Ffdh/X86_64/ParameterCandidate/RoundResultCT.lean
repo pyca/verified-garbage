@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundCall
-import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundStatus
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResult
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LinkCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundState
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundResult
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of a known round result -/
 

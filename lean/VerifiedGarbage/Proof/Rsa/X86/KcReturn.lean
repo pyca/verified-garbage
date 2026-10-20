@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+public import VerifiedGarbage.Proof.Rsa.X86.KcResult
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBounds
-public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Rsa.X86.KcBounds
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Rsa.X86.KcInstalled
+import VerifiedGarbage.Proof.Rsa.X86.KcResources
+import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Weierstrass.Env
 
 /-! # Key validation preserves saved registers and the return address -/
 

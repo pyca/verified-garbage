@@ -1,14 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseTile
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseTile
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSparse

@@ -1,8 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedMul
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedLayout
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

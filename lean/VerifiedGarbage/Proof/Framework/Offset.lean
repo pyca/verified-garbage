@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Byte ranges at offsets from a base address

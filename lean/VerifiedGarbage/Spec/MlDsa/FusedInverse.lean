@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Poly
 
-public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 
 /-! Internal fused arithmetic interfaces. Inputs may use positive, noncanonical
 representatives below 3q; outputs are canonical ordinary coefficients.

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
+public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTailSetup
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 @[expose] public section
 

@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundsCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundsCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseWitness
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH parameter generation on x86-64: timing of the complete modulus policy -/
 

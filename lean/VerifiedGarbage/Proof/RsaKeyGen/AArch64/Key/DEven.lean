@@ -1,12 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.State
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
 import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
-import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Shared
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on AArch64: `d` for an even `e`

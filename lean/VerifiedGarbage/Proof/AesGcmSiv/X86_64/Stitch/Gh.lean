@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
+public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Aes
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM-SIV's interleaved loop: the POLYVAL loads

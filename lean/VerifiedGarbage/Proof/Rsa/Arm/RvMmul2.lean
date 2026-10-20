@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvMmul
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint
+import VerifiedGarbage.Proof.Rsa.Arm.RvMont2
+import VerifiedGarbage.Proof.Rsa.Arm.RvViews
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a Montgomery product on a stage, as a piece (`mmul_vp`) -/
 

@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMaskLoop
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_expand_mask_poly`

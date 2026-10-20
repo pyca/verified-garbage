@@ -1,13 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.P384.X86_64.PointOps
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsFn
-import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
+public import VerifiedGarbage.Impl.P384.X86_64.Joint
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsMixed
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # P-384's point functions on x86-64: where their slots are

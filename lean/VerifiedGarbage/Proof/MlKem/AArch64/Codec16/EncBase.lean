@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # ByteEncode12 contract and input representation -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86
-public import VerifiedGarbage.Spec.BrainpoolP384r1
 
 /-! # ECDSA over brainpoolP384r1 on x86 (32-bit): six-word field elements and scalars -/
 

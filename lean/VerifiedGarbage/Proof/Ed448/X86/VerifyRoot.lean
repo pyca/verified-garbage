@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyField
 public import VerifiedGarbage.Proof.Ed448.Root
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
+public import VerifiedGarbage.Proof.X448.X86.Square
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the square root's power

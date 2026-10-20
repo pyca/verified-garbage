@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KMain
-import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # A candidate on AArch64: correctness

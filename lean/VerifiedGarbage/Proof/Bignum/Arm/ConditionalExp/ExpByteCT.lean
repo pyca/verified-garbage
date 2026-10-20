@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHeadCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHeadCT
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHead
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpState
 meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHeadCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitsCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpByteHead
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Processing one exponent byte reveals only that public byte and its address -/
 

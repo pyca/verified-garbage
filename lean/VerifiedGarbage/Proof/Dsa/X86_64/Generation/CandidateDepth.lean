@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashDepth
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeDepth
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeDepth
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Stack bounds for subgroup candidates and prime search -/
 

@@ -938,6 +938,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # For the checks of the edited modules (`lean-assemble`).
+      - uses: ./.github/actions/download-artifact
+        if: ${{ steps.check.outputs.assemble == 'true' }}
+        with:
+          name: lean-plan
+          path: ${{ runner.temp }}
       - uses: ./.github/actions/lean-prepare
         id: prepare
         if: ${{ steps.check.outputs.assemble == 'true' }}

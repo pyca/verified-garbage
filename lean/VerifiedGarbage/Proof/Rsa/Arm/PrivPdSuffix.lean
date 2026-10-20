@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPrefix
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPcPrefix
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPreWords
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The four register arguments of the public re-exponentiation call -/
 

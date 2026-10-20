@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHash
 
 /-! A checked straight-line absorb schedule. The checker validates every
 source byte, destination position, and permutation boundary. -/

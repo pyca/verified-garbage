@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
+public import VerifiedGarbage.Proof.X448.Wide.CarryStep
+public import VerifiedGarbage.Proof.X448.Wide.Column
 
-public import VerifiedGarbage.Proof.X448.Wide.PassInit
-public import VerifiedGarbage.Proof.X448.Wide.TailStep
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.PassInit
+import VerifiedGarbage.Proof.X448.Wide.TailStep
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X448.Wide.TailBounds
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: in-place or disjoint wide carry propagation. -/
 

@@ -1,17 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointContract
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP384r1
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Spec.BrainpoolP384r1
-meta import VerifiedGarbage.Spec.BrainpoolP384r1
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.PointVerified
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: brainpoolP384r1

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCT
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCT
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
 
 /-! # The x86 randomized signer meets its contract -/
 

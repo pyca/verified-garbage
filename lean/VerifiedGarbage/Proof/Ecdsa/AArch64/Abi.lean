@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The ABI of the curve functions on AArch64

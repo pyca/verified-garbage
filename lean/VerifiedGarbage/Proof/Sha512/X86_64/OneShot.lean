@@ -1,13 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
+public import VerifiedGarbage.Spec.Sha512.Contract
+public import VerifiedGarbage.Proof.Sha512.Md
+public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MdStream.X86_64.OneShotCT
-public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
+meta import VerifiedGarbage.Spec.Sha512.Contract
+meta import VerifiedGarbage.Proof.Sha512.Md
+meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Digest
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The one-shot SHA-512 family digests on x86-64

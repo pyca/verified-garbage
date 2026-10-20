@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Proof.Bignum.X86.CrtImportStep
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Bignum.X86.CrtImportStep
+import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Import all private components with traces determined only by slice geometry -/
 

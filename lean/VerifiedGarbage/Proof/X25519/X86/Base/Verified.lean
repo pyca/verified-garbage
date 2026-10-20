@@ -1,33 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Base.Main
-meta import VerifiedGarbage.Proof.X25519.X86.Base.Main
-public import VerifiedGarbage.Proof.X25519.X86.Base.Lit
-meta import VerifiedGarbage.Proof.X25519.X86.Base.Lit
-public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.X25519.X86.Field32.CallTaint
 import VerifiedGarbage.Proof.X25519.X86.Lit
-meta import VerifiedGarbage.Proof.X25519.X86.Lit
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.X25519.X86.Base.Lit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.X86.Base.Main
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+meta import VerifiedGarbage.Proof.X25519.X86.Lit
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
-meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.X25519.X86.Base.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X25519 of the base point on x86: constant time, and the shared contract

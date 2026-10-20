@@ -1,6 +1,8 @@
 module
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
-public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductLow
+import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ProductTop
+import VerifiedGarbage.Proof.Framework.Block
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square
 open VG VG.AArch64 VG.Impl.Mont.AArch64.P521Square

@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 @[expose] public section
 

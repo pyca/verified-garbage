@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # RC2 selection on ARMv7

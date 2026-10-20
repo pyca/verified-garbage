@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Copy
-import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The start and end of a batch

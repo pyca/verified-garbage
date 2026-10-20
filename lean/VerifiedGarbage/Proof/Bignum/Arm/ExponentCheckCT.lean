@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
-meta import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentScan
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExponentScan
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public-exponent validation has no dependency on any secret memory -/
 

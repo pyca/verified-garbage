@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckMath
 public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Bignum.ModulusCheckMath
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The first packed byte determines a precomputed modulus's parity -/
 

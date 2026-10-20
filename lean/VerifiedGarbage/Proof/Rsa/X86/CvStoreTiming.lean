@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
+import VerifiedGarbage.Proof.Rsa.X86.CvFrames
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Selecting and exporting a CRT value does not reveal its acceptance mask -/
 

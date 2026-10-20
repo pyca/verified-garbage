@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.KgFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DecapsFinal

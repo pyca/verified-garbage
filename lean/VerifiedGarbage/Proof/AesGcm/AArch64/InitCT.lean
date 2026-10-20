@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Init
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Init
-import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_init` is constant time

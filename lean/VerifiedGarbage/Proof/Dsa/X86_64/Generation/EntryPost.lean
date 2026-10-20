@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryResult
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryRun
 
 /-! # The entry result meets the shared parameter-generation postcondition -/
 

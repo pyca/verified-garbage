@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBody
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBody
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.Fintype.Card
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecBase
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecFns
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: verified

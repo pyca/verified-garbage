@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.MlKem.X86.Table
 meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlKem.X86.Compress
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86 (32-bit): the start of `vg_mlkem_ntt` and `vg_mlkem_inv_ntt`

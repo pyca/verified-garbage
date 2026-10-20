@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashVariants
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Correct
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ConstantTime
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Satisfiable
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashVariants
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Correct
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ConstantTime
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Satisfiable
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Spec.Dsa.Generate
 
 /-! Complete verification for the existing hash and shared primality backends. -/
 @[expose] public section

@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
 
 /-! # Verification computation, including domain, key and signature checks -/
 

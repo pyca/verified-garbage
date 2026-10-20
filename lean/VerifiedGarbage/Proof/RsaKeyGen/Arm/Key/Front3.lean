@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front2
-public import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint1
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Half
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Mul
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand3
+import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `φ` and its halving (`halving_vp`)
 

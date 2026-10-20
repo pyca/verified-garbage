@@ -1,12 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Checks
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ws
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! # FFDH on x86-64: comparisons in constant time -/
 

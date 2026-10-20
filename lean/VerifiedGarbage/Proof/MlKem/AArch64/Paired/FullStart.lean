@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullInit
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Single
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SingleStep
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Squeeze
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Single
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Singleton fallback through all five SHAKE128 blocks -/
 @[expose] public section

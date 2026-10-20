@@ -1,27 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.FieldTheory.Finite.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import Mathlib.Tactic.NormNum.Prime
-import VerifiedGarbage.Proof.Edwards.Group
-meta import Mathlib.FieldTheory.Finite.Basic
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.Ref
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import Mathlib.Tactic.NormNum.Prime
-meta import VerifiedGarbage.Proof.Edwards.Group
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Ed448.Group.Projective
-meta import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Proof.Ed448.Group.Projective
+meta import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+meta import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+meta import Mathlib.Data.Nat.Totient
+meta import Mathlib.Tactic.Positivity.Finset
+meta import Mathlib.Algebra.Order.Field.Basic
+meta import Mathlib.Tactic.NormNum.GCD
+meta import Mathlib.Data.Sym.Sym2.Init
+meta import Mathlib.Tactic.ContinuousFunctionalCalculus
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`

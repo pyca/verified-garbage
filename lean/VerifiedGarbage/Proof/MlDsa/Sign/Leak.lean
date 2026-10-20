@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Spec.MlDsa.Contract
 
-public import VerifiedGarbage.Proof.MlDsa.Sign.Loop
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!

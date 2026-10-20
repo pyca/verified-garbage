@@ -5,8 +5,8 @@ import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 public import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.AArch64.Whole.Hash`. -/
 

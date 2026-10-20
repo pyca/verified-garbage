@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
 
-public import VerifiedGarbage.Proof.Dsa.X86.DigestClamp
-public import VerifiedGarbage.Proof.Dsa.X86.DigestWidth
+import VerifiedGarbage.Proof.Dsa.X86.DigestClamp
+import VerifiedGarbage.Proof.Dsa.X86.DigestWidth
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # The DSA digest-prefix length from validated subgroup masks -/
 

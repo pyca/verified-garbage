@@ -1,14 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
-public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
 import VerifiedGarbage.Proof.Rsa.AArch64.Div
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-!
 # A candidate on AArch64: too close to `p`

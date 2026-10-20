@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
-public import VerifiedGarbage.Proof.Sm4.CbcScratch
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+public import VerifiedGarbage.Spec.Sm4.Cbc
+import VerifiedGarbage.Proof.Sm4.CtrCipher
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # SM4's ECB functions on ARMv7 as the modes' core

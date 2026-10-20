@@ -1,7 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.Bytes
+import VerifiedGarbage.Proof.Dsa.X86.Bytes
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Dsa.X86.Bytes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Loading DSA operands preserves the runtime arithmetic context -/
 

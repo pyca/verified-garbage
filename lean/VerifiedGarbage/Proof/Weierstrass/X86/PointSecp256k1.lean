@@ -1,30 +1,34 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Impl.Secp256k1.Point
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
-meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
-meta import VerifiedGarbage.Impl.Secp256k1.Point
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
-meta import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
+import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 import VerifiedGarbage.Proof.Weierstrass.X86.MontSecp256k1
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
+import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
+meta import VerifiedGarbage.Impl.Secp256k1.Point
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontSecp256k1
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.Secp256k1
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Spec.Secp256k1
-meta import VerifiedGarbage.Spec.Secp256k1
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Proof.X25519.X86.Arith
-meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointContract
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
 
 /-!
 # Complete point addition and doubling as functions, on x86 (32-bit): secp256k1

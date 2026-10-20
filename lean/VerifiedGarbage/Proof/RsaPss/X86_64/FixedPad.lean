@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-! A fixed message length permits a single padding write. -/
 

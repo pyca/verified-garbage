@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvCand1
+public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.RecoverExp
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `y = g^r` (`expLoop_vp`)
 

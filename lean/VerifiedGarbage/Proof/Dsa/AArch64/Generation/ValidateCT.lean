@@ -1,8 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DomainCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Validate
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Validate
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateArgs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DomainCallCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateArgs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Timing of final parameter validation and its success/retry decision -/
 

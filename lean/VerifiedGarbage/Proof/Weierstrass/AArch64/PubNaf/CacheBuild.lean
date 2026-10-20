@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Building the cache

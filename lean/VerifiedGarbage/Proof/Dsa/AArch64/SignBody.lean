@@ -2,9 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignBytesSpec
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignRelease
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.SizeBounds
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Complete computation and signature release from initialized scratch -/
 

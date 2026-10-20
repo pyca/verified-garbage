@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyPre
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

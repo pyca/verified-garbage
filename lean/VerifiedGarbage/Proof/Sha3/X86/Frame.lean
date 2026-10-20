@@ -1,13 +1,16 @@
 module
 
 import VerifiedGarbage.Proof.Sha3.X86.Shared
-public import VerifiedGarbage.Proof.Sha3.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Sha3.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.StackScratch.X86
 import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The SHA-3 sponge on x86, with its working space on the stack

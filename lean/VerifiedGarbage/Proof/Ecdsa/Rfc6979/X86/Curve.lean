@@ -1,15 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.X86
-public import VerifiedGarbage.Spec.Ecdsa.Generic
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the curve

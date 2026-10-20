@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
+import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveResult
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCopyIncoming
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Save the CRT status and prepare the precomputation scratch arguments -/
 

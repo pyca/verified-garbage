@@ -1,10 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTLoop
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedCTLoop
 meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedWork
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedLoop
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowArithmeticCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowShared

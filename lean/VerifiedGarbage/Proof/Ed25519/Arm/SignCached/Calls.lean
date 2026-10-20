@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Layout
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarMulAddVerified
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 @[expose] public section
 

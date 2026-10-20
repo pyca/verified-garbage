@@ -1,17 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-public import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
-meta import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
 import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PowerCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponentCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicPower
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Timing of public exponentiation with secret bases -/
 

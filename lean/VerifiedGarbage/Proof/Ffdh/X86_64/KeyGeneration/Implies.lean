@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Contract
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Sig
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The key search's contract is its shared callable contract -/
 

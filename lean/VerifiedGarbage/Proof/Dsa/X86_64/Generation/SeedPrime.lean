@@ -1,9 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearchFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
-public import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSearchFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashChoice
+import VerifiedGarbage.Proof.Dsa.Generation.SearchDomain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeSearch
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # The full p search returns to the persistent seed-search state -/
 

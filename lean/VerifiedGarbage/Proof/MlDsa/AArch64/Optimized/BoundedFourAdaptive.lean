@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRound
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourFlags
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFlagValue
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! ## From `BoundedFourRunFlags.lean` -/
 

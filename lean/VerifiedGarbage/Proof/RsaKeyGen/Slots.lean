@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Layout
 import VerifiedGarbage.Proof.Framework.Omega
+import Batteries.Tactic.Init
 
 /-!
 # Arrays and header words apart from a literal list of ranges

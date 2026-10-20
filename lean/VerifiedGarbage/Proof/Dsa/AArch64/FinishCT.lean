@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.StoreCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Core
+import VerifiedGarbage.Proof.Dsa.AArch64.StoreSuffix
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.StoreCT
-import VerifiedGarbage.Proof.Dsa.AArch64.Finish
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Finish
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Core
+meta import VerifiedGarbage.Proof.Dsa.AArch64.StoreSuffix
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of arithmetic result storage and return -/
 

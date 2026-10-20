@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed448.AArch64.BaseContract
+public import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
+public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Layout
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Prune
-import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # Ed448 public-key derivation on AArch64: pruning and the base point

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ReverseBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Bignum.Arm.ReverseByteStep
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime endian conversion, with byte-exact output and memory preservation -/
 

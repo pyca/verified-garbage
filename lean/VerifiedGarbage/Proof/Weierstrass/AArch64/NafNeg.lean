@@ -1,12 +1,11 @@
 module
+public import VerifiedGarbage.Impl.NatPairs
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafCore
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 @[expose] public section
 

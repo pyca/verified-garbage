@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
 
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.PowerTwo
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Inverse
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Runtime-modulus Montgomery arithmetic on 32-bit ARM: setting up the context

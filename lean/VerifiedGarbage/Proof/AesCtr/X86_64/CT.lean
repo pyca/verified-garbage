@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.AesCtr.X86_64.Body
 
-public import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
-meta import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
+import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
 import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+meta import VerifiedGarbage.Proof.AesCtr.X86_64.Body
+meta import VerifiedGarbage.Proof.AesCtr.X86_64.Iter
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 
 /-!

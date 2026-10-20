@@ -1,11 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.AesOfb.Spec
-meta import VerifiedGarbage.Proof.AesOfb.Spec
 public import VerifiedGarbage.Proof.AesCbc.Arm.CT
-meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 public import VerifiedGarbage.Impl.AesOfb.Arm
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.AesOfb.Spec
+meta import VerifiedGarbage.Proof.AesCbc.Arm.CT
 meta import VerifiedGarbage.Impl.AesOfb.Arm
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-OFB on ARMv7: one block, and constant time

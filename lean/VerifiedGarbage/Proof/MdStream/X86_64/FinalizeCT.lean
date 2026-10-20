@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.X86_64.Common
-meta import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
-meta import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.X86_64.PadExec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86-64: `finalize`

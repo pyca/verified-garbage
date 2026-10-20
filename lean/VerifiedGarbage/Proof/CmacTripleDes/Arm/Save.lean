@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
-import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Impl.CmacTripleDes.Arm
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.RoundLit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+import VerifiedGarbage.Proof.MdStream.Arm.Common
 
 /-!
 # TDEA-CMAC on ARMv7: saving and restoring the registers

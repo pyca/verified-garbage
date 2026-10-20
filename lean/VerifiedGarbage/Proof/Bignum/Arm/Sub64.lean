@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Sub64
-public import VerifiedGarbage.Proof.Bignum.Arm.Sub64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Sub64Math
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Register-pair subtraction and its memory/register frame -/
 

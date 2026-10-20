@@ -1,24 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
+import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.JacTail
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.CachedHead
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddField
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticMixedTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
+import VerifiedGarbage.Proof.P256.EcdhDouble.Field
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 
 /-! ## `AllocatedPointFrame` -/
 

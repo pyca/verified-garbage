@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 
 /-!

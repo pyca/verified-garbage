@@ -1,8 +1,7 @@
 module
 
-public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Group
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: the last group

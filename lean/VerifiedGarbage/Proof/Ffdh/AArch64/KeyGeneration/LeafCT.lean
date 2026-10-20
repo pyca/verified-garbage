@@ -1,9 +1,27 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Data
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Writes
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Entry
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Public positions in the key search, and its exits and rejections (AArch64)
 

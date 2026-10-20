@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.CalleeLit
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA signing on x86-64: its code without the arithmetic, as literals

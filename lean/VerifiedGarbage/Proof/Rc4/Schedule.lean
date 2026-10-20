@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Spec.Rc4
 
-public import VerifiedGarbage.Proof.Rc4.Table
 
 @[expose] public section
 

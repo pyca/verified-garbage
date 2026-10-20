@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledProduct
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Row
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! Full raw product with every borrowed header byte restored. -/
 

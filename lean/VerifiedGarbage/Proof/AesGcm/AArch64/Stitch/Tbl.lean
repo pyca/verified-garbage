@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
 public import VerifiedGarbage.Spec.Gcm.Powers8
-import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-GCM on AArch64, interleaved: the table of keys

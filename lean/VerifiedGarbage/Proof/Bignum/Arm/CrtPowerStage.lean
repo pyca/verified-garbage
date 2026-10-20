@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedPowerSources
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedPowerSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrime
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Layout
 
 /-! # Select a factor, compute its private power, and restore the main workspace -/
 

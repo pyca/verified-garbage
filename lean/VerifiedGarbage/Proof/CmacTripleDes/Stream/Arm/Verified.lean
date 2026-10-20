@@ -1,14 +1,23 @@
 module
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Absorb
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Finish
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Init
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Finish
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.AbsorbCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Implies
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Absorb
+meta import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Init
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Finish
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.AbsorbCorrect
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.AbsorbCorrect
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Implies
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Implies
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: `Verified`

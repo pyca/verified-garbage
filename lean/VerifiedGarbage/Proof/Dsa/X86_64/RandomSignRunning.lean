@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInit
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSample
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInit
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! The persistent state of the bounded randomized-signing loop. -/
 @[expose] public section

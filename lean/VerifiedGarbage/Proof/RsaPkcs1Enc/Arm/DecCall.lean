@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecD
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: the calls of the hash functions

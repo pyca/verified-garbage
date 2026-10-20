@@ -1,21 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
-meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed25519 verification on x86-64: both square roots' powers first

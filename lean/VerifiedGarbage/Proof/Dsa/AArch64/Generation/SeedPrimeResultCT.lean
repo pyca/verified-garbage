@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedGeneratorPlanCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPhaseStableCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedPrime
 
 /-! # Public prime-search outcomes select the next generator phase -/
 

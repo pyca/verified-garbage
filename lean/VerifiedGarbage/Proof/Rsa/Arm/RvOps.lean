@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
+import VerifiedGarbage.Proof.Rsa.KeyViews
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Basic.IsEmpty.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the operations on a stage
 

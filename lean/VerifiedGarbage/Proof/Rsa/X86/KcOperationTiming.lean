@@ -1,11 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Rsa.X86.KcFrames
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBodyTiming
-public import VerifiedGarbage.Proof.Rsa.X86.KcEntryTiming
-public import VerifiedGarbage.Proof.Rsa.X86.KcArgumentsEq
-public import VerifiedGarbage.Proof.Rsa.X86.KcObservations
-public import VerifiedGarbage.Proof.Rsa.X86.KcBounds
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcBodyTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcArgumentsEq
+import VerifiedGarbage.Proof.Rsa.X86.KcObservations
+import VerifiedGarbage.Proof.Rsa.X86.KcBounds
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcInstalled
+import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
+import VerifiedGarbage.Proof.Rsa.X86.KcResources
+import VerifiedGarbage.Proof.Rsa.X86.KcBodyPublic
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The complete key-validation operation leaks only the contract's declared public inputs -/
 

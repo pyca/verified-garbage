@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequestDone
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchExhausted
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRequestDone
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchExhausted
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Entropy exhaustion and bounded native refill requests -/
 

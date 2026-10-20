@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.FbVerified
-meta import VerifiedGarbage.Proof.Seed.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Seed.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Seed.X86.CbcLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Seed.SboxLit
+meta import VerifiedGarbage.Proof.Seed.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Seed.CbcScratch
-public import VerifiedGarbage.Proof.Seed.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Seed.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Seed.SboxLit
 
 /-!
 # SEED-CBC on x86 (32-bit) meets its contracts

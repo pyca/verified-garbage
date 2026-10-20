@@ -1,7 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Loop
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Out
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Loop
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Out
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Prepare
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Stores
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Verified vector CBD2 using the existing public contract -/
 

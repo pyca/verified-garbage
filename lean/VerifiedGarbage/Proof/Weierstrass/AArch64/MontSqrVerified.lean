@@ -1,17 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # P-384's Montgomery square modulo `p`, as a function, on AArch64: verified

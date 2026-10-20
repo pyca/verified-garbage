@@ -2,19 +2,36 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
-import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
 import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseMain
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Framework.OffsetBelow
-import VerifiedGarbage.Proof.MdStream.Spec
 import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
 

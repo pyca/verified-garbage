@@ -1,21 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
 import VerifiedGarbage.Proof.Framework.X86.TaintErase
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Layout
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Correct
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
 meta import VerifiedGarbage.Proof.Framework.X86.TaintErase
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Layout
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): constant time, up to the number of candidates

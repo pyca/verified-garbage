@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
-import VerifiedGarbage.Impl.Weierstrass.X86_64.ForwardField
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
 
 /-! Public joint verification, with a Jacobian accumulator and an inversion-free final check.

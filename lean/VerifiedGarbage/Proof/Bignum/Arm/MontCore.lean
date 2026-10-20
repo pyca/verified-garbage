@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCore
-public import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.MontRounds
+import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Canonical Montgomery multiplication and its workspace frame -/
 

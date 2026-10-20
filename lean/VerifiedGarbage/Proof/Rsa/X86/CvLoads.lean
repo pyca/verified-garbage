@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvDivN
+public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvZero
+import VerifiedGarbage.Proof.Rsa.X86.CvZero
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
 
 /-! # Loading the modulus, factors, and exponent into initialized CRT arrays -/
 

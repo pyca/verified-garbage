@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+public import VerifiedGarbage.Proof.Bignum.CrtExp
+import VerifiedGarbage.Proof.Framework.Omega
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Table values and memory frames for the 32-entry CRT window. The
 arithmetic arrays and header write set are unchanged from four-bit windows. -/

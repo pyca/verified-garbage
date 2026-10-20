@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Framework.Range
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming BLAKE2 on ARMv7: `init`

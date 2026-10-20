@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Ed448
 
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.Scalar
 
 /-!
 # Ed448: the signing pipeline

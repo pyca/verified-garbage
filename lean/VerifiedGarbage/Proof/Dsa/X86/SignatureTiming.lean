@@ -1,8 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
-public import VerifiedGarbage.Proof.Dsa.X86.WriteSignature
+import VerifiedGarbage.Proof.Dsa.X86.OutputTiming
 public import VerifiedGarbage.Proof.Dsa.X86.CallTiming
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
+import VerifiedGarbage.Proof.Dsa.X86.WriteScalar
+import VerifiedGarbage.Proof.Dsa.X86.Persistent
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Constant-time release of a complete masked signature -/
 

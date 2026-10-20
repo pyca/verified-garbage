@@ -2,7 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlKem.Compress
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!

@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.R2Adx
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
+import VerifiedGarbage.Proof.Bignum.X86_64.R2aWord
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxStep
 
 /-!
 # `R² mod m` by word steps with ADX: `t = x 2^64 + q̂ mc - q̂ R` in place

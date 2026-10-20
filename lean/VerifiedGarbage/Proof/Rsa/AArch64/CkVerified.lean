@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkCTCode
+import VerifiedGarbage.Proof.Rsa.AArch64.CkCTCode
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Rsa.AArch64.CkCode
+import VerifiedGarbage.Proof.Rsa.AArch64.ExpCheck
 
 /-!
 # `vg_rsa_check_key` on AArch64: verified against the shared contract

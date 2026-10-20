@@ -1,11 +1,19 @@
 module
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
+public import VerifiedGarbage.Impl.AesGcm.X86_64.FastSeal
+public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.PowP
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
-import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.SealSel
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
+import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 
 /-!
 # AES-GCM's short path on x86-64 with a prepared key context: the functions verified

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointByte
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 
 /-! # Loading a pair of exponent bytes without secret-dependent addresses -/
 

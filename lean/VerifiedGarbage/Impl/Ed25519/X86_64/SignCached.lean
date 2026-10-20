@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PublicKey
-import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86_64.MulAdd
-import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
+import VerifiedGarbage.Impl.Ed25519.X86_64.Field
 
 /-!
 # Complete Ed25519 signing with the matching cached public key

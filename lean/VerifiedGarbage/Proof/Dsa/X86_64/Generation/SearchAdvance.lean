@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchControl
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 
 /-! # The p search advances exactly one counter and one hash stride -/
 

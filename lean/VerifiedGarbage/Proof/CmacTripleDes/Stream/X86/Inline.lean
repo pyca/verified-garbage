@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.X86.FinalizeCorrect
 import VerifiedGarbage.Proof.CmacTripleDes.X86.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.CmacTripleDes.InlineCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
+public import VerifiedGarbage.Proof.CmacTripleDes.X86.Contract
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on x86: the code of `init`, `update` and `finalize`, inline

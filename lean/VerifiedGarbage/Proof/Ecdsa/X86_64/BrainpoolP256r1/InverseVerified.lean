@@ -1,27 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.Pratt
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.Inverse
-meta import VerifiedGarbage.Spec.Weierstrass.Inverse
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.InverseLit
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.X86_64
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Spec.EcKey.Generic
-meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Proof.Framework.LitShare
 
 /-!
 # `vg_brainpoolp256r1_inv_mod_p` and `_n` on x86-64: `Verified`

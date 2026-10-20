@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # The bit of an iteration of the `_alt` ladder, and the flag `mux_4` reads -/
 

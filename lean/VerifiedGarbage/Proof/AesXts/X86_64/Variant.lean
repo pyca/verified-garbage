@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.AesXts.X86_64.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Verified
 public import VerifiedGarbage.Proof.AesXts.X86_64.AesNi.Verified
 public import VerifiedGarbage.Impl.AesXts.X86_64Unit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.AesXts.X86_64.CT
 
 /-!
 # Implementations of `vg_aes_xts_encrypt` and `vg_aes_xts_decrypt` on x86-64

@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.LoadBEFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFnArgs
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBE
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Zero-extended import into an RSA workspace array -/
 

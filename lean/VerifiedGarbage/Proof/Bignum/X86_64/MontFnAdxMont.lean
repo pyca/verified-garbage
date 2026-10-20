@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxCT
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_mont_mul_adx` as the Montgomery multiplication of the RSA code

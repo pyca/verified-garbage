@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorSearch
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorInvariant
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorBody
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeLoop
 
 /-! # Complete native generator search against the byte-tape specification -/
 

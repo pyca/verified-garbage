@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
+import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 
 /-!
 # ML-KEM on x86-64: several outputs of `PRF₂`

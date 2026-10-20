@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha1
-public import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 public import VerifiedGarbage.TCB.Registration
 
 /-!

@@ -1,10 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Spec.Gcm
 import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-GCM on ARMv7: words and the lengths block

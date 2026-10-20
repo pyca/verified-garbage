@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! # Complete fixed-time division for Argon2's indices -/
 

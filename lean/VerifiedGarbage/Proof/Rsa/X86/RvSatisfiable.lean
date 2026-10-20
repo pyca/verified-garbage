@@ -1,6 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Rsa.X86.RvABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCorrect
 
 /-! # A concrete caller establishes satisfiability of the recovery contract -/
 

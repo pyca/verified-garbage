@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvChecksA
-public import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyBits
 
 /-! # Dividing the public modulus by the first private factor -/
 

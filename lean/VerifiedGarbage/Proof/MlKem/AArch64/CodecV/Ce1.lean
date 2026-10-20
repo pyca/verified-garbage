@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Blocks
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce4
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `ce1Math`

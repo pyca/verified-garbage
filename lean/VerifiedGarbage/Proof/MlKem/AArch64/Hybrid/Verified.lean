@@ -1,20 +1,47 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Prf
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
+import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+import Mathlib.Data.Finset.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
+meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
+meta import VerifiedGarbage.Proof.Framework.AArch64.DepthFill
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.NormNum.OfScientific
+meta import Mathlib.Tactic.NormNum.DivMod
+meta import Mathlib.Tactic.NormNum.Abs
+meta import Mathlib.Data.Rat.Cast.Order
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KemCommon
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 
 /-!
 # The checks of the hashing encapsulation's first phase and tail

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackBlock
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackEncode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCoefficients
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

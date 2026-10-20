@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectQ
-public import VerifiedGarbage.Proof.Dsa.X86.DigestPrefix
+import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectQ
+import VerifiedGarbage.Proof.Dsa.X86.DigestPrefix
 public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Dsa.X86.DigestWidth
+import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectP
+import VerifiedGarbage.Proof.Dsa.X86.ShapeLoadFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Complete public domain-shape check, including its rejection flag -/
 

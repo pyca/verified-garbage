@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
-public import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
-meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
+import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStores
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of full-width candidate and exponent stores -/
 

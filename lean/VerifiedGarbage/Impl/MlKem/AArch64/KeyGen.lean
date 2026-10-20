@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`

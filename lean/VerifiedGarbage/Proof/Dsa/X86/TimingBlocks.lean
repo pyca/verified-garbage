@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.TaintErase
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 
 /-! # Composing byte-code timing checks while forgetting temporary registers -/
 

@@ -1,11 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignResume
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgsSaved
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallRetry
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallValue
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignResume
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignArgsSaved
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallRetry
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallValue
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! One complete supplied-nonce signing step, including arguments and retry state. -/
 @[expose] public section

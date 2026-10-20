@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.PublicValidation
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
-public import VerifiedGarbage.Proof.Dsa.Arm.Pow
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.Arm.Session
+import VerifiedGarbage.Proof.Dsa.Arm.PublicKey
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Register saves around shared ARM public-key validation -/

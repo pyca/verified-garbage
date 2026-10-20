@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!

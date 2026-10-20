@@ -1,8 +1,16 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.LowerScan
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.AArch64.LowerScan
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroMask
+import VerifiedGarbage.Proof.Dsa.AArch64.Masks
+import VerifiedGarbage.Proof.Bignum.AArch64.PubOut
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # Exact scalar and element range checks -/
 @[expose] public section

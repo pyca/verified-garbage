@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Bfly
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

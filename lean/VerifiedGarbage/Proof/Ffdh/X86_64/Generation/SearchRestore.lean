@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallPre
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # A candidate call preserves the controller and unconsumed input tape -/
 

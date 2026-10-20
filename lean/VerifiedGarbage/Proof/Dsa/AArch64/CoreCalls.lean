@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Power
 import VerifiedGarbage.Proof.Dsa.AArch64.Multiply
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Exponentiation and multiplication in the DSA parent workspace -/
 

@@ -3,6 +3,15 @@ module
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgEnc3
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.PrivCall
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Rsa.Arm.PrivVerified
+import VerifiedGarbage.Proof.RsaPss.SignCases
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Vp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Params
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSASSA-PSS signing on ARMv7: the call of `vg_rsa_private_checked`

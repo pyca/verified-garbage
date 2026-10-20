@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterTailCT
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterIterationCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterIterationCT
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Timing and termination of the complete outer parameter search loop -/

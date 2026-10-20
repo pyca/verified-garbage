@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Choice
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Paired executions choose the same rejection path and early exit -/
 

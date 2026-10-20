@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKeyTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDataTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 
 /-! # Packed-key rejection branches only on public key values -/
 

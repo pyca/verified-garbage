@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferArray
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Importing the other residue preserves the completed factor power -/
 

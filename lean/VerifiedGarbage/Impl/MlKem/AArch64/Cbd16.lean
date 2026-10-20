@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-! # ML-KEM CBD2 in sixteen byte lanes
 

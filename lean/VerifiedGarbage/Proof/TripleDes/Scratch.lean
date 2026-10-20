@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.TripleDes.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Triple DES key expansion and ECB with their working space as an argument

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Curves using a public early-exit inverse also supply its Montgomery-form
 arithmetic theorem. This proof-only interface leaves contracts and the TCB unchanged. -/

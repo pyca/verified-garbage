@@ -1,6 +1,13 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointDigit
+public import VerifiedGarbage.Proof.Weierstrass.Joint
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

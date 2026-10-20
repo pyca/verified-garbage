@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvResult
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.CvResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # CRT output writes preserve saved registers and the caller's return address -/
 

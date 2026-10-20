@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
-public import VerifiedGarbage.Proof.Mont.X86.Inverse
-public import VerifiedGarbage.Proof.Rsa.X86.KeyBits
+import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Rsa.X86.KeyBits
+import VerifiedGarbage.Proof.Rsa.KeyWorkspace
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The negative Montgomery inverse of the public recovery modulus -/
 

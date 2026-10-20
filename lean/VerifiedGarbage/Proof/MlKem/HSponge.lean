@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.Proof.MlKem.Mem
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # `H(ek)` absorbed one block at a time

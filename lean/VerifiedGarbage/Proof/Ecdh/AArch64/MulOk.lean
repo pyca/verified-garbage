@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Fixed
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-public import VerifiedGarbage.Impl.Ecdh.AArch64.WithMul
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import Mathlib.Tactic.ClearExcept
 
 /-! The internal scalar-multiplication interface allows arbitrary invalid
 scalars to execute safely; the existing final range check rejects them. -/

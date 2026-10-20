@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): the whole chunks

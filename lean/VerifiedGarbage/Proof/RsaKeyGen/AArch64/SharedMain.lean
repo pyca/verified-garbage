@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # RSA witness policy with a shared prepared round -/
 

@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.Ecb
 public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.Scratch
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
 
 /-! # The ECB functions meet their contracts, with the scratch buffer as an argument -/
 

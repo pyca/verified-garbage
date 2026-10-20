@@ -2,12 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Args
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashMu
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on AArch64, `sign_message`: the call of the signing function on `μ`

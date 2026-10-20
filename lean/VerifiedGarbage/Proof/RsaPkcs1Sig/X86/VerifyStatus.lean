@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
-public import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
+import VerifiedGarbage.Proof.Rsa.X86.PrivZeroTest
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Save and mask the public operation's status without branching on it -/
 

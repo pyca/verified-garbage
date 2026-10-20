@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackLoops
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_unpack`, correct

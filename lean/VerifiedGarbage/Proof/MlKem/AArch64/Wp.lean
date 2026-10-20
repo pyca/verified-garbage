@@ -1,10 +1,12 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM on AArch64: one instruction at a time

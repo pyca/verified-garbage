@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeIterationCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopStep
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopExhausted
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The next primality branch and uniform counter are functions of public inputs -/
 

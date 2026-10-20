@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvABI
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvReturn
+import VerifiedGarbage.Proof.Rsa.X86.RvReturn
+import VerifiedGarbage.Proof.Rsa.X86.RvInstalled
+import VerifiedGarbage.Proof.Rsa.X86.RvResources
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Functional correctness and cdecl preservation of i686 RSA prime recovery -/
 

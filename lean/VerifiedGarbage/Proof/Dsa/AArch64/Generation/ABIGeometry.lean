@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABI
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
+import VerifiedGarbage.Proof.Dsa.Generation.Layout
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # The nested ABI frames and scratch allocation realize the search geometry -/
 

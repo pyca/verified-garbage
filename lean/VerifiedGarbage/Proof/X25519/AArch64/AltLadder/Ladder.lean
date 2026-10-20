@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! # The `_alt` ladder's iterations for bits 253 down to 3 -/
 

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.MillerRabin.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
 
 /-! # Call the complete shared round with its verified stack frame -/
 

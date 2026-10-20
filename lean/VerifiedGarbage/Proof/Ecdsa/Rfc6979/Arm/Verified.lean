@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
-import VerifiedGarbage.Proof.Weierstrass.Layout
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.CT
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: `Verified`

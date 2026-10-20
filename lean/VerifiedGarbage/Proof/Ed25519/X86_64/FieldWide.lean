@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Field
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Run the field workspace inside Ed25519's eight-KiB scratch argument. -/
 

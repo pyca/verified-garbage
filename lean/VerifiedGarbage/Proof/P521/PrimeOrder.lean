@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.P521.Curve
+import VerifiedGarbage.Proof.P521.Curve
 public import VerifiedGarbage.Proof.Weierstrass.Order
-public import VerifiedGarbage.Proof.Weierstrass.GroupOrder
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Spec.P521
+import VerifiedGarbage.Proof.Weierstrass.GroupOrder
 import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.P521.Point
 
 /-!
 # P-521 has prime order
@@ -15,6 +18,7 @@ has `n` elements, and every point but `O` has order `n`
 (`Weierstrass.primeOrder_of`), which the window method in Jacobian
 coordinates needs. Only the variant files `Variants/P521/<Target>/Law.lean`
 import this algebra.
+public import Aesop.BuiltinRules
 -/
 
 @[expose] public section

@@ -1,11 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointByteHead
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.JointWindowCT
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Joint
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public addresses for loading a pair of secret exponent bytes -/
 

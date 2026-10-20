@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Spec.MlDsa.HighPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

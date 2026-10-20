@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvBody
+public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvSizedTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvValid
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # CRT limb-width selection depends only on the public modulus length -/
 

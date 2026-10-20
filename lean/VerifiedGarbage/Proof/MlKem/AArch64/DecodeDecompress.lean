@@ -2,8 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd1
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4Step
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_decode_decompress`

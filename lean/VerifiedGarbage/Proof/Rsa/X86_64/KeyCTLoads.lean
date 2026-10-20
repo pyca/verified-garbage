@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
-meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTDefs
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA key checking on x86-64: shared constant-time loads

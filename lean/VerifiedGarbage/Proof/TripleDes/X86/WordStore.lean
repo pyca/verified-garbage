@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86.KeySteps
-public import VerifiedGarbage.Proof.Framework.Mem
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import Lean.Elab.Tactic.Omega.Frontend
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

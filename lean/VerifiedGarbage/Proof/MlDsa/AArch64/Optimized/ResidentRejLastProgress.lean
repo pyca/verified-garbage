@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejLastPair
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSegmentLayout
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejRows
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentBytes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejStart
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! ## From `ResidentRejLastFrame.lean` -/
 

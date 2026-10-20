@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputePair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeModulusTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeValidTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeModulusTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeValidTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailureTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Checked public RSA branches only on public key validation -/
 

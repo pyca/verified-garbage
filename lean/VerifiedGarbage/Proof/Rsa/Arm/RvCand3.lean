@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvSq2
+public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint3
+import VerifiedGarbage.Proof.Rsa.Arm.RvSt2
+import VerifiedGarbage.Proof.Rsa.Arm.RvKM
+import VerifiedGarbage.Proof.Rsa.Arm.RvSlots
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # `vg_rsa_recover_primes` on ARMv7: from `y = g^r` to the squarings, and the next candidate
 

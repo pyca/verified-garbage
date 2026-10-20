@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
-public import VerifiedGarbage.Proof.Bignum.ExternalWords
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! External tape and witness writes preserve all prepared workspace words. -/

@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-public import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Impl.Bignum.X86_64
+import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # RSAEP on x86-64: helpers for the shared contracts

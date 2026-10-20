@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvHalfStep
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvHalfLoop
-public import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+import VerifiedGarbage.Proof.Rsa.X86.RvHalfLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Initializing the halving loop and obtaining the odd exponent -/
 

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.ExponentTestMath
 public import VerifiedGarbage.Impl.Bignum.Arm.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Word tests for public-exponent limits, parity, and rejection of one -/
 

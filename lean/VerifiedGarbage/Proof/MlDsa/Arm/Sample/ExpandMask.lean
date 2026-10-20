@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Pro
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
 meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.ExpandMask
-public import VerifiedGarbage.Proof.Framework.Arm.Inline
-meta import VerifiedGarbage.Proof.Framework.Arm.Inline
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Loop
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_expand_mask_poly`

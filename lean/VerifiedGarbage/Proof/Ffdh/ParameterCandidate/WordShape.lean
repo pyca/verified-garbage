@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Ffdh
 
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH parameter candidates: each modulus's actual Montgomery word width -/

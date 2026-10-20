@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Rsa
+import VerifiedGarbage.Proof.Framework.PowLit
 
-public import VerifiedGarbage.Proof.Rsa.Octets
 
 /-!
 # RSA: `keyValid` from its parts

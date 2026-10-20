@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.CopyMasked
 public import VerifiedGarbage.Impl.Dsa.X86_64.Random
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Words
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Correctness and memory framing of the random-tape copy loop -/
 

@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckKeyCore
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # `vg_rsa_check_key` on x86-64: reduction by restoring division

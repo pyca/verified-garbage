@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Lanes
 public import VerifiedGarbage.Proof.Framework.Block
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Rc2.AArch64.CbcVec
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
+import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.TCB.AArch64.Simd
 
 /-!
 # A reverse mix on four blocks at once

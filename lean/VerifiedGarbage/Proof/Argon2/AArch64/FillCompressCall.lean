@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.Compress
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Invoke the verified compression primitive with narrowed permissions,
 retaining the surrounding matrix and derivation frame. -/

@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+public import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.RecoverSign
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

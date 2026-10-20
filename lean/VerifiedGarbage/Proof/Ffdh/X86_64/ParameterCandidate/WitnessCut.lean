@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.CutOctets
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutByte
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutByte
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Copy
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: the complete masked witness draw -/
 

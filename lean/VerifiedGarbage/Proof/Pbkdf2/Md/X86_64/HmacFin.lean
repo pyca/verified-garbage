@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.PadW
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.HmacFinInner
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Pbkdf2.Hmac
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC over any Merkle–Damgård hash function on x86-64: `finalize`

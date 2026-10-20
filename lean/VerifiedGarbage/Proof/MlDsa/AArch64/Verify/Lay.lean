@@ -1,21 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inv
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-public import VerifiedGarbage.Proof.MlDsa.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 public import VerifiedGarbage.Proof.MlDsa.Verify.Norm
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 
 /-!
 # ML-DSA verification on AArch64: parameters, buffers, and pieces

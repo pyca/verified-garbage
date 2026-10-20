@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedFrame
-public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RSA's prepared witness and a generic shared round -/

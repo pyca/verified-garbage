@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Spec.Ffdh
 import VerifiedGarbage.Proof.Ffdh.Domain
-import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Powers of a checked FFDH generator remain in its subgroup -/
 

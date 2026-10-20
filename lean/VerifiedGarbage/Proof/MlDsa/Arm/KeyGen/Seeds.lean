@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Inv
 import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the seeds

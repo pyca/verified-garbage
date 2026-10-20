@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
 
 @[expose] public section
 

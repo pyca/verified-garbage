@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CheckFactorProduct
-public import VerifiedGarbage.Proof.Bignum.X86.WideProductWords
-public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
+import VerifiedGarbage.Proof.Bignum.X86.WideProductWords
+import VerifiedGarbage.Proof.Dsa.X86.Checks
 
 /-! # Factor multiplication is checked without truncation or secret branches -/
 

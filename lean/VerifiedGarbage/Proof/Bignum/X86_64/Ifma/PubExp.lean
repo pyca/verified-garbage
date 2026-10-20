@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.PdRanges
-import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Win
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # The public operation with AVX512_IFMA on x86-64: the numbers into and out of the area

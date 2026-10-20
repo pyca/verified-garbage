@@ -4,11 +4,14 @@ public import VerifiedGarbage.Proof.Divstep.Packed
 import VerifiedGarbage.Proof.P256.EcdhInverse.Extract
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.AArch64.Row
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
-import VerifiedGarbage.Proof.Divstep.WordDef
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 

@@ -1,11 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtGPow
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Tactic.TermCongr
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
 
 /-!
 # RSA with the CRT on x86-64: constant time of `q`'s phase

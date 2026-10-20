@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
-import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Joint exponentiation in the DSA parent workspace -/
 

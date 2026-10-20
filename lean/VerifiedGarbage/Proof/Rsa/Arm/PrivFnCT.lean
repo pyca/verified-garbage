@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Rsa.Arm.PrivAllocCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The callable private wrapper leaks only public layout and key bytes -/
 

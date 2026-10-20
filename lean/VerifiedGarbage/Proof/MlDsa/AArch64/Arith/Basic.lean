@@ -1,14 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.MlDsa.Round.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+public import VerifiedGarbage.Spec.MlDsa.Poly
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.MlDsa.Round.Mem
 
 /-!
 # ML-DSA on AArch64: symbolic execution, and reduction modulo `q`

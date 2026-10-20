@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttLoop
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
+import VerifiedGarbage.Proof.MlDsa.Sample.Hash
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 
 @[expose] public section
 

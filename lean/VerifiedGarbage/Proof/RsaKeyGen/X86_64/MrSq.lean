@@ -3,11 +3,18 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.RsaKeyGen.Gcd
 
 /-!
 # A candidate on x86-64: Miller–Rabin's squarings

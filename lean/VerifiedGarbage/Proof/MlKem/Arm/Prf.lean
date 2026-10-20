@@ -1,13 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.MlKem.Arm.Loops
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-public import VerifiedGarbage.Proof.Sha3.Arith
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+public import VerifiedGarbage.Proof.MlKem.Arm.Calls
+public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
+import VerifiedGarbage.Proof.MlKem.Arm.HashTop
 
 /-!
 # ML-KEM on 32-bit ARM: sampling with `PRF` and `SamplePolyCBD`

@@ -1,19 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
-meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
 import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
-meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Spec.Cmac.Contract
-meta import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
-meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Absorb
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Init
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Finish
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.AbsorbCorrect
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
+meta import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Absorb
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

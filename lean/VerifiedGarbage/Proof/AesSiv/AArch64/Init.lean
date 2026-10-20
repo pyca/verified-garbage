@@ -2,12 +2,35 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
-public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Proof.AesSiv.Key
+import VerifiedGarbage.Proof.AesSiv.Key
 meta import VerifiedGarbage.Proof.AesSiv.Key
 public import VerifiedGarbage.Impl.AesSiv.AArch64
+public import VerifiedGarbage.Spec.Siv
 meta import VerifiedGarbage.Impl.AesSiv.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.AesSiv.CtrPart
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.AesSiv.CtrPart
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Spec
 
 /-!
 # AES-SIV on AArch64: `vg_aes_siv_init`

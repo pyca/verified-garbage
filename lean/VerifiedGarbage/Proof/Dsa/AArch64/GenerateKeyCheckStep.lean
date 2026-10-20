@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCode
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Key generation's domain check, on its frame state -/
 

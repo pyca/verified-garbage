@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Stages
+public import VerifiedGarbage.Impl.EcKey.Arm
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.EcKey
 
-public import VerifiedGarbage.Proof.EcKey.Arm.Finish
+import VerifiedGarbage.Proof.EcKey.Arm.Finish
 import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
-public import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.Arm.Main
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
+import VerifiedGarbage.Proof.Ecdsa.Arm.SlotOps
+import VerifiedGarbage.Proof.X25519.Arm.Limbs
 
 /-!
 # Elliptic curve public keys on 32-bit ARM: the whole function

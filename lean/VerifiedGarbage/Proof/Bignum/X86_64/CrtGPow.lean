@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
 public import VerifiedGarbage.Proof.Bignum.CrtGPow
 public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # `vg_rsa_private_crt` on x86-64: `G = 2^E mod n`

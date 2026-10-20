@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnRow
 import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7: the function

@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Rsa.Arm.DivReduce
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivStep
-public import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+import VerifiedGarbage.Proof.Rsa.Arm.DivStep
+import VerifiedGarbage.Proof.Rsa.Arm.DivInit
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and quotient/remainder correctness of fixed-count division -/
 

@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Pad
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Padding preserves the hash workspace and establishes the permutation input -/
 @[expose] public section

@@ -1,8 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Base
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
-import VerifiedGarbage.Proof.Gcm.StreamTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.Compose
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Aes.Circuit
+import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: between the calls

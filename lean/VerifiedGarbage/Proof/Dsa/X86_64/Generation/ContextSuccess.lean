@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedSearch
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccess
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Phase dispatch retains the complete generation state -/
 

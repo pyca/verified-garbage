@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # x86-64: straight-line bitwise AVX2 code, quadword lane by lane

@@ -1,13 +1,52 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Body
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Open
-public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Impl.Aes.AArch64.Alloc
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+meta import VerifiedGarbage.Proof.Cmac.Frame
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Gcm.Bits
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time

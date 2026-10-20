@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.FinCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Fin
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import Mathlib.Data.List.Dedup
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 
 /-!
 # AES-GCM `seal_split` on x86-64: the end of each instance

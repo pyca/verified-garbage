@@ -1,8 +1,22 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvProductCount
-public import VerifiedGarbage.Proof.Rsa.X86.MulMod
-public import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.X86.MulMod
+import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.X86.RvFrames
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import Mathlib.Algebra.NeZero
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # The exact product of the private and public exponents -/
 

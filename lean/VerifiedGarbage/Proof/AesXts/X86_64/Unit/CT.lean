@@ -1,13 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Enc
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Enc
 meta import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.AesXts.X86_64.CT
-meta import VerifiedGarbage.Proof.AesXts.X86_64.CT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES of data units on x86-64: constant time

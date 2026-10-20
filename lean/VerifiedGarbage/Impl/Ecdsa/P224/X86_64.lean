@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.X86_64
-public import VerifiedGarbage.Spec.P224
 public import VerifiedGarbage.Impl.P224.CombTable7
 
 /-! # ECDSA over P-224 on x86-64: four-word field elements and scalars -/

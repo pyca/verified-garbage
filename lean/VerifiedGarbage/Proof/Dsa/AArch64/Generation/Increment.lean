@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! The even candidate difference can be incremented without carry propagation. -/
 @[expose] public section

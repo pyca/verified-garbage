@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Blowfish
 
-public import VerifiedGarbage.Proof.Blowfish.F
+import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # A lookup that scans an S-box's planes a word at a time

@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
-public import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
+import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Key-validation arithmetic uses public iteration counts and fixed addresses -/
 

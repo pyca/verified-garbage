@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.Basic
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSASSA-PSS on x86-64: the loops that clear and copy bytes

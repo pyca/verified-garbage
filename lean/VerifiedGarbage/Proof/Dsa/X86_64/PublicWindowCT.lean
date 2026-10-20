@@ -1,14 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindow
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicSelect
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public window addresses and branches depend only on the exponent -/
 

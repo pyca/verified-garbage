@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Copy an incoming stack argument into the outgoing call area -/
 

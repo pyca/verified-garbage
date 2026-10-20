@@ -1,26 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Aes
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Data.List.Induction
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: running straight-line blocks

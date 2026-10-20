@@ -1,10 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The window method on AArch64

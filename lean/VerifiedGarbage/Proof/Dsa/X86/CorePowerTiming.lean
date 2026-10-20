@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHeadTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
-public import VerifiedGarbage.Proof.Dsa.X86.RawInputsTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreStoreTiming
+import VerifiedGarbage.Proof.Dsa.X86.RawInputsTiming
 public import VerifiedGarbage.Proof.Dsa.X86.PowerHead
-public import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
+import VerifiedGarbage.Proof.Dsa.X86.PowCallTiming
+import VerifiedGarbage.Proof.Dsa.X86.PointerTiming
+import VerifiedGarbage.Proof.Dsa.X86.PowCall
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant-time modular exponentiation through the shared helper -/
 

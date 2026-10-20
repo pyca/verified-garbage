@@ -1,21 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedZ
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedResponseState
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZLayout
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZ
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZCheck
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `OptimizedPairedZVector.lean` -/
 

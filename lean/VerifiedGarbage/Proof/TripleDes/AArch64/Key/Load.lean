@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
-import VerifiedGarbage.Proof.TripleDes.AArch64.BlockIO
+import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
 public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bytes
 import VerifiedGarbage.Proof.TripleDes.AArch64.Word
 import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 @[expose] public section
 

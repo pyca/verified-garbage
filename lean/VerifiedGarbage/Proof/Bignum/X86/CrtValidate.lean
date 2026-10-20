@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtAcceptance
+import VerifiedGarbage.Proof.Bignum.X86.CrtAcceptance
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValidationFrame
-public import VerifiedGarbage.Proof.Bignum.X86.CheckFactorProduct
+public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Bignum.X86.CheckFactorProduct
+import VerifiedGarbage.Proof.Bignum.X86.CrtProductLayout
+import VerifiedGarbage.Proof.Dsa.X86.Checks
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # The private CRT acceptance mask exactly implements the shared key and input checks -/
 

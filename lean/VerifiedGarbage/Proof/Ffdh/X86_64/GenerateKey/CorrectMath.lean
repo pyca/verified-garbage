@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Core
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Main
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
+import VerifiedGarbage.Proof.Bignum.Octets
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH on x86-64: the attempt's outputs satisfy the shared key-generation specification -/
 

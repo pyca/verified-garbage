@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Rows
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: pass 1

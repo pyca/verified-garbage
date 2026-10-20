@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseK
-import VerifiedGarbage.Proof.MlKem.Arm.Lay
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 
 /-!
 # ML-DSA signing on ARMv7: the rejection sampling loop

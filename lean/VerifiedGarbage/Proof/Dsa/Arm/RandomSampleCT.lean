@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomDrawCT
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomDrawCT
-public import VerifiedGarbage.Proof.Dsa.RandomTrace
 meta import VerifiedGarbage.Proof.Dsa.RandomTrace
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Sampling leaks only its trace (32-bit ARM)

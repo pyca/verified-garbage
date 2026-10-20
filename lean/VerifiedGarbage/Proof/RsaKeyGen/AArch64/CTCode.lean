@@ -1,9 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
-meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Code
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.CTBase
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-!
 # A candidate on AArch64: constant time, the front

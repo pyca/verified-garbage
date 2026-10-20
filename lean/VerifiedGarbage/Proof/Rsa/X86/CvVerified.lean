@@ -1,6 +1,15 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvOperationTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvOperationTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvCorrect
 
 /-! # Complete i686 certificate for CRT parameter calculation -/
 

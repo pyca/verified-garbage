@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+public import VerifiedGarbage.Spec.Dsa.RandomSign
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCorrect
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignConstantTime
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignConstantTime
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Complete verification of randomized DSA signing for every AArch64 backend. -/
 @[expose] public section

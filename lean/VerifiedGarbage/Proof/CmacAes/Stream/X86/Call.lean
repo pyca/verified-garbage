@@ -1,11 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.CmacAes.X86.Verified
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
+import VerifiedGarbage.Proof.CmacAes.X86.Verified
 import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Impl.CmacAes.Stream.X86
+public import VerifiedGarbage.Proof.CmacAes.X86.Save
 import VerifiedGarbage.Proof.CmacAes.X86.FinalizeCT
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

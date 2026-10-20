@@ -1,9 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Hashes
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacFinCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.HmacInitCT
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.IterateCT
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # HMAC-SHA-512/224's `init` and `finalize` and PBKDF2-HMAC-SHA-512/224's `iterate` on x86 (32-bit)

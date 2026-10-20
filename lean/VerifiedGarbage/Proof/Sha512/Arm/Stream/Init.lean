@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.Arm.Compress
 import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!

@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
-public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 
 /-!
 # The RSA operations as the signatures' callees, on AArch64

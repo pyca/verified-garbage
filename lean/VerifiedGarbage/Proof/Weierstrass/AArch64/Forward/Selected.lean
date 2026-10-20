@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Comb
+import VerifiedGarbage.Proof.Weierstrass.Comb
 public import VerifiedGarbage.Impl.P256.VerifyDouble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDouble
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

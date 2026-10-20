@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointPowers
 public import VerifiedGarbage.Impl.Ed25519.Arm.PointSelect
+public import VerifiedGarbage.Impl.Ed25519.Arm.FieldMemory
 
 /-! Descending scalar bits. Sixteen bits at workspace bytes 32–47 are
 expanded from two scalar bytes for each checkpoint batch. -/

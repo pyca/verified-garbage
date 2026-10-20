@@ -3,8 +3,14 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # `vg_rsa_crt_values` on AArch64: correctness

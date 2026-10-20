@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
+public import VerifiedGarbage.Spec.MlDsa
 
 @[expose] public section
 

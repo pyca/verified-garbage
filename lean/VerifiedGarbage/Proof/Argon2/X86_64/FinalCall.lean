@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitCall
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
 
 /-! The final H′ call accepts a complete reduced block and a public tag length. -/
 

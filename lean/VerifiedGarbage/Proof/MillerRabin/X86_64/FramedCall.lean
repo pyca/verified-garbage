@@ -1,9 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+public import VerifiedGarbage.Spec.MillerRabin
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Stack
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallBody
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallBody
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Frames
+import VerifiedGarbage.Proof.MillerRabin.X86_64.ExitRegisters
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MillerRabin.X86_64.BodyKeeps
+import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 
 /-! # Actual Montgomery calls within the saved round frames -/
 

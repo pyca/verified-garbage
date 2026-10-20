@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.St
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Math
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Words
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Math
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Words
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand2
 
 /-! # A candidate on ARMv7: more operations as pieces
 

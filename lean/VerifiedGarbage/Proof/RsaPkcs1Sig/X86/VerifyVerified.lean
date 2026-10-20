@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContract
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContract
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBody
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Complete i686 certificate for precomputed PKCS #1 verification -/
 

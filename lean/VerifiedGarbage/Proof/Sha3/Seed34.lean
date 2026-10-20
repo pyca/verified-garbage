@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.KPke
-import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

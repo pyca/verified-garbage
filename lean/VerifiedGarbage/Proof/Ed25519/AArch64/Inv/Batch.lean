@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Mat
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Row
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Conn
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Out
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
+import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Conn
+import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Out
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.Divstep.Tc
 
 /-! # A batch of the inversion modulo `p` on AArch64
 

@@ -1,13 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
-meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 public import VerifiedGarbage.Proof.MdStream.X86.Finalize
-meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+meta import VerifiedGarbage.Proof.MdStream.X86.Finalize
 meta import VerifiedGarbage.Proof.MdStream.X86.Words
-public import VerifiedGarbage.Proof.Sha512.Word64
-meta import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `finalize`

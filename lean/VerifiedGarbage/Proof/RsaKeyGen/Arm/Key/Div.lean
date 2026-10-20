@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
-public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
-public import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
-public import VerifiedGarbage.Proof.Rsa.Arm.RvFin3
-public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
+import VerifiedGarbage.Proof.Rsa.Arm.DivCT
+import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
+import VerifiedGarbage.Proof.Rsa.Arm.RvFin3
+import VerifiedGarbage.Proof.Rsa.Arm.KcStart
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
 
 /-! # An RSA key on ARMv7: divisions
 

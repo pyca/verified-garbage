@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
 import VerifiedGarbage.Proof.Ocb.Stretch
 public import VerifiedGarbage.Proof.Ocb.Stretch32
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Spec.Ocb
+import VerifiedGarbage.Proof.AesOcb.X86.Dbl
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # AES-OCB on x86: `Offset_0` (`offset0`)

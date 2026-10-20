@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 @[expose] public section
 

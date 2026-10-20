@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkPhaseCore
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyTop
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Impl.Rsa.AArch64.CheckKey
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: the phases

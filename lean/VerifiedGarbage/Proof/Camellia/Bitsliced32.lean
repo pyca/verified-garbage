@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Camellia.Bytes
+public import VerifiedGarbage.Proof.Framework.Bitslice.Table
 
-public import VerifiedGarbage.Proof.Camellia.Bitsliced
+import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!
 # Bitsliced Camellia on 32-bit planes

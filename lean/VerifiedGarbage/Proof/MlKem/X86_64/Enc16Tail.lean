@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
+import VerifiedGarbage.Proof.MlKem.X86_64.Kg16Tail
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt with 16-bit polynomials, after the samples

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
 
 /-!
 # AES-OCB on ARMv7, with its working space on the stack

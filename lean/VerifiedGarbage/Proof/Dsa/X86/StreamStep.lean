@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Impl.Dsa.X86.Stream
 
-public import VerifiedGarbage.Proof.Dsa.X86.FetchByte
-public import VerifiedGarbage.Proof.Dsa.X86.Reduce
+import VerifiedGarbage.Proof.Dsa.X86.FetchByte
+import VerifiedGarbage.Proof.Dsa.X86.Reduce
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # A bounded streaming reduction iteration -/
 

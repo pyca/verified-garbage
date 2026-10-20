@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Field
-public import Batteries.Tactic.Init
-public import Batteries.Logic
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.X448
+import Batteries.Tactic.Init
+import Batteries.Logic
 
 /-!
 # X448: radix-2¹⁶ arithmetic

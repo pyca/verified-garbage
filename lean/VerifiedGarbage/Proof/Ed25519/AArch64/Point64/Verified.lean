@@ -1,17 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
+import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Fn
+meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed25519's point functions on AArch64: their `Verified`

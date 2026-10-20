@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Block
 import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Common
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC over a Merkle–Damgård hash function on x86 (32-bit): `init`, correct

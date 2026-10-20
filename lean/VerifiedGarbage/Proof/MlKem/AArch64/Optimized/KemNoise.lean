@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.LayoutAll
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
 
 /-! # Paired encryption noise preserves read inputs and caller state -/
 

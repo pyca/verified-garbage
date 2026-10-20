@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Mont.X86.PowerLoop
+import VerifiedGarbage.Proof.Mont.X86.PowerLoop
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Montgomery-domain setup using public modular doublings -/
 

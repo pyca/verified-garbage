@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Compress
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Compress
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Compress
 meta import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: constant time

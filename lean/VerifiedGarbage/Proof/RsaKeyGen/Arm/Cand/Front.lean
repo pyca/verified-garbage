@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Loads
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint1
-public import VerifiedGarbage.Proof.Rsa.Arm.RvStage
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint1
+import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 
 /-! # A candidate on ARMv7: whether `rand` holds a candidate
 

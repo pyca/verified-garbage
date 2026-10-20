@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.TCB.AArch64.Simd
+import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 
-public import VerifiedGarbage.Proof.Mont.AArch64.Chain
-public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square

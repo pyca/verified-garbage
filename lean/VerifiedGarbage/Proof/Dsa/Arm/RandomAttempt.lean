@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomCall
 public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomDraw
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # One signing attempt (32-bit ARM)

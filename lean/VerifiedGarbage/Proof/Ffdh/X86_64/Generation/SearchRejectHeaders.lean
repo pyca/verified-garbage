@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchReject
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 
 /-! # A rejected candidate advances the native search invariant -/
 

@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Common
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Step
+public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
+import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.PrePost
 import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # One-pass XTS-AES on x86-64: eight blocks at a time

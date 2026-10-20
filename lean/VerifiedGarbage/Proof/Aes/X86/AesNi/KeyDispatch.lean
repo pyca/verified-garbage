@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyContext
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyBranches
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPost
 
 @[expose] public section
 

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Data
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ArithmeticBridge
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Output
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Arithmetic
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ArithmeticBridge
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Output
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH on x86-64: range-check and encode a generated public key -/

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicData
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Stable public-operation state after modulus precomputation -/
 

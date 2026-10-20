@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 
 /-! Determine the segment's address mode from public variant, pass and slice.

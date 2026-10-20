@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCall
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSampleCT
-public import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+import VerifiedGarbage.Proof.Framework.Offset
+import Batteries.Logic
 
 /-!
 # The signer's call leaks only what its contract allows (x86)

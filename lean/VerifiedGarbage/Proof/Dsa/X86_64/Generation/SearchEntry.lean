@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchPlan
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptEntry
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Reframe
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Build each p-attempt's proof state from the retained search frame -/

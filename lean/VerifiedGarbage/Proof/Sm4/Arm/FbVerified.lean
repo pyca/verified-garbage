@@ -1,21 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
-meta import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
 public import VerifiedGarbage.Proof.Sm4.FbScratch
-meta import VerifiedGarbage.Proof.Sm4.FbScratch
-public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Sm4.Arm.Fb
-meta import VerifiedGarbage.Impl.Sm4.Arm.Fb
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+public import VerifiedGarbage.Spec.Sm4.Cfb
+import VerifiedGarbage.Proof.Modes.Arm.Cbc
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Sm4.Arm.ModeCore
+meta import VerifiedGarbage.Proof.Sm4.FbScratch
+meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
+meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+meta import VerifiedGarbage.Impl.Sm4.Arm.Fb
+meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
+meta import VerifiedGarbage.Spec.Sm4.Cfb
+meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SM4-OFB and SM4-CFB128 on ARMv7 meet their contracts

@@ -2,7 +2,9 @@ module
 
 public import VerifiedGarbage.Spec.Cast5
 public import VerifiedGarbage.Impl.Cast5.Lines
-public import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CAST5 key schedule: the lines as the implementations compute them

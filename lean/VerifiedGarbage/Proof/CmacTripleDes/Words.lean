@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.Bytes
-import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # TDEA-CMAC: 64-bit words as two 32-bit words

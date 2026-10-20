@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Scratch prefixes and stack-argument regions used by the DSA ABI -/
 

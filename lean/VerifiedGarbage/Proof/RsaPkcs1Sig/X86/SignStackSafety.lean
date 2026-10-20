@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignPrivateCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignVerified
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignNoSp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignFnInput
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackSafety
+import VerifiedGarbage.Proof.Rsa.X86.PrivFnInput
 
 /-! # Stack bound and instruction safety for every CRT-backed signing variant -/
 

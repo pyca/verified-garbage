@@ -1,15 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
+import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 
 /-!
 # Montgomery arithmetic modulo brainpoolP384r1's `p` and `n`, as functions, on x86 (32-bit): verified

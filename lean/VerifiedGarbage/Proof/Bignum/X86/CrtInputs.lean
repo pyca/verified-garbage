@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+public import VerifiedGarbage.Spec.Rsa
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
 /-! # Stable resources for all eighteen private CRT arguments -/
 

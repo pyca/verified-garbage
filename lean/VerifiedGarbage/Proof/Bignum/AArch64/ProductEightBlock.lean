@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightLoad
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcBlock
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcLoad
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.ProductEight

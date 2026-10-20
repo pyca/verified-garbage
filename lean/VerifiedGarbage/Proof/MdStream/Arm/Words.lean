@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MdStream.Arm
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MdStream.Spec
 
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming Merkle–Damgård hash functions on ARMv7: length fields and digests

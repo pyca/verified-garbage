@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Hash
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SeedAdd
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
+public import VerifiedGarbage.Impl.RsaOaep.AArch64
 
 /-! Wrapped-seed hash contributions in descending contribution order. -/
 @[expose] public section

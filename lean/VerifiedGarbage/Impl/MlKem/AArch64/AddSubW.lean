@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
 # Sums of polynomials stored with 16 bits, on AArch64

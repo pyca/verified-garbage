@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The complete CRT layout fits the existing cross-architecture scratch contract -/
 

@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86.CallCT
-meta import VerifiedGarbage.Proof.X448.X86.CallCT
 import VerifiedGarbage.Proof.X448.X86.Square
-meta import VerifiedGarbage.Proof.X448.X86.Square
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Proof.X448.X86.FnLit
-meta import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X448.X86.CallCT
+meta import VerifiedGarbage.Proof.X448.X86.Square
 meta import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Proof.X448.X86.Counters
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # Field arithmetic on x86 (32-bit): two runs, piece by piece

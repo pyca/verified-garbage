@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Rsa.ZeroTest32
-public import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
+import VerifiedGarbage.Proof.Rsa.ZeroTest32
+import VerifiedGarbage.Proof.Bignum.Arm.CompareByteStep
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A full byte comparison terminates without disclosing the first mismatch -/
 

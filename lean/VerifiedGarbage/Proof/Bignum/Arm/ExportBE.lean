@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
-public import VerifiedGarbage.Proof.Bignum.Arm.ReadPrefix
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ReverseBuffer
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Fixed-width I2OSP export from a shared RSA array -/
 

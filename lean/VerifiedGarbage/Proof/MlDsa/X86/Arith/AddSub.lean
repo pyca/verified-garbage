@@ -1,19 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86.Arith.Basic
-public import VerifiedGarbage.Spec.MlDsa.Poly
-meta import VerifiedGarbage.Spec.MlDsa.Poly
-public import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Sig
-meta import VerifiedGarbage.Proof.Framework.Sig
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import Mathlib.Tactic.Set
 meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_add` and `vg_mldsa_sub`

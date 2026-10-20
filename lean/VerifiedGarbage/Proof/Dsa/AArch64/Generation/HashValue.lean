@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashPlan
 public import VerifiedGarbage.Proof.Dsa.Generation.Contributions
-public import VerifiedGarbage.Proof.Dsa.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Digest
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Decode the stored p hashes as their radix contribution sum -/
 

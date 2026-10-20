@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Install
-public import VerifiedGarbage.Proof.Dsa.Arm.Dispatch
+public import VerifiedGarbage.Proof.Dsa.Arm.Body
+public import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-!
 # DSA on 32-bit ARM: the caller's buffers, and the exit

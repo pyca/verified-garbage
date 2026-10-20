@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Setup
+import VerifiedGarbage.Proof.Bignum.Arm.Setup
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.Setup
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Workspace setup changes only bytes within the caller's scratch buffer -/
 

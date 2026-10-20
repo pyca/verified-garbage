@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Stream
 public import VerifiedGarbage.Proof.MlDsa.Pack.Bits
 public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # ML-DSA on 32-bit ARM: the loops over the groups

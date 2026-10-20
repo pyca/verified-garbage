@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitment
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseC
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.Mem
 
 @[expose] public section
 

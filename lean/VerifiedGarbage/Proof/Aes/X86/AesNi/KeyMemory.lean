@@ -1,8 +1,9 @@
 module
-
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeySteps
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
-public import VerifiedGarbage.Proof.Framework.Offset
+
 
 @[expose] public section
 

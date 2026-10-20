@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.GMul
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.GMul
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP256r1.AArch64
 
 /-! # brainpoolP256r1 signing with the general ladder -/
 

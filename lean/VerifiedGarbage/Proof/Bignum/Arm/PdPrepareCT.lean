@@ -1,11 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.Arm.PdFn
+meta import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public RSA workspace setup has a public trace -/
 

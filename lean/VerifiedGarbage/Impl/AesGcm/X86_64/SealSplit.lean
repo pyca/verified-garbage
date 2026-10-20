@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 public import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 
 /-!
 # AES-GCM on x86-64: `seal` of a plaintext whose prefix is elsewhere

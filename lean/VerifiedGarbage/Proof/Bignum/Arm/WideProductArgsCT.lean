@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductHead
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductHead
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.WideProductHead
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Loading a secret product scalar leaks only its public source address -/
 

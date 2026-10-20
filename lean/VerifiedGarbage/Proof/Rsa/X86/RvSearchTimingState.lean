@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvSearchState
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateBodyTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
+import VerifiedGarbage.Proof.Rsa.X86.RvSearchLoop
+import VerifiedGarbage.Proof.Rsa.RecoverTries
 
 /-! # The declared attempt count determines the recovery search's stopping condition -/
 

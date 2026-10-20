@@ -1,10 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM on AArch64: what every function uses

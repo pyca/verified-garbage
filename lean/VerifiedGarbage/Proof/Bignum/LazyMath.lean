@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
 
-public import VerifiedGarbage.Proof.Bignum.Math
 
 /-!
 # Montgomery multiplication without a reduced operand

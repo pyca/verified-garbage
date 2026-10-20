@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+import VerifiedGarbage.Proof.Bignum.Arm.LoadArray
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Read an array pointer and native-word count from the shared header -/
 

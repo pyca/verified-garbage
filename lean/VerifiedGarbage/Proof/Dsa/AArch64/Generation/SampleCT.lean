@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitnessCT
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitnessCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitnessCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.StoredWitnessCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! Witness selection branches only on the public sampled candidate. -/
 @[expose] public section

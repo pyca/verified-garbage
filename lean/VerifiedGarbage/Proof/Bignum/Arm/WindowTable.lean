@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.TCB.Arm.Isa
 
-public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
-public import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The table of powers of the windowed ARMv7 exponentiation
 

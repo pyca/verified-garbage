@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Child
+import VerifiedGarbage.Proof.Dsa.X86_64.Child
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86_64.InitFrame
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Initializing both DSA moduli in the shared scratch allocation -/
 

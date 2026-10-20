@@ -2,9 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitPath
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SplitCallee
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the call of `vg_aes_gcm_seal_split`

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEntry
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! Saved public arguments retained throughout randomized signing. -/
 @[expose] public section

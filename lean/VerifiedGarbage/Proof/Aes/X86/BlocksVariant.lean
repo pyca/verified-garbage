@@ -1,11 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
-meta import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.Aes.X86.BlocksCT
-meta import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+public import VerifiedGarbage.Proof.Aes.X86.Blocks
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Aes.X86.VariantProof
+meta import VerifiedGarbage.Proof.Aes.X86.BlocksCT
 meta import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksMain
+meta import VerifiedGarbage.Proof.Aes.X86.Blocks
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyArith
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86

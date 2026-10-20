@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
-import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignBody
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheckStep
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyDerive
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublishValue
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Key generation after an accepted domain: x sampled, then the key derived -/
 

@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
-meta import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.SampleSqueeze
 meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.MlKem.Bits
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_sample_ntt`

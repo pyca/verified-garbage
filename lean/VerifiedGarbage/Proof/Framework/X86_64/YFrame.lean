@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86_64.State
 
-public import VerifiedGarbage.TCB.X86_64.Isa
 
 /-!
 # x86-64: what a block leaves of the vector registers, lane by lane

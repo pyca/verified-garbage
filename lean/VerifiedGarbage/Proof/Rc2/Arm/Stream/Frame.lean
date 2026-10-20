@@ -1,15 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Common
 
-public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
-public import VerifiedGarbage.Proof.Rc2.Scratch
+import VerifiedGarbage.Proof.Rc2.Arm.Stream.Verified
 import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Impl.MdStream.Arm
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Rc2.Arm.Lit
 
 /-!
 # RC2-CBC's streaming functions on ARMv7, with their working space on the stack

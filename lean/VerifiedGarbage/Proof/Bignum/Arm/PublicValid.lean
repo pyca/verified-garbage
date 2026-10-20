@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicApply
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicWritten
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Bignum.Arm.PublicApply
+import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.PublicWritten
 
 /-! # The public RSA path for a validated public key satisfies the shared result contract -/
 

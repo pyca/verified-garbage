@@ -1,11 +1,8 @@
 module
+public import VerifiedGarbage.Impl.RsaPss.X86_64
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
-import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
 import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.RsaPss
 
 /-!
 # RSASSA-PSS on x86-64: no writes to `rsp`, no loads of MXCSR

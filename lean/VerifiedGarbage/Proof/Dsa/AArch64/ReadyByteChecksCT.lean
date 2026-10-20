@@ -1,11 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
 
 /-! # Byte validation timing from the persistent public field bindings -/
 

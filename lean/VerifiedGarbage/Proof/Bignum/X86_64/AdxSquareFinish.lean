@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! The final conditional subtraction, shared with the ADX multiplier. -/
 

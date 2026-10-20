@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmeticCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmeticCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateStoresCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateLoadState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
 
 /-! # The complete byte-to-byte p-candidate builder has a public trace -/
 

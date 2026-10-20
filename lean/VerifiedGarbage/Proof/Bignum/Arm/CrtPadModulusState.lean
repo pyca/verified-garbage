@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportPadded
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtClearWide
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtClearWide
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Preserve the modulus workspace while clearing its extended comparison buffer -/
 

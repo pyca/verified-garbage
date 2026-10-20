@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Limbs
+import Batteries.Tactic.Init
 
 /-!
 # X448: canonical reduction

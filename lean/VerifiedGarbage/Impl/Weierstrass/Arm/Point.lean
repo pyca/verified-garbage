@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm
-public import VerifiedGarbage.Impl.Weierstrass.Slots
 public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!

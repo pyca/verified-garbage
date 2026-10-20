@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Initial
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! # Argument handling for Argon2 H₀ -/

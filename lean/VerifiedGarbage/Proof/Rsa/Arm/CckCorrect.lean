@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.KcPost
+import VerifiedGarbage.Proof.Rsa.Arm.KcPost
 public import VerifiedGarbage.Impl.Rsa.Arm.CheckCrtKey
+public import VerifiedGarbage.Proof.Rsa.Arm.KcFn
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! # `vg_rsa_check_crt_key` on ARMv7: correctness
 

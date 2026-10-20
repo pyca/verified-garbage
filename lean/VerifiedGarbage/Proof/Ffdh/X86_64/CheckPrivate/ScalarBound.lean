@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Flags
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarLess
-public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckPrivate
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.ScalarLess
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH private-key validation on x86-64: choose the scalar's bound -/
 
