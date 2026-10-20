@@ -82,15 +82,15 @@ def gatherSel (i : Nat) (a b c d t0 t1 : XReg) : List Piece :=
 /-- `finish` before its gathers: the rows added and transposed. -/
 def finishRows : List Instr :=
   ([.vmovdqu32Store (at_ .rcx save0Off) .xmm14, .vmovdqu32Store (at_ .rcx save1Off) .xmm15] : List Instr) ++
-  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
+  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
-  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
+  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
-  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
+  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
   ([.vmovdqu32Load .xmm9 (at_ .rcx save0Off), .vmovdqu32Load .xmm15 (at_ .rcx save1Off),
    .vmovdqu32Store (at_ .rcx save0Off) .xmm2, .vmovdqu32Store (at_ .rcx save1Off) .xmm3] : List Instr) ++
-  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
+  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] ++
     ([.vmovdqu32Load .xmm3 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3
 
@@ -121,15 +121,15 @@ def gatherHSel (i : Nat) (a b c d t0 t1 : XReg) : List Piece :=
 /-- `finishP` before its gathers. -/
 def finishPRows : List Instr :=
   ([.vmovdqu32Store (at_ .r9 save0Off) .xmm14, .vmovdqu32Store (at_ .r9 save1Off) .xmm15] : List Instr) ++
-  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
+  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++
     transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
-  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
+  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
     transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
-  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
+  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] ++
     transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
   ([.vmovdqu32Load .xmm9 (at_ .r9 save0Off), .vmovdqu32Load .xmm15 (at_ .r9 save1Off),
    .vmovdqu32Store (at_ .r9 save0Off) .xmm2, .vmovdqu32Store (at_ .r9 save1Off) .xmm3] : List Instr) ++
-  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
+  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] ++
     ([.vmovdqu32Load .xmm3 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm3] : List Instr) ++
     transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3
 

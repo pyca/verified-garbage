@@ -83280,28 +83280,24 @@ mov QWORD PTR [rcx+184], rax
 cmp rdx, 1024
 jb 269f
 271:
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -84264,15 +84260,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [rcx], zmm14
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -84281,15 +84272,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -84298,15 +84284,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -84319,15 +84300,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [rcx]
 vmovdqu32 zmm15, ZMMWORD PTR [rcx+64]
 vmovdqu32 ZMMWORD PTR [rcx], zmm2
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
@@ -84565,28 +84541,24 @@ jmp 270f
 cmp rdx, 513
 jb 2104f
 mov r9, rcx
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -85549,15 +85521,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [r9], zmm14
 vmovdqu32 ZMMWORD PTR [r9+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -85566,15 +85533,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -85583,15 +85545,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -85604,15 +85561,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [r9]
 vmovdqu32 zmm15, ZMMWORD PTR [r9+64]
 vmovdqu32 ZMMWORD PTR [r9], zmm2
 vmovdqu32 ZMMWORD PTR [r9+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
@@ -123952,28 +123904,24 @@ mov QWORD PTR [rcx+184], rax
 cmp rdx, 1024
 jb 269f
 271:
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -124936,15 +124884,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [rcx], zmm14
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -124953,15 +124896,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -124970,15 +124908,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -124991,15 +124924,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [rcx]
 vmovdqu32 zmm15, ZMMWORD PTR [rcx+64]
 vmovdqu32 ZMMWORD PTR [rcx], zmm2
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
@@ -125237,28 +125165,24 @@ jmp 270f
 cmp rdx, 513
 jb 2104f
 mov r9, rcx
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -126221,15 +126145,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [r9], zmm14
 vmovdqu32 ZMMWORD PTR [r9+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -126238,15 +126157,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -126255,15 +126169,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -126276,15 +126185,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [r9]
 vmovdqu32 zmm15, ZMMWORD PTR [r9+64]
 vmovdqu32 ZMMWORD PTR [r9], zmm2
 vmovdqu32 ZMMWORD PTR [r9+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
@@ -137443,28 +137347,24 @@ mov QWORD PTR [rcx+184], rax
 cmp rdx, 1024
 jb 269f
 271:
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -138427,15 +138327,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [rcx], zmm14
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -138444,15 +138339,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -138461,15 +138351,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -138482,15 +138367,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [rcx]
 vmovdqu32 zmm15, ZMMWORD PTR [rcx+64]
 vmovdqu32 ZMMWORD PTR [rcx], zmm2
 vmovdqu32 ZMMWORD PTR [rcx+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [rcx+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
@@ -138728,28 +138608,24 @@ jmp 270f
 cmp rdx, 513
 jb 2104f
 mov r9, rcx
-vbroadcasti32x4 zmm15, XMMWORD PTR [rdi+48]
-vpshufd zmm12, zmm15, 0
-vpshufd zmm13, zmm15, 85
-vpshufd zmm14, zmm15, 170
-vpshufd zmm15, zmm15, 255
+vpbroadcastd zmm12, DWORD PTR [rdi+48]
+vpbroadcastd zmm13, DWORD PTR [rdi+52]
+vpbroadcastd zmm14, DWORD PTR [rdi+56]
+vpbroadcastd zmm15, DWORD PTR [rdi+60]
 vmovdqu32 zmm0, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm0
-vbroadcasti32x4 zmm3, XMMWORD PTR [rdi]
-vpshufd zmm0, zmm3, 0
-vpshufd zmm1, zmm3, 85
-vpshufd zmm2, zmm3, 170
-vpshufd zmm3, zmm3, 255
-vbroadcasti32x4 zmm7, XMMWORD PTR [rdi+16]
-vpshufd zmm4, zmm7, 0
-vpshufd zmm5, zmm7, 85
-vpshufd zmm6, zmm7, 170
-vpshufd zmm7, zmm7, 255
-vbroadcasti32x4 zmm11, XMMWORD PTR [rdi+32]
-vpshufd zmm8, zmm11, 0
-vpshufd zmm9, zmm11, 85
-vpshufd zmm10, zmm11, 170
-vpshufd zmm11, zmm11, 255
+vpbroadcastd zmm0, DWORD PTR [rdi]
+vpbroadcastd zmm1, DWORD PTR [rdi+4]
+vpbroadcastd zmm2, DWORD PTR [rdi+8]
+vpbroadcastd zmm3, DWORD PTR [rdi+12]
+vpbroadcastd zmm4, DWORD PTR [rdi+16]
+vpbroadcastd zmm5, DWORD PTR [rdi+20]
+vpbroadcastd zmm6, DWORD PTR [rdi+24]
+vpbroadcastd zmm7, DWORD PTR [rdi+28]
+vpbroadcastd zmm8, DWORD PTR [rdi+32]
+vpbroadcastd zmm9, DWORD PTR [rdi+36]
+vpbroadcastd zmm10, DWORD PTR [rdi+40]
+vpbroadcastd zmm11, DWORD PTR [rdi+44]
 vpaddd zmm0, zmm0, zmm4
 vpaddd zmm1, zmm1, zmm5
 vpaddd zmm2, zmm2, zmm6
@@ -139712,15 +139588,10 @@ vprold zmm7, zmm7, 7
 vprold zmm4, zmm4, 7
 vmovdqu32 ZMMWORD PTR [r9], zmm14
 vmovdqu32 ZMMWORD PTR [r9+64], zmm15
-vbroadcasti32x4 zmm14, XMMWORD PTR [rdi]
-vpshufd zmm15, zmm14, 0
-vpaddd zmm0, zmm0, zmm15
-vpshufd zmm15, zmm14, 85
-vpaddd zmm1, zmm1, zmm15
-vpshufd zmm15, zmm14, 170
-vpaddd zmm2, zmm2, zmm15
-vpshufd zmm15, zmm14, 255
-vpaddd zmm3, zmm3, zmm15
+vpaddd zmm0, zmm0, DWORD PTR [rdi]{{1to16}}
+vpaddd zmm1, zmm1, DWORD PTR [rdi+4]{{1to16}}
+vpaddd zmm2, zmm2, DWORD PTR [rdi+8]{{1to16}}
+vpaddd zmm3, zmm3, DWORD PTR [rdi+12]{{1to16}}
 vpunpckldq zmm14, zmm0, zmm1
 vpunpckhdq zmm1, zmm0, zmm1
 vpunpckldq zmm15, zmm2, zmm3
@@ -139729,15 +139600,10 @@ vpunpcklqdq zmm0, zmm14, zmm15
 vpunpckhqdq zmm14, zmm14, zmm15
 vpunpcklqdq zmm2, zmm1, zmm3
 vpunpckhqdq zmm3, zmm1, zmm3
-vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+16]
-vpshufd zmm15, zmm1, 0
-vpaddd zmm4, zmm4, zmm15
-vpshufd zmm15, zmm1, 85
-vpaddd zmm5, zmm5, zmm15
-vpshufd zmm15, zmm1, 170
-vpaddd zmm6, zmm6, zmm15
-vpshufd zmm15, zmm1, 255
-vpaddd zmm7, zmm7, zmm15
+vpaddd zmm4, zmm4, DWORD PTR [rdi+16]{{1to16}}
+vpaddd zmm5, zmm5, DWORD PTR [rdi+20]{{1to16}}
+vpaddd zmm6, zmm6, DWORD PTR [rdi+24]{{1to16}}
+vpaddd zmm7, zmm7, DWORD PTR [rdi+28]{{1to16}}
 vpunpckldq zmm1, zmm4, zmm5
 vpunpckhdq zmm5, zmm4, zmm5
 vpunpckldq zmm15, zmm6, zmm7
@@ -139746,15 +139612,10 @@ vpunpcklqdq zmm4, zmm1, zmm15
 vpunpckhqdq zmm1, zmm1, zmm15
 vpunpcklqdq zmm6, zmm5, zmm7
 vpunpckhqdq zmm7, zmm5, zmm7
-vbroadcasti32x4 zmm5, XMMWORD PTR [rdi+32]
-vpshufd zmm15, zmm5, 0
-vpaddd zmm8, zmm8, zmm15
-vpshufd zmm15, zmm5, 85
-vpaddd zmm9, zmm9, zmm15
-vpshufd zmm15, zmm5, 170
-vpaddd zmm10, zmm10, zmm15
-vpshufd zmm15, zmm5, 255
-vpaddd zmm11, zmm11, zmm15
+vpaddd zmm8, zmm8, DWORD PTR [rdi+32]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+36]{{1to16}}
+vpaddd zmm10, zmm10, DWORD PTR [rdi+40]{{1to16}}
+vpaddd zmm11, zmm11, DWORD PTR [rdi+44]{{1to16}}
 vpunpckldq zmm5, zmm8, zmm9
 vpunpckhdq zmm9, zmm8, zmm9
 vpunpckldq zmm15, zmm10, zmm11
@@ -139767,15 +139628,10 @@ vmovdqu32 zmm9, ZMMWORD PTR [r9]
 vmovdqu32 zmm15, ZMMWORD PTR [r9+64]
 vmovdqu32 ZMMWORD PTR [r9], zmm2
 vmovdqu32 ZMMWORD PTR [r9+64], zmm3
-vbroadcasti32x4 zmm2, XMMWORD PTR [rdi+48]
-vpshufd zmm3, zmm2, 0
-vpaddd zmm12, zmm12, zmm3
-vpshufd zmm3, zmm2, 85
-vpaddd zmm13, zmm13, zmm3
-vpshufd zmm3, zmm2, 170
-vpaddd zmm9, zmm9, zmm3
-vpshufd zmm3, zmm2, 255
-vpaddd zmm15, zmm15, zmm3
+vpaddd zmm12, zmm12, DWORD PTR [rdi+48]{{1to16}}
+vpaddd zmm13, zmm13, DWORD PTR [rdi+52]{{1to16}}
+vpaddd zmm9, zmm9, DWORD PTR [rdi+56]{{1to16}}
+vpaddd zmm15, zmm15, DWORD PTR [rdi+60]{{1to16}}
 vmovdqu32 zmm3, ZMMWORD PTR [r9+128]
 vpaddd zmm12, zmm12, zmm3
 vpunpckldq zmm2, zmm12, zmm13
