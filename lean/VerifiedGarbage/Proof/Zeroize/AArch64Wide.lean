@@ -8,6 +8,10 @@ meta import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 meta import VerifiedGarbage.Proof.Zeroize.AArch64
 meta import VerifiedGarbage.Proof.Ct.AArch64
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 @[expose] public section
 
