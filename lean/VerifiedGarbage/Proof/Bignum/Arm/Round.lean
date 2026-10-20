@@ -3,18 +3,21 @@ public import VerifiedGarbage.Impl.Bignum.Arm.Round
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 import VerifiedGarbage.Proof.Bignum.Arm.ProductStage
-import VerifiedGarbage.Proof.Bignum.Arm.ReductionStage
-import VerifiedGarbage.Proof.Bignum.Arm.QuotientStage
+import VerifiedGarbage.Proof.Bignum.Arm.FusedReductionStage
+import VerifiedGarbage.Proof.Bignum.Arm.RoundFinish
+import VerifiedGarbage.Proof.Bignum.Arm.RoundFinishMemory
 import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
 import VerifiedGarbage.Proof.Bignum.Arm.MontMath
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! # A complete ARMv7 Montgomery round, including its memory and loop state -/
 
 @[expose] public section
 
 namespace VG.Proof.Bignum.Arm
+open VG.Proof.X25519.Arm (ofNat_beq_zero)
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 
 theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : Nat} {inv : BitVec 32}
@@ -38,19 +41,34 @@ theorem montRound_ok (s : State) {base : BitVec 32} {size tmp a b mod acc n i : 
     (s.mem.readW (off (State.addr base) (a + 4 * i)) 32).isLt
   have capacity := round_fit hT ha hB hq (val32_lt s.mem (State.addr base) mod n)
   rw [WP.seq_iff]
-  refine WP.mono (reductionStage_ok u ctxU hdrU ptrU (by rw [modulus]; exact hInv) ?_) ?_
-  · rw [product, modulus]
+  refine WP.mono (fusedStage_ok u ctxU hdrU ptrU (by rw [modulus];exact hInv) ?_) ?_
+  · rw [product,modulus]
     exact capacity
-  · rintro v ⟨reduction, cancel, hdrV, ptrV, outsideV, keepV⟩
-    refine WP.mono (quotientStage_ok v (ctxU.congr keepV.wr) hdrV hi ptrV cancel) ?_
-    rintro t ⟨quotient, hdrT, ptrT, outsideT, zero, keepT⟩
-    have value : 2 ^ 32 * val32 t.mem (State.addr base) acc (n + 2) =
-        val32 s.mem (State.addr base) acc (n + 2) +
-          w32 s.mem (State.addr base) (a + 4 * i) * val32 s.mem (State.addr base) b n +
-            q * val32 s.mem (State.addr base) mod n := by
-      rw [quotient, reduction, product, modulus]
-    refine ⟨hdrT, ptrT, ⟨q, hq, value⟩, round_lt value hT ha hB hq, ?_, zero,
-      keepU.trans (keepV.trans keepT)⟩
-    exact (Outs.of_outside (outsideU.trans outsideV) (by simp)).trans outsideT
+  · rintro v ⟨quotient,hdrV,ptrV,outsideV,keepV⟩
+    have ctxV := ctxU.congr keepV.wr
+    refine WP.mono (roundFinish_ok (tmp:=tmp) (top:=acc+4*(n+1)) v ctxV.workspace (by have := ctx.tmpFits;omega)
+      (by have := ctx.layout;omega) ptrV) ?_
+    rintro t ⟨memT,ptrT,zero,keepT⟩
+    have mt : t.mem=finishMem v.mem (State.addr base) (acc+4*(n+1)) tmp := memT
+    have nowrap' : (State.addr base).toNat+size≤2^32 := by
+      simpa only [VG.Proof.X25519.Arm.addr_toNat] using nowrap
+    obtain ⟨result,frame⟩ := finish_value (mem:=v.mem) (acc:=acc) (n:=n) (tmp:=tmp)
+      nowrap' (by have := ctx.tmpFits;omega) rfl (by have := ctx.layout;omega)
+    rw [←mt] at result frame
+    have value : 2^32*val32 t.mem (State.addr base) acc (n+2)=
+        val32 s.mem (State.addr base) acc (n+2)+
+          w32 s.mem (State.addr base) (a+4*i)*val32 s.mem (State.addr base) b n+
+            q*val32 s.mem (State.addr base) mod n := by
+      rw [result,quotient,product,modulus]
+    refine ⟨?_,ptrT,⟨q,hq,value⟩,round_lt value hT ha hB hq,?_,?_,?_⟩
+    · rw [mt]
+      exact finish_meta nowrap ctx.tmpFits (by have := ctx.layout;omega) hdrV hi
+    · exact (Outs.of_outside (outsideU.trans
+        (outsideV.mono (Nat.le_refl _) (by omega))) (by simp)).trans frame
+    · rw [zero,hdrV.remaining]
+      change (BitVec.ofNat 32 (n-i)-BitVec.ofNat 32 1==0)=_
+      rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega),ofNat_beq_zero (by omega)]
+      simp only [show n-i-1=0↔i+1=n by omega]
+    · exact keepU.trans (keepV.trans (keepT.mono (by simp [roundClobbers])))
 
 end VG.Proof.Bignum.Arm

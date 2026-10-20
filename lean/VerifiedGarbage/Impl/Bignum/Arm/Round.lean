@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.RowFull
 public import VerifiedGarbage.Impl.Bignum.Arm.Shift
+public import VerifiedGarbage.Impl.Bignum.Arm.FusedReduction
 
 /-! # A Montgomery round using the temporary array for public loop state
 
@@ -48,7 +49,9 @@ def reductionStage : Prog isa := .seq (.block reductionArgs) rowFull
 
 def quotientStage : Prog isa := .seq (.block shiftArgs) (.seq shift (.block roundFinish))
 
-def montRound : Prog isa := .seq productStage (.seq reductionStage quotientStage)
+def fusedReductionStage : Prog isa := .seq (.block reductionArgs) FusedReduction.code
+
+def montRound : Prog isa := .seq productStage (.seq fusedReductionStage (.block roundFinish))
 
 def montRounds : Prog isa := .loop montRound .ne
 

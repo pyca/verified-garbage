@@ -65,7 +65,7 @@ def artifacts : List Artifact := [
         in place of four 16 × 16-bit `mul`s and their additions; after a row's loop, the registers its \
         16-bit steps would leave are set from the last word, so that each row ends as the baseline's \
         does and the baseline's proofs carry over."]
-    code := Impl.Bignum.Arm.umaalRows Impl.Bignum.Arm.CrtFn.code
+    code := Impl.Bignum.Arm.umaalArithmetic Impl.Bignum.Arm.CrtFn.code
     stack := 56
     verified := Proof.Bignum.Arm.crtUmaal_verified
     features := ["umaal"] },

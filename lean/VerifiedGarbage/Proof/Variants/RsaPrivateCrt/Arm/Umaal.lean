@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm.Base
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtUmaal
-import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
-public import VerifiedGarbage.Proof.Bignum.Arm.RowUmaal
+import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.UmaalArithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
@@ -551,10 +551,11 @@ import VerifiedGarbage.Proof.Bignum.FoldedPublic
 # `vg_rsa_private_crt` on ARMv7 with `umaal`: the variant's code and proofs
 
 The variant `VG.Variants.RsaPrivateCrt.Arm.Umaal.variant`
-(`Variants/RsaPrivateCrt/Arm/Umaal.lean`): the baseline's code with each
-row by `rowU` (`umaalRows`), whose proofs are the baseline's
-(`umaalRows_verified`), checked with the baseline's
-`vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked`.
+(`Variants/RsaPrivateCrt/Arm/Umaal.lean`): `umaalArithmetic` replaces product
+and fused reduction rows with UMAAL implementations. The exact execution
+simulation transfers the baseline proof through `umaalArithmetic_verified`,
+checked with the baseline's `vg_rsa_public_precompute` and
+`vg_rsa_public_precomputed_checked`.
 -/
 
 @[expose] public section
@@ -566,9 +567,9 @@ open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 def variant : Proof.Rsa.Arm.CrtImpl :=
   { Base.variant with
     name := Spec.Rsa.privateCrtApi.name ++ "_umaal"
-    code := umaalRows CrtFn.code
+    code := umaalArithmetic CrtFn.code
     verified := crtUmaal_verified
-    stack := (armStack_umaalRows _).trans Base.variant.stack
+    stack := (armStack_umaalArithmetic _).trans Base.variant.stack
     suffix := "_umaal"
     features := ["umaal"] }
 
