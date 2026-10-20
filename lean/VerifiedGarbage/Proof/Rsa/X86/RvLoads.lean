@@ -104,7 +104,8 @@ theorem loads_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   have header := h.ws.hdr_le
   have nw := h.ws.workspace.nowrap
   refine ⟨ht.inputs.rt len, h.lower, h.upper, outside_stage ht.frame (by omega) (by unfold hdr at header; omega),
-    ht.inputs.esp, ht.rest, ?_, ?_, by simp, by decide, by decide, by simp⟩
+    ht.inputs.esp, ht.inputs.room, ht.inputs.wsLen len, by rw [len.bytes]; omega, ht.rest, ?_, ?_, by simp,
+    by decide, by decide, by simp⟩
   · intro j hj
     simp only [List.mem_singleton] at hj
     subst j

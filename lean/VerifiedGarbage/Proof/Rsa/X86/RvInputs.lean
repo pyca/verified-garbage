@@ -36,12 +36,14 @@ structure Lengths (g : CallGeometry) : Prop where
   upper : (g.args 5).toNat ≤ 1024
   width : g.n = Spec.Rsa.modulusWords (g.args 5).toNat
   scratch : g.args 10 = BitVec.ofNat 32 g.B.toNat
+  bytes : g.Z = (g.args 11).toNat * 8
 
 structure Inputs (g : CallGeometry) (s : State) : Prop where
   ws : Ws s g.B g.Z g.toGeo.w nArr
   lower : 8 ≤ g.n
   upper : g.n ≤ 128
   esp : s.gpr .esp = g.sp
+  room : VG.Proof.Mont.X86.CallRoom g.sp g.B g.Z
   arguments : ∀ i, i < 12 → CallArgument s g.B g.Z i (g.args i)
   stackApart : ∀ i, i < 12 → ∀ r ∈ g.writes, Region.Disjoint ⟨stackAddress s i, 4⟩ r
   inputPositive : ∀ j : Fin 3, 0 < (g.buffer (4 + 2 * j.val)).len
@@ -59,7 +61,7 @@ structure Inputs (g : CallGeometry) (s : State) : Prop where
 theorem Inputs.after {g : CallGeometry} {s t : State} {regs : List Reg} (h : Inputs g s)
     (rest : Keeps regs s t) (di : .edi ∉ regs) (sp : .esp ∉ regs) (frame : Frame g.writes s.mem t.mem) :
     Inputs g t := by
-  refine ⟨h.ws.rest rest di sp, h.lower, h.upper, by rw [rest.1 _ sp]; exact h.esp, ?_, ?_, h.inputPositive, h.inputBound,
+  refine ⟨h.ws.rest rest di sp, h.lower, h.upper, by rw [rest.1 _ sp]; exact h.esp, h.room, ?_, ?_, h.inputPositive, h.inputBound,
     h.inputFit, ?_, h.inputApart, h.outputPositive, h.outputBound, h.outputFit, ?_, h.outputScratch,
     h.outputSeparate⟩
   · exact fun i hi => (h.arguments i hi).frame rest sp frame (h.stackApart i hi)
@@ -105,6 +107,13 @@ theorem stage_writes (g : CallGeometry) (hz : 16 ≤ g.Z) :
   rcases hr with rfl | rfl
   · exact ⟨_, by simp [CallGeometry.writes], fun _ h => h⟩
   · exact ⟨⟨g.B, g.Z⟩, by simp [CallGeometry.writes], VG.Offset.sub_base _ (by omega)⟩
+
+/-- The working space's length argument, at its length in `u64`s. -/
+theorem Inputs.wsLen {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+    CallArgument s g.B g.Z 11 (BitVec.ofNat 32 (g.Z / 8)) := by
+  have a := h.arguments 11 (by decide)
+  have e : g.Z / 8 = (g.args 11).toNat := by rw [len.bytes]; omega
+  rwa [e, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- An argument's word lies apart from what a stage changes. -/
 theorem Inputs.stageApart {g : CallGeometry} {s : State} (h : Inputs g s) {i : Nat} (hi : i < 12) :
