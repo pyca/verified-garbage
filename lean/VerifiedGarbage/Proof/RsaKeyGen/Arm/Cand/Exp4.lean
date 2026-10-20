@@ -108,7 +108,7 @@ theorem powStep_ok {j : Nat} (hj : j < 5) {u : State} {x y : BitVec 32} (r1 : u.
       exact wp_mov (op2_lsr (by omega)) fun u1 v1 => wp_dp (op2_imm (by decide)) fun u2 v2 =>
         k' u2 ((v1.rest (by simp)).trans (v2.rest (by simp))) (by rw [v2.mem, v1.mem]) (by
           rw [v2.gpr, dpVal, v1.gpr, r1])
-  unfold powStep
+  unfold powStep VG.Impl.Bignum.Arm.TwoPower.step
   rw [List.append_assoc]
   refine hb fun u1 k1 m1 b1 => ?_
   simp only [List.cons_append, List.nil_append]
