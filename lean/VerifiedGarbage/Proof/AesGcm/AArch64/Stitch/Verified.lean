@@ -27,12 +27,16 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 
 theorem stitchSealWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {tb : List Instr}
-    (htb : (Code.block tb : Prog isa).allInstrs keepsV = true) {cl : Prog isa} (hcl : cl.allInstrs keepsV = true) :
-    (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees k tb cl).allInstrs keepsV = true := by
+    (htb : (Code.block tb : Prog isa).allInstrs keepsV = true) {cl : Prog isa} (hcl : cl.allInstrs keepsV = true)
+    {sh : Bool} : (Impl.AesGcm.AArch64.Stitch.sealWithS v.callees k tb cl sh).allInstrs keepsV = true := by
   simp only [Code.allInstrs] at htb
-  rcases hk with rfl | rfl <;>
+  rcases hk with rfl | rfl <;> cases sh <;>
   simp only [Impl.AesGcm.AArch64.Stitch.sealWithS, Impl.AesGcm.AArch64.Stitch.runWithS,
     Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.runWithP,
+    Impl.AesGcm.AArch64.Stitch.sealShort, Impl.AesGcm.AArch64.Stitch.textOut, Impl.AesGcm.AArch64.Stitch.shortThr, Impl.AesGcm.AArch64.Stitch.shortMin,
+    Impl.AesGcm.AArch64.Stitch.shortPre, Impl.AesGcm.AArch64.Stitch.textIn, Impl.AesGcm.AArch64.Stitch.copyQ,
+    Impl.AesGcm.AArch64.Stitch.ctToB2, Impl.AesGcm.AArch64.Stitch.aadIn, Impl.AesGcm.AArch64.Stitch.shortAes,
+    Impl.AesGcm.AArch64.SealGather.copyBlocks, Impl.Gcm.AArch64.Stitch.byRounds, Bool.false_eq_true, ite_true, ite_false,
     Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond,
     Impl.AesGcm.AArch64.Fast.padMul, cryptAl, crSeg2, crTail, sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo,
     textAbs, finBody, tag, crypt, crSeg1, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy,
@@ -40,12 +44,16 @@ theorem stitchSealWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 8 ∨ k = 16) {
     v.ctr.keepsV, v.gh.keepsV, htb, hcl, Bool.and_true, Bool.true_and] <;> decide +kernel
 
 theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) {tb : List Instr}
-    (htb : (Code.block tb : Prog isa).allInstrs keepsV = true) {cl : Prog isa} (hcl : cl.allInstrs keepsV = true) :
-    (Impl.AesGcm.AArch64.Stitch.openWithS v.callees k tb cl).allInstrs keepsV = true := by
+    (htb : (Code.block tb : Prog isa).allInstrs keepsV = true) {cl : Prog isa} (hcl : cl.allInstrs keepsV = true)
+    {sh : Bool} : (Impl.AesGcm.AArch64.Stitch.openWithS v.callees k tb cl sh).allInstrs keepsV = true := by
   simp only [Code.allInstrs] at htb
-  rcases hk with rfl | rfl <;>
+  rcases hk with rfl | rfl <;> cases sh <;>
   simp only [Impl.AesGcm.AArch64.Stitch.openWithS, Impl.AesGcm.AArch64.Stitch.openFastS,
     Impl.AesGcm.AArch64.Stitch.thr, Impl.AesGcm.AArch64.Fast.openFastP, Impl.AesGcm.AArch64.Fast.openRunWithP,
+    Impl.AesGcm.AArch64.Stitch.openShortF, Impl.AesGcm.AArch64.Stitch.openShort, Impl.AesGcm.AArch64.Stitch.plainOut, Impl.AesGcm.AArch64.Stitch.shortThr,
+    Impl.AesGcm.AArch64.Stitch.shortPre, Impl.AesGcm.AArch64.Stitch.textIn, Impl.AesGcm.AArch64.Stitch.copyQ,
+    Impl.AesGcm.AArch64.Stitch.ctToB2, Impl.AesGcm.AArch64.Stitch.aadIn, Impl.AesGcm.AArch64.Stitch.shortAes,
+    Impl.AesGcm.AArch64.SealGather.copyBlocks, Impl.Gcm.AArch64.Stitch.byRounds, Bool.false_eq_true, ite_true, ite_false,
     Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front,
     Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, openRest, openMain, oneCrypt, cryptAl, crArgs,
     tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
