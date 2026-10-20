@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Proof.Blake2.AArch64.Lit
 meta import VerifiedGarbage.Impl.Blake2.AArch64.Stream
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
