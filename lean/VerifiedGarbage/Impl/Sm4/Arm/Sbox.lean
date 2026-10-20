@@ -4,7 +4,6 @@ public import VerifiedGarbage.Impl.Sm4.Circuit
 meta import VerifiedGarbage.Impl.Sm4.Circuit
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 meta import VerifiedGarbage.Impl.Aes.Arm.Sbox
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!

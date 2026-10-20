@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
 meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
