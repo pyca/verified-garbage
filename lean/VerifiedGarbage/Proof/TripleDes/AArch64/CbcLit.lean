@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Cbc
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # Triple DES-CBC's AArch64 code as literals, for kernel-evaluated checks -/
