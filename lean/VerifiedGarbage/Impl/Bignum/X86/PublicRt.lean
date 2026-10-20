@@ -36,7 +36,7 @@ def numOff : Nat := 256
 
 /-- `r = B`, the bytes of a number, from `n_len`, with `k` words pushed. -/
 def widthB (k : Nat) (r : Reg) : List Instr :=
-  [.mov r (.mem (argAt k 3)), .alu .add r (.imm 7), .shift .shr r 3, .alu .add r (.reg r),
+  [.mov r (.mem (argAt k 1)), .alu .add r (.imm 7), .shift .shr r 3, .alu .add r (.reg r),
     .alu .add r (.reg r), .alu .add r (.reg r)]
 
 /-- `r = 256 + j B`, the offset of number `j`, and `t = B`. -/
@@ -62,13 +62,16 @@ def load (j p l : Nat) : Prog isa :=
 def setOne (j : Nat) : Prog isa :=
   .seq (zero j) (.block (slotPtr .eax j .ecx ++ [.mov .ecx (.imm 1), .store (at_ .eax 0) .ecx]))
 
-/-- `ecx` all ones if the input is below `M`, else zero: the borrow of their
-difference, which is not stored. -/
-def compare : Prog isa :=
-  .seq (.block (slotPtr .esi 1 .edx ++ slotPtr .ebp 0 .edx ++ [.mov .ecx (.imm 0)]))
+/-- `ecx` all ones if number `a` is below number `b`, else zero: the borrow
+of their difference, which is not stored. -/
+def compareAt (a b : Nat) : Prog isa :=
+  .seq (.block (slotPtr .esi a .edx ++ slotPtr .ebp b .edx ++ [.mov .ecx (.imm 0)]))
     (.loop (.block [.mov .eax (.mem (at_ .esi 0)), .alu .add .ecx (.reg .ecx),
       .alu .sbb .eax (.mem (at_ .ebp 0)), .alu .sbb .ecx (.reg .ecx), .alu .add .esi (.imm 4),
       .alu .add .ebp (.imm 4), .alu .sub .edx (.imm 4)]) .ne)
+
+/-- `ecx` all ones if the input is below `M`, else zero. -/
+def compare : Prog isa := compareAt 1 0
 
 /-- The sum `2 T` (number 4) at `256 + 5 B`, and its carry in the word after it. -/
 def double : Prog isa :=

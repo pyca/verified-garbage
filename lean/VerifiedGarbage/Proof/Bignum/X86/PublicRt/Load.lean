@@ -28,7 +28,7 @@ theorem byteAddr_ptr {s : State} {W : Addr} {r : Reg} {x : Nat} (hp : PtrAt s W 
     Nat.mod_eq_of_lt (a := W.toNat + x) hx, Nat.mod_eq_of_lt (a := x) (by omega), Nat.mod_eq_of_lt (by omega)]
 
 theorem load_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) {j p l : Nat} (hj : j ≤ 7) (hp : p < 10) (hl : l < 10)
+    (h : RtIn base bytes len args s) {j p l : Nat} (hj : j ≤ 7) (hp : p < 10) (hl : l < 10)
     (hlen : args l = BitVec.ofNat 32 len) (fit : (args p).toNat + len ≤ 2 ^ 32)
     (rd : InRegions (s.rd ++ s.wr) (byteAddr (args p)) len)
     (apart : Region.Disjoint ⟨byteAddr (args p), len⟩ ⟨base, bytes⟩) :

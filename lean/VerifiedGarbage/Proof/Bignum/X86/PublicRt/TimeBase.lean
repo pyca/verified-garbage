@@ -41,7 +41,7 @@ theorem τA_wf {s : State} (A : ArgsOk s) : VG.X86.Taint.Wf τA s :=
     fun _ h => (List.not_mem_nil h).elim, fun _ => A, fun _ h => (List.not_mem_nil h).elim⟩
 
 theorem agreeA {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s₁ s₂ : State}
-    (h₁ : PublicInputs base bytes len args s₁) (h₂ : PublicInputs base bytes len args s₂)
+    (h₁ : RtIn base bytes len args s₁) (h₂ : RtIn base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) : VG.X86.Taint.Agree τA s₁ s₂ := by
   have f₁ := A₁.1
   have f₂ := A₂.1
@@ -83,7 +83,7 @@ theorem τF_wf {s : State} (A : ArgsOk s) (low : 36 ≤ (s.gpr .esp).toNat) :
     simp only [allocFrame_wr, allocFrame_esp, List.getElem?_cons_zero, addr, BitVec.add_zero]
 
 theorem agreeF {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {s₁ s₂ : State}
-    (h₁ : PublicInputs base bytes len args s₁) (h₂ : PublicInputs base bytes len args s₂)
+    (h₁ : RtIn base bytes len args s₁) (h₂ : RtIn base bytes len args s₂)
     (A₁ : ArgsOk s₁) (A₂ : ArgsOk s₂) (sp : s₁.gpr .esp = s₂.gpr .esp) (low : 36 ≤ (s₁.gpr .esp).toNat) :
     VG.X86.Taint.Agree τF (allocFrame 36 s₁) (allocFrame 36 s₂) := by
   have G := agreeA h₁ h₂ A₁ A₂ sp

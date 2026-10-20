@@ -12,7 +12,7 @@ public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 namespace VG.Proof.RsaPkcs1Sig.X86.Rcv
 open VG VG.X86 VG.Proof.Bignum.X86 VG.Impl.RsaPkcs1Sig.X86.Verify
 
-def recoverStack : Nat := 2152
+def recoverStack : Nat := 2172
 
 structure Geometry where
   stack : BitVec 32
@@ -41,10 +41,10 @@ def outputRegion (g : Geometry) : Region := ⟨byteAddr g.output, g.outputLength
 def workspaceRegion (g : Geometry) : Region := ⟨byteAddr g.workspace, 8 * g.scratchLength⟩
 def innerRegion (g : Geometry) : Region := ⟨byteAddr g.stack, VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes⟩
 def savedRegion (g : Geometry) : Region := ⟨byteAddr g.stack + BitVec.ofNat 64 VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes, 16⟩
-def calleeRegion (g : Geometry) : Region := VG.X86.below g.stack 24
+def calleeRegion (g : Geometry) : Region := VG.X86.below g.stack 44
 def argumentsRegion (g : Geometry) : Region :=
   ⟨byteAddr g.stack + BitVec.ofNat 64 (VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20), 52⟩
-def wholeStack (g : Geometry) : Region := ⟨byteAddr (g.stack - 24), recoverStack⟩
+def wholeStack (g : Geometry) : Region := ⟨byteAddr (g.stack - 44), recoverStack⟩
 def em1 (g : Geometry) : BitVec 32 := g.stack + BitVec.ofNat 32 em1Offset
 def em2 (g : Geometry) : BitVec 32 := g.stack + BitVec.ofNat 32 em2Offset
 
@@ -66,7 +66,7 @@ structure Valid (g : Geometry) : Prop where
   signatureBound : g.signatureLength < 2 ^ 32
   precomputed : g.preLength = Spec.Rsa.precomputedWords g.length
   space : Spec.Rsa.publicScratchWords g.length ≤ g.scratchLength
-  stackLow : 24 ≤ g.stack.toNat
+  stackLow : 44 ≤ g.stack.toNat
   stackHigh : g.stack.toNat + VG.Impl.RsaPkcs1Sig.X86.Verify.frameBytes + 20 + 52 ≤ 2 ^ 32
   outputFit : g.output.toNat + g.outputLength ≤ 2 ^ 32
   outputSources : ∀ i, g.outputRegion.Disjoint (g.sourceRegion i)

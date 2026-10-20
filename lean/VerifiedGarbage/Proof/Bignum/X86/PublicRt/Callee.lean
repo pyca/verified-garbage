@@ -39,7 +39,7 @@ theorem setWidth_toNat (x : BitVec 32) : (x.setWidth 64).toNat = x.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans x.isLt (by decide))]
 
 theorem callee_abi {s g : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbytes : bytes = (args 9).toNat * 8)
+    (h : RtIn base bytes len args s) (hbytes : bytes = (args 9).toNat * 8)
     (R : CallRoom (s.gpr .esp) base bytes) {o a b : Nat} (ho : o ≤ 4) (ha : a ≤ 4) (hb : b ≤ 4)
     (ho0 : o ≠ 0) (hesp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36)
     (hFg : Frame [below (s.gpr .esp) 36] s.mem g.mem)

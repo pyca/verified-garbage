@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
@@ -49,9 +49,12 @@ def artifacts : List Artifact := [
     spSafe := Proof.Bignum.X86.Crt.code_sp
     stack := 40 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
-    code := Impl.Bignum.X86.PrecomputedFn.code
-    verified := Proof.Bignum.X86.precomputed_verified
-    stack := 20 },
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul`. The input acceptance mask is applied after a fixed \
+      64-step exponentiation. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.PrecomputedRt.code
+    verified := Proof.Bignum.X86.PrecomputedRt.verified
+    stack := 40 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified

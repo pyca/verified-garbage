@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
-public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.In
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The stages of public RSA at a run-time width
 
-From `PublicInputs`: number `j` zeroed (`zero_ok`), set to one
+From `RtIn`: number `j` zeroed (`zero_ok`), set to one
 (`setOne_ok`), read from the bytes of an argument (`load_ok`); the input
 compared with the modulus (`compare_ok`).
 -/
@@ -29,20 +29,20 @@ variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
 theorem wb_eq (len : Nat) : wb len = 4 * nw len := by simp only [wb, nw]; omega
 
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.ws (h : PublicInputs base bytes len args s) : Ws s base bytes :=
+theorem RtIn.ws (h : RtIn base bytes len args s) : Ws s base bytes :=
   ⟨h.scratch.wr, h.scratch.nowrap⟩
 
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.width (h : PublicInputs base bytes len args s) :
-    readSrc s (.mem (argAt 0 3)) = some (BitVec.ofNat 32 len) := by
-  have := (h.stack 3 (by decide)).readSrc
-  rw [h.nLen] at this
+theorem RtIn.width (h : RtIn base bytes len args s) :
+    readSrc s (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len) := by
+  have := (h.stack 1 (by decide)).readSrc
+  rw [h.outLen] at this
   exact this
 
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.edi (h : PublicInputs base bytes len args s) : (s.gpr .edi).toNat = base.toNat :=
+theorem RtIn.edi (h : RtIn base bytes len args s) : (s.gpr .edi).toNat = base.toNat :=
   h.scratch.edi_toNat
 
 /-- Every number, and the multiplication's range after them, within the working space. -/
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.fits (h : PublicInputs base bytes len args s) {j : Nat} (hj : j ≤ 7) :
+theorem RtIn.fits (h : RtIn base bytes len args s) {j : Nat} (hj : j ≤ 7) :
     numAt len j + wb len ≤ bytes ∧ numAt len 5 + (3 * wb len + 56) ≤ bytes := by
   have sp := h.space
   have := h.upper
@@ -52,7 +52,7 @@ theorem _root_.VG.Proof.Bignum.X86.PublicInputs.fits (h : PublicInputs base byte
   simp only [numAt, numOff, wb] at *
   omega
 
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.bytes_lt (h : PublicInputs base bytes len args s) : bytes < 2 ^ 32 :=
+theorem RtIn.bytes_lt (h : RtIn base bytes len args s) : bytes < 2 ^ 32 :=
   h.scratch.size_lt
 
 end
@@ -60,7 +60,7 @@ end
 /-! ## Zeroing and one -/
 
 theorem zero_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) {j : Nat} (hj : j ≤ 7) :
+    (h : RtIn base bytes len args s) {j : Nat} (hj : j ≤ 7) :
     WP isa (zero j) s fun u => Outside base (numAt len j) (wb len) s.mem u.mem ∧
       val32 u.mem base (numAt len j) (nw len) = 0 ∧ Keeps [.eax, .ecx, .ebp] s u := by
   have fit := (h.fits hj).1
@@ -79,7 +79,7 @@ theorem zero_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitV
   rwa [wb_eq]
 
 theorem setOne_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) {j : Nat} (hj : j ≤ 7) :
+    (h : RtIn base bytes len args s) {j : Nat} (hj : j ≤ 7) :
     WP isa (setOne j) s fun u => Outside base (numAt len j) (wb len) s.mem u.mem ∧
       val32 u.mem base (numAt len j) (nw len) = 1 ∧ Keeps [.eax, .ecx, .ebp] s u := by
   have fit := (h.fits hj).1
@@ -89,9 +89,9 @@ theorem setOne_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
   refine WP.seq (WP.mono (zero_ok h hj) fun u ⟨O, V, K⟩ => ?_)
   have hu := h.ws.of_keeps K
   have edi : (u.gpr .edi).toNat = base.toNat := by rw [K.1 _ (by decide)]; exact h.edi
-  have wd : readSrc u (.mem (argAt 0 3)) = some (BitVec.ofNat 32 len) := by
-    have := ((h.stack 3 (by decide)).keep K (by decide) (O.mono (Nat.zero_le _) (by omega))).readSrc
-    rw [h.nLen] at this; exact this
+  have wd : readSrc u (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len) := by
+    have := ((h.stack 1 (by decide)).keep K (by decide) (O.mono (Nat.zero_le _) (by omega))).readSrc
+    rw [h.outLen] at this; exact this
   refine slotPtr_ok (r := .eax) (t := .ecx) (by decide) (by decide) edi wd h.upper (by omega)
     fun v Kv mv pv _ => wp_movS rfl fun v₁ u₁ _ => ?_
   have hv₁ := hu.of_keeps (Kv.trans (u₁.keeps.mono (by decide)))

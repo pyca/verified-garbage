@@ -101,7 +101,7 @@ theorem mulBody_noSp (o a b : Nat) :
   exact (by decide : Rt.body.allInstrs (fun i => !Taint.clobbers i .esp) = true) ▸ rfl
 
 theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbytes : bytes = (args 9).toNat * 8)
+    (h : RtIn base bytes len args s) (hbytes : bytes = (args 9).toNat * 8)
     (R : CallRoom (s.gpr .esp) base bytes) {o a b : Nat} (ho : o ≤ 4) (ha : a ≤ 4) (hb : b ≤ 4) (ho0 : o ≠ 0)
     (hinv : (val32 s.mem base numOff (nw len) * w32 s.mem base invOff + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base (numAt len b) (nw len) < val32 s.mem base numOff (nw len)) :
@@ -121,7 +121,7 @@ theorem mul_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVe
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   have fEspN : ((allocFrame 36 s).gpr .esp).toNat = (s.gpr .esp).toNat - 36 := by rw [fEsp, sub_toNat (by omega)]
   refine WP.seq (WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := o) (a := a) (b := b)
-    (argAt_alloc (by rw [← h.nLen]; exact (h.stack 3 (by decide)).readSrc))
+    (argAt_alloc (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc))
     (argAt_alloc (h.stack 9 (by decide)).readSrc) h.upper (by omega) (by omega) (by omega) (by omega)
     (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_)
   have gEsp : g.gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := by rw [Kg.1 _ (by decide), fEsp]

@@ -62,7 +62,7 @@ end
 
 /-- `widthB k r`: `r = B`. -/
 theorem widthB_ok {s : State} {is : List Instr} {Q : State → Prop} {k len : Nat} {r : Reg}
-    (hr : readSrc s (.mem (argAt k 3)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024)
+    (hr : readSrc s (.mem (argAt k 1)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024)
     (kk : ∀ t, Keeps [r] s t → t.mem = s.mem → t.gpr r = BitVec.ofNat 32 (wb len) → WP isa (.block is) t Q) :
     WP isa (.block (widthB k r ++ is)) s Q := by
   simp only [widthB, List.cons_append, List.nil_append]
@@ -83,7 +83,7 @@ theorem widthB_ok {s : State} {is : List Instr} {Q : State → Prop} {k len : Na
 
 /-- `offAt r j t`: `r = 256 + j B`, `t = B`. -/
 theorem offAt_ok {s : State} {is : List Instr} {Q : State → Prop} {len j : Nat} {r t : Reg} (hrt : r ≠ t)
-    (hr : readSrc s (.mem (argAt 0 3)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024) (hj : j ≤ 8)
+    (hr : readSrc s (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024) (hj : j ≤ 8)
     (kk : ∀ u, Keeps [r, t] s u → u.mem = s.mem → u.gpr r = BitVec.ofNat 32 (numAt len j) →
       u.gpr t = BitVec.ofNat 32 (wb len) → WP isa (.block is) u Q) :
     WP isa (.block (offAt r j t ++ is)) s Q := by
@@ -102,7 +102,7 @@ theorem offAt_ok {s : State} {is : List Instr} {Q : State → Prop} {len j : Nat
 /-- `slotPtr r j t`: `r = edi + 256 + j B`, `t = B`. -/
 theorem slotPtr_ok {s : State} {is : List Instr} {Q : State → Prop} {base : Addr} {len j : Nat} {r t : Reg}
     (hrt : r ≠ t) (hte : t ≠ .edi) (hedi : (s.gpr .edi).toNat = base.toNat)
-    (hr : readSrc s (.mem (argAt 0 3)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024) (hj : j ≤ 8)
+    (hr : readSrc s (.mem (argAt 0 1)) = some (BitVec.ofNat 32 len)) (hl : len ≤ 1024) (hj : j ≤ 8)
     (kk : ∀ u, Keeps [r, t] s u → u.mem = s.mem → PtrAt u base r (numAt len j) →
       u.gpr t = BitVec.ofNat 32 (wb len) → WP isa (.block is) u Q) :
     WP isa (.block (slotPtr r j t ++ is)) s Q := by

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 
@@ -45,8 +45,8 @@ def baseline : CrtImpl where
   pcStack := by decide +kernel
   pcNoSp := NoSp.of_all (by decide +kernel)
   pdName := "vg_rsa_public_precomputed_checked"
-  pd := Impl.Bignum.X86.PrecomputedFn.code
-  pdVerified := Bignum.X86.precomputed_verified
+  pd := Impl.Bignum.X86.PrecomputedRt.code
+  pdVerified := Bignum.X86.PrecomputedRt.verified
   pdStack := by decide +kernel
   pdNoSp := NoSp.of_all (by decide +kernel)
 

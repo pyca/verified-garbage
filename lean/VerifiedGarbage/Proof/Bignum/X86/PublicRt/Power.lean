@@ -32,7 +32,7 @@ theorem select_mod' {Tl D top X M : Nat} {c : Bool} (hX : M < X) (hD : D < X) (h
   by_cases h : top < c.toNat <;> simp [h]
 
 theorem doubleStep_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat)
+    (h : RtIn base bytes len args s) (hbase : (args 8).toNat = base.toNat)
     (hT : val32 s.mem base (numAt len 4) (nw len) < val32 s.mem base (numAt len 0) (nw len)) :
     WP isa doubleStep s fun u =>
       Outside base (numAt len 4) (2 * wb len + 4) s.mem u.mem ∧
@@ -94,7 +94,7 @@ theorem count1_zf {x : BitVec 32} {N j : Nat} (hx : x.toNat = N - j) (hj : j < N
     omega
 
 theorem powerTwo_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat)
+    (h : RtIn base bytes len args s) (hbase : (args 8).toNat = base.toNat)
     (hM : 1 < val32 s.mem base (numAt len 0) (nw len)) :
     WP isa powerTwo s fun u =>
       Outside base (numAt len 4) (2 * wb len + 4) s.mem u.mem ∧

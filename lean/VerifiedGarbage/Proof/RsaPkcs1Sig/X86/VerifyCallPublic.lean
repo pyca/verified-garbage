@@ -28,7 +28,7 @@ theorem Context.words_equal {g : Geometry} {bs : Fin 5 → List Byte} {s t : Sta
 theorem publicCall_pub {g : Geometry} {bs : Fin 5 → List Byte} {s t : State}
     (hs : Context g bs s) (ht : Context g bs t)
     (argsS : Arguments g (publicArgument g) 10 s) (argsT : Arguments g (publicArgument g) 10 t) :
-    (Spec.Rsa.publicPrecomputedCheckedContract abi 20).pub
+    (Spec.Rsa.publicPrecomputedCheckedContract abi 40).pub
       (s.callEntry.withRegions (publicRd g) (publicWr g)) (t.callEntry.withRegions (publicRd g) (publicWr g)) := by
   sig_pub [Spec.Rsa.publicPrecomputedCheckedContract, Spec.Rsa.publicPrecomputedSig, abi, argSlots, argVal, argBytes]
   have sa := fun {j} (hj : j < 10) => publicArgs_values hs argsS hj

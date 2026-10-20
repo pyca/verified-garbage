@@ -19,27 +19,28 @@ namespace VG.Proof.Bignum.X86.PublicRt
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.PublicRt VG.Proof.Mont
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
-theorem compare_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) :
-    WP isa compare s fun u => u.mem = s.mem ∧
-      u.gpr .ecx = cmask (decide (val32 s.mem base (numAt len 1) (nw len) < val32 s.mem base (numAt len 0) (nw len))) ∧
+theorem compareAt_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : RtIn base bytes len args s) {a b : Nat} (ha : a ≤ 7) (hb : b ≤ 7) :
+    WP isa (compareAt a b) s fun u => u.mem = s.mem ∧
+      u.gpr .ecx = cmask (decide (val32 s.mem base (numAt len a) (nw len) < val32 s.mem base (numAt len b) (nw len))) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .esi] s u := by
-  have f1 := (h.fits (j := 1) (by decide)).1
-  have f0 := (h.fits (j := 0) (by decide)).1
+  have f1 := (h.fits (j := a) ha).1
+  have f0 := (h.fits (j := b) hb).1
   have dims := h.dimensions
   have wbe := wb_eq len
-  unfold PublicRt.compare
-  refine WP.seq (slotPtr_ok (r := .esi) (t := .edx) (j := 1) (by decide) (by decide) h.edi h.width h.upper (by decide)
+  unfold PublicRt.compareAt
+  simp only [List.append_assoc]
+  refine WP.seq (slotPtr_ok (r := .esi) (t := .edx) (j := a) (by decide) (by decide) h.edi h.width h.upper (by omega)
     fun u K m p _ => ?_)
   have hu := h.keep K (by decide) (by decide) (by rw [m]; exact Outside.refl _ _ _ _)
-  refine slotPtr_ok (r := .ebp) (t := .edx) (j := 0) (by decide) (by decide) hu.edi hu.width h.upper (by decide)
+  refine slotPtr_ok (r := .ebp) (t := .edx) (j := b) (by decide) (by decide) hu.edi hu.width h.upper (by omega)
     fun v Kv mv pv cv => wp_movS rfl fun w uw _ => WP.block_nil ?_
   have Kw : Keeps [.ecx, .edx, .ebp, .esi] s w :=
     ((K.mono (by decide)).trans (Kv.mono (by decide))).trans (uw.keeps.mono (by decide))
   have mw : w.mem = s.mem := by rw [uw.mem, mv, m]
-  have esi : PtrAt w base .esi (numAt len 1) := by
+  have esi : PtrAt w base .esi (numAt len a) := by
     rw [PtrAt, uw.other _ (by decide), Kv.1 _ (by decide)]; exact p
-  have ebp : PtrAt w base .ebp (numAt len 0) := by rw [PtrAt, uw.other _ (by decide)]; exact pv
+  have ebp : PtrAt w base .ebp (numAt len b) := by rw [PtrAt, uw.other _ (by decide)]; exact pv
   have edx : (w.gpr .edx).toNat = 4 * nw len := by
     rw [uw.other _ (by decide), cv, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := wb_le h.upper; omega)]
     exact wbe
@@ -47,8 +48,15 @@ theorem compare_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     (by omega) (by omega) esi ebp edx uw.gpr) fun t ⟨mt, et, Kt⟩ => ⟨by rw [mt, mw], by rw [et, mw],
       (Kw.mono (by decide)).trans Kt⟩
 
+theorem compare_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : RtIn base bytes len args s) :
+    WP isa compare s fun u => u.mem = s.mem ∧
+      u.gpr .ecx = cmask (decide (val32 s.mem base (numAt len 1) (nw len) < val32 s.mem base (numAt len 0) (nw len))) ∧
+      Keeps [.eax, .ecx, .edx, .ebp, .esi] s u :=
+  compareAt_ok h (by decide) (by decide)
+
 theorem maskOut_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) {c : Bool}
+    (h : RtIn base bytes len args s) {c : Bool}
     (hm : s.mem.readW (off base PublicFn.acceptanceOffset) 32 = cmask c) :
     WP isa maskOut s fun u => Outside base (numAt len 2) (wb len) s.mem u.mem ∧
       val32 u.mem base (numAt len 2) (nw len) = (if c then val32 s.mem base (numAt len 2) (nw len) else 0) ∧
@@ -71,11 +79,12 @@ theorem maskOut_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
     (by rw [uw.gpr, m, hm])) fun t ⟨O, V, Kt⟩ => ⟨by rw [← mw, wbe]; exact O, by rw [V, mw],
       (Kw.mono (by decide)).trans (Kt.mono (by decide))⟩
 
-theorem write_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s)
-    (fitv : val32 s.mem base (numAt len 2) (nw len) < 2 ^ (8 * len)) :
+/-- The result written out; its bytes are its value's when it fits them. -/
+theorem write_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : RtIn base bytes len args s) :
     WP isa write s fun t =>
-      Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (val32 s.mem base (numAt len 2) (nw len)) len ∧
+      (val32 s.mem base (numAt len 2) (nw len) < 2 ^ (8 * len) →
+        Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (val32 s.mem base (numAt len 2) (nw len)) len) ∧
       t.gpr .eax = s.mem.readW (off base PublicFn.acceptanceOffset) 32 &&& 1 ∧
       Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t := by
   have f2 := (h.fits (j := 2) (by decide)).1
@@ -128,10 +137,20 @@ theorem write_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bit
     Ft.readW (r := ⟨base, bytes⟩) (Scr.contains nw' (by simp only [PublicFn.acceptanceOffset, numAt, numOff] at f2 ⊢; omega))
       (by intro r hr; rw [List.mem_singleton.mp hr]; exact h.outApart) (by decide)
   refine ⟨?_, ?_, by rw [u₂.mem, u₁.mem]; exact Ft, (Kt.trans (u₁.keeps.mono (by decide))).trans (u₂.keeps.mono (by decide))⟩
-  · rw [u₂.mem, u₁.mem, V, srcAddr, m₂]
+  · intro fitv
+    rw [u₂.mem, u₁.mem, V, srcAddr, m₂]
     have eq : (s.mem.read (off base (numAt len 2)) (4 * nw len)).toNat = val32 s.mem base (numAt len 2) (nw len) :=
       read_eq_val32 _ _ _ _
     rw [VG.Proof.Bignum.read_prefix_value s.mem _ (by omega : len ≤ 4 * nw len) (by rw [eq]; exact fitv), eq]
   · rw [u₂.gpr, u₁.gpr, acc]; rfl
+
+theorem write_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : RtIn base bytes len args s)
+    (fitv : val32 s.mem base (numAt len 2) (nw len) < 2 ^ (8 * len)) :
+    WP isa write s fun t =>
+      Spec.Rsa.bytesAt t.mem (byteAddr (args 0)) len = Spec.Rsa.i2osp (val32 s.mem base (numAt len 2) (nw len)) len ∧
+      t.gpr .eax = s.mem.readW (off base PublicFn.acceptanceOffset) 32 &&& 1 ∧
+      Frame [⟨byteAddr (args 0), len⟩] s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .esi] s t :=
+  WP.mono (write_any_ok h) fun _ ⟨V, A, F, K⟩ => ⟨V fitv, A, F, K⟩
 
 end VG.Proof.Bignum.X86.PublicRt

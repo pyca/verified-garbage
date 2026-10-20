@@ -13,7 +13,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Bignum.X86 VG.Impl.Bignum.X86.
 open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86
 
 theorem reduce_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat) :
+    (h : RtIn base bytes len args s) (hbase : (args 8).toNat = base.toNat) :
     WP isa reduce s fun u => Outside base (numAt len 4) (wb len) s.mem u.mem ∧
       (∃ c : Bool, val32 u.mem base (numAt len 4) (nw len) + val32 s.mem base (numAt len 0) (nw len) =
           val32 s.mem base (numAt len 5) (nw len) + 2 ^ (32 * nw len) * c.toNat ∧
@@ -76,7 +76,7 @@ theorem reduce_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → Bi
   · exact Kall.trans (u₆.keeps.mono (by decide))
 
 theorem select_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat) {x d : Nat} (hx : x ≤ 7)
+    (h : RtIn base bytes len args s) (hbase : (args 8).toNat = base.toNat) {x d : Nat} (hx : x ≤ 7)
     (hd : d ≤ 7) (hxd : x ≠ d) {k : Bool} (hk : s.gpr .ecx = cmask k) :
     WP isa (select x d) s fun u => Outside base (numAt len d) (wb len) s.mem u.mem ∧
       val32 u.mem base (numAt len d) (nw len) =

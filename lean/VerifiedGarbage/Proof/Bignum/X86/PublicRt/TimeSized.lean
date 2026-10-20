@@ -79,7 +79,7 @@ theorem sized_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (arg
     RelCT isa (Both (SizedIn base bytes len args sp)) sized fun _ _ => True := by
   unfold sized
   refine VG.RelCT.seq (taint_both (F := fun s => ∃ M, ExpIn base bytes len args sp M s)
-    (fun _ _ ⟨h₁, _, A₁, sp₁, _⟩ ⟨h₂, _, A₂, sp₂, _⟩ => agreeA h₁ h₂ A₁ A₂ (sp₁.trans sp₂.symm))
+    (fun _ _ ⟨h₁, _, A₁, sp₁, _⟩ ⟨h₂, _, A₂, sp₂, _⟩ => agreeA h₁.rt h₂.rt A₁ A₂ (sp₁.trans sp₂.symm))
     (VG.Taint.hintOf taint τA prepare) (by taint_decide) fun _ ⟨h, X, A, sp₀, V⟩ => ?_) ?_
   · have facts := valid_facts V h.lower
     refine WP.mono (prepare_ok h X.hbase X.room X.top V rfl rfl rfl) fun u ⟨E, hT, hO, _, _, _, _, K⟩ =>

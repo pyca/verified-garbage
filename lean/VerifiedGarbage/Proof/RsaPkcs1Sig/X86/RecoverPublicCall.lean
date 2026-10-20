@@ -35,7 +35,7 @@ theorem Context.callFrame {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) : Frame [g.calleeRegion] s.mem s.callEntry.mem := by
   rw [State.callEntry_mem, h.sp]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-    (VG.X86.below_top (by decide : 4 ≤ 24) h.valid.stackLow (by decide : 4 ≤ 4))
+    (VG.X86.below_top (by decide : 4 ≤ 44) h.valid.stackLow (by decide : 4 ≤ 4))
 
 theorem Context.callBytes {g : Geometry} {bs : Fin 4 → List Byte} {s : State}
     (h : Context g bs s) (i : Fin 4) :

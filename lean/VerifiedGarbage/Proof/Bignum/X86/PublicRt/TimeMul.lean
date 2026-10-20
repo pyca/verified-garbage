@@ -42,7 +42,7 @@ theorem mulArgs_call {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
   have nwr := h.scratch.nowrap
   have fEsp : (allocFrame 36 s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 36 := allocFrame_esp _ _
   refine WP.mono (mulArgs_ok (f := allocFrame 36 s) (len := len) (o := o) (a := a) (b := b)
-    (argAt_alloc (by rw [← h.nLen]; exact (h.stack 3 (by decide)).readSrc))
+    (argAt_alloc (by rw [← h.outLen]; exact (h.stack 1 (by decide)).readSrc))
     (argAt_alloc (h.stack 9 (by decide)).readSrc) h.upper (by omega) (by omega) (by omega)
     (by rw [fEsp, VG.X86.sub_toNat (by omega)]; omega)
     (by rw [allocFrame_wr, fEsp]; exact List.mem_cons_self ..)) fun g ⟨Kg, Fg, Rg⟩ => ?_

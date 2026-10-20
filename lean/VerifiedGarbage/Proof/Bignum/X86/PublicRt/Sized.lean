@@ -22,7 +22,7 @@ open VG.Proof.Mont.X86 VG.Proof.Mont.X86.Rt VG.Proof.Bignum.X86 VG.Proof.Mont.X8
 
 /-- The acceptance mask and the inverse. -/
 theorem setup_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) {c : Bool} (hc : s.gpr .ecx = cmask c)
+    (h : RtIn base bytes len args s) {c : Bool} (hc : s.gpr .ecx = cmask c)
     (hodd : val32 s.mem base numOff (nw len) % 2 = 1) :
     WP isa (.block (([.store (sc PublicFn.acceptanceOffset) .ecx] : List Instr) ++ VG.Impl.Mont.X86.Dynamic.setupInverse numOff invOff)) s fun t =>
       t.mem.readW (off base PublicFn.acceptanceOffset) 32 = cmask c ∧
@@ -73,6 +73,11 @@ theorem prepare_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat →
       val32 u.mem base 128 2 = e ∧ u.mem.readW (off base 144) 32 = cmask (decide (x < m)) ∧
       Outside base 16 (bytes - 16) s.mem u.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
   subst hm hx
+  have nL := h.nLen
+  have nF := h.nFit
+  have nR := h.nRead
+  have nA := h.nApart
+  replace h := h.rt
   set m := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hm
   set x := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 6)) len) with hx
   have dims := h.dimensions
@@ -95,8 +100,8 @@ theorem prepare_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat →
     simpa only [bytesAt_length, pow256_eq] using B
   unfold prepare
   -- The modulus and the input.
-  refine WP.seq (WP.mono (load_ok h (j := 0) (p := 2) (l := 3) (by decide) (by decide) (by decide) h.nLen h.nFit
-    h.nRead h.nApart) fun u₁ ⟨N₁, O₁, K₁⟩ => ?_)
+  refine WP.seq (WP.mono (load_ok h (j := 0) (p := 2) (l := 3) (by decide) (by decide) (by decide) nL nF
+    nR nA) fun u₁ ⟨N₁, O₁, K₁⟩ => ?_)
   have O₁' : Outside base 0 bytes s.mem u₁.mem := O₁.mono (by omega) (by omega)
   have h₁ := h.keep K₁ (by decide) (by decide) O₁'
   have xs := scratch_bytes O₁' (by have := h.upper; omega) h.inApart
@@ -164,6 +169,8 @@ theorem sized_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → B
       t.gpr .eax = BitVec.ofNat 32 (decide (x < m)).toNat ∧
       Frame [⟨off base 16, bytes - 16⟩, ⟨byteAddr (args 0), len⟩, below (s.gpr .esp) 40] s.mem t.mem ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
+  have hP := h
+  replace h := h.rt
   set m := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len) with hm
   set x := Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 6)) len) with hx
   have dims := h.dimensions
@@ -185,7 +192,7 @@ theorem sized_ok {s : State} {base : Addr} {bytes len e : Nat} {args : Nat → B
     have B := os2ip_lt (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)
     simpa only [bytesAt_length, pow256_eq] using B
   unfold sized
-  refine WP.seq (WP.mono (prepare_ok h hbase R top valid exponent hm.symm hx.symm) fun u₆ ⟨E₆, hT, hO, X₆, W₆, a₆, S₆, K₁₆⟩ => ?_)
+  refine WP.seq (WP.mono (prepare_ok hP hbase R top valid exponent hm.symm hx.symm) fun u₆ ⟨E₆, hT, hO, X₆, W₆, a₆, S₆, K₁₆⟩ => ?_)
   have sp₆ : u₆.gpr .esp = s.gpr .esp := K₁₆.1 _ (by decide)
   -- The exponentiation.
   refine WP.seq (WP.mono (exponentiate_ok E₆ hbase hbytes facts.2.1 hT hO) fun u₇ ⟨E₇, F₇, Y₇, K₇⟩ => ?_)

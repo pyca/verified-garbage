@@ -57,7 +57,7 @@ theorem frame_other (m : Mem) (P : Addr) (v : BitVec 32) {k j : Nat} (h : j + 4 
   Mem.readW_writeW_sep (Offset.sep P h (by omega) (by omega)) (by decide)
 
 theorem mulArgs_ok {f : State} {len o a b : Nat} {wsLen : BitVec 32}
-    (hr3 : readSrc f (.mem (argAt 9 3)) = some (BitVec.ofNat 32 len))
+    (hr3 : readSrc f (.mem (argAt 9 1)) = some (BitVec.ofNat 32 len))
     (hr9 : readSrc f (.mem (argAt 9 9)) = some wsLen)
     (hl : len ≤ 1024) (ho : o ≤ 8) (ha : a ≤ 8) (hb : b ≤ 8)
     (hesp : (f.gpr .esp).toNat + 36 ≤ 2 ^ 32) (hfr : (⟨(f.gpr .esp).setWidth 64, 36⟩ : Region) ∈ f.wr) :

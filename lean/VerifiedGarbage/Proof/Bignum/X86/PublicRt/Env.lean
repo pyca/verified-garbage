@@ -25,7 +25,7 @@ def Chg (base : Addr) (len bytes : Nat) (sp : BitVec 32) : List Region :=
   [⟨off base 128, 12⟩, ⟨off base (numAt len 1), bytes - numAt len 1⟩, below sp 40]
 
 structure Env (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (M : Nat) (s : State) : Prop where
-  pi : PublicInputs base bytes len args s
+  pi : RtIn base bytes len args s
   room : CallRoom (s.gpr .esp) base bytes
   mod : val32 s.mem base numOff (nw len) = M
   inv : (M * w32 s.mem base invOff + 1) % 2 ^ 32 = 0
@@ -57,10 +57,9 @@ theorem Env.keep {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M :
   have esp : t.gpr .esp = s.gpr .esp := K.1 _ sp
   have h256 : numOff = 256 := rfl
   refine ⟨?_, by rw [esp]; exact E.room, ?_, ?_, by rw [esp]; exact E.top⟩
-  · refine ⟨h.scratch.of_keeps K di sp, h.lower, h.upper, h.space, fun i hi => ?_, h.outLen, h.nLen, h.inLen,
-      h.ePositive, h.eBound, h.outFit, h.nFit, h.eFit, h.inFit, by rw [K.2.2]; exact h.outWrite,
-      by rw [K.2.1, K.2.2]; exact h.nRead, by rw [K.2.1, K.2.2]; exact h.eRead,
-      by rw [K.2.1, K.2.2]; exact h.inRead, h.outApart, h.nApart, h.eApart, h.inApart⟩
+  · refine ⟨h.scratch.of_keeps K di sp, h.lower, h.upper, h.space, fun i hi => ?_, h.outLen, h.inLen,
+      h.outFit, h.inFit, by rw [K.2.2]; exact h.outWrite, by rw [K.2.1, K.2.2]; exact h.inRead, h.outApart,
+      h.inApart⟩
     have A := h.stack i hi
     refine ⟨A.stack.keep K sp, ?_⟩
     rw [← A.value]

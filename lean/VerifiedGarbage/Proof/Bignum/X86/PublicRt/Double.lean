@@ -33,12 +33,12 @@ theorem numAt_apart (len : Nat) {x d : Nat} (h : x ≠ d) :
   · left; have := Nat.mul_le_mul_right (wb len) (Nat.succ_le_of_lt h)
     simp only [numAt, Nat.succ_mul] at *; omega
 
-theorem _root_.VG.Proof.Bignum.X86.PublicInputs.edi_eq {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) (hbase : (args 8).toNat = base.toNat) : args 8 = s.gpr .edi :=
+theorem RtIn.edi_eq {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
+    (h : RtIn base bytes len args s) (hbase : (args 8).toNat = base.toNat) : args 8 = s.gpr .edi :=
   BitVec.eq_of_toNat_eq (hbase.trans h.edi.symm)
 
 theorem double_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
-    (h : PublicInputs base bytes len args s) :
+    (h : RtIn base bytes len args s) :
     WP isa double s fun u => Outside base (numAt len 5) (wb len + 4) s.mem u.mem ∧
       (∃ c : Bool, w32 u.mem base (numAt len 5 + wb len) = c.toNat ∧
         val32 u.mem base (numAt len 5) (nw len) + 2 ^ (32 * nw len) * c.toNat =
