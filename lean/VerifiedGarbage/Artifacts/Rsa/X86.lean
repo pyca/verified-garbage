@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
-public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
@@ -40,13 +39,13 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.CrtValues.code_sp
     stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
-    notes := ["Each factor whose length (`p_len`, `q_len`) fits half the modulus's words has the \
-      input reduced modulo it at the modulus's width, then its exponentiation at half the width, \
-      with half the exponent's bits: a balanced key's. A longer factor's exponentiation runs at the \
-      modulus's width. The lengths are public; the factors' values select no branch."]
-    code := Impl.Bignum.X86.Crt.code
-    verified := Proof.Bignum.X86.Crt.verified
-    spSafe := Proof.Bignum.X86.Crt.code_sp
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul`. Each factor whose length (`p_len`, `q_len`) fits half \
+      the modulus's width has the input reduced modulo it at the modulus's width, then its windowed \
+      exponentiation at half the width; a longer factor's runs at the modulus's width. The lengths \
+      are public; the factors' values select no branch. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.CrtRt.code
+    verified := Proof.Bignum.X86.CrtRt.verified
     stack := 40 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
