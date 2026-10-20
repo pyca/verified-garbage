@@ -234,15 +234,17 @@ def new_plain(mod: str, base: str | None) -> set[str] | None:
 
 
 class Demoted(Graph):
-    """`graph`, but for `mod` importing `x` privately."""
+    """`graph`, but for the modules of `pairs` importing those privately:
+    `Demoted(graph, mod, x)`, or `Demoted(graph, pairs={(mod, x), …})`."""
 
-    def __init__(self, graph: Graph, mod: str, x: str):
+    def __init__(self, graph: Graph, mod: str | None = None, x: str | None = None, pairs=None):
         super().__init__(graph.roots)
-        self.files, self.texts, self.mod, self.x = graph.files, graph.texts, mod, x
+        self.files, self.texts = graph.files, graph.texts
+        self.pairs = set(pairs or ()) | ({(mod, x)} if mod is not None else set())
 
     def imports(self, mod: str) -> list[tuple[str, bool, bool, bool]]:
         imps = super().imports(mod)
-        return [(i, p and not (mod == self.mod and i == self.x), me, a) for i, p, me, a in imps]
+        return [(i, p and (mod, i) not in self.pairs, me, a) for i, p, me, a in imps]
 
 
 def reads(graph: Graph, mod: str) -> set[str]:
@@ -317,20 +319,28 @@ def problems(mods: list[str], shaken: dict[str, tuple[list[str], list[str]]], gr
     # names (in a tactic, `simp [f]`, a field: uses that leave nothing in
     # the `.olean` shake reads), stays.
     if uses is not None and any(f[4] for f in found):
+        # Against the planned result: every demotion applied, and none of the
+        # module's other removal candidates counted as providing anything
+        # (each would justify the other).
+        planned = Demoted(graph, pairs={(mod, x) for mod, _, _, private, _ in found for x, _ in private})
         provided = {}
         for mod, _, _, _, unused in found:
             imps = graph.imports(mod)
             for x in unused:
-                others = set().union(*(graph.passes(i) for i, _, _, _ in imps if i != x))
-                provided[mod, x] = {y for y in graph.passes(x) - others if graph.project(y)}
+                others = set().union(*(planned.passes(i) for i, _, _, _ in imps if i != x and i not in unused))
+                provided[mod, x] = {y for y in planned.passes(x) - others if graph.project(y)}
         names = uses(sorted(set().union(*provided.values())), "names") if provided else {}
         kept_found = []
         for mod, rel, lines, private, unused in found:
-            words = source_words("\n".join(lines))
+            text = "\n".join(lines)
+            words, opened = source_words(text), opened_namespaces(text)
             keep = []
             for x in unused:
                 declared = set().union(*(names.get(y, set()) for y in provided[mod, x]))
-                if not words & {d.rpartition(".")[2] for d in declared}:
+                named = words & {d.rpartition(".")[2] for d in declared}
+                spaces = {d.rpartition(".")[0] for d in declared}
+                opens = {ns for ns in opened if any(s == ns or s.endswith("." + ns) or s.startswith(ns + ".") for s in spaces)}
+                if not named and not opens:
                     keep.append(x)
             kept_found.append((mod, rel, lines, private, keep))
         found = kept_found
@@ -387,6 +397,15 @@ def source_words(text: str) -> set[str]:
     """The identifiers' last components in a source, comments left out."""
     text = re.sub(r"/-.*?-/|--[^\n]*", " ", text, flags=re.S)
     return {w.rpartition(".")[2] for w in WORD.findall(text)}
+
+
+OPEN = re.compile(r"^\s*(?:@\[[^\]\n]*\]\s*)?open\s+(?:scoped\s+)?([^\n(]*)", re.M)
+
+
+def opened_namespaces(text: str) -> set[str]:
+    """The namespaces a source opens (`open A B`, `open A (x y)`), comments left out."""
+    text = re.sub(r"/-.*?-/|--[^\n]*", " ", text, flags=re.S)
+    return {ns for l in OPEN.findall(text) for ns in l.split() if ns[:1].isupper() and ns != "in"}
 
 
 def header_imports(path: pathlib.Path) -> list[str]:

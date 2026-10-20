@@ -159,6 +159,28 @@ class Check(unittest.TestCase):
         [p] = self.problems("VerifiedGarbage.C", ["import VerifiedGarbage.A"], uses=uses)
         self.assertIn("does not use it: remove it", p)
 
+    def test_removals_do_not_justify_each_other(self):
+        # F imports A and B; both pass on Seal, whose declaration `sealed` F names.
+        # Each alone is redundant given the other; removing both would lose Seal.
+        self.write({"lean/VerifiedGarbage/F.lean": "module\n\nimport VerifiedGarbage.A\nimport VerifiedGarbage.B\n"
+                                                    "\nexample : True := by simp [sealed]\n"})
+        self.graph = check.Graph([self.lean, self.deps])
+        names = {"VerifiedGarbage.Seal": {"VG.sealed"}}
+        uses = lambda mods, view: {m: names.get(m, set()) for m in mods} if view == "names" else {}
+        # Seal has side effects, so make it a plain module for this test.
+        self.write({"lean/VerifiedGarbage/Seal.lean": "module\n\ntheorem sealed : True := trivial\n"})
+        self.graph = check.Graph([self.lean, self.deps])
+        self.assertEqual(self.problems("VerifiedGarbage.F", ["import VerifiedGarbage.A", "import VerifiedGarbage.B"],
+                                       uses=uses), [])
+
+    def test_an_opened_namespace_keeps_its_import(self):
+        self.write({"lean/VerifiedGarbage/C.lean": "module\n\npublic import VerifiedGarbage.B\nimport VerifiedGarbage.A\n"
+                                                    "\nopen VG.Impl.Thing\n"})
+        self.graph = check.Graph([self.lean, self.deps])
+        names = {"VerifiedGarbage.A": {"VG.Impl.Thing.x"}}
+        uses = lambda mods, view: {m: names.get(m, set()) for m in mods} if view == "names" else {}
+        self.assertEqual(self.problems("VerifiedGarbage.C", ["import VerifiedGarbage.A"], uses=uses), [])
+
     def test_fix_undoes_what_does_not_build(self):
         self.write({"lean/VerifiedGarbage/D.lean": "module\n\nimport VerifiedGarbage.C\n"})
         found = ["lean/VerifiedGarbage/C.lean:4: `import VerifiedGarbage.A`: VerifiedGarbage.C does not use it: remove it",
