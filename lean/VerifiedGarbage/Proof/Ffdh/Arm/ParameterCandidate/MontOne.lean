@@ -26,6 +26,7 @@ theorem montOne_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
     WP isa (.seq (VG.Impl.Bignum.Arm.smallConst 1 1) (VG.Impl.Bignum.Arm.montOp 1 1 4)) s fun t =>
       ArithmeticReady base capacity w t ∧ numAt t.mem (State.addr base) w 0 = n ∧
       numAt t.mem (State.addr base) w 1 = 2 ^ (64 * w) % n ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % n ∧
       Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have fits : arrAt w 8 ≤ 8 * capacity := ready.width ▸ ready.layout.2.2.1
   have op (j : Nat) (bound : j = 0 ∨ j = 1 ∨ j = 4) : Operand j := by
@@ -38,8 +39,9 @@ theorem montOne_ok {s : State} {base : BitVec 32} {capacity w n : Nat}
   have r2U := (keeps_array_num keepsU fits (op 4 (by simp)) (by decide)).trans r2
   refine WP.mono (montEncode_ok u readyU (op 1 (by simp)) (op 1 (by simp)) (by decide)
     modulusU odd r2U) ?_
-  rintro t ⟨readyT, modulusT, oneT, _, frameT, restT⟩
+  rintro t ⟨readyT, modulusT, oneT, keepsT, frameT, restT⟩
   rw [oneU, Nat.one_mul] at oneT
-  exact ⟨readyT, modulusT, oneT, frameU.trans frameT, restU.trans restT⟩
+  exact ⟨readyT, modulusT, oneT, (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r2U,
+    frameU.trans frameT, restU.trans restT⟩
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

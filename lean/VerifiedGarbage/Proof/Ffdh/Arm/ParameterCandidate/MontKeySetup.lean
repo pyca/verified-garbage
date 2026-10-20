@@ -42,6 +42,8 @@ theorem montKeySetup_ok {s : State} {base : BitVec 32} {capacity k : Nat}
       numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 =
         numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 ∧
       t.mem.readW (off (State.addr base) 224) 64 = BitVec.ofNat 64 (8 * (Spec.Rsa.modulusWords k + 2)) ∧
+      (∀ j, j < 30 → j ∉ [0, 1, 9, 10] → numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) j =
+        numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) j) ∧
       Frame [⟨State.addr base, 8 * capacity⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.seq_iff, WP.block_append_iff]
   refine WP.mono (keyContext_ready s workspace data minLength maxLength space readBase saved) ?_
@@ -69,8 +71,13 @@ theorem montKeySetup_ok {s : State} {base : BitVec 32} {capacity k : Nat}
   rw [valueV 1 (by decide)] at rT minusT
   have frameT := key_keep_workspace (workspaceU.congr restV.wr) readyV (by simp) keepT
   have strideT := key_keep_header (workspaceU.congr restV.wr) readyV (by simp) (by decide : 224 + 8 ≤ 256) keepT
-  exact ⟨readyT, dataT, nT, rT, minusT, numberT, strideT.trans strideV, frameV'.trans frameT,
+  refine ⟨readyT, dataT, nT, rT, minusT, numberT, strideT.trans strideV, ?_, frameV'.trans frameT,
     (restU.mono (by simp [roundClobbers])).trans ((restV.mono (by simp [roundClobbers])).trans
       (restT.mono (by simp [roundClobbers, VG.Proof.Rsa.Arm.Keys.opRegs])))⟩
+  intro j bound outside
+  have unchanged : ∀ a ∈ [0, 1, 9, 10], a ≠ j := by
+    intro a member same
+    exact outside (same ▸ member)
+  rw [key_keep_number (workspaceU.congr restV.wr) readyV bound unchanged keepT, valueV j (by omega)]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

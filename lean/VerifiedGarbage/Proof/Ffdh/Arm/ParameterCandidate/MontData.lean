@@ -35,16 +35,13 @@ theorem numAt_lowWord (m : Mem) (base : Addr) (w j : Nat) (positive : 0 < w) :
     exact congrArg (fun n => wordsVal m base (arrAt w j) n) (show w = (w - 1) + 1 by omega)
   rw [split, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (word m base (arrAt w j)).isLt]
 
-theorem MontData.after_value {base : BitVec 32} {capacity w : Nat} {m m' : Mem} {regions : List Region}
-    (h : MontData base capacity w m) (frame : Frame regions m m')
-    (header : ∀ r ∈ regions, (⟨State.addr base, 128⟩ : Region).Disjoint r)
+theorem MontData.after_reads {base : BitVec 32} {capacity w : Nat} {m m' : Mem}
+    (h : MontData base capacity w m)
+    (readHeader : ∀ d, d + 8 ≤ 128 →
+      m'.readW (off (State.addr base) d) 64 = m.readW (off (State.addr base) d) 64)
     (numberEq : numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0) :
     MontData base capacity w m' ∧ numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0 := by
   have wmin : 2 ≤ w := h.width ▸ h.layout.1
-  have wmax : w < 2 ^ 31 := h.width ▸ h.layout.2.1
-  have readHeader (d : Nat) (bound : d + 8 ≤ 128) :
-      m'.readW (off (State.addr base) d) 64 = m.readW (off (State.addr base) d) 64 :=
-    frame.readW (r := ⟨State.addr base, 128⟩) (Offset.contains_base _ bound (by omega)) header (by decide)
   have widthEq : wOf m' (State.addr base) = wOf m (State.addr base) := by
     unfold wOf wordAt
     rw [readHeader (8 * VG.Spec.Rsa.Mont.wWord) (by decide)]
@@ -67,6 +64,14 @@ theorem MontData.after_value {base : BitVec 32} {capacity w : Nat} {m m' : Mem} 
     exact h.inverse
   · rw [numberEq]
     exact h.modulus
+
+theorem MontData.after_value {base : BitVec 32} {capacity w : Nat} {m m' : Mem} {regions : List Region}
+    (h : MontData base capacity w m) (frame : Frame regions m m')
+    (header : ∀ r ∈ regions, (⟨State.addr base, 128⟩ : Region).Disjoint r)
+    (numberEq : numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0) :
+    MontData base capacity w m' ∧ numAt m' (State.addr base) w 0 = numAt m (State.addr base) w 0 :=
+  h.after_reads (fun _ bound => frame.readW (r := ⟨State.addr base, 128⟩)
+    (Offset.contains_base _ bound (by omega)) header (by decide)) numberEq
 
 theorem MontData.after_frame {base : BitVec 32} {capacity w : Nat} {m m' : Mem} {regions : List Region}
     (h : MontData base capacity w m) (frame : Frame regions m m')

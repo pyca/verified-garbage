@@ -92,30 +92,6 @@ def shapeP : Prog isa := seqs [
   shapeMasks,
   .block shapeFirst, .block shapeLast]
 
-/-- One binary remainder step, selecting the subtraction without a branch. -/
-def modBit : List Instr :=
-  [.mov .r1 (.shifted .r2 .lsr 7), .dp .and .r1 .r1 (.imm 1),
-    .dp .add .r3 .r3 (.reg .r3), .dp .add .r3 .r3 (.reg .r1),
-    .subs .r1 .r3 (.reg .r7), .mov .r8 (.imm 0), .adc .r8 .r8 (.imm 0),
-    .mov .r9 (.imm 0), .dp .sub .r8 .r9 (.reg .r8),
-    .dp .eor .r1 .r1 (.reg .r3), .dp .and .r1 .r1 (.reg .r8),
-    .dp .eor .r3 .r3 (.reg .r1), .mov .r2 (.shifted .r2 .lsl 1), .subs .r6 .r6 (.imm 1)]
-
-/-- Output mod the small positive divisor in r7, in r3; keeps r10/r11. -/
-def remSmall : Prog isa := seqs [
-  .block [.ldrSp .r4 4, .ldrSp .r5 12, .mov .r3 (.imm 0)],
-  .loop (seqs [.block [.ldrb .r2 .r4 0, .mov .r6 (.imm 8)],
-    .loop (.block modBit) .ne,
-    .block [.dp .add .r4 .r4 (.imm 1), .subs .r5 .r5 (.imm 1)]]) .ne]
-
-def residue : Prog isa := seqs [
-  .block [.ldrSp .r1 28, .cmp .r1 (.imm 2)],
-  .ite .eq (.block [.mov .r7 (.imm 24)]) (.block [.mov .r7 (.imm 10)]),
-  remSmall,
-  .block [.ldrSp .r1 28, .cmp .r1 (.imm 2)],
-  .ite .eq (.block [.cmp .r3 (.imm 11)])
-    (.block [.dp .orr .r3 .r3 (.imm 4), .cmp .r3 (.imm 7)])]
-
 /-- The small-prime table is beyond the 28 arrays the shared round uses. -/
 def tablePointer : List Instr :=
   [.ldrSp .r0 0, .ldrSp .r7 12, .dp .add .r7 .r7 (.imm 7), .mov .r7 (.shifted .r7 .lsr 3),
@@ -156,6 +132,26 @@ Read octet pairs backwards, with a zero high octet for an odd byte length.
 The final accumulator is below twice the prime, so zero or the prime
 means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
 def trialSmall : Prog isa := seqs [.block trialStart, .loop trialStep .ne, trialFlag]
+
+/-- Short public residue comparisons, unrolled by the emitter. -/
+def residueEquals : List Nat → Prog isa
+  | [] => .block []
+  | [v] => .block [.cmp .r2 (.imm (BitVec.ofNat 32 v))]
+  | v :: rest => .seq (.block [.cmp .r2 (.imm (BitVec.ofNat 32 v))])
+      (.ite .eq (.block []) (residueEquals rest))
+
+def residueLow : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
+  .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 7), .cmp .r2 (.imm 3)]
+
+/-- For odd p, p mod 24 = 11 iff p mod 8 = 3 and p mod 3 = 2.
+The shared reducer's radix is 1 modulo both 3 and 5. -/
+def residue2 : Prog isa := .seq (.block residueLow)
+  (.ite .eq (seqs [.block [.mov .r7 (.imm 3)], trialSmall, residueEquals [2, 5]]) (.block []))
+
+/-- For odd p, p mod 10 is 3 or 7 iff p mod 5 is 3 or 2. -/
+def residue5 : Prog isa := seqs [.block [.mov .r7 (.imm 5)], trialSmall, residueEquals [2, 3, 7, 8]]
+
+def residue : Prog isa := .seq (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)]) (.ite .eq residue2 residue5)
 
 def sieve : Prog isa := seqs [
   .block (tablePointer ++ [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64),
@@ -236,30 +232,42 @@ def expSetup : Prog isa := seqs [expDecompose,
   .block ([.ldrSp .r1 60] ++ TwoPower.code),
   .block exponentPowerStore]
 
+def witnessMaskHead : List Instr :=
+  [.ldrSp .r6 44, .dp .sub .r6 .r6 (.imm 1), .mov .r5 (.shifted .r6 .lsr 5),
+    .dp .and .r6 .r6 (.imm 31), .dp .add .r6 .r6 (.imm 1)]
+
+def witnessMaskStore : List Instr :=
+  [.ldrSp .r0 0, .ldr .r4 .r0 72, .dp .add .r4 .r4 (.shifted .r5 .lsl 2),
+    .ldr .r3 .r4 0, .dp .and .r3 .r3 (.reg .r7), .str .r3 .r4 0]
+
+def witnessMaskBits : Prog isa := .seq (.block [.mov .r1 (.reg .r6)])
+  (.seq (.block TwoPower.code) (.block [.dp .sub .r7 .r2 (.imm 1)]))
+
 /-- Mask the highest native word occupied by a witness, including at a
 32- or 64-bit width boundary. Import has already cleared the higher words. -/
-def witnessMask : Prog isa := seqs [
-  .block [.ldrSp .r6 44, .dp .sub .r6 .r6 (.imm 1), .mov .r5 (.shifted .r6 .lsr 5),
-    .dp .and .r6 .r6 (.imm 31), .dp .add .r6 .r6 (.imm 1), .mov .r7 (.imm 0)],
-  .loop (.block maskStep) .ne,
-  .block [.ldrSp .r0 0, .ldr .r4 .r0 72, .dp .add .r4 .r4 (.shifted .r5 .lsl 2),
-    .ldr .r3 .r4 0, .dp .and .r3 .r3 (.reg .r7), .str .r3 .r4 0]]
+def witnessMask : Prog isa := seqs [.block witnessMaskHead, witnessMaskBits, .block witnessMaskStore]
 
-def onPass : Prog isa := seqs [
-  .block [.ldrSp .r1 56, .dp .add .r1 .r1 (.imm 1), .ldrSp .r2 52,
-    .cmp .r1 (.reg .r2)],
+def sampleWitness : Prog isa := .seq (importOperand 1) witnessMask
+
+def onPassHead : List Instr := [.ldrSp .r1 56, .dp .add .r1 .r1 (.imm 1), .ldrSp .r2 52, .cmp .r1 (.reg .r2)]
+
+def onPassFinish : List Instr := save .r1 56 ++ [.cmp .r3 (.imm 4)]
+
+def onPass : Prog isa := seqs [.block onPassHead,
   .ite .eq (.block [.mov .r3 (.imm 1)]) (.block [.mov .r3 (.imm 4)]),
-  .block (save .r1 56 ++ [.cmp .r3 (.imm 4)])]
+  .block onPassFinish]
 
-def round (name : String) (body : Prog isa) : Prog isa := seqs [
-  montOp 5 1 4, .block [.ldrSp .r0 0, .ldrSp .r1 36], .call name body,
+def roundKernel (name : String) (body : Prog isa) : Prog isa := seqs [
+  montOp 5 1 4, .block [.ldrSp .r0 0, .ldrSp .r1 36], .call name body]
+
+def round (name : String) (body : Prog isa) : Prog isa := seqs [roundKernel name body,
   .block [.cmp .r0 (.imm 0)],
   .ite .eq (.block [.mov .r3 (.imm 2), .cmp .r3 (.imm 4)]) onPass]
 
 def draw (name : String) (body : Prog isa) : Prog isa := seqs [
   .block [.ldrSp .r0 0, .ldrSp .r4 16, .ldrSp .r1 40, .ldrSp .r6 48,
     .dp .add .r4 .r4 (.reg .r1), .dp .add .r1 .r1 (.reg .r6)] ,
-  .block (save .r1 40), importOperand 1, witnessMask, VG.Impl.Ffdh.Arm.inRange 1,
+  .block (save .r1 40), sampleWitness, VG.Impl.Ffdh.Arm.inRange 1,
   .block [.cmp .r11 (.imm 0)],
   .ite .eq (.block [.mov .r3 (.imm 4), .cmp .r3 (.imm 4)]) (round name body)]
 
@@ -267,8 +275,10 @@ def millerRabin (name : String) (body : Prog isa) : Prog isa :=
   .loop (seqs [.block witnessRoom,
     .ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)]) (draw name body)]) .eq
 
+def phasePrepared : Prog isa := .seq montPrep expSetup
+
 def test (q : Bool) (name : String) (body : Prog isa) : Prog isa :=
-  seqs [.block (phaseHead q), montPrep, expSetup, millerRabin name body]
+  seqs [.block (phaseHead q), phasePrepared, millerRabin name body]
 
 def result : Prog isa := seqs [
   .block [.cmp .r3 (.imm 0)], .ite .eq finNone

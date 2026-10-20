@@ -33,7 +33,7 @@ theorem saveR1_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d +
 
 theorem saveWord_ok {s : State} {d : Nat} (stack : Workspace s s.sp 72) (fit : d + 4 ≤ 72)
     (value : BitVec 32) (enc : encodable value = true) :
-    WP isa (.block ([.mov .r1 (.imm value)] ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d)) s fun t =>
+    WP isa (.block (([.mov .r1 (.imm value)] : List Instr) ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 d)) s fun t =>
       t.mem = s.mem.writeW (State.addr (s.sp + BitVec.ofNat 32 d)) value ∧ Rest [.r1, .r12] s t := by
   have write : InRegions s.wr (State.addr (s.sp + BitVec.ofNat 32 d)) 4 := by
     rw [VG.Arm.addr_add (by have := stack.nowrap; omega)]

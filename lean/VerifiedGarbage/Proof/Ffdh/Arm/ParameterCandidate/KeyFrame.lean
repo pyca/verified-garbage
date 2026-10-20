@@ -28,6 +28,14 @@ theorem KeyReady.arrayFit {s : State} {base : BitVec 32} {capacity w j : Nat}
   have stridePositive : 16 ≤ 8 * (w + 2) := by omega
   omega
 
+theorem KeyReady.arraysFit {s : State} {base : BitVec 32} {capacity w j : Nat}
+    (h : KeyReady base capacity w s) (bound : j < 30) : arrAt w (j + 1) ≤ 8 * capacity := by
+  have fit := h.arrayFit bound
+  have next : arrAt w (j + 1) = arrAt w j + 8 * (w + 2) := by
+    simp only [arrAt, VG.Spec.Rsa.Mont.hdrBytes, Nat.add_mul, Nat.one_mul, Nat.add_assoc]
+  rw [next]
+  exact fit
+
 theorem KeyReady.baseShiftFits {s : State} {base : BitVec 32} {capacity w : Nat}
     (h : KeyReady base capacity w s) (workspace : Workspace s base (8 * capacity)) :
     base.toNat + 96 < 2 ^ 32 := by

@@ -17,7 +17,7 @@ open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 
 theorem exponentPowerWord_ok {s : State} {count : Nat} (stack : Workspace s s.sp 72)
     (saved : s.mem.readW (State.addr (s.sp + 60#32)) 32 = BitVec.ofNat 32 count) :
-    WP isa (.block ([.ldrSp .r1 60] ++ VG.Impl.Bignum.Arm.TwoPower.code)) s fun t =>
+    WP isa (.block (([.ldrSp .r1 60] : List Instr) ++ VG.Impl.Bignum.Arm.TwoPower.code)) s fun t =>
       (t.gpr .r3 ++ t.gpr .r2 : BitVec 64) = BitVec.twoPow 64 (count % 64) ∧
       t.mem = s.mem ∧ Rest [.r1, .r2, .r3, .r4] s t := by
   have read : InRegions (s.rd ++ s.wr) (State.addr (s.sp + 60#32)) 4 := by
