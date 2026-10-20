@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Spec.TripleDes
+import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Spec.TripleDes
 
 
