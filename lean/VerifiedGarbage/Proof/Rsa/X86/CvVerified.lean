@@ -1,7 +1,7 @@
 module
 public import Mathlib.Data.Int.ModEq
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Spec.Rsa.Contract
@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Rsa.X86.CvCorrect
 @[expose] public section
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86
-open VG.Impl.Rsa.X86.CrtValues
+open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
 /-- Disjoint 512-bit buffers with the contract's full scratch allowance. -/
 def satState : State where

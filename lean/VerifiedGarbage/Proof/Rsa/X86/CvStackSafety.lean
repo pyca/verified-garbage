@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 
-/-! # Compositional stack-pointer safety for all CRT dispatch widths -/
+/-! # Stack-pointer safety of the inverse's steps, shared by the key checks and prime recovery -/
 
 @[expose] public section
 namespace VG.Proof.Rsa.X86.CrtValues
@@ -32,30 +32,5 @@ theorem invStep_sp (n a b : Nat) : (invStep n a b).all stackSafe = true := by
   all_goals simp only [sub3, sel, half, Dynamic.chainW, Dynamic.selectsW, Dynamic.wordLoop,
     Code.all, List.all_append, Dynamic.shiftDown]
   all_goals rfl
-
-theorem sized_sp (n : Nat) : (sized n).all stackSafe = true := by
-  simp only [sized, loads, load, core, firstDiv, checks, invSetup, divQ, stores, store, seqs,
-    List.cons_append, List.nil_append, eqS, copy, sub3, sel, inverse,
-    VG.Impl.Rsa.X86.CrtValues.div, VG.Impl.Rsa.X86.Div.code, VG.Impl.Rsa.X86.Div.step,
-    VG.Impl.Rsa.X86.Div.shiftArrays, VG.Impl.Rsa.X86.Div.shift, VG.Impl.Rsa.X86.Div.copyWords,
-    VG.Impl.Rsa.X86.Div.reduce, loadBE, storeBE, reverseBytes,
-    Dynamic.zerosW, Dynamic.chainW, Dynamic.selectsW, Dynamic.wordLoop, Code.all, List.all_append]
-  rw [invStep_sp, invStep_sp]
-  rfl
-
-theorem dispatch_sp (widths : List Nat) : (dispatch widths).all stackSafe = true := by
-  induction widths with
-  | nil => rfl
-  | cons w rest ih =>
-    change true && ((sized w).all stackSafe && (dispatch rest).all stackSafe) = true
-    rw [sized_sp, ih]
-    rfl
-
-theorem code_sp : code.all (fun i => !isa.writesSp i) = true := by
-  change code.all stackSafe = true
-  unfold code body valid
-  simp only [Code.all]
-  rw [dispatch_sp]
-  rfl
 
 end VG.Proof.Rsa.X86.CrtValues

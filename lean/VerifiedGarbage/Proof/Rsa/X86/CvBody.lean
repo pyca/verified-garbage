@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 
-import VerifiedGarbage.Proof.Rsa.X86.CvValid
 import VerifiedGarbage.Proof.Rsa.X86.CvFailure
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
@@ -13,17 +12,9 @@ import VerifiedGarbage.Proof.Bignum.Octets
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
-open VG.Impl.Rsa.X86.CrtValues
-
-structure Lengths (g : CallGeometry) : Prop where
-  lower : 64 ≤ (g.args 7).toNat
-  upper : (g.args 7).toNat ≤ 1024
-  width : g.n = Spec.Rsa.modulusWords (g.args 7).toNat
-  pSmall : (g.args 9).toNat < (g.args 7).toNat
-  qSmall : (g.args 11).toNat < (g.args 7).toNat
-  dpLen : g.args 1 = g.args 9
-  dqLen : g.args 3 = g.args 11
-  qiLen : g.args 5 = g.args 9
+open VG.Impl.Rsa.X86.CrtValues (inputArgs)
+open VG.Impl.Rsa.X86.CrtValuesRt (body)
+open VG.Proof.Rsa.X86.CrtValuesRt (Lengths sized_ok)
 
 theorem body_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
     WP isa body s fun t => Inputs g t ∧ Written g s.mem t ∧
@@ -43,7 +34,7 @@ theorem body_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g
   have hv := h.after keeps (by decide) (by decide) (by rw [mem]; exact Frame.refl _ _)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) (g.args 7).toNat) z ?_ ?_
   · intro accepted
-    refine WP.mono (valid_ok hv len.lower len.upper len.width) fun t ⟨ht, result, frame, rest⟩ => ?_
+    refine WP.mono (sized_ok hv len) fun t ⟨ht, result, frame, rest⟩ => ?_
     rw [mem] at result frame
     refine ⟨ht, written_arithmetic result ?_ ?_ ?_ ?_ ?_ ?_, frame, keeps.trans rest⟩
     · simp only [inputBytes, bytesAt_length, CallGeometry.buffer]

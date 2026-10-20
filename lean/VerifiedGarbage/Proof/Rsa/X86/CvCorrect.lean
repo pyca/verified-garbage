@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.CvABI
 public import VerifiedGarbage.Proof.Rsa.X86.CvResult
 
 import VerifiedGarbage.Proof.Rsa.X86.CvReturn
+import VerifiedGarbage.Proof.Rsa.X86.CvBody
 import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
 import VerifiedGarbage.Proof.Rsa.X86.CvResources
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
@@ -17,7 +18,7 @@ namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum hiding off Outside
 open VG.Proof.Bignum.X86 VG.Impl.Bignum.X86
-open VG.Impl.Rsa.X86.CrtValues
+open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
 theorem operation_ok {s : State} (a : ABI s) :
     WP isa code s fun t => Written (caller s) s.mem t ∧ abiPreserved s t := by
