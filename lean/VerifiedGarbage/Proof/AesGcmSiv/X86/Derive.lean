@@ -13,9 +13,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.AesGcm.X86.Env
 
 /-!
 # AES-GCM-SIV on x86: the message keys (`derive`)
