@@ -7,10 +7,7 @@ import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Square
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Rows
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontRound
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd

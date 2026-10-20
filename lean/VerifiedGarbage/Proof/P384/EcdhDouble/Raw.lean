@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Impl.P384.EcdhDouble
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.P384.Linear
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.P384.EcdhDouble.Vals
