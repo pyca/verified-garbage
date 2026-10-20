@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
+import VerifiedGarbage.Proof.Mont.X86.Compact.EntryMemory
 public import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Compact.Layout
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Entry
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Mont.X86.Compact.Frame
+import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! # Compact writes satisfy the public prepared workspace frame -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
-import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
 public import VerifiedGarbage.Proof.Mont.Words
 

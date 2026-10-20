@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
-public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.X86.Compact.Restore
+import VerifiedGarbage.Proof.Mont.Words32
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Mont.X86.ArgFar
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Impl.Mont.X86.Compact
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # A complete callable compact multiplication restores the i686 ABI -/
 

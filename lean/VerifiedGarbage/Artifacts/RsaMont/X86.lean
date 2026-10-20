@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Mont.X86.StaticSquare
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 public import VerifiedGarbage.Proof.Mont.X86.StaticSquare.Shape
+public import VerifiedGarbage.Proof.Mont.X86.Compact.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery multiplication at offsets of a working space, on baseline i686
@@ -26,6 +27,16 @@ def runtime : Artifact :=
     verified := Proof.Mont.X86.Rt.rt_verified
     spSafe := Proof.Mont.X86.StaticSquare.body_spSafe }
 
-def artifacts : List Artifact := [runtime]
+def prepared : Artifact :=
+  Spec.Rsa.Mont.mulApi.artifact X86.target {
+    stack := 16
+    notes := ["Prepared Montgomery multiplication on paired 32-bit words. Arrays 2 and 3 hold the \
+      product and row multiplier; subtraction goes directly into the result after all inputs have \
+      been consumed. Four callee-saved registers use a 16-byte stack frame. The prepared modulus \
+      and inverse are reused across Miller–Rabin products without operand copies."]
+    code := Impl.Mont.X86.Compact.body
+    verified := Proof.Mont.X86.Compact.verified }
+
+def artifacts : List Artifact := [runtime, prepared]
 
 end VG.Artifacts.RsaMont.X86

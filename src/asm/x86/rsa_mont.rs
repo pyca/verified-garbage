@@ -281557,3 +281557,243 @@ ret
 .p2align 6",
     )
 }
+
+/// Montgomery multiplication in the working space of the RSA functions: writes to array `o` the number below the modulus `m` (array 0) congruent to `a b 2^(-64 w)` modulo `m`, for the numbers in arrays `a` and `b`. The working space is a header of 32 words, then 8 arrays of `w + 2` words each: header word 6 holds `w`, word 7 `-m⁻¹ mod 2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, little-endian, at the start of their arrays; `o` may be `a` or `b`, and `a` may be `b`. Every byte of `ws` but those of arrays 2 and 3 (the function's own) and of array `o` keeps its value.
+///
+/// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
+///
+/// Prepared Montgomery multiplication on paired 32-bit words. Arrays 2 and 3 hold the product and row multiplier; subtraction goes directly into the result after all inputs have been consumed. Four callee-saved registers use a 16-byte stack frame. The prepared modulus and inverse are reused across Miller–Rabin products without operand copies.
+///
+/// # Safety
+///
+/// * `ws` must be valid for reads and writes of `8 * ws_len` bytes.
+/// * Header word 6 of `ws`, `w`, must be in 2..2^31, and `ws_len` at least `32 + 8 * (w + 2)`.
+/// * Header words 8 to 15 must hold the addresses of the arrays: word `8 + j` the address of word `32 + j * (w + 2)` of `ws`.
+/// * Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.
+/// * `o`, `a` and `b` must be below 8, and not 2 or 3.
+/// * The number in array `b` must be below `m`.
+/// * Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the caller must destroy if they are secret.
+/// * `ws` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `ws` must not overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
+    core::arch::naked_asm!(
+        r"push ebx
+push ebp
+push esi
+push edi
+mov edi, DWORD PTR [esp+20]
+mov edi, DWORD PTR [edi+80]
+mov ebp, edi
+add ebp, 24
+mov eax, DWORD PTR [esp+20]
+mov esi, DWORD PTR [eax+48]
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, esi
+add esi, 4
+mov eax, 0
+20:
+mov DWORD PTR [ebp], eax
+add ebp, 4
+sub esi, 4
+jne 20b
+mov ebp, edi
+add ebp, 24
+21:
+mov ecx, DWORD PTR [esp+20]
+mov edx, DWORD PTR [esp+32]
+add edx, edx
+add edx, edx
+add edx, edx
+add ecx, edx
+mov ecx, DWORD PTR [ecx+64]
+mov eax, ebp
+sub eax, edi
+sub eax, 24
+add eax, ecx
+mov eax, DWORD PTR [eax]
+mov DWORD PTR [edi+20], eax
+mov ebx, 0
+mov ecx, DWORD PTR [esp+20]
+mov edx, DWORD PTR [esp+36]
+add edx, edx
+add edx, edx
+add edx, edx
+add ecx, edx
+mov ecx, DWORD PTR [ecx+64]
+mov eax, DWORD PTR [esp+20]
+mov esi, DWORD PTR [eax+48]
+add esi, esi
+add esi, esi
+add esi, esi
+22:
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx]
+mul edx
+add eax, DWORD PTR [ebp]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp], eax
+mov ebx, edx
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx+4]
+mul edx
+add eax, DWORD PTR [ebp+4]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp+4], eax
+mov ebx, edx
+add ecx, 8
+add ebp, 8
+sub esi, 8
+jne 22b
+mov eax, DWORD PTR [ebp]
+add eax, ebx
+mov DWORD PTR [ebp], eax
+mov eax, DWORD PTR [ebp+4]
+adc eax, 0
+mov DWORD PTR [ebp+4], eax
+mov edx, DWORD PTR [esp+20]
+mov eax, DWORD PTR [edx+48]
+add eax, eax
+add eax, eax
+add eax, eax
+sub ebp, eax
+mov edx, DWORD PTR [esp+20]
+mov eax, DWORD PTR [ebp]
+mov edx, DWORD PTR [edx+56]
+mul edx
+mov DWORD PTR [edi+20], eax
+mov ebx, 0
+mov ecx, DWORD PTR [esp+20]
+mov ecx, DWORD PTR [ecx+64]
+mov eax, DWORD PTR [esp+20]
+mov esi, DWORD PTR [eax+48]
+add esi, esi
+add esi, esi
+add esi, esi
+23:
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx]
+mul edx
+add eax, DWORD PTR [ebp]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp], eax
+mov ebx, edx
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx+4]
+mul edx
+add eax, DWORD PTR [ebp+4]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp+4], eax
+mov ebx, edx
+add ecx, 8
+add ebp, 8
+sub esi, 8
+jne 23b
+mov eax, DWORD PTR [ebp]
+add eax, ebx
+mov DWORD PTR [ebp], eax
+mov eax, DWORD PTR [ebp+4]
+adc eax, 0
+mov DWORD PTR [ebp+4], eax
+mov edx, DWORD PTR [esp+20]
+mov eax, DWORD PTR [edx+48]
+add eax, eax
+add eax, eax
+add eax, eax
+sub ebp, eax
+add ebp, 4
+mov edx, DWORD PTR [esp+20]
+mov eax, DWORD PTR [edx+48]
+add eax, eax
+add eax, eax
+add eax, eax
+add eax, edi
+add eax, 24
+cmp ebp, eax
+jne 21b
+mov esi, DWORD PTR [esp+20]
+mov esi, DWORD PTR [esi+64]
+mov ebx, DWORD PTR [esp+20]
+mov edx, DWORD PTR [esp+28]
+add edx, edx
+add edx, edx
+add edx, edx
+add ebx, edx
+mov ebx, DWORD PTR [ebx+64]
+mov eax, DWORD PTR [esp+20]
+mov edi, DWORD PTR [eax+48]
+add edi, edi
+add edi, edi
+add edi, edi
+mov ecx, 0
+24:
+mov eax, DWORD PTR [ebp]
+mov edx, 0
+cmp edx, ecx
+sbb eax, DWORD PTR [esi]
+mov DWORD PTR [ebx], eax
+sbb ecx, ecx
+add ebp, 4
+add esi, 4
+add ebx, 4
+sub edi, 4
+jne 24b
+mov edi, DWORD PTR [esp+20]
+mov edi, DWORD PTR [edi+80]
+mov eax, DWORD PTR [ebp]
+mov edx, 0
+cmp edx, ecx
+sbb eax, 0
+sbb eax, eax
+xor eax, -1
+mov ecx, eax
+mov edx, DWORD PTR [esp+20]
+mov eax, DWORD PTR [edx+48]
+add eax, eax
+add eax, eax
+add eax, eax
+sub ebp, eax
+mov esi, DWORD PTR [esp+20]
+mov edx, DWORD PTR [esp+28]
+add edx, edx
+add edx, edx
+add edx, edx
+add esi, edx
+mov esi, DWORD PTR [esi+64]
+mov eax, DWORD PTR [esp+20]
+mov edi, DWORD PTR [eax+48]
+add edi, edi
+add edi, edi
+add edi, edi
+25:
+mov eax, DWORD PTR [ebp]
+mov edx, DWORD PTR [esi]
+xor edx, eax
+and edx, ecx
+xor eax, edx
+mov DWORD PTR [esi], eax
+add ebp, 4
+add esi, 4
+sub edi, 4
+jne 25b
+mov edi, DWORD PTR [esp]
+mov esi, DWORD PTR [esp+4]
+mov ebp, DWORD PTR [esp+8]
+pop ebx
+pop ebx
+pop ebx
+pop ebx
+ret
+.p2align 6",
+    )
+}

@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Mont.X86.Compact.Product
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Bounds
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
-import VerifiedGarbage.Proof.Mont.X86.Rt.Row
 
 /-! # Prepared multiplication through the complete paired-word product -/
 

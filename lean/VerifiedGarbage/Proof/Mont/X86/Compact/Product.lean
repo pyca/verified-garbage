@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Rows
-import VerifiedGarbage.Proof.Mont.X86.Compact.Bounds
-import VerifiedGarbage.Proof.Mont.X86.Compact.Metadata
-import VerifiedGarbage.Proof.Mont.X86.Rt.Row
 
 /-! # The compact product after every CIOS row -/
 

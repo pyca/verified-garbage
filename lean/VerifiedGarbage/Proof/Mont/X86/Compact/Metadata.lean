@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Compact.Args
 public import VerifiedGarbage.Proof.Mont.Words32
-import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 
 /-! # Prepared metadata is outside the compact multiplication's scratch -/
 
