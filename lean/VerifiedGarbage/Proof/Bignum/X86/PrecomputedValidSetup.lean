@@ -1,10 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Proof.Bignum.WordsFrame
+
 import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 

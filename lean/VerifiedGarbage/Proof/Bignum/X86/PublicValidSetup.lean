@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 
 /-! # Public width selection retains all input buffers and caller resources -/

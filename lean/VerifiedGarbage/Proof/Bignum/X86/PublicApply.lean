@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.AcceptSave
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Proof.Bignum.X86.AcceptSave
+
+import VerifiedGarbage.Proof.Bignum.X86.InputCompare
 import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Mont.X86.Instr

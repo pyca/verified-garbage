@@ -1,8 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValidTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
+
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks

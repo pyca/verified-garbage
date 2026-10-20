@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedPower
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
 public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetupFrame

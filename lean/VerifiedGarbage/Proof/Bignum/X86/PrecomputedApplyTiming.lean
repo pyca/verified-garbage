@@ -1,12 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDataTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPrepared
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDataTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPrepared
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedAcceptance
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

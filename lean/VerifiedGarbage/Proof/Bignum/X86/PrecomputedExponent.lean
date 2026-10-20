@@ -1,13 +1,13 @@
 module
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Framework.Lit
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
-
 public import VerifiedGarbage.Proof.Bignum.X86.SparseLoop
 public import VerifiedGarbage.Proof.Bignum.MontRepresentation
 public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
-public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
 /-! # Safe execution for all packed values, RSA correctness for a valid stored R² -/
 

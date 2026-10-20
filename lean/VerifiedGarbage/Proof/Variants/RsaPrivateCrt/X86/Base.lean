@@ -143,7 +143,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatch
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatchTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponent
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentSafe
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportSafe
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportTiming
@@ -179,20 +178,17 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
 public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
 public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicExport
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoopGeneral
 public import VerifiedGarbage.Proof.Bignum.X86.PublicMask
 public import VerifiedGarbage.Proof.Bignum.X86.PublicMath
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-public import VerifiedGarbage.Proof.Bignum.X86.PublicStep
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicWrite
 public import VerifiedGarbage.Proof.Bignum.X86.ReduceOperand
@@ -472,7 +468,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatch
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatchTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponent
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentSafe
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportSafe
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExportTiming
@@ -508,20 +503,17 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
 import VerifiedGarbage.Proof.Bignum.X86.PublicDispatchTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntry
 import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicExport
 import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
-import VerifiedGarbage.Proof.Bignum.X86.PublicLoopGeneral
 import VerifiedGarbage.Proof.Bignum.X86.PublicMask
 import VerifiedGarbage.Proof.Bignum.X86.PublicMath
 import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
-import VerifiedGarbage.Proof.Bignum.X86.PublicStep
 import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicWrite
 import VerifiedGarbage.Proof.Bignum.X86.ReduceOperand

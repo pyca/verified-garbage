@@ -2,10 +2,10 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValidSetup
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatchTiming
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckedTiming
 
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedValidSetup
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatchTiming
-import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckedTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

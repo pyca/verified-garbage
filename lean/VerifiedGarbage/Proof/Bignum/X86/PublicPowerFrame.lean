@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout

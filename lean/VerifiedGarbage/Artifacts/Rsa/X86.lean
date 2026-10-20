@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 
 /-! Public and private CRT RSA on baseline i686. -/
 

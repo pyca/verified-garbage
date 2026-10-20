@@ -2,12 +2,13 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
-
 public import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.SparseTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86.AcceptSave
+
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Input acceptance and exponentiation have no secret-dependent trace -/
 

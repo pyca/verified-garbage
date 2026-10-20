@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicApplyTiming
 public import VerifiedGarbage.Proof.Bignum.X86.SparseTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApply
+
+import VerifiedGarbage.Proof.Bignum.X86.PublicDataTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Stored-power arithmetic and public key checks have fixed instruction traces -/
 
