@@ -9,7 +9,9 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Sha256.StateMem
+import VerifiedGarbage.Proof.Sha256.StateMem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Sha256
 
 /-!
 # HMAC-SHA-256: lemmas shared by every target
