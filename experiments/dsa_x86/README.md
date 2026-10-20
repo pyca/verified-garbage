@@ -41,3 +41,12 @@ candidate using the geometric mean of its fixed-search ratios to baseline. It
 then measures complete random parameter generation for baseline, that candidate,
 and OpenSSL. Random-search medians remain noisy; fixed tapes isolate arithmetic
 changes but cannot replace the real API comparison.
+
+Third sweep: `f` seeds setup from the public modulus's known high bit for the
+common full-width and padded-q shapes, retaining the original setup as fallback.
+It reaches the same 2^(65*n) residue before the same six Montgomery squares.
+`v` replaces full-product reduction's high-word scans with a pending carry at
+context header offset 8. Each following row consumes that carry at its high
+word; the last row publishes it as the accumulator's top word. These experiments
+are stacked with both four-word and fully expanded multiplication rows.
+Power identities cover full-width, shorter-high-bit, and padded moduli.

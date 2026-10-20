@@ -7,7 +7,9 @@ originals={p:(root/p).read_bytes() for p in ['src/asm/x86/dsa.rs','src/dsa/param
 (root/'.unproven-dsa-experiment').touch()
 env=os.environ.copy();env['CARGO_TARGET_DIR']=str(root/'bench-target');env['VG_BENCHES']='dsa'
 variants=['baseline','d','w','dw','dwp','dwpr2','dwpr4','dwpr8','dwpr0']
+if env.get('PROTOTYPE_VARIANTS'):variants=env['PROTOTYPE_VARIANTS'].split()
 if len(sys.argv)>1:variants=sys.argv[1:]
+assert all(v.isalnum() and v.isascii() for v in variants), 'Invalid variant name'
 def run(cmd,log,extra=None):
     with open(out/log,'w') as f:
         subprocess.run(cmd,env=env| (extra or {}),stdout=f,stderr=subprocess.STDOUT,check=True)
