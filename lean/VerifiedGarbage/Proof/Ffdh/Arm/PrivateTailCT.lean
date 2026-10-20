@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTail
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
@@ -9,6 +10,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 
 /-! Private-key subgroup branches depend on the public value, followed by constant-time consistency checking. -/
 

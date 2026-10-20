@@ -1,8 +1,12 @@
 module
 
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
+public import VerifiedGarbage.Impl.Bignum.Arm.ModulusCheck
+public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 public import VerifiedGarbage.Impl.Bignum.Arm.ReduceOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
+public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 
 /-! FFDH domain operations over the runtime-sized ARMv7 RSA workspace.
 The 72-byte local frame contains pointers, public lengths and saved flags.

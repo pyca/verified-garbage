@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Branch
-public import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+import VerifiedGarbage.Proof.Ffdh.Arm.Branch
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import Init.Prelude
+meta import Init.Prelude
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! The small branch-control blocks have fixed traces. Branch conditions are
 related separately from the values moved by these blocks. -/

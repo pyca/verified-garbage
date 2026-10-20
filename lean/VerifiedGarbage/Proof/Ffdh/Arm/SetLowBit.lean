@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.LowBit
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The p-1 comparison changes only array 7's low word. -/
 

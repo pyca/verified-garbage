@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentContext
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 
 /-! Exact AAPCS arguments and stack-memory effects of the nested key attempt. -/
 

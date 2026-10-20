@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Subgroup membership is a native power followed by a fixed-width equality. -/
 

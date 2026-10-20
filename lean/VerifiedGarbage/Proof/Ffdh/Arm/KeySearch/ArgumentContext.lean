@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Framework.Block
 
 /-! The argument frame can be filled without changing the selected domain,

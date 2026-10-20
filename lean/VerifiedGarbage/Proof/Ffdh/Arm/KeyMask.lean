@@ -1,11 +1,14 @@
 module
 
+public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 
 /-! Branch-free masking of either complete key encoding by its saved validity flag. -/
 

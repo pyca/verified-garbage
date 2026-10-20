@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTail
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range

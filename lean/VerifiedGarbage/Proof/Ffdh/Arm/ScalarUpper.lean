@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.QTest
-public import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
 import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Compare an imported scalar with q when supplied, or with p-1 otherwise. -/
 

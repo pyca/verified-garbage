@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBit
 import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBitCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
 
 /-! Full-width range checks have the same trace for different secret values. -/
 

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
@@ -12,7 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
-open VG VG.Arm VG.Proof.Bignum.Arm
+open VG VG.Arm
 
 theorem domainEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
     (.block VG.Impl.Ffdh.Arm.Domain.CheckDomain.entry) (fun _ _ => True) := by

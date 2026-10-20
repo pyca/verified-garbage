@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 public import VerifiedGarbage.Impl.Bignum.Arm.WindowExp
-public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! FFDH's native ARMv7 arithmetic uses the runtime-sized RSA workspace and
 its three-bit fixed-window exponentiation. Slot zero of the local frame

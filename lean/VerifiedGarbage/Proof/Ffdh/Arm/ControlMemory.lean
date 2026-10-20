@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Spec.Rsa.Contract
 import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.TCB.Mem
 
 /-! The shared 64-bit FFDH controller encoded with native 32-bit stores. -/
 

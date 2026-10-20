@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Set up native entropy cutting and retain the significant scalar pointer. -/
 

@@ -1,6 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Unsigned public size guards for the native controller entry points. -/
 

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMain
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublicCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT

@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 
 /-! Native private-key validation statuses agree with the shared FFDH algorithm. -/
 

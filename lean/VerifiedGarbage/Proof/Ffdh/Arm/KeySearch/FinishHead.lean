@@ -1,11 +1,15 @@
 module
 
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 import VerifiedGarbage.Proof.Rc2.PairMem
 import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The controller returns its status and writes a full u64 entropy-consumption count. -/
 

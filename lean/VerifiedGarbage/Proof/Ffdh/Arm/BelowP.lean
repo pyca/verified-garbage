@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBit
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.SetLowBit
 import VerifiedGarbage.Proof.Ffdh.Arm.LowBit
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 
 /-! Compare against p-1 using full-width, fixed-schedule native operations. -/
 

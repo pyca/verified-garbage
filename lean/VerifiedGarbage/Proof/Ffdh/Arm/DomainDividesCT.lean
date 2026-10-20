@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
@@ -11,6 +13,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Divisibility checking reuses RSA's constant-time full-width reduction. -/
 

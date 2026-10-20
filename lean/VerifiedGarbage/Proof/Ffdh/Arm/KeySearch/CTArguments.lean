@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
@@ -8,7 +9,6 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
@@ -16,7 +16,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
-import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-! Native argument setup uses only the public controller and stack

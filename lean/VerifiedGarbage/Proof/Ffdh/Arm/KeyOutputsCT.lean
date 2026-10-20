@@ -15,6 +15,7 @@ public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMask
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Clearing and masking complete key encodings never branches on their contents
 or the saved secret result flag. -/

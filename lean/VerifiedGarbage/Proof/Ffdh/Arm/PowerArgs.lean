@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Bases and exponents have separate public pointer/count slots. -/
 

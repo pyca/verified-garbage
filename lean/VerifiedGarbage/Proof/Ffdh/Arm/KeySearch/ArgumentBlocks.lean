@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Small native blocks used to place the selected attempt's stack arguments. -/
 

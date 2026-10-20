@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.InitStores
-import VerifiedGarbage.Impl.Ffdh.Arm.Init
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

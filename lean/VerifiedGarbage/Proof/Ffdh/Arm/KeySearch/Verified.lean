@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Sat
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 
 /-! Complete native ARMv7 key generation, including bounded retries and

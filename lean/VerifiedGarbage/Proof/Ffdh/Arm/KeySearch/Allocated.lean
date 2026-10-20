@@ -2,9 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 
 /-! Geometry of the nested call's allocated argument frame. -/
 

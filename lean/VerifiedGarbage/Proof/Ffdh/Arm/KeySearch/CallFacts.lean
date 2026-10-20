@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Tape
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! The nested attempt's buffers and private stack satisfy its shared signature. -/
 

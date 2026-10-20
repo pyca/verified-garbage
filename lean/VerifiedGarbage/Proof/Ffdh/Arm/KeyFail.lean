@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs

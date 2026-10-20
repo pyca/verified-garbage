@@ -1,16 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBECT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! Shared-value encoding uses public output pointers and fixed lengths. -/
 

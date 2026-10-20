@@ -6,7 +6,6 @@ public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.InitCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInitVerified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
@@ -15,6 +14,7 @@ public import Init.Data.List.Basic
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInit
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 
 /-! Native parameter initialization implements the shared FFDH ABI. -/
 

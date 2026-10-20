@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody

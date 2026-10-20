@@ -11,6 +11,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The complete callable key-generation attempt satisfies the shared contract. -/
 

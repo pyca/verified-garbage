@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecks
 public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRangeCT
@@ -10,6 +11,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
 
 /-! Order validation branches only on the documented public domain values. -/
 

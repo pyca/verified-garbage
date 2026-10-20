@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
@@ -11,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
-import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 
 /-! Native key-generation states used to compose functional and timing proofs. -/
 

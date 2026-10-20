@@ -1,8 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Guards
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Guards
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 
 /-! Preservation of live and finished native controller states. -/
 

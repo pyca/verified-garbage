@@ -1,9 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 
 /-! Retry-budget and entropy-room guards, and the next disclosed search point. -/
 

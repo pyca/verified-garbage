@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.Power
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Exponentiation through saved FFDH pointers retains RSA's constant-time window. -/
 

@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Odd
+import VerifiedGarbage.Proof.Ffdh.Arm.Odd
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
 /-! Reading an operand's parity uses a public array pointer and fixed byte offset. -/
 

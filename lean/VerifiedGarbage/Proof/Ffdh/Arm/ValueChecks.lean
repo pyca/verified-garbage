@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Equal
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.Equal
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Constant-width tests of an operand against zero and one. -/
 

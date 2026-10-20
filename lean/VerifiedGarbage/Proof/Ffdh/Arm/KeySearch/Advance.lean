@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Each attempt consumes exactly the public domain width from the entropy
 tape, independent of its secret acceptance status. -/

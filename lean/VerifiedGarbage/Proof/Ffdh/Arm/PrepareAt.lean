@@ -1,12 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
-
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 /-! Native modulus setup composes the FFDH frame with RSA's fast arithmetic. -/
 
 @[expose] public section

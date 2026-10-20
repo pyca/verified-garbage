@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
 import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup

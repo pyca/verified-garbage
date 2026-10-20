@@ -1,13 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinish
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExportResultCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutputCT
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinish
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResultCT
+import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutputCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutput
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Export and rejection masking have the same trace for every shared value and status. -/
 

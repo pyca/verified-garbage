@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Preparing a saved modulus has a trace determined by public frame metadata. -/
 

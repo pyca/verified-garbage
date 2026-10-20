@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! One zeroed scalar-prefix byte, optionally advancing the entropy pointer. -/
 

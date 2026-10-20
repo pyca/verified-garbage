@@ -1,5 +1,8 @@
 module
 
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT

@@ -5,9 +5,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Advance
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! The retry controller consumes one scalar width per attempt, then updates
 exactly the rejection budget corresponding to its returned status. -/

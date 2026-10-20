@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Impl.Bignum.Arm.SelectArray
+public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+public import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! Fixed-width FFDH comparisons using RSA's native subtraction and selection.
 The flag is r11. Header offset 136 holds the saved flag across arithmetic. -/

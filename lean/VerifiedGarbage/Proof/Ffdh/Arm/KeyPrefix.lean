@@ -1,10 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
-public import VerifiedGarbage.Proof.Ffdh.Arm.OutputSlice
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
+import VerifiedGarbage.Proof.Ffdh.Arm.OutputSlice
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Clear only the publicly known leading scalar bytes while advancing the
 entropy and output pointers together. -/

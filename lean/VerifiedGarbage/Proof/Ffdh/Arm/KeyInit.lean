@@ -1,8 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Bounds
-public import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! ARMv7 key-generation controller initialization, including invalid widths. -/
 

@@ -1,15 +1,17 @@
 module
 
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.TCB.Code
 
 /-! Key-generation entry accesses only fixed offsets of the public stack frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
-open VG VG.Arm VG.Proof.Bignum.Arm
+open VG VG.Arm
 
 theorem keyEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
     (.block VG.Impl.Ffdh.Arm.Domain.GenerateKey.entry) (fun _ _ => True) := by

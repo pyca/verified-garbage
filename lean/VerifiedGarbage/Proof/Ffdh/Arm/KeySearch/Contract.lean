@@ -10,7 +10,6 @@ public import Init.Data.List.Basic
 public import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Mont.Words
 
 /-! Public inputs and loop-state representation for the native ARMv7 key
 search. The retry counters and width fit in native words; their packed-u64

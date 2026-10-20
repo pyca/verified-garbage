@@ -1,10 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
-import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! One scan step advances only past a public zero byte before the last byte. -/
 

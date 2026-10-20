@@ -1,14 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirst
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.OutputSlice
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirst
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+import VerifiedGarbage.Proof.Ffdh.Arm.OutputSlice
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The first masked scalar byte preserves domain, entropy, and saved pointers. -/
 

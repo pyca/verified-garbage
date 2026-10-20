@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Copy the possibly empty suffix after a key scalar's masked leading byte. -/
 

@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Incoming
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract

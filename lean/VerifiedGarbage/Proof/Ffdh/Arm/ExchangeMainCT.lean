@@ -12,7 +12,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 
 /-! Shared-secret computation uses the same window and masking trace for distinct private scalars. -/
 

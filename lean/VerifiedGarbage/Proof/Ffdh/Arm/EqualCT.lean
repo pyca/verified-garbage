@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.ChecksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Equal
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 
 /-! Equality and flag combining do not disclose operand words. -/
 

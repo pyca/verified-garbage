@@ -4,9 +4,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The native public-value check, from its entry through AAPCS restoration. -/
 

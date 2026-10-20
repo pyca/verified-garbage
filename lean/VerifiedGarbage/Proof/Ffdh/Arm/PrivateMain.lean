@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublic
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
@@ -9,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 
 /-! Imported private-key validation keeps scalar validity and public-key consistency in native code. -/
 

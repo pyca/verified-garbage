@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+public import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Fixed local-frame accesses used by native key generation have public addresses. -/
 

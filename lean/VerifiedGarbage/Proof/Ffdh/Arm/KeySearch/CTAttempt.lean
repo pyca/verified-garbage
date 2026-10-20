@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
-import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! A native key attempt leaks only its public domain and the disclosed
 status at the current search point, for every arithmetic backend. -/

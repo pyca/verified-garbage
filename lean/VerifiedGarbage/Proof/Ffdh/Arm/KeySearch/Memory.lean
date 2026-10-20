@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! Controller writes preserve the entropy tape, domain and saved AAPCS registers. -/
 

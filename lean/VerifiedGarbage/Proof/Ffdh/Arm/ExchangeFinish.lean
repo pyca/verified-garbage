@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
-public import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutput
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+import VerifiedGarbage.Proof.Ffdh.Arm.MaskOutput
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Shared-value export and masking keep every status-dependent operation native. -/
 

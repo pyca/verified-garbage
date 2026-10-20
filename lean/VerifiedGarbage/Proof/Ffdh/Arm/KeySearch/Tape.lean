@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Mont.Words
 
 /-! A nested attempt receives exactly the next public-width slice of entropy. -/
 

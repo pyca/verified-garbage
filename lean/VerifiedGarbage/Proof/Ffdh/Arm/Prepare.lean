@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
-public import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
 import VerifiedGarbage.Proof.Bignum.Arm.PcHead
 import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
 import VerifiedGarbage.Proof.Bignum.Arm.Precompute
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! Reuse RSA's native modulus preparation without imposing public-RSA
 exponent restrictions on FFDH scalars. -/

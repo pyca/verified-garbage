@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest
-import VerifiedGarbage.Proof.Ffdh.Arm.Locals
-import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Select the public bound and its full encoded length from native saved arguments. -/
 

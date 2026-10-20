@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainTail
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
@@ -7,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 
 /-! Optional order validation branches only on the public domain shape. -/
 

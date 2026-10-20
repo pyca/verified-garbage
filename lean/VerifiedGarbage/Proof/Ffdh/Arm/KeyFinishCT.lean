@@ -1,5 +1,8 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputsCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinishCT

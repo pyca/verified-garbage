@@ -1,11 +1,11 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! A nested key-generation attempt changes its outputs, workspace and its
 own stack, preserving the retry policy and saved controller frame. -/

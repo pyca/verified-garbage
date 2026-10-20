@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Odd
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The order's range and parity checks use fixed public addresses. -/
 

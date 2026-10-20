@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack

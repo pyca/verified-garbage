@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block

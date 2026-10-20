@@ -14,6 +14,7 @@ meta import VerifiedGarbage.TCB.Arm.Target
 public import Init.Core
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Native ARMv7 key generation is verified against the shared FFDH API. -/
 

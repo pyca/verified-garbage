@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The only secret-dependent key-generation branch is scalar acceptance,
 whose classification is disclosed by the attempt's returned status. -/

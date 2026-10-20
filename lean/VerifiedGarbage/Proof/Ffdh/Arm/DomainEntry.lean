@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The imported-domain ABI arguments are retained in native locals. -/
 

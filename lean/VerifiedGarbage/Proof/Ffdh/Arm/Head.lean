@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 /-! Public modulus validation precedes every native FFDH operation. -/
 
 @[expose] public section

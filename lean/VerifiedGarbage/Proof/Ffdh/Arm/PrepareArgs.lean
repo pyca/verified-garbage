@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The modulus arguments are copied to the slots RSA's helpers consume. -/

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+import VerifiedGarbage.Proof.Bignum.Arm.PcStack
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! The FFDH frame retains public pointers and lengths across RSA arithmetic. -/
 

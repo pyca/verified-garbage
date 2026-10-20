@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublic
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTailCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
@@ -12,6 +13,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 
 /-! The public half of private-key checking reveals no private scalar data. -/
 

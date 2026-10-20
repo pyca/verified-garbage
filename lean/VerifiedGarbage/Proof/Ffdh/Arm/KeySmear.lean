@@ -1,7 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Spread the highest public bound bit into the exact first-byte scalar mask. -/
 

@@ -1,10 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
-public import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
+import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Store the public significant width and first-byte mask in native local slots. -/
 

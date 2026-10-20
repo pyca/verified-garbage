@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Scalar sampling preserves the prepared RSA modulus and exposes both the
 full output encoding and its public-width significant suffix. -/

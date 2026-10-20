@@ -1,7 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
-import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Impl.Ffdh.Arm.Init
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 public import VerifiedGarbage.Spec.Ffdh.Generation

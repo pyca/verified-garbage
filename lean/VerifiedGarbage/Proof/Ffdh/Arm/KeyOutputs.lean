@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! The two caller-owned key encodings are disjoint from arithmetic, domain,
 and local stack storage. -/

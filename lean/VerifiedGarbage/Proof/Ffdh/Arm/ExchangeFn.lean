@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! AAPCS shared-secret computation with native validation and output handling. -/
 

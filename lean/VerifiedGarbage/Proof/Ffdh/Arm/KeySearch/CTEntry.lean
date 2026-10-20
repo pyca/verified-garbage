@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAddresses
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLoop
@@ -8,7 +9,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.PushedArguments
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Start
 

@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroByteStep
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroByteStep
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Native byte clearing for scalar prefixes and rejected key pairs. -/
 

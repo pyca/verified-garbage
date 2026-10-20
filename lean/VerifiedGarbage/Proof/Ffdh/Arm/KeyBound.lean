@@ -1,10 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundSave
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScan
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySmear
-import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundSave
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScan
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySmear
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Derive the exact native scalar width and mask from the public domain bound. -/
 

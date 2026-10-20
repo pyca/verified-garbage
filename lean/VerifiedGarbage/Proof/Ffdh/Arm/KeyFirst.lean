@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Mask the first significant entropy byte and set the remaining public count. -/
 

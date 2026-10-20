@@ -1,10 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
-public import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
-public import VerifiedGarbage.Proof.Ffdh.Arm.Range
+import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
+import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
 /-! Native scalar validity combines nonzero and the public domain's upper bound. -/
 

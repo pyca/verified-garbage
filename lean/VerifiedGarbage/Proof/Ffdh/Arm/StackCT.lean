@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
@@ -9,6 +11,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Fixed local-frame accesses do not depend on the values stored in them. -/
 

@@ -1,12 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecks
 import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Divisibility is checked by reducing the full-width p modulo q. -/
 

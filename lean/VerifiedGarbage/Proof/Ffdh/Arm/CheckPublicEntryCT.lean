@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.TCB.Arm.Isa
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
@@ -9,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm
-open VG VG.Arm VG.Proof.Bignum.Arm
+open VG VG.Arm
 
 theorem checkPublicEntry_ct : RelCT isa (fun s t => s.sp = t.sp)
     (.block VG.Impl.Ffdh.Arm.Domain.CheckPublic.entry) (fun s t => s.sp = t.sp) := by

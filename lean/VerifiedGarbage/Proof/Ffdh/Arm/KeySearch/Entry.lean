@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.EntryBlocks
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Incoming
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 
 /-! Exact argument snapshot made before entering the key-search loop. -/

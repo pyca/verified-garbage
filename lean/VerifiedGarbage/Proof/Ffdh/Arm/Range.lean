@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Ffdh.Arm.BelowP
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckFlag
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! All FFDH value ranges are checked without secret-dependent iteration. -/
 

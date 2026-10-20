@@ -1,15 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 import VerifiedGarbage.Proof.Ffdh.Arm.InitCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import Init.Data.BitVec.BasicAux
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Spec.Ffdh.KeyGeneration
 
 /-! The native key initializer implements the shared public FFDH ABI. -/
 

@@ -1,8 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBytes
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBytes
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Whole-range effects of native byte clearing, including final pointer positions. -/
 

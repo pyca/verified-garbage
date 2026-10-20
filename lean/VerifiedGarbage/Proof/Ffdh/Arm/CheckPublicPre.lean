@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import Init.Data.BitVec.BasicAux
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 
 /-! The shared signature supplies the native public-check frame and buffers. -/
 

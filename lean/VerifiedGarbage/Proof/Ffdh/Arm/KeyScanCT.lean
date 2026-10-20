@@ -13,6 +13,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
+public import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The bound scan's addresses and branches depend only on the public bound
 bytes and their length. Every continuing step decreases that public length. -/

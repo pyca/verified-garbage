@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Block -- shake: keep (ffrun expands WP.of_runBlock and runBlock lemmas in importers)
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd -- shake: keep (ffrun expands these state-update lemmas in importers)
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
-public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+import VerifiedGarbage.Impl.Ffdh.Arm.Init
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! Symbolic execution of the short ARMv7 FFDH argument and controller blocks. -/
 

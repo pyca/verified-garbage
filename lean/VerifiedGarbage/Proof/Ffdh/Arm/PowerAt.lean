@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
-public import VerifiedGarbage.Proof.Ffdh.Arm.Power
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.Power
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Arithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! A power from saved FFDH base and exponent buffers. -/
 

@@ -1,15 +1,19 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
-public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
-public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Spec.Ffdh.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
 import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.Arm.Isa
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Spec.Rsa.Mont
 
 /-! Common argument and memory invariants of the native FFDH operations. -/
 

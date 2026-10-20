@@ -1,13 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrefix
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirstRetained
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySuffix
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCutEncoding
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrefix
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirstRetained
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySuffix
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyCutEncoding
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 
 /-! Native entropy cutting produces exactly the shared scalar encoding. -/
 

@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! The selected backend's shared precondition at the actual ARM call boundary. -/
 

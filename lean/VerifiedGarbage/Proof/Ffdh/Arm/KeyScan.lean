@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanStep
+public import Batteries.Tactic.Init
+public import Batteries.Tactic.PermuteGoals
+public import Batteries.Tactic.SeqFocus
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanStep
 public import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The native public-bound scan terminates at the first nonzero byte or the final byte. -/
 

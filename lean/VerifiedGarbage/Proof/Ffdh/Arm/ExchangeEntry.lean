@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
-import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Retain the shared-secret ABI's output, domain, scalar, peer, and workspace arguments. -/
 

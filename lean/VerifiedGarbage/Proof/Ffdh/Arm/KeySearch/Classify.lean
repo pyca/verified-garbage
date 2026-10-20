@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
 

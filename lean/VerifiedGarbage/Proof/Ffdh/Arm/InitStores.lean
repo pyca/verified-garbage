@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Block
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.ControlMemory
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Exact controller stores made by ARMv7 initialization. -/
 

@@ -5,8 +5,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions

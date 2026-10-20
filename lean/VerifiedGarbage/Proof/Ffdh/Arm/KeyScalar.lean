@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyCut
@@ -8,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The complete native scalar sampler preserves arithmetic storage and the
 saved workspace pointer while deriving the shared scalar encoding. -/

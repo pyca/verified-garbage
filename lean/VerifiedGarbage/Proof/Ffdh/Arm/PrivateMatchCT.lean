@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatch
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 
 /-! Computing g^x and comparing it with the imported public value is constant time in x. -/
 

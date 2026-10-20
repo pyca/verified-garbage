@@ -1,12 +1,14 @@
 module
 
+public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Export a shared value through the saved output pointer, at the full modulus width. -/
 

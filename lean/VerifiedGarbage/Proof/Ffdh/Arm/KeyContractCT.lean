@@ -11,6 +11,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyPre
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Native key generation satisfies the shared timing policy for arbitrary
 secret entropy tapes with the same public domain and disclosed attempt status. -/

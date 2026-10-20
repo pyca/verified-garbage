@@ -3,7 +3,6 @@ module
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! The native cut encoding is the scalar required by the shared FFDH specification. -/

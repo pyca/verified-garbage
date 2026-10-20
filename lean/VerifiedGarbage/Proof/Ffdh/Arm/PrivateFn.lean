@@ -4,8 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The native private-key check, from its entry through AAPCS restoration. -/
 

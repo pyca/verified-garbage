@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinishCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
@@ -14,6 +15,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 
 /-! Generated-public-value exponentiation, checking, export and masking have
 the same trace for different secret scalars of the public significant width. -/

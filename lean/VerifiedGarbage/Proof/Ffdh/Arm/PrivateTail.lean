@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatch
 import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 import VerifiedGarbage.Proof.Ffdh.Arm.QTest

@@ -11,7 +11,6 @@ public import VerifiedGarbage.Spec.Ffdh.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePre
 import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
-import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 
 /-! Imported private-key checking satisfies the shared timing policy, including its status leakage. -/
 

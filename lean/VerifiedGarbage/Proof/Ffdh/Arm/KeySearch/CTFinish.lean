@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
@@ -14,6 +15,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 
 /-! The native return path uses public control/output/stack addresses;
 its consumed-byte count and saved register values do not affect timing. -/

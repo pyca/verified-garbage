@@ -1,5 +1,8 @@
 module
 
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc

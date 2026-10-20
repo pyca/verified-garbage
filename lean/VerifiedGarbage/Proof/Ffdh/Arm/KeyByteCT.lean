@@ -8,10 +8,10 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 meta import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 
 /-! The scalar byte loops depend on public pointers and counts; the byte
 mask and copied entropy values do not affect their traces. -/
