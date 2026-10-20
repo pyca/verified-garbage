@@ -6,6 +6,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
 import VerifiedGarbage.Proof.Rc4.AArch64.Rows
 import VerifiedGarbage.Proof.Rc4.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The key schedule

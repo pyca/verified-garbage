@@ -4,22 +4,14 @@ public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
-import VerifiedGarbage.Proof.Rc4.Dword
-import VerifiedGarbage.Proof.Rc4.Table
-public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.Mmx
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.Proof.Rc4.Dword
-public import VerifiedGarbage.Proof.Rc4.Table
+import VerifiedGarbage.Proof.Rc4.Dword
+import VerifiedGarbage.Proof.Rc4.Table
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.X86.State
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.Proof.Framework.X86.Exec
 
 /-! # RC4 on x86 (32-bit): the table lookup, a doubleword at a time -/
 

@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Store
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ByteDecode₁₂ to a polynomial stored with 16 bits, on AArch64

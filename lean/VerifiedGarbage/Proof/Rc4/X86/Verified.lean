@@ -1,17 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.X86.ConstantTime
+import VerifiedGarbage.Proof.Rc4.X86.ConstantTime
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Rc4.Update
-public import VerifiedGarbage.Proof.Rc4.X86.Schedule
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc4.Update
+import VerifiedGarbage.Proof.Rc4.X86.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Rc4.Dword
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.Table
@@ -19,6 +15,11 @@ import VerifiedGarbage.Proof.Rc4.X86.Apply
 import VerifiedGarbage.Proof.Rc4.X86.Init
 import VerifiedGarbage.Proof.Rc4.X86.Replace
 import VerifiedGarbage.Proof.Rc4.X86.Save
+public import VerifiedGarbage.Spec.Rc4
+public import VerifiedGarbage.Impl.Rc4.X86
+public import VerifiedGarbage.Proof.Rc4.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # RC4 on x86 (32-bit): `Verified`

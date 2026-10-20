@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.EncMath
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ByteEncode₁₂ of a polynomial stored with 16 bits, on AArch64

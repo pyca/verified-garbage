@@ -2,18 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.SigEval
-public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Rc4.Scratch
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import VerifiedGarbage.TCB.Mem
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.TCB.X86.Target
 
 /-!
 # RC4 on x86 (32-bit): the contracts the proofs use

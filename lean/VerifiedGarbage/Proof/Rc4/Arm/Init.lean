@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # RC4 on ARMv7: checked initialization -/
 

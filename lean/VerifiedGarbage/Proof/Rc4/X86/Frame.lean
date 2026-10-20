@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Rc4.Contract
 public import VerifiedGarbage.Impl.Rc4.X86
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Rc4.X86.Lookup
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RC4 on x86, with the working space on the stack

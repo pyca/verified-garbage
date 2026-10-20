@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Rc4.X86.ApplyLoop
 import VerifiedGarbage.Proof.Rc4.Stream
 import VerifiedGarbage.Proof.Rc4.X86.Save
 import VerifiedGarbage.Proof.Rc4.X86.Lookup
+import VerifiedGarbage.Proof.Rc4.Table
 
 /-! # RC4 on x86 (32-bit): the stream function -/
 

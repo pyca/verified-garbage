@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Rc4.Iterate
 public import VerifiedGarbage.Proof.Rc4.AArch64.Prga
 import VerifiedGarbage.Proof.Rc4.Memory
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # A group of sixteen bytes

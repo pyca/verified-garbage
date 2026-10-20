@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Bytes
 import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # ML-KEM encoding eight coefficients at a time -/
 
