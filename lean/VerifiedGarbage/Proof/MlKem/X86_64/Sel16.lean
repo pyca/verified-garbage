@@ -3,8 +3,6 @@ module
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
 import VerifiedGarbage.Proof.MlKem.X86_64.DcTop16
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Narrow
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
 
