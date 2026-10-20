@@ -98,30 +98,52 @@ jobs:
             fi
           fi
           echo "needed=true" >> "$GITHUB_OUTPUT"
-      - uses: ./.github/actions/lean-prepare
-        id: prepare
+      - name: Restore the checked module archives
+        id: build
         if: ${{ steps.publish.outputs.needed == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
+          path: lean/.lake/ltar
           key: ${{ steps.keys.outputs.build-cache }}
-          restore-keys: ${{ steps.keys.outputs.build-cache }}
+      - name: Retry restoring the checked module archives
+        id: build-again
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.build.outputs.cache-hit != 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: lean/.lake/ltar
+          key: ${{ steps.keys.outputs.build-cache }}
       - name: Check the checked build was restored
+        id: dependencies
         if: ${{ steps.publish.outputs.needed == 'true' }}
         env:
-          CACHE_HIT: ${{ steps.prepare.outputs.cache-hit }}
+          CACHE_HIT: ${{ steps.build.outputs.cache-hit == 'true' || steps.build-again.outputs.cache-hit == 'true' }}
         run: |
           # Never publish a fallback or an empty project build.
           [ "$CACHE_HIT" = true ] || { echo "::error::The checked build cache is missing"; exit 1; }
-      # Both sets of module archives come from CI's caches (`lean-prepare`).
-      # Reuse Mathlib's separate archive directory when packaging them together.
-      - uses: ./.github/actions/leantar
-        if: ${{ steps.publish.outputs.needed == 'true' }}
+          if [ -f lean/.lake/ltar/mathlib-cache-key ]; then
+            echo "key=$(cat lean/.lake/ltar/mathlib-cache-key)" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore the checked dependency archives
+        id: mathlib
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.dependencies.outputs.key != '' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: lean/.lake/mathlib-ltar
+          key: ${{ steps.dependencies.outputs.key }}
+      # Old project caches lack the dependency key. An evicted dependency
+      # cache also needs the normal setup to fetch and store it again.
+      - uses: ./.github/actions/lean-prepare
+        if: ${{ steps.publish.outputs.needed == 'true' && steps.mathlib.outputs.cache-hit != 'true' }}
+        with:
+          key: ${{ steps.keys.outputs.build-cache }}
+          restore-keys: ${{ steps.keys.outputs.build-cache }}
       # The archive goes to memory: it is uploaded, then discarded.
       - name: Package the checked build and dependencies
         if: ${{ steps.publish.outputs.needed == 'true' }}
         run: |
           set -o pipefail
           mkdir -p /dev/shm/lean-cache-image
-          python3 ci/lean_cache.py pack lean .lake/build .lake/packages --reuse .lake/mathlib-ltar \
+          python3 ci/lean_cache.py bundle lean .lake/ltar .lake/mathlib-ltar \
             | zstd -T0 -5 -o /dev/shm/lean-cache-image/lean-cache.tar.zst
       - name: Upload the cache image
         id: upload

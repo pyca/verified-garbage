@@ -5,6 +5,8 @@ import json
 import os
 import shutil
 from pathlib import Path
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -246,6 +248,76 @@ class LeanArchiveTests(unittest.TestCase):
         # Exclude the independent cache from check_unpack's original tree.
         shutil.rmtree(self.lean / packages)
         self.check_unpack(data)
+
+    def independent_caches(self):
+        directories = [lean_cache.LTAR, Path(".lake/mathlib-ltar")]
+        for root, directory in zip((".lake/build", ".lake/packages"), directories):
+            lean_cache.store(self.lean, [Path(root)], 2, 5, str(self.stub), directory)
+        return directories
+
+    def test_bundle_without_expanded_build_or_toolchain(self):
+        directories = self.independent_caches()
+        # Record the expected expanded build, then keep only the two caches.
+        expected = {p.relative_to(self.lean): p.read_bytes()
+                    for root in (".lake/build", ".lake/packages")
+                    for p in (self.lean / root).rglob("*") if p.is_file()}
+        shutil.rmtree(self.lean / ".lake/build")
+        shutil.rmtree(self.lean / ".lake/packages")
+        # Unindexed stale archives and private metadata must not be published.
+        write(self.lean / directories[0] / "build/Stale.ltar", "stale")
+        write(self.lean / directories[0] / "mathlib-cache-key", "dependency-key")
+        before = {p.relative_to(self.lean): p.read_bytes()
+                  for p in self.lean.rglob("*") if p.is_file()}
+        self.log.write_text("")
+        result = subprocess.run([sys.executable, lean_cache.__file__, "bundle", str(self.lean),
+                                 *map(str, directories)], capture_output=True, check=True)
+        data = io.BytesIO(result.stdout)
+        self.assertIn(b"Bundled 3 modules", result.stderr)
+        self.assertEqual(self.log.read_text(), "")
+        self.assertEqual(before, {p.relative_to(self.lean): p.read_bytes()
+                                  for p in self.lean.rglob("*") if p.is_file()})
+        with tarfile.open(fileobj=io.BytesIO(data.getvalue())) as tar:
+            self.assertEqual(tar.getnames()[0], ".lake/ltar/files.tar")
+            self.assertEqual(len(tar.getnames()), 5)  # files, index, three modules
+            index = json.load(tar.extractfile(".lake/ltar/index.json"))
+            self.assertEqual(len(index), 3)
+            for rel in index:
+                original = next(self.lean / d / (rel + ".ltar") for d in directories
+                                if (self.lean / d / (rel + ".ltar")).is_file())
+                self.assertEqual(tar.extractfile(f".lake/ltar/{rel}.ltar").read(), original.read_bytes())
+        target = self.root / "bundled-restore"
+        target.mkdir()
+        lean_cache.unpack(target, 2, str(self.root), 1, str(self.stub), io.BytesIO(data.getvalue()))
+        self.assertEqual(expected, {p.relative_to(target): p.read_bytes()
+                                    for p in target.rglob("*") if p.is_file()})
+        self.assertTrue(os.access(target / ".lake/packages/mathlib/scripts/run.sh", os.X_OK))
+        # The merged index also supports keeping and restoring the caches.
+        cached = self.root / "bundled-cache"
+        cached.mkdir()
+        subprocess.run(["tar", "-xf", "-", "-C", str(cached)], input=data.getvalue(), check=True)
+        lean_cache.restore(cached, 2, str(self.stub))
+        self.log.write_text("")
+        lean_cache.store(cached, [Path(".lake/build"), Path(".lake/packages")], 2, 5, str(self.stub))
+        self.assertEqual(self.log.read_text(), "")
+
+    def test_bundle_rejects_incomplete_or_overlapping_caches_before_output(self):
+        directories = self.independent_caches()
+        for missing in ("index.json", "files.tar", "build/C.ltar"):
+            path = self.lean / directories[0] / missing
+            saved = path.read_bytes()
+            path.unlink()
+            data = io.BytesIO()
+            with self.subTest(missing=missing), self.assertRaises(FileNotFoundError):
+                lean_cache.bundle(self.lean, directories, data)
+            self.assertEqual(data.getvalue(), b"")
+            path.write_bytes(saved)
+        data = io.BytesIO()
+        with self.assertRaisesRegex(ValueError, "Overlapping"):
+            lean_cache.bundle(self.lean, [directories[0], directories[0]], data)
+        self.assertEqual(data.getvalue(), b"")
+        (self.lean / directories[0] / "index.json").write_text("{}")
+        with self.assertRaisesRegex(ValueError, "Empty"):
+            lean_cache.bundle(self.lean, directories, data)
 
     def test_reuse_repacks_missing_or_changed_archives(self):
         packages = Path(".lake/mathlib-ltar")

@@ -147,3 +147,12 @@ runs:
         mods: ${{ steps.lean-setup.outputs.mods }}
         cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
         cache-key: ${{ steps.lean-setup.outputs.cache-key }}
+    # Saved with the next project build, so publishing can fetch the exact
+    # dependency cache without installing Lean to parse the imports again.
+    - name: Record the dependency cache key
+      shell: bash
+      env:
+        KEY: ${{ steps.lean-setup.outputs.cache-key }}
+      run: |
+        mkdir -p lean/.lake/ltar
+        printf '%s\n' "$KEY" > lean/.lake/ltar/mathlib-cache-key
