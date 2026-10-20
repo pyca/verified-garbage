@@ -11,7 +11,6 @@ meta import VerifiedGarbage.Proof.AesOcb.Arm.Env
 meta import VerifiedGarbage.Proof.AesOcb.Arm.Calls
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.TCB.Arm.Isa
 meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 meta import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Framework.Arm.Exec

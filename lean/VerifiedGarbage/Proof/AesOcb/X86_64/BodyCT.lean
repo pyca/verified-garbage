@@ -22,12 +22,7 @@ meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.AesOcb.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Impl.AesOcb.X86_64
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

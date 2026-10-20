@@ -4,11 +4,8 @@ public import VerifiedGarbage.Proof.AesOcb.AArch64.Resident
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Args
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.AesGcm.AArch64.Env
-import VerifiedGarbage.Impl.AesOcb.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
