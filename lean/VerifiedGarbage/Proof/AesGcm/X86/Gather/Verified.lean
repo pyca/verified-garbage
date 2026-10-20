@@ -17,23 +17,6 @@ import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
 import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
 import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
 import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import VerifiedGarbage.Proof.AesGcm.X86.Gather.Fn
-import VerifiedGarbage.Proof.AesGcm.X86.Init
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import VerifiedGarbage.Proof.AesGcm.X86.Init
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Mem
@@ -42,27 +25,13 @@ import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-public import VerifiedGarbage.Proof.AesGcm.X86.Callee
 public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import VerifiedGarbage.Proof.Framework.X86.Call
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`

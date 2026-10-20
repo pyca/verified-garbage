@@ -8,7 +8,6 @@ public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
 import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.Callee
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Fn
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops
@@ -27,81 +26,18 @@ import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Gcm.SealGather
 import VerifiedGarbage.Proof.Sha256.Stream
-import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
-import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
-import VerifiedGarbage.Proof.AesGcm.Arm.Loops
-import VerifiedGarbage.Proof.AesGcm.CtxFrame
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Arm.Bytes
-import VerifiedGarbage.Proof.Framework.Arm.Exec
-import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Gcm.SealGather
-import VerifiedGarbage.Proof.Sha256.Stream
 public import Init.Data.BitVec.BasicAux
 public import Init.Data.List.Basic
 public import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-public import VerifiedGarbage.Impl.AesGcm.Arm
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.Impl.AesGcm.Arm
-public import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.TCB.Arm.Target
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.Impl.AesGcm.Arm
-public import VerifiedGarbage.Spec.Gcm.Contract
-public import VerifiedGarbage.TCB.Arm.Target
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.Impl.AesGcm.Arm
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
-public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.TCB.Arm.Isa
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.TCB.Arm.Isa
-public import VerifiedGarbage.TCB.Artifact
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Impl.StackScratch.Arm
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.TCB.Arm.Isa
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.TCB.Arm.Target
-public import Init.Data.BitVec.BasicAux
-public import Init.Data.List.Basic
-public import Init.Data.Nat.Bitwise.Basic
-public import VerifiedGarbage.TCB.Artifact
-public import VerifiedGarbage.Spec.Gcm.OutOfPlace
-public import VerifiedGarbage.TCB.Mem
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: `Verified`
