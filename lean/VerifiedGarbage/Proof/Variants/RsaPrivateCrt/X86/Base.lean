@@ -85,7 +85,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicMath
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSave
@@ -297,7 +296,6 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 import VerifiedGarbage.Proof.Bignum.X86.PublicImport
 import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
 import VerifiedGarbage.Proof.Bignum.X86.PublicMath
-import VerifiedGarbage.Proof.Bignum.X86.PublicPower
 import VerifiedGarbage.Proof.Bignum.X86.PublicPowerFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
