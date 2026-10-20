@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 
 /-! # The trace of private CRT at a run-time width, from the components to the result
 

@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 import VerifiedGarbage.Proof.Bignum.PublicWritten
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Spec.RsaKeyGen
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInputs
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # The checked-RSA contract's postcondition, and the failure path meeting it -/
 

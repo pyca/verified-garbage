@@ -1,9 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Bignum.ReadPrefix
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
+public import VerifiedGarbage.Proof.Dsa.X86.PowABI
+public import VerifiedGarbage.Proof.Dsa.X86.PowEntry
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86.CallWith
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Body
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Front
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Save
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Stages
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 
 /-! # A multiplication by a call, in public RSA at a run-time width
 

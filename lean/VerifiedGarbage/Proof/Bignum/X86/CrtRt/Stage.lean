@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
 
 /-! # What the stages of private CRT share
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
-public import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
+import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
+import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
 public import VerifiedGarbage.Proof.Mont.X86.WindowTiming
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -15,6 +15,14 @@ import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-! # Secret-independent workspace operations in prime recovery -/
 

@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The loops of private CRT at a run-time width that public RSA's lack
 

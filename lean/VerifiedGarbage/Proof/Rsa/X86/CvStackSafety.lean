@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # Compositional stack-pointer safety for all CRT dispatch widths -/
 

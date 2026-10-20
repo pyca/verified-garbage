@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 
 /-! # What the timing of private CRT at a run-time width checks its pieces from
 

@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
-public import VerifiedGarbage.Proof.Mont.X86.WindowWords
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
+import VerifiedGarbage.Proof.Mont.X86.WindowWords
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Power
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 
 /-! # The next window of a run-time-width exponentiation
 

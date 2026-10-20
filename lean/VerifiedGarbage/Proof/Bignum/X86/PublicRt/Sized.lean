@@ -1,9 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
-public import VerifiedGarbage.Proof.Mont.X86.Inverse
-public import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
+import VerifiedGarbage.Proof.Mont.X86.Inverse
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 
 /-! # Public RSA at a run-time width, from the inputs to the result
 

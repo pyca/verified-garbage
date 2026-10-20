@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.Code
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # Words copied into the working space from readable memory
 

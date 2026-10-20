@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 
 /-! # Numbers in private CRT at a run-time width
 

@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.SparseExponent
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.Mont.X86.Words
 
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
 import VerifiedGarbage.Proof.Mont.X86.Ops
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.X86.Isa
 
 /-! # The tests of the public exponent's low bit and of what is left of it -/
 

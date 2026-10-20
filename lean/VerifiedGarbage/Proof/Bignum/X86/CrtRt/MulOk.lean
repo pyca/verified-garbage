@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Bignum.X86.RtCall
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+import VerifiedGarbage.Proof.Framework.X86.CallWith
 
 /-! # The Montgomery product of two slots of a context, by a call -/
 

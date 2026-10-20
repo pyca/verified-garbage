@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 public import VerifiedGarbage.Proof.Bignum.X86.RtCall
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Base
+public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # A multiplication by a call, in private CRT at a run-time width
 

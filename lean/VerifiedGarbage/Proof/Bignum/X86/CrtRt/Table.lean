@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Mont.X86.ExponentInitMath
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 
 /-! # The table of a run-time-width windowed exponentiation
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # Stack-pointer safety of both key-validation programs -/
 

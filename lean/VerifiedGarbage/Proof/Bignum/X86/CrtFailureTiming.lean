@@ -5,7 +5,9 @@ public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Weierstrass.Point
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 
 /-! # Invalid public keys clear a public-length output with a fixed trace -/
 

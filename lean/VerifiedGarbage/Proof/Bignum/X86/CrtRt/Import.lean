@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
 public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
 
 /-! # The key's components read
 

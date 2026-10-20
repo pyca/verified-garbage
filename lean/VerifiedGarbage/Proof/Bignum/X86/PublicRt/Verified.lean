@@ -1,6 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeTop
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeTop
+public import Init.Data.BitVec.BasicAux
+public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
 
 /-! # Public RSA at a run-time width on i686 against its contract
 

@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.In
+public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.In
+import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 
 /-! # What the timing of public RSA at a run-time width checks its pieces from
 

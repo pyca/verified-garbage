@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Spec.Rsa.MontMul
 
 /-! # Private CRT RSA at a width read at run time (i686 cdecl)
 

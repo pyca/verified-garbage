@@ -4,9 +4,13 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 public import Mathlib.Data.Int.ModEq
 public import VerifiedGarbage.Spec.Weierstrass.Point
 public import VerifiedGarbage.Spec.Rsa.Contract
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+public import VerifiedGarbage.Impl.Bignum.X86.ModulusCheck
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa
 
 /-! # Loading and validating the public modulus preserves all call inputs -/
 

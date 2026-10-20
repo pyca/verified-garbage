@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Mont.X86.OutsZ
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Mont.X86.OutsZ
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # What the exponentiation of public RSA at a run-time width keeps
 

@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeWindow
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Coefficient
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Select
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 
 /-! # The trace of a factor's power and of the coefficient
 

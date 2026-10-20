@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # The factors' powers
 

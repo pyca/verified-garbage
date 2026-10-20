@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # The checks of the precomputed values
 

@@ -4,6 +4,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 public import VerifiedGarbage.Proof.Framework.RelCTChain
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 
 /-! # The trace of the table of a windowed power
 

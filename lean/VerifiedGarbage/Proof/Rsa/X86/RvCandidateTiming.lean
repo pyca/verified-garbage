@@ -5,12 +5,16 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvAddressTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSet
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Rsa.X86.RvBase
+import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 
 /-! # Candidate exponentiation relates different private exponents -/
 

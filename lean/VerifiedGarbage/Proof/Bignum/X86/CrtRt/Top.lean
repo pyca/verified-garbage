@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Sized
-public import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
@@ -11,6 +11,18 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 import VerifiedGarbage.Proof.Bignum.X86.CrtSave
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Framework.X86.Call
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA at a run-time width
 

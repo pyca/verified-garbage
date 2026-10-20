@@ -9,7 +9,12 @@ import VerifiedGarbage.Proof.Framework.Sig
 public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Weierstrass.Point
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+public import Init.Data.Fin.Basic
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
 /-! # Calling checked public RSA retains every immutable verification input -/
 

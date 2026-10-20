@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 
 /-! # The ranges a factor's power changes
 

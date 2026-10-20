@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
 import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Semantics
 
 /-! # Stack-pointer safety throughout prime recovery -/
 

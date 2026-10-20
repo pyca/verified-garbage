@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Reduce
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Reduce
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 
 /-! # `R² mod M` in public RSA at a run-time width
 

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Body
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
+import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # `R² mod M` by doublings, in public RSA at a run-time width
 

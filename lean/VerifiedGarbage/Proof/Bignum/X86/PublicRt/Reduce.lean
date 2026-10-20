@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # The subtraction and the selection of public RSA at a run-time width -/
 

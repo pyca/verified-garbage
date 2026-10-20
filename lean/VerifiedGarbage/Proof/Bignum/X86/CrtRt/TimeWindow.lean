@@ -4,6 +4,16 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Select
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Select
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Shift
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Window
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Window
 
 /-! # The trace of a windowed power
 

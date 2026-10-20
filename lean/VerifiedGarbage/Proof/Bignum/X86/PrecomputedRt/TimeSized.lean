@@ -2,9 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Correct
 meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Correct
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeSized
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeSized
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeSized
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The trace of precomputed public RSA at a run-time width, from the values to the result
 

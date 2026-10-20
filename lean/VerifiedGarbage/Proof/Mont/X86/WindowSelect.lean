@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Impl.Mont.X86.Window
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Reading the window's table entry by a masked scan of the whole table -/
 

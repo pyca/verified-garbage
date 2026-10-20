@@ -8,7 +8,10 @@ import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
+import VerifiedGarbage.Proof.Mont.X86.ShiftDown
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The arithmetic and exponent update of one iteration -/
 

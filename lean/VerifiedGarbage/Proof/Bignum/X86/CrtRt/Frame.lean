@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
-public import VerifiedGarbage.Proof.Bignum.MemoryFrame
-public import VerifiedGarbage.Proof.Bignum.ByteWords
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 
 /-! # What a stage of private CRT at a run-time width changes
 

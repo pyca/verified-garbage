@@ -4,10 +4,13 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
 public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
 public import VerifiedGarbage.Spec.Rsa
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.TCB.X86.State
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Stable resources for all eighteen private CRT arguments -/
 

@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Powers
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
+import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num2
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Stage
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+import VerifiedGarbage.Proof.Dsa.Arithmetic
 
 /-! # The CRT coefficient
 

@@ -2,8 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.X86.MulMod
 public import VerifiedGarbage.Impl.Rsa.X86.CrtValues
-public import VerifiedGarbage.Impl.Mont.X86.Context
+import VerifiedGarbage.Impl.Mont.X86.Context
 public import VerifiedGarbage.Impl.Mont.X86.Window
+public import VerifiedGarbage.Impl.Mont.X86.Dynamic
+public import VerifiedGarbage.Impl.Mont.X86.Inverse
+public import VerifiedGarbage.Impl.Mont.X86.Power
 
 /-! # RSA prime recovery on i686
 

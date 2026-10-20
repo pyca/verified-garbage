@@ -2,15 +2,43 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.TimeSized
 meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.TimeSized
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
 import VerifiedGarbage.Proof.Bignum.WordsFrame
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+public import VerifiedGarbage.Spec.Rsa.Contract
+meta import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.Words
+meta import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # The trace of precomputed public RSA at a run-time width, from the entry to the return
 

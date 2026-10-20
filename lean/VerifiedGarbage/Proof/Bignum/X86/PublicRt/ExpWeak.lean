@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
 import Mathlib.Data.Int.GCD
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # The exponentiation from any `R²` below the modulus
 

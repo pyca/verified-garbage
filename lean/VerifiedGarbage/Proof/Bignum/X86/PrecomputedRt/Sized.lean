@@ -1,12 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Apply
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.WordsFrame
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Dsa.X86.PowABI
 
 /-! # Precomputed public RSA at a run-time width, from the values to the result
 

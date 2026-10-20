@@ -4,6 +4,16 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
+public import VerifiedGarbage.Proof.Bignum.X86.ExponentBits
+meta import VerifiedGarbage.Proof.Bignum.X86.ExponentBits
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+meta import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 
 /-! # The trace of the exponentiation, in public RSA at a run-time width
 

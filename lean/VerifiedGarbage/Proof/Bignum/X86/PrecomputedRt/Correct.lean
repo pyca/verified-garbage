@@ -1,13 +1,24 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Sized
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.WordsFrame
 import VerifiedGarbage.Proof.Bignum.X86.PublicSave
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 
 /-! # Functional correctness and cdecl preservation of precomputed public RSA at a run-time width
 

@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 import VerifiedGarbage.Proof.Framework.GetElem
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Isa
+public import VerifiedGarbage.TCB.Code
+public import Init.Prelude
+public import VerifiedGarbage.TCB.Code
 
 /-! # Instructions that keep the stack pointer, for compositional stack-pointer safety -/
 

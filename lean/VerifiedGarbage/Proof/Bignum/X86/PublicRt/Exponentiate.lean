@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exp
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exp
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 
 /-! # The exponentiation of public RSA at a run-time width
 

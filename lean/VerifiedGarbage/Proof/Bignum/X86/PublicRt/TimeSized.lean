@@ -2,8 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.TCB.Mem
+meta import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
+meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 
 /-! # The trace of public RSA at a run-time width, from the inputs to the result
 

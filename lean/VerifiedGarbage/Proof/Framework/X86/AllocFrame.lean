@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-!
 # Frames of stack the code allocates (x86, 32-bit)

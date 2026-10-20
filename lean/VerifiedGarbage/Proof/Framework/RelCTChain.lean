@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # A prefix of a sequence, in relational constant-time proofs

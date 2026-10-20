@@ -5,8 +5,13 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.PlainSimp
-public import VerifiedGarbage.Proof.Rsa.X86.KeySelect
-public import VerifiedGarbage.Proof.Mont.X86.ShiftDown
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Mont.X86.ShiftDown
+public import Init.Prelude
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import Init.Prelude
+public import VerifiedGarbage.Impl.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # Halving an RSA workspace array with an incoming carry -/
 

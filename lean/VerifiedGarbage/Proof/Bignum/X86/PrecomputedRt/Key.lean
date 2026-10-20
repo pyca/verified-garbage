@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Copy
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Copy
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Framework.Scratch
 
 /-! # The precomputed values into the working space
 
