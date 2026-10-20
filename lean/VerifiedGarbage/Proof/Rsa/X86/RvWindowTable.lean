@@ -102,6 +102,58 @@ theorem tableStep_ok {m b i : Nat} (h : TI g s0 A AW V live ls m b i s) (L : Tab
         · simp only [lt2, show j < i + 1 + 2 by omega, ↓reduceIte]
         · simp only [lt2, show ¬ j < i + 1 + 2 by omega, ↓reduceIte]
 
+theorem tableInit_ok {m b : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s) (L : TableLive live)
+    (hO : aO ∈ live) (hG : mG ∈ live)
+    (one : A aO = 2 ^ (64 * g.n) % m) (base : A mG = b * 2 ^ (64 * g.n) % m) :
+    WP isa VG.Impl.Rsa.X86.RecoverRt.tableStart s (TI g s0 A AW V live ls m b 0) := by
+  unfold VG.Impl.Rsa.X86.RecoverRt.tableStart
+  simp only [seqs]
+  refine WP.seq (WP.mono (h.copy_w (o := 0) (a := aO) (by decide) hO (by decide) (by decide))
+    fun s1 ⟨h1, _, _⟩ => ?_)
+  refine WP.seq (WP.mono (h1.copy_w (o := 1) (a := mG) (by decide) (by simp [hG]) (by decide) (by decide))
+    fun s2 ⟨h2, _, _⟩ => ?_)
+  refine WP.mono (h2.copy_w (o := mXm) (a := mG) (by decide) (by simp [hG]) (by decide) (by decide))
+    fun s3 ⟨h3, _, _⟩ => ?_
+  refine h3.mono (fun j hj => ⟨?_, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
+  · simp only [List.mem_cons, List.mem_append, List.mem_range] at hj ⊢
+    rcases hj with e | lo | hi
+    · exact .inl e
+    · rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+      · exact .inr (.inr (.inl rfl))
+      · exact .inr (.inl rfl)
+    · exact .inr (.inr (.inr hi))
+  · have mG1 : (upd (upd A 0 (A aO)) 1 (upd A 0 (A aO) mG)) mG = A mG := by
+      rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]
+    by_cases ex : j = mXm
+    · subst ex
+      rw [upd_self, upd_self, mG1, base, Nat.pow_one]
+    · rw [upd_ne _ _ ex, upd_ne _ _ ex]
+      simp only [List.mem_cons, List.mem_append, List.mem_range] at hj
+      rcases hj with e | lo | hi
+      · exact absurd e ex
+      · rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+        · rw [upd_ne _ _ (show (0 : Nat) ≠ 1 by decide), upd_self, one]
+          simp only [tableA, show 0 < 0 + 2 by decide, ↓reduceIte, Nat.pow_zero, Nat.one_mul]
+        · rw [upd_self, upd_ne _ _ (show mG ≠ 0 by decide), base]
+          simp only [tableA, show 1 < 0 + 2 by decide, ↓reduceIte, Nat.pow_one]
+      · have := L.above j hi
+        rw [upd_ne _ _ (show j ≠ 1 by omega), upd_ne _ _ (show j ≠ 0 by omega)]
+        simp only [tableA, show ¬ j < 0 + 2 by omega, ↓reduceIte]
+
+theorem tableSteps_ok {m b : Nat} (L : TableLive live) (hG : mG ∈ live) (hB : mBase ∈ live)
+    (hI : sInv ∈ ls) (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
+    (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) (odd : m % 2 = 1) (positive : 0 < m)
+    (base : A mG = b * 2 ^ (64 * g.n) % m) :
+    ∀ k ≤ 14, ∀ u, TI g s0 A AW V live ls m b 0 u →
+      WP isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) u (TI g s0 A AW V live ls m b k) := by
+  intro k hk
+  induction k with
+  | zero => intro u hu; exact WP.block_nil hu
+  | succ k ih =>
+    intro u hu
+    exact WP.seq (WP.mono (ih (by omega) u hu) fun t ht =>
+      tableStep_ok ht L hG hB hI value bound inverse odd positive base (by omega))
+
 theorem table_ok {m b : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s) (L : TableLive live)
     (hO : aO ∈ live) (hG : mG ∈ live) (hB : mBase ∈ live)
     (hI : sInv ∈ ls) (value : A mBase = m) (bound : m < 2 ^ (64 * g.n))
@@ -109,49 +161,8 @@ theorem table_ok {m b : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s) (L : Table
     (one : A aO = 2 ^ (64 * g.n) % m) (base : A mG = b * 2 ^ (64 * g.n) % m) :
     WP isa VG.Impl.Rsa.X86.RecoverRt.table s fun t =>
       KS g s0 (tableA A g.n m b 16) (List.range 16 ++ live) AW [wRc, wR] V ls t := by
-  have init : WP isa VG.Impl.Rsa.X86.RecoverRt.tableStart s (TI g s0 A AW V live ls m b 0) := by
-    unfold VG.Impl.Rsa.X86.RecoverRt.tableStart
-    simp only [seqs]
-    refine WP.seq (WP.mono (h.copy_w (o := 0) (a := aO) (by decide) hO (by decide) (by decide))
-      fun s1 ⟨h1, _, _⟩ => ?_)
-    refine WP.seq (WP.mono (h1.copy_w (o := 1) (a := mG) (by decide) (by simp [hG]) (by decide) (by decide))
-      fun s2 ⟨h2, _, _⟩ => ?_)
-    refine WP.mono (h2.copy_w (o := mXm) (a := mG) (by decide) (by simp [hG]) (by decide) (by decide))
-      fun s3 ⟨h3, _, _⟩ => ?_
-    refine h3.mono (fun j hj => ⟨?_, ?_⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
-    · simp only [List.mem_cons, List.mem_append, List.mem_range] at hj ⊢
-      rcases hj with e | lo | hi
-      · exact .inl e
-      · rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
-        · exact .inr (.inr (.inl rfl))
-        · exact .inr (.inl rfl)
-      · exact .inr (.inr (.inr hi))
-    · have mG1 : (upd (upd A 0 (A aO)) 1 (upd A 0 (A aO) mG)) mG = A mG := by
-        rw [upd_ne _ _ (by decide), upd_ne _ _ (by decide)]
-      by_cases ex : j = mXm
-      · subst ex
-        rw [upd_self, upd_self, mG1, base, Nat.pow_one]
-      · rw [upd_ne _ _ ex, upd_ne _ _ ex]
-        simp only [List.mem_cons, List.mem_append, List.mem_range] at hj
-        rcases hj with e | lo | hi
-        · exact absurd e ex
-        · rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
-          · rw [upd_ne _ _ (show (0 : Nat) ≠ 1 by decide), upd_self, one]
-            simp only [tableA, show 0 < 0 + 2 by decide, ↓reduceIte, Nat.pow_zero, Nat.one_mul]
-          · rw [upd_self, upd_ne _ _ (show mG ≠ 0 by decide), base]
-            simp only [tableA, show 1 < 0 + 2 by decide, ↓reduceIte, Nat.pow_one]
-        · have := L.above j hi
-          rw [upd_ne _ _ (show j ≠ 1 by omega), upd_ne _ _ (show j ≠ 0 by omega)]
-          simp only [tableA, show ¬ j < 0 + 2 by omega, ↓reduceIte]
-  have steps : ∀ k ≤ 14, ∀ u, TI g s0 A AW V live ls m b 0 u →
-      WP isa (VG.Impl.Rsa.X86.RecoverRt.tableSteps k) u (TI g s0 A AW V live ls m b k) := by
-    intro k hk
-    induction k with
-    | zero => intro u hu; exact WP.block_nil hu
-    | succ k ih =>
-      intro u hu
-      exact WP.seq (WP.mono (ih (by omega) u hu) fun t ht =>
-        tableStep_ok ht L hG hB hI value bound inverse odd positive base (by omega))
+  have init := tableInit_ok h L hO hG one base
+  have steps := tableSteps_ok (s0 := s0) (AW := AW) L hG hB hI value bound inverse odd positive base
   unfold VG.Impl.Rsa.X86.RecoverRt.table
   refine WP.seq (WP.mono init fun u hu => WP.mono (steps 14 (by decide) u hu) fun t ht => ?_)
   have hu := ht

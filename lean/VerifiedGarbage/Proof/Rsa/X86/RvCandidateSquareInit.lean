@@ -26,10 +26,11 @@ theorem candSquareInit_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m y e
     (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
     (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
     (limit : 8 * (dLen + eLen) ≤ 16384) :
-    WP isa (seqs [eqAt g.n sE1 mY aO, eqAt g.n sE2 mY aNg, .block sqInit]) s fun t =>
+    WP isa VG.Impl.Rsa.X86.RecoverRt.candSquareInit s fun t =>
       SI g s0 A AW V m 0 (8 * (dLen + eLen))
       (sqStart m y) t := by
   have cop := VG.Proof.Bignum.coprime_pow2 odd (64 * g.n)
+  unfold VG.Impl.Rsa.X86.RecoverRt.candSquareInit VG.Impl.Rsa.X86.RecoverRt.eqAt
   simp only [seqs]
   refine WP.seq (WP.mono (h.eqS_w (d := sE1) (a := mY) (b := aO)
     (by simp [liveSq]) (by simp [liveSq, liveM]) (by decide) (by decide) (by decide) (by decide))
