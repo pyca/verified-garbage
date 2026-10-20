@@ -37527,6 +37527,248 @@ bx lr",
     )
 }
 
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// ARMv7: native rejection sampling owns both bounded retry counters, consumes the entropy tape, clears incomplete outputs, and requests entropy refills. The chosen arithmetic backend propagates through the callable key-generation attempt. Four packed-u64 policy words retain exact values across ARM's native 32-bit stores.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r9, r10, r11, r12, lr}}
+ldr r4, [sp, #56]
+str r0, [r4, #40]
+str r2, [r4, #48]
+ldr r3, [sp, #24]
+str r3, [r4, #120]
+ldr r3, [sp, #28]
+str r3, [r4, #56]
+ldr r3, [sp, #32]
+str r3, [r4, #64]
+ldr r3, [sp, #40]
+str r3, [r4, #72]
+ldr r3, [sp, #44]
+str r3, [r4, #80]
+ldr r3, [sp, #48]
+str r3, [r4, #96]
+ldr r3, [sp, #52]
+str r3, [r4, #104]
+mov r3, #0
+str r3, [r4, #88]
+20:
+ldr r9, [r4, #0]
+cmp r9, #0
+beq 21f
+ldr r9, [r4, #8]
+cmp r9, #0
+beq 23f
+ldr r9, [r4, #80]
+ldr r10, [r4, #16]
+subs r11, r9, r10
+mov r11, #0
+adc r11, r11, #0
+cmp r11, #0
+beq 25f
+sub sp, sp, #32
+ldr r0, [r4, #40]
+ldr r1, [r4, #16]
+ldr r2, [r4, #48]
+ldr r3, [r4, #16]
+add r12, sp, #0
+ldr r9, [r4, #56]
+str r9, [r12, #0]
+ldr r9, [r4, #64]
+str r9, [r12, #4]
+str r1, [r12, #8]
+ldr r9, [r4, #72]
+str r9, [r12, #12]
+str r1, [r12, #16]
+ldr r9, [r4, #96]
+str r9, [r12, #20]
+ldr r9, [r4, #104]
+str r9, [r12, #24]
+bl {vg_ffdh_generate_key}
+add sp, sp, #32
+mov r9, r0
+ldr r10, [r4, #16]
+ldr r11, [r4, #72]
+ldr r12, [r4, #80]
+ldr r3, [r4, #88]
+add r11, r11, r10
+sub r12, r12, r10
+add r3, r3, r10
+str r11, [r4, #72]
+str r12, [r4, #80]
+str r3, [r4, #88]
+cmp r9, #1
+beq 27f
+cmp r9, #2
+beq 29f
+cmp r9, #3
+beq 211f
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+213:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+214:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 214b
+b 212f
+211:
+ldr r10, [r4, #0]
+sub r10, r10, #1
+mov r11, #128
+mov r12, #4
+str r10, [r4, #0]
+str r11, [r4, #8]
+str r12, [r4, #112]
+212:
+b 210f
+29:
+ldr r10, [r4, #8]
+sub r10, r10, #1
+mov r11, #4
+str r10, [r4, #8]
+str r11, [r4, #112]
+210:
+b 28f
+27:
+mov r10, #0
+mov r11, #1
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+28:
+b 26f
+25:
+ldr r10, [r4, #16]
+mov r11, #0
+str r10, [r4, #24]
+str r11, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+215:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+216:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 216b
+26:
+b 24f
+23:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+217:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 217b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+218:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 218b
+24:
+b 22f
+21:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+219:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 219b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+220:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 220b
+22:
+ldr r9, [r4, #112]
+cmp r9, #4
+beq 20b
+ldr r1, [r4, #120]
+ldr r2, [r4, #88]
+ldr r0, [r4, #112]
+mov r3, #0
+str r2, [r1, #0]
+str r3, [r1, #4]
+ldr r9, [sp, #4]
+ldr r10, [sp, #8]
+ldr r11, [sp, #12]
+ldr lr, [sp, #20]
+ldr r4, [sp], #24
+bx lr",
+        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
+    )
+}
+
 /// The CPU features `vg_ffdh_check_domain_umaal` requires (`Artifact.features`).
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 pub(crate) const VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
@@ -71824,5 +72066,253 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
+    )
+}
+
+/// The CPU features `vg_ffdh_generate_key_search_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+///
+/// ARMv7: native rejection sampling owns both bounded retry counters, consumes the entropy tape, clears incomplete outputs, and requests entropy refills. The chosen arithmetic backend propagates through the callable key-generation attempt. Four packed-u64 policy words retain exact values across ARM's native 32-bit stores.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
+/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
+/// * `x_len` and `y_len` must be `p_len`.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 184 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r9, r10, r11, r12, lr}}
+ldr r4, [sp, #56]
+str r0, [r4, #40]
+str r2, [r4, #48]
+ldr r3, [sp, #24]
+str r3, [r4, #120]
+ldr r3, [sp, #28]
+str r3, [r4, #56]
+ldr r3, [sp, #32]
+str r3, [r4, #64]
+ldr r3, [sp, #40]
+str r3, [r4, #72]
+ldr r3, [sp, #44]
+str r3, [r4, #80]
+ldr r3, [sp, #48]
+str r3, [r4, #96]
+ldr r3, [sp, #52]
+str r3, [r4, #104]
+mov r3, #0
+str r3, [r4, #88]
+20:
+ldr r9, [r4, #0]
+cmp r9, #0
+beq 21f
+ldr r9, [r4, #8]
+cmp r9, #0
+beq 23f
+ldr r9, [r4, #80]
+ldr r10, [r4, #16]
+subs r11, r9, r10
+mov r11, #0
+adc r11, r11, #0
+cmp r11, #0
+beq 25f
+sub sp, sp, #32
+ldr r0, [r4, #40]
+ldr r1, [r4, #16]
+ldr r2, [r4, #48]
+ldr r3, [r4, #16]
+add r12, sp, #0
+ldr r9, [r4, #56]
+str r9, [r12, #0]
+ldr r9, [r4, #64]
+str r9, [r12, #4]
+str r1, [r12, #8]
+ldr r9, [r4, #72]
+str r9, [r12, #12]
+str r1, [r12, #16]
+ldr r9, [r4, #96]
+str r9, [r12, #20]
+ldr r9, [r4, #104]
+str r9, [r12, #24]
+bl {vg_ffdh_generate_key_umaal}
+add sp, sp, #32
+mov r9, r0
+ldr r10, [r4, #16]
+ldr r11, [r4, #72]
+ldr r12, [r4, #80]
+ldr r3, [r4, #88]
+add r11, r11, r10
+sub r12, r12, r10
+add r3, r3, r10
+str r11, [r4, #72]
+str r12, [r4, #80]
+str r3, [r4, #88]
+cmp r9, #1
+beq 27f
+cmp r9, #2
+beq 29f
+cmp r9, #3
+beq 211f
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+213:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+214:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 214b
+b 212f
+211:
+ldr r10, [r4, #0]
+sub r10, r10, #1
+mov r11, #128
+mov r12, #4
+str r10, [r4, #0]
+str r11, [r4, #8]
+str r12, [r4, #112]
+212:
+b 210f
+29:
+ldr r10, [r4, #8]
+sub r10, r10, #1
+mov r11, #4
+str r10, [r4, #8]
+str r11, [r4, #112]
+210:
+b 28f
+27:
+mov r10, #0
+mov r11, #1
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+28:
+b 26f
+25:
+ldr r10, [r4, #16]
+mov r11, #0
+str r10, [r4, #24]
+str r11, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+215:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+216:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 216b
+26:
+b 24f
+23:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+217:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 217b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+218:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 218b
+24:
+b 22f
+21:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+219:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 219b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+220:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 220b
+22:
+ldr r9, [r4, #112]
+cmp r9, #4
+beq 20b
+ldr r1, [r4, #120]
+ldr r2, [r4, #88]
+ldr r0, [r4, #112]
+mov r3, #0
+str r2, [r1, #0]
+str r3, [r1, #4]
+ldr r9, [sp, #4]
+ldr r10, [sp, #8]
+ldr r11, [sp, #12]
+ldr lr, [sp, #20]
+ldr r4, [sp], #24
+bx lr",
+        vg_ffdh_generate_key_umaal = sym super::ffdh::vg_ffdh_generate_key_umaal,
     )
 }

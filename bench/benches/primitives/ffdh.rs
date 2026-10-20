@@ -1,10 +1,10 @@
 //! FFDH component operations against OpenSSL and AWS-LC.
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 #[path = "../../support/ffdh.rs"]
 mod aws_lc;
 use criterion::Criterion;
 pub const USES: &[&str] = &["ffdh", "rsa_mont", "miller_rabin"];
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
     use crate::{AWS_LC, OPENSSL, VG};
     use criterion::BenchmarkId;
@@ -204,6 +204,7 @@ pub fn bench(c: &mut Criterion) {
         });
         group.finish();
     }
+    #[cfg(not(target_arch = "arm"))]
     for generator in [2, 5] {
         let mut group = c.benchmark_group(format!("ffdh_parameters_g{generator}"));
         // Safe-prime search has high variance: ten random draws can
@@ -218,5 +219,5 @@ pub fn bench(c: &mut Criterion) {
         group.finish();
     }
 }
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
 pub fn bench(_c: &mut Criterion) {}
