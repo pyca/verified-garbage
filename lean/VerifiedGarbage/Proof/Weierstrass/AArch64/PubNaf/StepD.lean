@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 
 /-!
 # The public NAF's iterations with a given doubling

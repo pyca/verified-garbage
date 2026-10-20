@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder

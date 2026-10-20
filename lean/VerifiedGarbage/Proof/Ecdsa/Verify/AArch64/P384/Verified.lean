@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import VerifiedGarbage.Proof.P384.EcdhDouble.Verified
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepDTiming
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Lit

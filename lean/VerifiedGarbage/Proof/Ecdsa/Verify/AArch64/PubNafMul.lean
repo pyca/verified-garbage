@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 import VerifiedGarbage.Proof.Framework.AArch64.Call
