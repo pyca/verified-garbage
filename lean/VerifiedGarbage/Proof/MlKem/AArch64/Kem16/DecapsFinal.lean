@@ -103,8 +103,8 @@ theorem habsJ1024 : ∀ blk, 136 * blk < (Kem16.jSrc Impl.MlKem1024.AArch64.lay1
         true :=
   habs_of _ ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩
 
-theorem srcOkJ768 : SrcOk (Kem16.jSrc lay768) := ⟨.inr rfl, by decide, by decide, by decide⟩
-theorem srcOkJ1024 : SrcOk (Kem16.jSrc Impl.MlKem1024.AArch64.lay1024) := ⟨.inr rfl, by decide, by decide, by decide⟩
+theorem srcOkJ768 : SrcOk (Kem16.jSrc lay768) := ⟨.inr (.inr rfl), by decide, by decide, by decide⟩
+theorem srcOkJ1024 : SrcOk (Kem16.jSrc Impl.MlKem1024.AArch64.lay1024) := ⟨.inr (.inr rfl), by decide, by decide, by decide⟩
 theorem hashOkJ768 : HashOk lay768 (Kem16.jSrc lay768) := ⟨by decide, by decide, by decide⟩
 theorem hashOkJ1024 : HashOk Impl.MlKem1024.AArch64.lay1024 (Kem16.jSrc Impl.MlKem1024.AArch64.lay1024) :=
   ⟨by decide, by decide, by decide⟩

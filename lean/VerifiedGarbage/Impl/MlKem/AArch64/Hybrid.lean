@@ -23,7 +23,9 @@ the matrix:
 4. noise, `u`, `v` and the epilogue, as before.
 
 Only the public lengths decide which blocks are absorbed when; the third
-state's pointer is `scratch`'s.
+state's pointer is `scratch`'s. Key generation (`Kem16.keyGenH`) uses the same
+pairs (`pairM`), each absorbing up to three blocks of the part of `ek` its
+rows have encoded so far.
 -/
 
 @[expose] public section
@@ -81,19 +83,33 @@ def squeezeTail : List Instr :=
 def step3 (S : HSrc) (b : Nat) : Prog isa :=
   .seq (.block (absorbBlock S b)) (.seq x3call (.block squeezeTail))
 
-/-- The three main squeezes of pair `i`, absorbing blocks `3i`, `3i + 1`, `3i + 2`. -/
-def squeeze3 (S : HSrc) (i : Nat) : Prog isa :=
-  .seq (step3 S (3 * i)) (.seq (step3 S (3 * i + 1)) (step3 S (3 * i + 2)))
+/-- A main squeeze absorbing no block: `vg_keccak_f1600_x2_sha3` alone. -/
+def plainStep : Prog isa :=
+  .seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536) (.block squeezeTail)
 
-/-- `Paired.pair` (encapsulation) with `squeeze3` for the three main squeezes. -/
-def pair3 (L : KemLay) (S : HSrc) (a i : Nat) (w16 : Bool := false) : Prog isa :=
-  seqs [.block (Paired.init SB SS a (a+1) L.k), squeeze3 S i, .block Rej8.rejConsts,
-    Paired.reject 400 (AH+1024*a) .x22 w16,
+/-- Main squeeze `k` of a pair absorbing blocks `j`, …, `j + m - 1`. -/
+def stepM (S : HSrc) (j m k : Nat) : Prog isa :=
+  if k < m then step3 S (j + k) else plainStep
+
+/-- The three main squeezes of a pair, the first `m` absorbing blocks `j`, …, `j + m - 1`. -/
+def squeezeM (S : HSrc) (j m : Nat) : Prog isa :=
+  .seq (stepM S j m 0) (.seq (stepM S j m 1) (stepM S j m 2))
+
+/-- `Paired.pair` with `squeezeM` for the three main squeezes, its seed at `sb`,
+its working space at `ss` and its entries at `off`. -/
+def pairM (sb ss off : Nat) (L : KemLay) (S : HSrc) (a j m : Nat) (w16 : Bool := false) : Prog isa :=
+  seqs [.block (Paired.init sb ss a (a+1) L.k), squeezeM S j m, .block Rej8.rejConsts,
+    Paired.reject 400 (off+1024*a) .x22 w16,
     .block [.str .x .x3 .x19 1680,.str .x .x4 .x19 1688],
-    Paired.reject 904 (AH+1024*(a+1)) .x23 w16,
+    Paired.reject 904 (off+1024*(a+1)) .x23 w16,
     .block [.str .x .x3 .x19 1696,.str .x .x4 .x19 1704,.logic .and .x .x6 .x22 .x23],
     .ite (.zero .x .x6) (Paired.extraPair w16) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
+
+/-- `Paired.pair` (encapsulation) whose three main squeezes absorb blocks `3i`, `3i + 1`
+and `3i + 2`. -/
+def pair3 (L : KemLay) (S : HSrc) (a i : Nat) (w16 : Bool := false) : Prog isa :=
+  pairM SB SS AH L S a (3 * i) 3 w16
 
 /-- The matrix whose first `hashPairs S` pairs absorb the message `S`. -/
 def matrixH (L : KemLay) (S : HSrc) (w16 : Bool := false) : Prog isa :=

@@ -8,7 +8,9 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 # One main squeeze of a hashing pair
 
 `step3_ok`: block `blk` of the message's padding XORed into the third state, the `x3`
-call, then both SHAKE128 states' 21 words to their stream buffers.
+call, then both SHAKE128 states' 21 words to their stream buffers. `plainStep_ok`: the
+same squeeze absorbing no block, with `vg_keccak_f1600_x2_sha3`, which leaves the third
+state as it was.
 -/
 
 @[expose] public section
@@ -126,5 +128,46 @@ theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : 
       (ft.mono (by simp [step3Writes]))
   · exact VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pv ft fvt
   · rw [VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame ft svt, sv, su]
+
+/-- **A main squeeze absorbing no block.** -/
+theorem plainStep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : Addr}
+    {A B : Spec.Sha3.State}
+    (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = a) (h21 : s.gpr .x21 = b)
+    (pair : PairAt s.mem p A B) (hl : StepLay S p a b e st s) :
+    WP isa Impl.MlKem.AArch64.Hybrid.plainStep s fun t =>
+      Keep stepRegs s t ∧
+      Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
+      PairAt t.mem p (keccakF A) (keccakF B) ∧
+      Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
+      stateAt t.mem st = stateAt s.mem st ∧
+      t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 := by
+  have hc := Paired.squeezeBlock_ok (rp := .x19) (ra := .x20) (rb := .x21) h19 h20 h21 (by rw [h19]; rfl)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) pair hl.hin hl.hwa hl.hwb hl.dAB hl.dPA hl.dPB hl.dPC
+    (covers_mono hl.cov (by simp))
+  unfold Impl.MlKem.AArch64.Hybrid.plainStep Impl.MlKem.AArch64.Hybrid.squeezeTail
+  apply WP.seq
+  refine WP.mono (WP.seq_iff.mp hc) fun u hu => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono hu fun v ⟨kv, pv, av, bv, fv, vv⟩ => ?_
+  refine wp_addImm (by decide) fun v1 h1 e1 => wp_addImm (by decide) fun t h2 e2 => wp_nil ?_
+  have hv : Keep Paired.blockRegs s v := ⟨kv.gpr, kv.rd, kv.wr, kv.sp, vv⟩
+  have ot : Only [.x20, .x21] v t := (h1.trans h2).mono (by simp)
+  have hm : t.mem = v.mem := ot.mem
+  have fr : ∀ r ∈ [pairR p, rateR21 a, rateR21 b, callR (p + 1536)], (stR st).Disjoint r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact hl.dPS.symm
+    · exact hl.dSA
+    · exact hl.dSB
+    · exact hl.dSC
+  refine ⟨(hv.trans ot.keep).mono (by simp [stepRegs, clobbered, Paired.blockRegs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [hm]; exact fv.mono (by simp [step3Writes])
+  · rw [hm]; exact pv
+  · rw [hm]; exact av
+  · rw [hm]; exact bv
+  · rw [hm]; exact VG.Proof.Sha3.AArch64.Hybrid.X3.stateAt_frame fv fr
+  · rw [h2.get .x20 (by decide), e1, kv.gpr .x20 (by decide), h20]; rfl
+  · rw [e2, h1.get .x21 (by decide), kv.gpr .x21 (by decide), h21]; rfl
 
 end VG.Proof.MlKem.AArch64.Hybrid
