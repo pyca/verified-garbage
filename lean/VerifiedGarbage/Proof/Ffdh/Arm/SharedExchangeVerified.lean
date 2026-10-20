@@ -1,0 +1,46 @@
+module
+
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeContractCT
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import Batteries.Logic
+import Mathlib.Util.CompileInductive
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Spec.Ffdh.Contract
+meta import VerifiedGarbage.TCB.Arm.Target
+public import Init.Core
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangePrograms
+public import VerifiedGarbage.Spec.Ffdh.Contract
+
+/-! Native ARMv7 shared-secret computation is verified against the shared FFDH API. -/
+
+@[expose] public section
+namespace VG.Proof.Ffdh.Arm.SharedExchange
+open VG VG.Arm
+
+private def exchangeSat : State where
+  gpr r := match r with | .r0 => 0x1000 | .r1 => 64 | .r2 => 0x2000 | .r3 => 128 | _ => 0
+  sp := 0x8000
+  n := false
+  z := false
+  c := false
+  v := false
+  mem a := if a = 0x8000 then 64 else if a = 0x8005 then 0x30 else if a = 0x8008 then 1 else
+    if a = 0x800d then 0x31 else if a = 0x8010 then 64 else if a = 0x8015 then 0x40 else
+    if a = 0x8018 then 0x20 else if a = 0x8019 then 4 else 0
+  rd := [⟨0x2000, 128⟩, ⟨0x3000, 1⟩, ⟨0x3100, 64⟩, ⟨0x8000, 28⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x4000, 8448⟩]
+
+theorem sat : ∃ s, (Spec.Ffdh.exchangeContract abi 176).pre s := by
+  sig_implies_sat [Spec.Ffdh.exchangeContract, Spec.Ffdh.exchangeSig, Spec.Ffdh.pLenValid,
+    Spec.Ffdh.domainLenValid, abi, argRegs, reduceClassify, Loc.val, State.addr]
+    [exchangeSat, stackArg, stackArgAddr, Mem.readW, Mem.read, Spec.Rsa.scratchWords] using exchangeSat
+
+theorem verified (backend : VG.Proof.Bignum.Arm.MontBackend) : Verified target (code backend)
+    (Spec.Ffdh.exchangeContract abi 176) :=
+  ⟨correct backend, contract_ct backend, sat⟩
+
+end VG.Proof.Ffdh.Arm.SharedExchange
