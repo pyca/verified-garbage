@@ -36,11 +36,11 @@ theorem written_failure {g : CallGeometry} {m : Mem} {t : State}
   simp only [outputBuffers, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨p, q⟩
 
-theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s)
+theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g)
     (valid : Spec.Rsa.modulusValid (inputValue g s.mem 0) (inputBytes g s.mem 0).length = true)
     (pLen : (g.buffer 0).len = (inputBytes g s.mem 0).length)
     (qLen : (g.buffer 2).len = (inputBytes g s.mem 0).length) :
-    WP isa (sized g.n) s fun t => Inputs g t ∧ Written g s.mem t ∧
+    WP isa VG.Impl.Rsa.X86.RecoverRt.sized s fun t => Inputs g t ∧ Written g s.mem t ∧
       Frame (bodyWrites g) s.mem t.mem ∧ Keeps opRegs s t := by
   have bound : inputValue g s.mem 0 < 2 ^ (64 * g.n) := by
     apply Nat.lt_of_lt_of_le (inputValue_lt g s.mem 0)
@@ -57,21 +57,24 @@ theorem sized_ok {g : CallGeometry} {s : State} (h : Inputs g s)
       Nat.pow_le_pow_right (n := 2) (by decide) hk
     have bigger := power 511 (by decide)
     omega
-  unfold sized
-  refine WP.seq (WP.mono (numbers_ok h) fun u ⟨hu, zt⟩ => ?_)
+  unfold VG.Impl.Rsa.X86.RecoverRt.sized
+  refine WP.seq (WP.mono (numbers_ok h len) fun u ⟨hu, zt⟩ => ?_)
   refine WP.ite (decide (GoOn (product g s.mem))) (by exact zt) ?_ ?_
   · intro yes
     have go : GoOn (product g s.mem) := of_decide_eq_true yes
-    refine WP.mono (rest_ok h hu go bound odd large) fun t result => ?_
+    refine WP.mono (rest_ok h len hu go bound odd large) fun t result => ?_
     have written := written_rest result valid pLen qLen
     obtain ⟨_, _, _, ⟨ht, _, _, _, frame, rest⟩, _, _, _⟩ := result
     exact ⟨ht, written, frame, rest⟩
   · intro no
     have skip : ¬GoOn (product g s.mem) := of_decide_eq_false no
-    have iu := h.after hu.rest (by decide) (by decide) (h.scratchFrame hu.frame)
+    have iu := h.of_KS hu
     refine WP.mono (failure_ok iu) fun t ⟨ht, p, q, zero, frame, rest⟩ => ?_
-    have before := outside_frame hu.frame (by have := h.ws.workspace.nowrap; omega)
+    have before : Frame (bodyWrites g) s.mem u.mem := hu.frame.sub fun r hr => ⟨r, by
+      simp only [stageR, VG.Proof.Bignum.X86.CrtRt.frameR, List.map_cons, List.map_nil, List.mem_cons,
+        List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> simp [bodyWrites], fun _ h => h⟩
     exact ⟨ht, written_failure (calculated_none_skip skip) p q zero,
-      (before.mono (by simp [bodyWrites])).trans frame, hu.rest.trans (rest.mono (by decide))⟩
+      before.trans frame, hu.rest.trans (rest.mono (by decide))⟩
 
 end VG.Proof.Rsa.X86.Recover
