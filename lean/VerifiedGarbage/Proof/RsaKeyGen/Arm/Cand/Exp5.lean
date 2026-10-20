@@ -31,7 +31,7 @@ theorem St.psigPow (cert : Cert (.block (sigMasks ++ powWord))) (ht : sTc ∈ LS
     have tl := hlt σ e
     generalize et : V σ sTc = t at tl
     have ht' : V σ sTc = t := et
-    simp only [sigMasks, powWord, List.cons_append, List.nil_append, List.append_assoc]
+    simp only [sigMasks, powWord, VG.Impl.Bignum.Arm.TwoPower.code, List.cons_append, List.nil_append, List.append_assoc]
     refine h.ldr hw ht (r := .r1) (by decide) fun s1 h1 hw1 u1 => ?_
     rw [ht'] at u1
     refine wp_dp (op2_imm (by decide)) fun s2 u2 => wp_dp (op2_imm (by decide)) fun s3 u3 =>
