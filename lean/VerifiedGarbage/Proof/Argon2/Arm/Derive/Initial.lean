@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
 import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
 import VerifiedGarbage.Proof.Blake2.Arm.CompressB
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Argon2 on ARMv7: H₀
