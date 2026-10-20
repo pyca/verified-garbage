@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
 public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
+public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
@@ -110,10 +111,35 @@ def tablePointer : List Instr :=
 def tableWrite : List Instr := tablePointer ++ (List.range 53).flatMap fun j =>
   [.mov .r1 (.imm (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry j))), .str .r1 .r11 (4 * j)]
 
+/-- Consume the next least-significant radix-2^16 digit of the big-endian
+buffer ending at r0, with r1 octets left. The final odd octet is zero-padded. -/
+def trialDigitHead : List Instr :=
+  [.dp .sub .r0 .r0 (.imm 1), .ldrb .r5 .r0 0, .subs .r1 .r1 (.imm 1)]
+
+def trialDigitHigh : List Instr :=
+  [.dp .sub .r0 .r0 (.imm 1), .ldrb .r7 .r0 0,
+    .dp .orr .r5 .r5 (.shifted .r7 .lsl 8), .dp .sub .r1 .r1 (.imm 1)]
+
+def trialDigit : Prog isa := .seq (.block trialDigitHead)
+  (.ite .eq (.block []) (.block trialDigitHigh))
+
+/-- Trial division by the odd prime in r7 using RSA's radix-2^16 reducer.
+Read octet pairs backwards, with a zero high octet for an odd byte length.
+The final accumulator is below twice the prime, so zero or the prime
+means divisibility. Z reports that result; r10/r11 remain the sieve cursor. -/
+def trialSmall : Prog isa := seqs [
+  .block ([.mov .r3 (.reg .r7), .mov .r4 (.reg .r3)] ++
+    TrialDivision16.newton ++ TrialDivision16.newton ++ TrialDivision16.newton ++
+    [.mov .r5 (.imm 0), .dp .sub .r4 .r5 (.reg .r4),
+      .mov .r4 (.shifted .r4 .lsl 16), .mov .r4 (.shifted .r4 .lsr 16),
+      .ldrSp .r0 4, .ldrSp .r1 12, .dp .add .r0 .r0 (.reg .r1), .mov .r2 (.imm 0)]),
+  .loop (seqs [trialDigit, .block (TrialDivision16.redc ++ [.cmp .r1 (.imm 0)])]) .ne,
+  .block [.cmp .r2 (.imm 0)],
+  .ite .eq (.block []) (.block [.cmp .r2 (.reg .r3)])]
+
 def sieve : Prog isa := seqs [
   .block (tablePointer ++ [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64),
-  .loop (seqs [.block [.ldr .r7 .r10 0, .dp .add .r10 .r10 (.imm 4)], remSmall,
-    .block [.cmp .r3 (.imm 0)],
+  .loop (seqs [.block [.ldr .r7 .r10 0, .dp .add .r10 .r10 (.imm 4)], trialSmall,
     .ite .eq (.block ([.mov .r1 (.imm 1)] ++ save .r1 64)) (.block []),
     .block [.subs .r11 .r11 (.imm 1)]]) .ne,
   .block [.ldrSp .r1 64, .cmp .r1 (.imm 0)]]
