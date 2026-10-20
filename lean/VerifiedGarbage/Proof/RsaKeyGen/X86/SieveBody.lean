@@ -32,4 +32,3 @@ theorem body_ok {g : Geometry} (v : g.Valid) {c : Nat} {s : State} (C : Context 
   exact WP.seq (WP.mono (WP.seq_iff.mp (WP.assoc run)) fun a H => WP.assoc H)
 
 end VG.Proof.RsaKeyGen.X86.Sieve
-
