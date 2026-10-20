@@ -15,7 +15,6 @@ public import Aesop.BuiltinRules
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Divstep.WordDef
 
 @[expose] public section

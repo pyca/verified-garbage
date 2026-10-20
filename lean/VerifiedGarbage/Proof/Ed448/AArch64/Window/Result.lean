@@ -1,18 +1,26 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-public import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
 import VerifiedGarbage.Proof.Framework.KernelRfl
-public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
-public import VerifiedGarbage.Proof.X448.AArch64.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 import VerifiedGarbage.Proof.X448.AArch64.Finish
+public import VerifiedGarbage.Impl.X448.AArch64.Fast
+public import VerifiedGarbage.Spec.X448
+public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
+public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+public import VerifiedGarbage.Proof.X448.AArch64.Env
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448 verification on AArch64: the result

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.Sha512.Contract
 public import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Sha512.X86.Lit
-import VerifiedGarbage.Impl.Sha512.X86.Stream
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Offset

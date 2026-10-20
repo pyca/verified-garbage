@@ -10,6 +10,10 @@ import Mathlib.Tactic.NormNum.DivMod
 import Mathlib.Tactic.NormNum.Abs
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.NormNum.Pow
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # The inversion's matrix as magnitudes and signs
 

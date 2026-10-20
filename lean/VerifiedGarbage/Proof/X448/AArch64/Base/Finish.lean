@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
 
 /-!
 # X448 of the base point on AArch64: `Y² / X²`, encoded

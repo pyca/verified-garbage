@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.P384.EcdhDouble.Raw
 public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.P384.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # P-384's allocated doublings

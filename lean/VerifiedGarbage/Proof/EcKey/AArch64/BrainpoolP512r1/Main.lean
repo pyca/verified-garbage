@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Main
 import VerifiedGarbage.Proof.EcKey.PublicKey
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! # brainpoolP512r1 public-key derivation without constant tables -/
 

@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
 
 import VerifiedGarbage.Proof.X25519.AArch64.Word.Step
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! The 255 public-count ladder iterations and the final conditional swaps. -/
 

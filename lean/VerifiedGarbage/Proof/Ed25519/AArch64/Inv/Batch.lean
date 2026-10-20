@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Conn
 import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Out
 import VerifiedGarbage.Proof.X25519.AArch64.Ops
 import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # A batch of the inversion modulo `p` on AArch64
 

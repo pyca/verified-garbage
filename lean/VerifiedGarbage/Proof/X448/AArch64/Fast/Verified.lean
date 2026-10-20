@@ -16,6 +16,10 @@ meta import Mathlib.Tactic.ToAdditive
 meta import Aesop.BuiltinRules
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # X448 on AArch64: `Verified`

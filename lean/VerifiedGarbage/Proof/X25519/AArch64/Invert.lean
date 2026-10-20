@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 public import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Proof.X25519.AArch64.Slots
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Kernel-checked ref10 inversion chain, reusing the ladder's dead slots. -/
 

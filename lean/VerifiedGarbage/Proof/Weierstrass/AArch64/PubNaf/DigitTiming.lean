@@ -12,6 +12,9 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Timing of the public NAF's digits

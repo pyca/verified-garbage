@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Ed25519.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import VerifiedGarbage.Proof.Framework.X86_64.Syms

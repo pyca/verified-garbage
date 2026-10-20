@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Lit
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddMemory
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X25519 on AArch64: the `_alt` ladder's whole function

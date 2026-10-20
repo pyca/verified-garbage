@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
 public import VerifiedGarbage.Proof.X448.AArch64.Counters
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.X448.BaseAdd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

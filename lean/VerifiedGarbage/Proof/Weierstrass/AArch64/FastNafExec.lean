@@ -10,9 +10,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.PlainSimp
-import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 import VerifiedGarbage.Proof.Mont.AArch64.Words
-import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 

@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulCall
+import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulCall
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.X448.AArch64.Field56
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Mul
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 
 /-!
 # Curve448's field product on AArch64: calls on the slots

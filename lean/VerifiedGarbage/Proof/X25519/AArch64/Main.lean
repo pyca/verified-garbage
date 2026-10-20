@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.X25519.AArch64.Final
 public import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 import VerifiedGarbage.Proof.X25519.AArch64.Invert
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # X25519 on AArch64: the whole function

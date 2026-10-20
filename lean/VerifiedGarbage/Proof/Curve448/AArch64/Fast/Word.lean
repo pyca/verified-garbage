@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.Wide.Word
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.Word64
 
 /-!
 # Two-word accumulators modulo 2¹²⁸

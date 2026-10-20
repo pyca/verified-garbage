@@ -18,6 +18,7 @@ meta import VerifiedGarbage.Proof.X448.Field
 meta import VerifiedGarbage.Proof.X448.Wide.Limbs
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ed448
+meta import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
 
 /-!
 # `vg_gf448_r56_mul` on AArch64, verified

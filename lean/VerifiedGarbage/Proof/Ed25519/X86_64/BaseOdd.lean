@@ -10,7 +10,6 @@ import Mathlib.Data.Sym.Sym2.Init
 import Mathlib.Tactic.ContinuousFunctionalCalculus
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Positivity.Finset
-import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 /-!
 # The static odd multiples of `-B`

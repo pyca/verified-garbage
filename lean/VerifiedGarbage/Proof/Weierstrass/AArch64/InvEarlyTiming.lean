@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyAllocatedMain
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyAllocatedMain
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -14,16 +14,16 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 meta import VerifiedGarbage.Proof.Divstep.Bound
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-public import VerifiedGarbage.Proof.Divstep.Early
-public import VerifiedGarbage.Proof.Divstep.Iter
-public import VerifiedGarbage.Proof.Divstep.WordBasic
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
-public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
-public import VerifiedGarbage.Proof.Weierstrass.Pow
+import VerifiedGarbage.Proof.Divstep.Early
+import VerifiedGarbage.Proof.Divstep.Iter
+import VerifiedGarbage.Proof.Divstep.WordBasic
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Refine
+import VerifiedGarbage.Proof.Weierstrass.Pow
 meta import VerifiedGarbage.Proof.Divstep.Early
 meta import VerifiedGarbage.Proof.Divstep.Iter
 meta import VerifiedGarbage.Proof.Divstep.WordBasic
@@ -152,6 +152,26 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 meta import VerifiedGarbage.Proof.Weierstrass.JacMul
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
+public import VerifiedGarbage.Proof.Divstep.Alg
+meta import VerifiedGarbage.Proof.Divstep.Alg
+public import Mathlib.Algebra.GroupWithZero.Nat
+meta import Mathlib.Algebra.GroupWithZero.Nat
+public import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Isa
+meta import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+meta import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import Init.Data.BitVec.BasicAux
+meta import Init.Data.BitVec.BasicAux
+public import Init.Data.Int.Basic
+meta import Init.Data.Int.Basic
+public import VerifiedGarbage.TCB.Mem
+meta import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Impl.Mont.Mod
 
 @[expose] public section
 

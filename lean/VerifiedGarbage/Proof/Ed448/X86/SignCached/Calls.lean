@@ -37,6 +37,7 @@ import VerifiedGarbage.Proof.X448.X86.Restore
 import VerifiedGarbage.Proof.X448.X86.Select
 import VerifiedGarbage.Proof.X448.X86.Small
 import VerifiedGarbage.Proof.X448.X86.Step
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): the scalar calls

@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.StepD
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop

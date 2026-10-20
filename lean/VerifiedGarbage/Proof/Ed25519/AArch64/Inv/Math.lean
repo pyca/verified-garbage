@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Group.Nat.Defs
 public import Mathlib.Algebra.Group.Int.Defs
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Ed25519.Word64
 
 /-! # The inversion modulo `p` on AArch64: the numbers
 

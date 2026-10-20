@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Ed448.Group.Decode
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.KLoop
 public import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.Digit
 
 /-!
 # Ed448 verification on AArch64: the equation, by the group law

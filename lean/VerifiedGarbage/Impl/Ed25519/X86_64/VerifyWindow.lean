@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Point64
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 
 /-!
 # Verification's equation with signed sliding windows

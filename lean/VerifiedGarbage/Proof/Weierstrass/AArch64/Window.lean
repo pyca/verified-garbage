@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-!
 # The window method on AArch64

@@ -11,9 +11,6 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBytes
 import VerifiedGarbage.Proof.Ed448.AArch64.BaseEncode
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.X448.AArch64.Square
 

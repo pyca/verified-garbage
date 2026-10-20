@@ -7,12 +7,9 @@ public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Middle
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
 import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Elliptic curve public keys on x86-64: the result, and the whole function

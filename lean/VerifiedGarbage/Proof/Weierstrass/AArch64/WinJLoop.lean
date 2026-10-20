@@ -7,8 +7,13 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
 import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Impl.Weierstrass.AArch64.WindowJ
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJBuild
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 
 /-!
 # Windows in Jacobian coordinates on AArch64: the last iteration and the loop

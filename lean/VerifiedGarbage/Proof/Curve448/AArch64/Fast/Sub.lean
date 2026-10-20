@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Finish
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Impl.X448.AArch64.Symmetric
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 
 /-!
 # Differences and sums

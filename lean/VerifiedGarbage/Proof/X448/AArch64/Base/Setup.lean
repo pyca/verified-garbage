@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Step
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
+import VerifiedGarbage.Proof.X448.AArch64.Init
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
 
 /-!
 # X448 of the base point on AArch64: the setup

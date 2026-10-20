@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Front
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
+import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 
 /-!
 # Ed448 verification on AArch64: what every phase keeps

@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import VerifiedGarbage.Proof.Mont.X86_64.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # P-384's product modulo `p` as a function, on x86-64

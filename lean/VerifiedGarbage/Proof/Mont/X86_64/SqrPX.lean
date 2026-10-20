@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 
 /-!
 # Montgomery arithmetic on x86-64: P-521's squares with BMI2 and ADX

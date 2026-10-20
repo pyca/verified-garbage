@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Proof.Mont.X86_64.Csub
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps

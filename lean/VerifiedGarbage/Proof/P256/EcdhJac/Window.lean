@@ -27,6 +27,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 
 /-! ## `HotField` -/
 

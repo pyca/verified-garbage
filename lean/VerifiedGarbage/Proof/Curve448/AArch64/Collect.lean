@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X448.Wide.Memory
 public import VerifiedGarbage.Impl.Curve448.AArch64
 public import VerifiedGarbage.Proof.X448.Wide.Representation
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 

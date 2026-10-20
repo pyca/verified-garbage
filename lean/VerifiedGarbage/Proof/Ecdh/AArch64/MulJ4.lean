@@ -9,11 +9,9 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJNorm
 import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Weierstrass.WindowJ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
 
 /-!
 # ECDH on AArch64: `[d]P` by 4-bit windows with a Jacobian accumulator

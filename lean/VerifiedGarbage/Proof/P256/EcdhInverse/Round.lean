@@ -10,9 +10,7 @@ import Mathlib.Tactic.NormNum.Inv
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
-import VerifiedGarbage.TCB.AArch64.Isa
 
 @[expose] public section
 

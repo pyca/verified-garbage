@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! The single-row constant multiplication shares the checked carry fold. -/
 

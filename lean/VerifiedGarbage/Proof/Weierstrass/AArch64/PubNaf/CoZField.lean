@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 import VerifiedGarbage.Proof.Weierstrass.CoZTable
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 
 /-!
 # The co-Z table's field programs

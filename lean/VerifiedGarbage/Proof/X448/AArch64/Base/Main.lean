@@ -10,6 +10,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.BaseAdd
 
 /-!
 # X448 of the base point on AArch64: the whole function
