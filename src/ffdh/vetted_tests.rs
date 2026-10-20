@@ -77,10 +77,13 @@ fn vetted_rfc_groups_use_exact_public_bit_caps() {
             let params = Parameters::from_components(&p, &[2], None).unwrap();
             let draw = marked_draw(p.len(), cap);
             let key = generate_from(&params, &draw);
-            if cfg!(target_arch = "arm") {
+            #[cfg(target_arch = "arm")]
+            {
                 assert_eq!(canonical(key.private_component()), &[3]);
                 assert_eq!(key.public_key().component(), &[8]);
-            } else {
+            }
+            #[cfg(not(target_arch = "arm"))]
+            {
                 assert_eq!(key.private_component(), draw);
             }
             // The highest permitted bit must also survive: a cap one bit
