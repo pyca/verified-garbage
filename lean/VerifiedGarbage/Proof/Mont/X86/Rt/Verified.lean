@@ -9,7 +9,7 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # `vg_rsa_mont_mul` on x86 against its contract
+/-! # `vg_rsa_mont_mul_at` on x86 against its contract
 
 Its correctness (`rt_correct`), from `body_ok`; its timing, from one taint
 check of its code (`rt_constantTime`): every public value is in a register

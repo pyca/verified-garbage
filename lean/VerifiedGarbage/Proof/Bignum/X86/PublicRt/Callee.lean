@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 public import VerifiedGarbage.Proof.Framework.X86.AllocFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # The precondition of a call of `vg_rsa_mont_mul` from public RSA
+/-! # The precondition of a call of `vg_rsa_mont_mul_at` from public RSA
 
 From the frame of its arguments (`mulArgs_ok`) below the caller's `esp`,
 apart from the working space (`CallRoom`): the callee's state, with its

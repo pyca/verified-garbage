@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 /-! # A multiplication by a call, in public RSA at a run-time width
 
 `mul o a b` (`Impl/Bignum/X86/PublicRt.lean`): from the arguments' frame
-below `esp`, a call of `vg_rsa_mont_mul` writes the Montgomery product of
+below `esp`, a call of `vg_rsa_mont_mul_at` writes the Montgomery product of
 numbers `a` and `b` into number `o`, changing only it, the callee's range
 and the 40 bytes of stack below `esp` (`mul_ok`).
 -/

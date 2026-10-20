@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The arguments of a multiplication in public RSA at a run-time width
 
-`mulArgs o a b` stores the nine arguments of `vg_rsa_mont_mul` into the
+`mulArgs o a b` stores the nine arguments of `vg_rsa_mont_mul_at` into the
 frame of 36 bytes at `esp` (`mulArgs_ok`): word `i` is `mulArg … i`.
 -/
 

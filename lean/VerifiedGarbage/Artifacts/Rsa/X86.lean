@@ -40,7 +40,7 @@ def artifacts : List Artifact := [
     stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
-      multiplication calls `vg_rsa_mont_mul`. Each factor whose length (`p_len`, `q_len`) fits half \
+      multiplication calls `vg_rsa_mont_mul_at`. Each factor whose length (`p_len`, `q_len`) fits half \
       the modulus's width has the input reduced modulo it at the modulus's width, then its windowed \
       exponentiation at half the width; a longer factor's runs at the modulus's width. The lengths \
       are public; the factors' values select no branch. Callee-saved registers reside in scratch."]
@@ -49,8 +49,9 @@ def artifacts : List Artifact := [
     stack := 40 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
-      multiplication calls `vg_rsa_mont_mul`. The input acceptance mask is applied after a fixed \
-      64-step exponentiation. Callee-saved registers reside in scratch."]
+      multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
+      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PrecomputedRt.code
     verified := Proof.Bignum.X86.PrecomputedRt.verified
     stack := 40 },
@@ -60,8 +61,9 @@ def artifacts : List Artifact := [
     stack := 20 },
   Spec.Rsa.publicCheckedApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
-      multiplication calls `vg_rsa_mont_mul`. The input acceptance mask is applied after a fixed \
-      64-step exponentiation. Callee-saved registers reside in scratch."]
+      multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
+      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
     code := Impl.Bignum.X86.PublicRt.code
     verified := Proof.Bignum.X86.PublicRt.verified
     stack := 40 }]

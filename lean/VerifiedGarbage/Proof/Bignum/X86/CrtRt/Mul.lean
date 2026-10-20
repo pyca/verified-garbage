@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A multiplication by a call, in private CRT at a run-time width
 
-`mulArgs c o a b` stores the arguments of `vg_rsa_mont_mul` for the slots
+`mulArgs c o a b` stores the arguments of `vg_rsa_mont_mul_at` for the slots
 `o`, `a` and `b` of the context `c` (`mulArgs_ok`); `mul c o a b` writes the
 Montgomery product of slots `a` and `b` into slot `o`, changing only it,
 the callee's range (from slot 1) and the 40 bytes below `esp` (`mul_ok`).

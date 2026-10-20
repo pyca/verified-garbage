@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
-/-! # What `vg_rsa_mont_mul`'s contract gives on entry
+/-! # What `vg_rsa_mont_mul_at`'s contract gives on entry
 
 `RtABI s`: the facts of `mulContract abi 0`'s precondition, as `sig_pre`
 states them; from them, the working space (`Ws`), the arguments on the stack

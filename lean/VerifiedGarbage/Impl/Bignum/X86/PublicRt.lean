@@ -12,7 +12,7 @@ every loop runs over `B` bytes through pointers into the working space
 (`edi`), counting a register down. The numbers are at `256 + j B` for
 `j < 6`: the modulus `M` (0), the input and then the base (1), the result
 (2), one (3), `R² mod M` and then the products (4), and from `256 + 5 B`
-the range of `vg_rsa_mont_mul`, which every multiplication calls. Before
+the range of `vg_rsa_mont_mul_at`, which every multiplication calls. Before
 the first call, that range holds each doubling's sum, whose difference with `M` replaces the
 number doubled unless the sum is below `M`.
 
@@ -117,7 +117,7 @@ def powerTwo : Prog isa :=
 def offEax (j : Nat) : List Instr :=
   .mov .eax (.imm (BitVec.ofNat 32 numOff)) :: List.replicate j (.alu .add .eax (.reg .edx))
 
-/-- The arguments of `vg_rsa_mont_mul` for the numbers `o`, `a` and `b`, stored
+/-- The arguments of `vg_rsa_mont_mul_at` for the numbers `o`, `a` and `b`, stored
 into the frame at `esp`: `ws` (`edi`), `ws_len`, the width, `m`, `inv`, `s`,
 `o`, `a` and `b`. Only `eax` and `edx` change. -/
 def mulArgs (o a b : Nat) : List Instr :=
@@ -130,7 +130,7 @@ def mulArgs (o a b : Nat) : List Instr :=
     offEax a ++ [.store (at_ .esp 28) .eax] ++ offEax b ++ [.store (at_ .esp 32) .eax]
 
 /-- `[o] = [a] [b] R⁻¹ mod M` for the numbers `o`, `a` and `b`, by a call of
-`vg_rsa_mont_mul` with its arguments in a frame of 36 bytes, which keeps
+`vg_rsa_mont_mul_at` with its arguments in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (o a b : Nat) : Prog isa :=
   .frame (.alloc 36) (.seq (.block (mulArgs o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)

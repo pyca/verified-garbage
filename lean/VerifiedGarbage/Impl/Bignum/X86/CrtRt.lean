@@ -11,7 +11,7 @@ it is raised in a context of `Bh = 8 ⌈B / 16⌉` bytes (`Ctx.half`), a longer
 one in a context of `B` bytes (`Ctx.wide`). Every width and offset is
 computed from the arguments on the stack, every loop runs over a count of
 bytes through pointers into the working space (`edi`), and every Montgomery
-multiplication calls `vg_rsa_mont_mul`.
+multiplication calls `vg_rsa_mont_mul_at`.
 
 The working space: a header of 256 bytes (the inverse `-M⁻¹ mod 2³²`, the
 window, the acceptance mask, the saved registers and a multiplier word), the
@@ -187,7 +187,7 @@ def offIn : Loc → List Instr
   | .slot _ j => .mov .eax (.imm (BitVec.ofNat 32 numBase)) :: List.replicate j (.alu .add .eax (.reg .edx))
   | .fixed o => [.mov .eax (.imm (BitVec.ofNat 32 o))]
 
-/-- The arguments of `vg_rsa_mont_mul` in the context `c`, for the slots `o`,
+/-- The arguments of `vg_rsa_mont_mul_at` in the context `c`, for the slots `o`,
 `a` and `b`, stored into the frame at `esp`: `ws` (`edi`), `ws_len`, the
 width, the modulus (slot 0), the inverse, the callee's range (slot 1), `o`,
 `a` and `b`. Only `eax` and `edx` change. -/
@@ -202,7 +202,7 @@ def mulArgs (c : Ctx) (o a b : Nat) : List Instr :=
     offIn (.slot c a) ++ [.store (at_ .esp 28) .eax] ++ offIn (.slot c b) ++ [.store (at_ .esp 32) .eax]
 
 /-- `[o] = [a] [b] R⁻¹ mod M` for the slots `o`, `a` and `b` of the context
-`c`, by a call of `vg_rsa_mont_mul` in a frame of 36 bytes, which keeps
+`c`, by a call of `vg_rsa_mont_mul_at` in a frame of 36 bytes, which keeps
 `ebx`, `esi`, `ebp` and `edi`. -/
 def mul (c : Ctx) (o a b : Nat) : Prog isa :=
   .frame (.alloc 36) (.seq (.block (mulArgs c o a b)) (.call Spec.Rsa.MontMul.mulApi.name Rt.body)) (.free 36)
