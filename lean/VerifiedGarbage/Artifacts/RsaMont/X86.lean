@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.MulAtVerified
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery multiplication in the RSA functions' context, as a function, on baseline i686
 
 One function per width of the RSA functions' Montgomery context
 (`Impl.Mont.X86.Context`): `PublicFn.widths` and their halves, the CRT
-factors' widths. -/
+factors' widths; and one function for every width, `vg_rsa_mont_mul`. -/
 
 @[expose] public section
 
@@ -27,8 +28,18 @@ def helper (n : Nat)
     stack := 20
     spSafe := Code.all_of_allInstrs (Proof.Mont.X86.Dynamic.mulAt_spSafe n) }
 
+def runtime : Artifact :=
+  Spec.Rsa.MontMul.mulApi.artifact X86.target {
+    notes := ["Coarsely integrated operand scanning on 32-bit words through pointers into the working \
+      space, each loop counting its bytes down in a register: every public value is in a register or \
+      computed from the arguments, which are read-only. The callee-saved registers, the rows' multiplier, \
+      the product and the subtraction's temporary are in the function's range; the result is selected \
+      into `o` by a mask."]
+    code := Impl.Mont.X86.Rt.body
+    verified := Proof.Mont.X86.Rt.rt_verified }
+
 open Proof.Mont.X86.Dynamic in
 def artifacts : List Artifact :=
-  Impl.Mont.X86.Dynamic.mulWidths.attach.map fun ⟨n, h⟩ => helper n (mulAt_verified_mem h)
+  runtime :: Impl.Mont.X86.Dynamic.mulWidths.attach.map fun ⟨n, h⟩ => helper n (mulAt_verified_mem h)
 
 end VG.Artifacts.RsaMont.X86
