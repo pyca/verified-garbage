@@ -20,6 +20,8 @@ meta import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 meta import VerifiedGarbage.Impl.TripleDes.X86.Fb
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit) meet their contracts
