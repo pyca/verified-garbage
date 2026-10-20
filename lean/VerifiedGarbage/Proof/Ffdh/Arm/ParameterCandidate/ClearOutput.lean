@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 namespace VG.Proof.Ffdh.Arm.ParameterCandidate
 open VG VG.Arm VG.Proof.Ffdh.Arm VG.Proof.X25519.Arm
 
-private theorem clearHead_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
+theorem clearHead_ok {s : State} {dst usedPtr : BitVec 32} {n consumed : Nat}
     (h : ResultContext dst usedPtr n consumed s) :
     WP isa (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]) s fun t =>
       (t.gpr .r0 = dst ∧ t.gpr .lr = BitVec.ofNat 32 n ∧ t.gpr .r2 = 0 ∧ t.mem = s.mem) ∧

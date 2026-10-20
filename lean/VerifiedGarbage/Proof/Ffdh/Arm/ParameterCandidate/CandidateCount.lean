@@ -18,7 +18,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm VG.Proof.X25519.Arm
 
 theorem candidateCount_ok {s : State} {p : CandidateParams} {used : Nat}
     (h : CandidateContext p used s) (enough : p.length ≤ p.bytes.length) :
-    WP isa (.block ([.ldrSp .r1 12] ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 40)) s fun t =>
+    WP isa (.block (([.ldrSp .r1 12] : List Instr) ++ VG.Impl.Ffdh.Arm.ParameterCandidate.save .r1 40)) s fun t =>
       CandidateContext p p.length t ∧
       Frame [⟨State.addr (s.sp + 40#32), 4⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [WP.block_append_iff]

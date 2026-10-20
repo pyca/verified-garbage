@@ -74,7 +74,7 @@ theorem residue5_ok {s : State} {dst : BitVec 32} {n : Nat} (h : ReadContext dst
   rintro t ⟨acc, bound, residue, flag, memory, rest⟩
   exact ⟨flag.trans (decide_eq_decide.mpr (residue5_accept bound residue odd)), memory, rest⟩
 
-private theorem residueHead_ok {s : State} {dst : BitVec 32} {n generator : Nat}
+theorem residueHead_ok {s : State} {dst : BitVec 32} {n generator : Nat}
     (h : ReadContext dst n s) (bound : generator < 2 ^ 32)
     (saved : s.mem.readW (State.addr (s.sp + 28#32)) 32 = BitVec.ofNat 32 generator) :
     WP isa (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)]) s fun t =>
