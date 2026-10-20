@@ -2,13 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinishCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 
 /-! Generated-public-value exponentiation, checking, export and masking have
 the same trace for different secret scalars of the public significant width. -/

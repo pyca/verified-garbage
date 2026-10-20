@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFnCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFnCT
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyClassification
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPre
 
 /-! Native key generation satisfies the shared timing policy for arbitrary
 secret entropy tapes with the same public domain and disclosed attempt status. -/

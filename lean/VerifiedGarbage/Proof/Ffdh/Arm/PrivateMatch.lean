@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.Equal
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.Equal
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Imported key consistency is checked by native exponentiation and full-width equality. -/
 

@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Calling any verified FFDH backend from the native key-search controller. -/
 

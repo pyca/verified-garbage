@@ -1,11 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
-import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ZeroOutput
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ZeroOutput
 
 /-! Rejections and incomplete searches clear outputs on public addresses
 and public-length schedules; scalar and output bytes do not affect timing. -/

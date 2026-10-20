@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Clearing an empty public prefix is a no-op; nonempty prefixes use the same
 verified byte loop as full output clearing. -/

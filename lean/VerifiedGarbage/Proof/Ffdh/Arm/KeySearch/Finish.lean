@@ -5,6 +5,11 @@ import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The native controller writes its result and restores the complete AAPCS
 callee-saved register set before its final frame pop. -/

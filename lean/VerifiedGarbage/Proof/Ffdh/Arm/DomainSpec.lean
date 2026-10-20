@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import Mathlib.Data.Nat.ModEq
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Native parameter checks agree with the shared algebraic domain predicate. -/
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateContractCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateContractCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -11,6 +11,9 @@ import Mathlib.Util.CompileInductive
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import Init.Core
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
 /-! Native ARMv7 imported private-key validation is verified against the shared FFDH API. -/
 

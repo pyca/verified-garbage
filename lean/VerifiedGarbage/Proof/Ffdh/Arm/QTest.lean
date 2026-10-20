@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! Whether the public domain contains a subgroup order. -/
 

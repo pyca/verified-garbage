@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatch
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatch
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Computing g^x and comparing it with the imported public value is constant time in x. -/
 

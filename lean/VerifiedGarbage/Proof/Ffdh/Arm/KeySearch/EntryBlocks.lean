@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Incoming
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Loading the controller pointer and retaining the two output pointers;
 finishing the native argument snapshot with a zero consumed-byte count. -/

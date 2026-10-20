@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! Relational proof helpers for native ARMv7 controller states sharing
 public descriptors and stack pointers. -/

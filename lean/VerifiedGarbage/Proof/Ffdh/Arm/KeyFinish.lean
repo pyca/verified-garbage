@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMask
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMask
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Finish a generated key with status 1 or 3 and mask both outputs without
 branching on the secret result flag. -/

@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Mont.Words
 
 /-! The shared key-attempt result is exactly the controller's current
 attempt status and key pair, independent of its temporary call frame. -/

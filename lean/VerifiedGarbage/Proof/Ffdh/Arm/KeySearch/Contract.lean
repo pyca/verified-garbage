@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import Init.Data.BitVec.BasicAux
+public import Init.Data.List.Basic
+public import Init.Data.Nat.Bitwise.Basic
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Mont.Words
 
 /-! Public inputs and loop-state representation for the native ARMv7 key
 search. The retry counters and width fit in native words; their packed-u64

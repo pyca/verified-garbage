@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainTailCT
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainMain
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainTailCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
@@ -11,6 +11,10 @@ import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 
 /-! Generator and order checks branch only on the public domain. -/
 

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
+import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Shared arithmetic and input-buffer invariants of native private-key validation. -/
 

@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
+import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The pointers into the packed domain stay in the local frame. -/
 

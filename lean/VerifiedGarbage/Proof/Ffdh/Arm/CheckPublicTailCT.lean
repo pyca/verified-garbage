@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicTail
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicTail
 public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Optional public subgroup checking branches only on the public domain shape. -/
 

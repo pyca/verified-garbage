@@ -1,10 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 
 /-! Scalar sampling preserves the prepared RSA modulus and exposes both the
 full output encoding and its public-width significant suffix. -/

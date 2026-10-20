@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
-public import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Branch on an already computed FFDH status and return a native status. -/
 

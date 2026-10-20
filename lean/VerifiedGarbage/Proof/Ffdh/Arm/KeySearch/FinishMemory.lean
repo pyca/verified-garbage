@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishHead
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! Storing the consumed-byte count preserves the key pair, retry policy,
 and the saved registers needed for the controller's return. -/

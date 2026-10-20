@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheckCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+meta import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+meta import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 /-! The common native head accesses only public domain and local-frame addresses. -/
 

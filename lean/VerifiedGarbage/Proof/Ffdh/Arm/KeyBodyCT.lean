@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMainCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 
 /-! Key generation's public modulus gate and documented retry-status class
 account for every branch before native exponentiation. -/

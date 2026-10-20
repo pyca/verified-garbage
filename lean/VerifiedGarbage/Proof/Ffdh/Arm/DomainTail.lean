@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecks
-public import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 
 /-! A domain without q needs only the modulus and generator checks; with q,
 the order, divisibility, and subgroup checks run in native code. -/

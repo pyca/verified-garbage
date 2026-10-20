@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTail
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTail
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMatchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 
 /-! Private-key subgroup branches depend on the public value, followed by constant-time consistency checking. -/
 

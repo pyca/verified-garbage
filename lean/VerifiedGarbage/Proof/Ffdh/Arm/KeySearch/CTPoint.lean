@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 
 /-! The public point of a native search: descriptor, consumed bytes,
 retry budgets, and disclosed attempt statuses still to come. -/

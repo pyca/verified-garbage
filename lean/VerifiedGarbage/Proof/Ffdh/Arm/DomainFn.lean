@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntry
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntry
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The native domain check, from its entry through AAPCS restoration. -/
 

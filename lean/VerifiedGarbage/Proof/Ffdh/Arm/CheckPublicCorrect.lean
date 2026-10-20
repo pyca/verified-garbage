@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFn
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The native callable public check satisfies the shared FFDH result contract. -/
 

@@ -1,13 +1,17 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Ffdh.KeyScalar
 import VerifiedGarbage.Proof.Rsa.Octets
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 
 /-! The native attempt statuses and output encodings agree with the shared
 FFDH specification, using subgroup closure for generated powers. -/

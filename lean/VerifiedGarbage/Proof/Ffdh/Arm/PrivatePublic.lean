@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTail
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Native public-value range, subgroup, and private-key consistency checks. -/
 

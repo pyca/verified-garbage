@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 
 /-! Relate native validation branches through their public boolean result. -/
 

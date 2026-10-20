@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinish
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Native shared-secret exponentiation, range checking, export, and rejection masking. -/
 

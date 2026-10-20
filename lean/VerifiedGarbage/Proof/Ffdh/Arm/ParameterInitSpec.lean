@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInit
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInit
+import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import Init.Data.BitVec.BasicAux
+public import VerifiedGarbage.Spec.Ffdh.Generation
 
 /-! Relate the ARMv7 guard to the shared initialization specification. -/
 

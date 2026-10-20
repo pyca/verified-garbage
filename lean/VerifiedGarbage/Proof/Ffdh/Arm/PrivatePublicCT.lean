@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublic
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTailCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublic
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateTailCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 
 /-! The public half of private-key checking reveals no private scalar data. -/
 

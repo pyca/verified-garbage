@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareArgs
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Preserve the caller's arguments while preparing RSA's modulus slots. -/
 

@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyInit
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Ffdh.Generation
+import VerifiedGarbage.Proof.Ffdh.Arm.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.InitValues
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitStores
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Parameter-controller guards and initialization are native on ARMv7. -/
 

@@ -1,10 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTClassify
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
 
 /-! Retry-budget and entropy-room guards, and the next disclosed search point. -/
 

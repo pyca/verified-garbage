@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! The native fixed-width shared value implements the shared exchange operation. -/
 

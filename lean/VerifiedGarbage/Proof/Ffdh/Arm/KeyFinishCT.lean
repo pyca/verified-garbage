@@ -1,11 +1,15 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputsCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinishCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinishCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResultCT
 
 /-! Public-value export and final key masking have a fixed trace for every
 secret exponent and result flag. -/

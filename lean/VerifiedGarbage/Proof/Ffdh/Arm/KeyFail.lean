@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Out-of-range random scalars return retry status 2 and clear both encodings. -/
 

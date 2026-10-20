@@ -7,7 +7,6 @@ import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 meta import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 meta import VerifiedGarbage.Proof.Framework.RelCT

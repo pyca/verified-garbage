@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ZeroOutput
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ZeroOutput
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Clearing both outputs preserves the controller and all loop invariants. -/
 

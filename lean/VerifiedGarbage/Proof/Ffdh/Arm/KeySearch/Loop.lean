@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 
 /-! Total correctness of the bounded native FFDH key-search loop, composing
 the chosen backend's key-generation attempt. -/

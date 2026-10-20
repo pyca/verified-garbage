@@ -54,7 +54,7 @@ impl Domain {
         };
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
-        // Rust objects. The ADX variant is selected only when the CPU has
+        // Rust objects. The CPU variant is selected only when the CPU has
         // its generated feature set.
         let ok = unsafe {
             f(
@@ -85,7 +85,7 @@ impl Domain {
         };
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
-        // The ADX variant is selected only when the CPU has its generated
+        // The CPU variant is selected only when the CPU has its generated
         // feature set.
         unsafe {
             f(
@@ -168,7 +168,7 @@ impl Domain {
         // been passed to this function since, which keeps its words as the
         // contract's precondition needs; the domain was checked by
         // `vg_ffdh_check_domain`; `x` and `y` are `p_len` bytes and `ws`
-        // `16 p_len + 32` words. All are distinct Rust objects. The ADX
+        // `16 p_len + 32` words. All are distinct Rust objects. The CPU
         // variant is selected only when the CPU has its generated feature
         // set.
         let status = unsafe {

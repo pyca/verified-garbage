@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Framework.Offset

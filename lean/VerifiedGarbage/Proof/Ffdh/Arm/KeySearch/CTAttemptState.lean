@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 
 /-! Before allocation, after argument setup, and after a native key attempt,
 with the disclosed attempt-status sequence retained in the proof state. -/

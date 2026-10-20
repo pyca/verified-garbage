@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
-public import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
+import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Set up native entropy cutting and retain the significant scalar pointer. -/
 

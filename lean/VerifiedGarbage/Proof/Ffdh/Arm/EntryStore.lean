@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
+import VerifiedGarbage.Proof.Ffdh.Arm.StoreSlot
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Argument stores can precede installing the workspace pointer in r0. -/
 

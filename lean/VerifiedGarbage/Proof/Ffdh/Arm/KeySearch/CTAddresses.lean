@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Ffdh.Arm.RegistersCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
@@ -8,6 +8,10 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Fixed stack loads and controller stores preserve public control
 addresses while handling arbitrary secret register values. -/

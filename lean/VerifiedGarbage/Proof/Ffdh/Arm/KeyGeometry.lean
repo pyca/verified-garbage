@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-import VerifiedGarbage.Proof.Ffdh.Lead
-import VerifiedGarbage.Proof.Ffdh.KeyScalar
 
 /-! The public bound determines the fixed scalar mask and exponent width. -/
 

@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.DomainBodyCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainEntry
 
 /-! The callable domain check reveals only the public domain. -/
 

@@ -1,10 +1,15 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBranch
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
 
 /-! The native bounded loop's trace is determined by public descriptor,
 retry policy and disclosed attempt-status sequence. -/

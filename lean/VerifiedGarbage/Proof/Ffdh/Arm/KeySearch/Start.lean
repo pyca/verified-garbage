@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.InitialWords
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.PushedArguments
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Entry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.InitialWords
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.PushedArguments
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Entry
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 
 /-! The native entry code establishes the complete key-search loop invariant. -/
 

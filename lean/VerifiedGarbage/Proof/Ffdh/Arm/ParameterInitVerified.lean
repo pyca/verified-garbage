@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInitSpec
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Ffdh.Arm.InitCT
@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.Spec.Ffdh.GenerationContract
+public import Init.Data.BitVec.BasicAux
+public import Init.Data.List.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Init
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterInit
 
 /-! Native parameter initialization implements the shared FFDH ABI. -/
 

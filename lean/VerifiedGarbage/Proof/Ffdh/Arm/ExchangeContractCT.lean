@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFnCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFnCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangePre
 
 /-! The shared exchange timing policy is satisfied even when private values and statuses differ. -/
 

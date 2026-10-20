@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 
 /-! AAPCS key generation from caller-provided entropy with native rejection. -/
 

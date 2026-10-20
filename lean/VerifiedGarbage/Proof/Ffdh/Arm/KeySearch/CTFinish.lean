@@ -1,12 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The native return path uses public control/output/stack addresses;
 its consumed-byte count and saved register values do not affect timing. -/

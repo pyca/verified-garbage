@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFinishCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
@@ -9,6 +9,10 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Output
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Shared-secret computation uses the same window and masking trace for distinct private scalars. -/
 

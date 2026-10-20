@@ -1,9 +1,16 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTEntry
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFinish
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFinish
 import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLoop
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Loop
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
 
 /-! Native entry, bounded key search, result stores, and saved-register
 frame compose without timing dependence beyond the disclosed search policy. -/

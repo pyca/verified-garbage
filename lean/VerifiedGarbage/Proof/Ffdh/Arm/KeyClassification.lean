@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySpec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 
 /-! Status 2 discloses exactly scalar rejection, including for unchecked
 parameter encodings; no other secret classification is needed for timing. -/

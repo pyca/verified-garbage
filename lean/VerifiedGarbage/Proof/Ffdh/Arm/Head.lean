@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainPointers
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainPointers
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
 /-! Public modulus validation precedes every native FFDH operation. -/
 

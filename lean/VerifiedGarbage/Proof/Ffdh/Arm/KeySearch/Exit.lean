@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Exhaustion and entropy requests return zero outputs and exact policy words. -/
 

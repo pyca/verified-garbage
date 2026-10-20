@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 import VerifiedGarbage.Proof.Bignum.Arm.CopyRegion
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 /-! Copy the possibly empty suffix after a key scalar's masked leading byte. -/
 

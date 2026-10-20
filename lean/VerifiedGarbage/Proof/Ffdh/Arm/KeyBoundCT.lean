@@ -1,14 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+meta import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 
 /-! The complete bound selection, scan, and saved mask have public traces. -/
 

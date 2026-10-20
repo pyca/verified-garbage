@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePre
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePre
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateFn
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Native callable imported-private-key validation satisfies the shared FFDH result contract. -/
 

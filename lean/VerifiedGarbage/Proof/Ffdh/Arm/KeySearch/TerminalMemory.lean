@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+import VerifiedGarbage.Proof.Mont.Words
 
 /-! Packed controller-word effects of finishing or requesting entropy. -/
 

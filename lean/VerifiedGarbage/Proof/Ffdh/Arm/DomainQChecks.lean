@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
-public import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRange
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainDivides
+import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Native subgroup-order validation, divisibility, and generator subgroup membership. -/
 

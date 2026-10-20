@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
-public import VerifiedGarbage.Proof.Ffdh.Arm.QTest
+import VerifiedGarbage.Proof.Ffdh.Arm.Subgroup
+import VerifiedGarbage.Proof.Ffdh.Arm.QTest
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! The optional subgroup check of an imported public value. -/
 

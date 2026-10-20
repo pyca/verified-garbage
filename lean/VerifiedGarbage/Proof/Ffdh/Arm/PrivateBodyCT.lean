@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 
 /-! Imported private-key checking reveals only public inputs and its documented scalar validity class. -/
 

@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainPre
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainPre
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainSpec
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.DomainFn
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The callable domain check implements the shared FFDH parameter contract. -/
 

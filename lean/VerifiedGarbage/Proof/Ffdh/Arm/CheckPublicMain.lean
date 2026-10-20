@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicTail
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Complete native range and subgroup checks of an imported public value. -/
 

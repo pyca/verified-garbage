@@ -1,15 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
-public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
+import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ExportResult
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticExternal
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
 
 /-! Generate a public value with RSA's fixed-window secret exponentiation and
 finish both key encodings with a branch-free validity mask. -/

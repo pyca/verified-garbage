@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.DomainFn
-public import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! The shared domain signature supplies the complete native frame and buffers. -/
 

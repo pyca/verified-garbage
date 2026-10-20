@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
-import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Regions of a key-generation call nested inside the retry controller. -/

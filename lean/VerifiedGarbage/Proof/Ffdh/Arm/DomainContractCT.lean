@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainFnCT
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainFnCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainPre
 
 /-! The native parameter checker satisfies the shared timing policy. -/
 

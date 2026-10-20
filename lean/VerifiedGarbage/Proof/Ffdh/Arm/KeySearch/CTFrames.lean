@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+public import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Reserving and releasing the nested attempt's argument frame adds no
 memory accesses to its body's trace. -/

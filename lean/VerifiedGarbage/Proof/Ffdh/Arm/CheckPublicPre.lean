@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFn
-public import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
+public import Init.Data.BitVec.BasicAux
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 
 /-! The shared signature supplies the native public-check frame and buffers. -/
 

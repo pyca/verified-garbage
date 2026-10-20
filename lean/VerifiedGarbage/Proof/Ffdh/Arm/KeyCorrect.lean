@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPre
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySpec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPre
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFn
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 
 /-! The complete callable key-generation attempt satisfies the shared contract. -/
 

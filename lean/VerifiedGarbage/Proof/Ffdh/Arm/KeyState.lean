@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
-public import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
+import VerifiedGarbage.Proof.Ffdh.Arm.ImportAt
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 
 /-! Native key-generation states used to compose functional and timing proofs. -/
 

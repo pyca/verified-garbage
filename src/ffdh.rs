@@ -362,6 +362,10 @@ mod tests {
         let (mut x, mut y) = (vec![0xa5; 64], vec![0x5a; 64]);
         let mut state = domain.key_state();
         assert_eq!(&state[..4], &[128, 128, 64, 64]);
+        // Only the budgets and width constrain a call. The incoming
+        // request and private controller workspace may hold arbitrary
+        // u64 words, including nonzero upper halves on a 32-bit target.
+        state[3..].fill(u64::MAX);
         assert_eq!(
             domain.key_search(&mut state, &tape, &mut x, &mut y),
             (1, 192, 0)
@@ -373,6 +377,7 @@ mod tests {
         // consumed, and the controller asks for one attempt's bytes again,
         // with the scalar budget one smaller.
         let mut state = domain.key_state();
+        state[3..].fill(u64::MAX);
         let (status, used, request) = domain.key_search(&mut state, &tape[..100], &mut x, &mut y);
         assert_eq!((status, used, request), (0, 64, 64));
         assert_eq!(&state[..4], &[128, 127, 64, 64]);

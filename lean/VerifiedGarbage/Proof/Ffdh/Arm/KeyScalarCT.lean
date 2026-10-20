@@ -1,13 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCutCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarArgs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBoundCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarArgs
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBound
 
 /-! The complete scalar sampler leaks only the public domain bound and buffer layout. -/
 

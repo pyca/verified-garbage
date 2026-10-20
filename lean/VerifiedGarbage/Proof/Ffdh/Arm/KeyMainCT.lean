@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyState
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyState
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailCT
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! The only secret-dependent key-generation branch is scalar acceptance,
 whose classification is disclosed by the attempt's returned status. -/

@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
 /-! Array 7's pointer is public even when its low word is secret. -/
 

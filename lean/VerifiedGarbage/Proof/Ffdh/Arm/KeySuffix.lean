@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroOptional
 public import VerifiedGarbage.Proof.Ffdh.Arm.CopyOptional
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyGeometry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory

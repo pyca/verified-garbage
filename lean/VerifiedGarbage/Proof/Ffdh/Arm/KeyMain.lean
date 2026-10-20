@@ -1,15 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySample
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTail
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMain
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalar
 
 /-! One key-generation attempt runs sampling, scalar validation, windowed
 exponentiation, and output rejection entirely in native ARMv7 code. -/

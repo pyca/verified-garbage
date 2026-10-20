@@ -1,15 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Checks
+import VerifiedGarbage.Proof.Ffdh.Arm.Checks
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareCT
-import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConstCT
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.Checks
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
 /-! The comparison helpers share RSA's fixed-width constant-time arithmetic. -/
 

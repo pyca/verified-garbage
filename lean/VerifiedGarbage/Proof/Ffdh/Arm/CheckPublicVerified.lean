@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicContractCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicContractCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -11,6 +11,9 @@ import Mathlib.Util.CompileInductive
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Ffdh.Contract
 meta import VerifiedGarbage.TCB.Arm.Target
+public import Init.Core
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
 
 /-! The native ARMv7 public check is verified against the shared FFDH API. -/
 

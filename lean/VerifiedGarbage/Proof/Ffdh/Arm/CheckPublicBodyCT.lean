@@ -1,12 +1,15 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicMainCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! The public-value body has a trace determined by its documented public inputs. -/
 

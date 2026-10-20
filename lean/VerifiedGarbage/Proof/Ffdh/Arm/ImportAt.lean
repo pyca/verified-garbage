@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.ImportOperand
 import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! Operand import from the saved public FFDH pointer and length. -/
 

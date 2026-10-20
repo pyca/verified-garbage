@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Start
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Loop
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Start
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Loop
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Finish
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The full native ARMv7 key search satisfies the shared result contract. -/
 

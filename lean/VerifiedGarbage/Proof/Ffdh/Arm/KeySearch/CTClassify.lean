@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttempt
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLeaf
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Classify
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAttemptState
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
+public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
 
 /-! Native classification branches depend only on the disclosed attempt
 status, with no additional dependence on the private scalar or public value. -/
@@ -26,7 +35,7 @@ def KeyGuard (k : Nat) (q : KeyPoint) (s : State) : Prop :=
     isa.eval .eq s = some (decide (q.status = k)) ∧ q.status < 4
 
 private theorem first_ready (q : KeyPoint) (s : State) (h : KeyAttempted q s) :
-    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.advance ++ [.cmp .r9 (.imm 1)])) s (KeyGuard 1 q) := by
+    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.advance ++ ([.cmp .r9 (.imm 1)] : List Instr))) s (KeyGuard 1 q) := by
   obtain ⟨original, live, statuses, keys, scalars, room, post⟩ := h
   have disclosed := attempt_status live statuses keys scalars room
   have small : q.status < 4 := by

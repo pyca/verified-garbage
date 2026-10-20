@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Covers
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 
 /-! The selected attempt can narrow permissions to its buffers and arguments;
 its stack writes remain below the controller's saved registers. -/

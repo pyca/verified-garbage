@@ -1,14 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFinish
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFail
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyArgsCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.MaskBytesCT
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyClear
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyMask
 
 /-! Clearing and masking complete key encodings never branches on their contents
 or the saved secret result flag. -/

@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecks
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainQChecks
 public import VerifiedGarbage.Proof.Ffdh.Arm.SubgroupCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainQRangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainDividesCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 
 /-! Order validation branches only on the documented public domain values. -/
 

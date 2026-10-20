@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The caller's nine ARM stack arguments are read above the saved search
 frame and remain separate from the controller workspace. -/

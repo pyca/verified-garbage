@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublicCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMain
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePublicCT
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ImportAtCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FlagCT
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateState
+import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 
 /-! Imported private-key validation branches on the scalar validity class disclosed by its status. -/
 

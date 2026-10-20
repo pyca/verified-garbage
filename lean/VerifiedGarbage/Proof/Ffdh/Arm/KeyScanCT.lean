@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanStep
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanStep
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+meta import VerifiedGarbage.Proof.Ffdh.Arm.Octets
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
+meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyScanBlocks
 
 /-! The bound scan's addresses and branches depend only on the public bound
 bytes and their length. Every continuing step decreases that public length. -/

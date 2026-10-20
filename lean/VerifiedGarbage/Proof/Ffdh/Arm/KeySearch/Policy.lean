@@ -1,10 +1,17 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.TerminalMemory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.TerminalMemory
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 
 /-! Native 32-bit writes encode the shared four-u64 search policy exactly. -/
 

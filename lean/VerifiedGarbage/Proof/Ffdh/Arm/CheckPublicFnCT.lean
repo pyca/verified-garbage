@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBodyCT
 import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicEntry
 
 /-! The complete callable public check reveals only public FFDH inputs. -/
 

@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarRange
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpperCT
 import VerifiedGarbage.Proof.Ffdh.Arm.ValueChecksCT
 import VerifiedGarbage.Proof.Ffdh.Arm.EqualCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 
 /-! The full scalar range check is constant time in the imported scalar. -/
 

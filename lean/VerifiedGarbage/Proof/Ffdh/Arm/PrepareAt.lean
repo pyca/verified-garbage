@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
 
 /-! Native modulus setup composes the FFDH frame with RSA's fast arithmetic. -/
 

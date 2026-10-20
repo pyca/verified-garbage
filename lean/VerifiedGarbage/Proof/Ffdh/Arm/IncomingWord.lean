@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
-public import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Public incoming argument words survive writes to the native local frame. -/
 

@@ -142,16 +142,25 @@ theorem withAllRest {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa 
   exact ⟨trace, t, run, done,
     (by intro r hr; exact False.elim (hr (by cases r <;> decide))), perms.1, perms.2.1, perms.2.2⟩
 
+theorem encodable_byte {v : BitVec 32} (h : v.toNat < 256) : encodable v = true := by
+  unfold encodable
+  apply List.any_eq_true.mpr
+  refine ⟨0, by decide, ?_⟩
+  simpa [BitVec.toNat_rotateLeft, Nat.mod_eq_of_lt v.isLt,
+    Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt v.isLt] using h
+
 tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   apply WP.of_runBlock
   set_option linter.unusedSimpArgs false in
-  simp (config := { decide := true }) (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil,
+  simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil,
     mov_exec, movw_exec, mul_exec, add_exec, cmp_exec, subs_exec, adc_exec, logic_exec, str_exec, ldr_exec, ldrb_exec, strb_exec, ldrSp_exec, addSp_exec, Op2.eval,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     gpr_subFlags, mem_subFlags, c_subFlags, z_subFlags, RegUpd.c_setReg,
     gpr_putMem, mem_putMem, wr_putMem, rd_putMem, sp_putMem, z_putMem,
     RegUpd.sp_setReg, RegUpd.z_setReg, gpr_mem, mem_mem, wr_mem, rd_mem, sp_mem, z_mem,
     Option.map_some, Option.some.injEq, exists_eq_left',
-    ite_true, ite_false, reduceCtorEq, true_and, and_true, $ls,*]))
+    ite_true, ite_false, reduceCtorEq, true_and, and_true, encodable_byte,
+    Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul,
+    BitVec.reduceSub, BitVec.reduceBEq, BitVec.reduceHShiftLeft, BitVec.reduceEq, decide_true, decide_false, $ls,*]))
 
 end VG.Proof.Ffdh.Arm

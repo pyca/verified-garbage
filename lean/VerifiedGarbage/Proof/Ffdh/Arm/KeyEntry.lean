@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.IncomingWord
 public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! Retain the key-generation ABI's domain, entropy, and two output pointers. -/
 

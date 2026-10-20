@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.FrameCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarCT
 
 /-! The callable key-generation attempt reveals only its public domain and
 buffer layout and the scalar-acceptance class documented by its status. -/

@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Incoming
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Framework.Arm.Frame
-import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 
 /-! The 24-byte ARM key-search frame saves exactly the registers its body
 needs to restore, with one padding word maintaining AAPCS alignment. -/

@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFnCT
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicFnCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicPre
 
 /-! The native public check has the timing policy of the shared FFDH signature. -/
 

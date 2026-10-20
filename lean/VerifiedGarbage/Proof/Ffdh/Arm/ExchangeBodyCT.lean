@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! Invalid-domain handling and the shared-secret body reveal no private scalar data. -/
 

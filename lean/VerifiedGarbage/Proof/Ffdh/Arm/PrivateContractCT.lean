@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateCorrect
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateFnCT
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateCorrect
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateFnCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Bignum.Octets
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivatePre
+import VerifiedGarbage.Proof.Ffdh.Arm.PrivateSpec
+import VerifiedGarbage.Proof.Ffdh.Arm.ScalarUpper
 
 /-! Imported private-key checking satisfies the shared timing policy, including its status leakage. -/
 

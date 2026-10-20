@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! Comparisons of the three public key-attempt statuses. -/
 

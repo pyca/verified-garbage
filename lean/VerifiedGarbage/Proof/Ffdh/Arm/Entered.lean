@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
 
 /-! The local and saved-register frames sit inside the ABI's 128-byte reservation. -/
 

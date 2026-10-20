@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Frame
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 

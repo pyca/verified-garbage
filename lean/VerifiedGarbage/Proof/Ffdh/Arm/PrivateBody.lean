@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrivateMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
 public import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicBody
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The complete imported-private-key body, including invalid public moduli. -/
 

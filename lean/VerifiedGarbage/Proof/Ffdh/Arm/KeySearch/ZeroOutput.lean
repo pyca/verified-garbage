@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
-public import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
+import VerifiedGarbage.Proof.Ffdh.Arm.ZeroBuffer
 public import VerifiedGarbage.Proof.Ffdh.Arm.Output
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.Block
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! The native retry controller clears rejected or incomplete outputs. -/
 

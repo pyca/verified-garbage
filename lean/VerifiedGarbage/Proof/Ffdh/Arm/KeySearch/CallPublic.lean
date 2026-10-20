@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 
 /-! At equal public search positions, the selected attempt sees equal
 public arguments, domain bytes, and its disclosed attempt status. -/

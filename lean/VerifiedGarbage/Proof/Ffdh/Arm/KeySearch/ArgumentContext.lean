@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! The argument frame can be filled without changing the selected domain,
 entropy-tape pointer, or register arguments. -/

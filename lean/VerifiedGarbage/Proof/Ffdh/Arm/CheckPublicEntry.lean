@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.EntryStore
 import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 import VerifiedGarbage.Proof.Bignum.Arm.Stack
 import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! The imported-public-value ABI arguments are retained in native locals. -/
 

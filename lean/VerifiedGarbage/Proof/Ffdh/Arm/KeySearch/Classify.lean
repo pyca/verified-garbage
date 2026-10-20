@@ -1,10 +1,17 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Update
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Update
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Outputs
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
 
 /-! Composition of entropy consumption with acceptance and the two kinds of rejection. -/
 
@@ -21,7 +28,7 @@ abbrev KeyClassified (p : KeyPublic) (original : State) (used keys scalars : Nat
 theorem classify_head {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (post : AttemptPost p original used s) :
-    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.advance ++ [.cmp .r9 (.imm 1)])) s fun t =>
+    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.advance ++ ([.cmp .r9 (.imm 1)] : List Instr))) s fun t =>
       KeyLive p original (used + p.len) keys scalars t ∧
       t.z = decide (currentStatus p original used = 1) ∧
       t.gpr .r9 = BitVec.ofNat 32 (currentStatus p original used) ∧

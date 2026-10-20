@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainMainCT
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainBody
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainMainCT
 import VerifiedGarbage.Proof.Ffdh.Arm.HeadCT
 import VerifiedGarbage.Proof.Ffdh.Arm.BranchCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! The complete domain-validation body's trace depends only on the public domain. -/
 

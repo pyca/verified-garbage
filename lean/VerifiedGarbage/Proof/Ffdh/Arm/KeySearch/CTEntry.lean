@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAddresses
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLoop
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Push
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTAddresses
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTLoop
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Correct
 import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTBase
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
+import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.PushedArguments
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Start
 
 /-! The native entry has public stack/control addresses, even though it
 saves arbitrary incoming register values in the outer frame. -/

@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyCut
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyCut
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyOutputs
-public import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyByteCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Impl.Ffdh.Arm.GenerateKey
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyFirstRetained
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrefix
 
 /-! Entropy cutting uses the same public prefix and suffix lengths for different
 secret tapes; no secret byte determines an address or loop count. -/

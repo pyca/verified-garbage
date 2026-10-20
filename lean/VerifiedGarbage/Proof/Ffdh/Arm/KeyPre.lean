@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyFn
-public import VerifiedGarbage.Proof.Ffdh.Arm.Entered
+import VerifiedGarbage.Proof.Ffdh.Arm.Entered
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+public import Init.Data.BitVec.BasicAux
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.Arm.Target
 
 /-! The shared key-generation signature supplies native entropy and writable key buffers. -/
 

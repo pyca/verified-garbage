@@ -1,10 +1,13 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyMain
-public import VerifiedGarbage.Proof.Ffdh.Arm.Head
+import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyScalarSpec
 
 /-! The native key-generation body is safe for every domain encoding and
 returns the specified key-generation result for valid public moduli. -/
