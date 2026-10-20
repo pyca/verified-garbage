@@ -1,7 +1,6 @@
 module
 public import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Impl.CmacAes.X86_64
-import VerifiedGarbage.Impl.CmacAes.X86_64.AesNi
 
 
 /-!

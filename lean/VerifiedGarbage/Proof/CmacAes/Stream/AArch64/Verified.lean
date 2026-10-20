@@ -12,7 +12,6 @@ public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 meta import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
