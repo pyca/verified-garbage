@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
+public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 
 /-!
 # A candidate for a prime of an RSA key on ARMv7
@@ -369,17 +370,11 @@ def sigMasks : List Instr :=
     .dp .orr .r4 .r4 (.reg .r2), .str .r4 .r8 sS2, .str .r2 .r8 sS3]
 
 /-- `r2 := r2 << 2^j` if bit `j` of `r1` is set (`r3`, `r4` scratch). -/
-def powStep (j : Nat) : List Instr :=
-  (if j = 0 then [.dp .and .r3 .r1 (.imm 1)] else [.mov .r3 (.shifted .r1 .lsr j), .dp .and .r3 .r3 (.imm 1)]) ++
-  [.mov .r4 (.imm 0), .dp .sub .r3 .r4 (.reg .r3), .mov .r4 (.shifted .r2 .lsl (2 ^ j)),
-    .dp .eor .r4 .r4 (.reg .r2), .dp .and .r4 .r4 (.reg .r3), .dp .eor .r2 .r2 (.reg .r4)]
+def powStep (j : Nat) : List Instr := TwoPower.step j
 
 /-- `2^(t mod 64)` as the slots `sLo` and `sHi`. -/
 def powWord : List Instr :=
-  [.ldr .r1 .r8 sTc, .dp .and .r1 .r1 (.imm 63), .mov .r2 (.imm 1)] ++ powStep 0 ++ powStep 1 ++ powStep 2 ++
-  powStep 3 ++ powStep 4 ++
-  [.mov .r3 (.shifted .r1 .lsr 5), .dp .and .r3 .r3 (.imm 1), .mov .r4 (.imm 0), .dp .sub .r3 .r4 (.reg .r3),
-    .dp .and .r3 .r2 (.reg .r3), .dp .eor .r2 .r2 (.reg .r3), .str .r2 .r8 sLo, .str .r3 .r8 sHi]
+  [.ldr .r1 .r8 sTc] ++ TwoPower.code ++ [.str .r2 .r8 sLo, .str .r3 .r8 sHi]
 
 /-- `[aEx]` halved if the slot `sl` holds 1. -/
 def halfIf (sl : Nat) : List (Prog isa) :=
