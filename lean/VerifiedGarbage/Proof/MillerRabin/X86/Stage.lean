@@ -24,4 +24,20 @@ theorem Stage.mono {g : Geometry} {capacity c : Nat} {p : BitVec 32}
     (slots : ∀ d ∈ Ds', d ∈ Ds ∧ V d = V' d) : Stage g capacity c p A' Js' V' Ds' s :=
   ⟨S.data.mono arrays slots, S.modulus, S.caller, fun j mem => S.noScratch j (arrays j mem).1⟩
 
+theorem Stage.keepMem {g : Geometry} {capacity c : Nat} {p : BitVec 32}
+    {A : Nat → Nat} {Js : List Nat} {V : Nat → BitVec 32} {Ds : List Nat} {s t : State}
+    (S : Stage g capacity c p A Js V Ds s) {regs : List Reg} (K : VG.Proof.Mont.X86.Keeps regs s t)
+    (base : .edi ∉ regs) (sp : .esp ∉ regs) (mem : t.mem = s.mem) : Stage g capacity c p A Js V Ds t := by
+  refine ⟨⟨S.data.context.keepMem K base mem, ?_, ?_⟩, ?_, ?_, S.noScratch⟩
+  · intro j known
+    rw [mem]
+    exact S.data.arrayValues j known
+  · intro d known
+    rw [mem]
+    exact S.data.slotValues d known
+  · rw [mem]; exact S.modulus
+  · apply S.caller.keepFrame K sp
+    rw [mem]
+    exact Frame.refl _ _
+
 end VG.Proof.MillerRabin.X86

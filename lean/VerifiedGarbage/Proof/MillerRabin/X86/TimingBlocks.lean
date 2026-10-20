@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 namespace VG.Proof.MillerRabin.X86
 open VG VG.X86 VG.Impl.MillerRabin.X86 VG.Proof.Dsa.X86
 
-/-- The round saves sixteen bytes and receives only two cdecl arguments.
-Saved registers and all workspace values remain secret. -/
+/-- Only explicitly listed registers and the stack pointer are public.
+Workspace metadata is republished from its correctness invariant after loads. -/
 def roundTaint (rs : List Reg := []) (flags : Bool := false) : VG.X86.Taint.T :=
-  { regs := .ofList (.esp :: rs), flags := flags, argLen := 12, stk := [some 16] }
+  { regs := .ofList (.esp :: rs), flags := flags }
 
 theorem squareFlag_relCT : RelCT isa (VG.X86.Taint.Agree (roundTaint [.edi]))
     (.block squareFlag) (VG.X86.Taint.Agree (roundTaint [.edi])) :=

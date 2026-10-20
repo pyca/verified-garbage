@@ -78,12 +78,14 @@ def wordStep (montName : String) (montCode : Prog isa) : Prog isa :=
 def initWindows : List Instr :=
   words ++ [.store (slot sWords) .esi, .mov .eax (.imm 0), .store (slot sFlag) .eax]
 
-/-- Fold the 64-bit power-of-two marker to four bits and derive 4-sigma.
-No branch depends on that marker or on the number of active final squares. -/
-def lastSquares : List Instr :=
+/-- Address the marker immediately after the exponent's native words. -/
+def markerPointer : List Instr :=
   ptr .ebp aExponent ++ words ++ [.mov .eax (.reg .esi), .alu .add .eax (.reg .eax),
-    .alu .add .eax (.reg .eax), .alu .add .ebp (.reg .eax), .mov .eax (.mem (at_ .ebp 0)),
-    .alu .or .eax (.mem (at_ .ebp 4)),
+    .alu .add .eax (.reg .eax), .alu .add .ebp (.reg .eax)]
+
+/-- Fold the two marker halves and derive 4-sigma without a secret branch. -/
+def markerCalc : List Instr :=
+  [.mov .eax (.mem (at_ .ebp 0)), .alu .or .eax (.mem (at_ .ebp 4)),
     .mov .edx (.reg .eax), .shift .shr .edx 16, .alu .or .eax (.reg .edx),
     .mov .edx (.reg .eax), .shift .shr .edx 8, .alu .or .eax (.reg .edx),
     .mov .edx (.reg .eax), .shift .shr .edx 4, .alu .or .eax (.reg .edx),
@@ -91,13 +93,20 @@ def lastSquares : List Instr :=
     .mov .ebx (.reg .eax), .shift .shr .ebx 2, .alu .and .ebx (.imm 1),
     .shift .shr .eax 3, .alu .and .eax (.imm 1),
     .alu .add .eax (.reg .edx), .alu .add .eax (.reg .edx), .alu .add .eax (.reg .edx),
-    .alu .add .eax (.reg .ebx), .alu .add .eax (.reg .ebx), .store (slot sThreshold) .eax,
+    .alu .add .eax (.reg .ebx), .alu .add .eax (.reg .ebx)]
+
+/-- Three final squarings use the secret threshold derived from the marker. -/
+def lastSquares : List Instr :=
+  markerPointer ++ markerCalc ++ [.store (slot sThreshold) .eax,
     .mov .eax (.imm 3), .store (slot sSquares) .eax]
 
-def body (montName : String) (montCode : Prog isa) : Prog isa :=
-  seqs [.block [.mov .edi (.mem (at_ .esp 20))], table montName montCode, copy aY aOne,
-    .block initWindows, .loop (wordStep montName montCode) .ne, .block lastSquares,
+def core (montName : String) (montCode : Prog isa) : Prog isa :=
+  seqs [table montName montCode, copy aY aOne, .block initWindows,
+    .loop (wordStep montName montCode) .ne, .block lastSquares,
     squareLoop montName montCode, .block [.mov .eax (.mem (slot sFlag))]]
+
+def body (montName : String) (montCode : Prog isa) : Prog isa :=
+  .seq (.block [.mov .edi (.mem (at_ .esp 20))]) (core montName montCode)
 
 def code (montName : String) (montCode : Prog isa) : Prog isa :=
   .frame (.push [.ebx, .ebp, .esi, .edi])

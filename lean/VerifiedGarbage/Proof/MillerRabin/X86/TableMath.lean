@@ -67,4 +67,12 @@ theorem tableValues_initial (A : Nat → Nat) (c w j : Nat) (known : j ∈ table
   simp only [List.mem_cons, List.not_mem_nil, or_false] at known
   rcases known with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
+theorem tableValues_power (A : Nat → Nat) (c w : Nat) {j : Nat} (digit : j < 16) :
+    tableValues A c w 14 (aTable + j) = Word32.tp c w (A aX) (A aOne) j := by
+  unfold tableValues
+  rw [ite_eq_right (by unfold aTable aY; omega : aTable + j ≠ aY),
+    ite_eq_left (by omega : aTable ≤ aTable + j ∧ aTable + j < aTable + 14 + 2)]
+  congr 1
+  omega
+
 end VG.Proof.MillerRabin.X86
