@@ -3,9 +3,7 @@ module
 public import VerifiedGarbage.Impl.P384.Linear
 public import VerifiedGarbage.Proof.P384.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.RowInit
-import VerifiedGarbage.Proof.Mont.AArch64.Round
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
