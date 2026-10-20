@@ -29,6 +29,10 @@ def CallGeometry.buffer (g : CallGeometry) (i : Nat) : Region :=
 def CallGeometry.writes (g : CallGeometry) : List Region :=
   [⟨g.base, g.size⟩, g.buffer 0, g.buffer 2, g.buffer 4]
 
+/-- What the body writes: the working space but its saved registers, and the outputs. -/
+def bodyWrites (g : CallGeometry) : List Region :=
+  [⟨off g.base 16, g.size - 16⟩, g.buffer 0, g.buffer 2, g.buffer 4]
+
 structure Inputs (g : CallGeometry) (s : State) : Prop where
   ws : Ws s g.base g.size (2 * g.n) nArr
   lower : 8 ≤ g.n

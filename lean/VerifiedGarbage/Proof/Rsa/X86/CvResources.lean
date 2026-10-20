@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
-public import VerifiedGarbage.Proof.Rsa.X86.CvBody
+public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 import VerifiedGarbage.Proof.Dsa.X86.ABIResources
 import VerifiedGarbage.Proof.Framework.Offset
@@ -54,8 +54,11 @@ theorem ABI.stackApart {s : State} (a : ABI s) {i : Nat} (hi : i < 16)
   rw [p, z]
   exact Offset.sub _ (by omega) (by omega)
 
-theorem ABI.lengths_ok {s : State} (a : ABI s) : Lengths (caller s) :=
+theorem ABI.lengths_ok {s : State} (a : ABI s) : VG.Proof.Rsa.X86.CrtValuesRt.Lengths (caller s) :=
   ⟨a.lengths.1, a.lengths.2, rfl, a.pSmall, a.qSmall,
-    BitVec.eq_of_toNat_eq a.dpLen, BitVec.eq_of_toNat_eq a.dqLen, BitVec.eq_of_toNat_eq a.qiLen⟩
+    BitVec.eq_of_toNat_eq a.dpLen, BitVec.eq_of_toNat_eq a.dqLen, BitVec.eq_of_toNat_eq a.qiLen, by
+      apply BitVec.eq_of_toNat_eq
+      simp only [caller, argumentPointer, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+      rw [Nat.mod_eq_of_lt (Nat.lt_trans (arg s 14).isLt (by decide)), Nat.mod_eq_of_lt (arg s 14).isLt]⟩
 
 end VG.Proof.Rsa.X86.CrtValues

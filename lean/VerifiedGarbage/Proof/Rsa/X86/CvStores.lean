@@ -18,9 +18,6 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.CrtValues
 open VG.Proof.Rsa.X86.Keys
 
-def bodyWrites (g : CallGeometry) : List Region :=
-  [⟨off g.base 16, g.size - 16⟩, g.buffer 0, g.buffer 2, g.buffer 4]
-
 theorem storeFrame_body {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) (i : Fin 3)
     {j : Nat} (hj : j < nArr)
     (f : Frame [⟨off g.base (arr (2 * g.n) j), S (2 * g.n)⟩, g.buffer (2 * i.val)] m m') :

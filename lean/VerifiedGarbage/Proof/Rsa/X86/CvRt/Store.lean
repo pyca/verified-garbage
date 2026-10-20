@@ -29,7 +29,7 @@ open VG.Impl.Rsa.X86.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD a
 open VG.Impl.Rsa.X86.CrtValuesRt
 open VG.Proof.Rsa.X86.Keys (Ws Keep arr num S slot ranges wp_seqs_cons)
 open VG.Proof.Rsa.X86.KeyRt
-open VG.Proof.Rsa.X86.CrtValues (CallGeometry Inputs inputBytes)
+open VG.Proof.Rsa.X86.CrtValues (CallGeometry Inputs inputBytes bodyWrites)
 
 theorem output_word {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) (i : Fin 3)
     (f : Frame [g.buffer (2 * i.val)] m m') {d : Nat} (bound : d + 4 ≤ g.size) :
@@ -157,9 +157,6 @@ theorem store_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths 
   · intro k hk ne
     rw [output_num h len i Fb hk]
     exact ku.num (by simpa using Ne.symm ne) (by simp) (r.ws.fit64 hk)
-
-def bodyWrites (g : CallGeometry) : List Region :=
-  [⟨off g.base 16, g.size - 16⟩, g.buffer 0, g.buffer 2, g.buffer 4]
 
 theorem storeFrame_body {g : CallGeometry} {s : State} {m m' : Mem} (h : Inputs g s) (len : Lengths g) (i : Fin 3)
     {j : Nat} (hj : j < nArr)

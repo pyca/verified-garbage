@@ -39,6 +39,11 @@ structure Lengths (g : CallGeometry) : Prop where
   lower : 64 ≤ (g.args 7).toNat
   upper : (g.args 7).toNat ≤ 1024
   width : g.n = Spec.Rsa.modulusWords (g.args 7).toNat
+  pSmall : (g.args 9).toNat < (g.args 7).toNat
+  qSmall : (g.args 11).toNat < (g.args 7).toNat
+  dpLen : g.args 1 = g.args 9
+  dqLen : g.args 3 = g.args 11
+  qiLen : g.args 5 = g.args 9
   scratch : g.args 14 = BitVec.ofNat 32 g.base.toNat
 
 theorem scratchFrame {g : CallGeometry} {s : State} {m : Mem} (h : Inputs g s)

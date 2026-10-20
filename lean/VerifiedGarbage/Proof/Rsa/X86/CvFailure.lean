@@ -1,5 +1,6 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.CvStores
+public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
 
 import VerifiedGarbage.Proof.Rsa.X86.CvClear
 import VerifiedGarbage.Proof.Rsa.X86.InvParts

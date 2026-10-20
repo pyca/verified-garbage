@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvSized
+public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
 import VerifiedGarbage.Proof.Rsa.CrtValuesMath
 import VerifiedGarbage.Proof.Bignum.Octets
 
@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.Octets
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum VG.Proof.Bignum.X86
+open VG.Proof.Rsa.X86.CrtValuesRt (ArithmeticPost encode arithmeticGeometry Geometry.M maskOf)
 
 def outputBuffers (g : CallGeometry) : List (Addr × Nat) :=
   [((g.buffer 0).base, (g.buffer 0).len), ((g.buffer 2).base, (g.buffer 2).len), ((g.buffer 4).base, (g.buffer 4).len)]
