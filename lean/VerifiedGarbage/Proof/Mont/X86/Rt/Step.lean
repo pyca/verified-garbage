@@ -45,23 +45,23 @@ theorem count_zf {x : BitVec 32} {N j : Nat} (hx : x.toNat = 4 * (N - j)) (hj : 
     simp at this
     omega
 
-/-- One step of a row. -/
-theorem mulStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N : Nat}
+/-- One step of a row, the multiplier at `[edi + mo]`. -/
+theorem mulStepAt_ok {mo : Nat} {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N : Nat}
     (hedi : PtrAt t W .edi S) (hecx : PtrAt t W .ecx (bx + 4 * j)) (hebp : PtrAt t W .ebp (w + 4 * j))
     (hesi : (t.gpr .esi).toNat = 4 * (N - j)) (hj : j < N)
-    (hm : S + multOff + 4 ≤ L) (hb : bx + 4 * j + 4 ≤ L) (ht : w + 4 * j + 4 ≤ L) :
-    WP isa (.block Rt.mulStep) t fun u =>
+    (hm : S + mo + 4 ≤ L) (hb : bx + 4 * j + 4 ≤ L) (ht : w + 4 * j + 4 ≤ L) :
+    WP isa (.block (Rt.mulStepAt mo)) t fun u =>
       u.mem = t.mem.writeW (off W (w + 4 * j)) (BitVec.ofNat 32
-        (w32 t.mem W (S + multOff) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat + w32 t.mem W (w + 4 * j))) ∧
-      (u.gpr .ebx).toNat = (w32 t.mem W (S + multOff) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
+        (w32 t.mem W (S + mo) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat + w32 t.mem W (w + 4 * j))) ∧
+      (u.gpr .ebx).toNat = (w32 t.mem W (S + mo) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
           w32 t.mem W (w + 4 * j)) / 2 ^ 32 ∧
       PtrAt u W .ecx (bx + 4 * (j + 1)) ∧ PtrAt u W .ebp (w + 4 * (j + 1)) ∧
       (u.gpr .esi).toNat = 4 * (N - (j + 1)) ∧
       u.zf = some (decide (j + 1 = N)) ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t u := by
   have hn := hw.nowrap
-  simp only [Rt.mulStep]
-  refine wp_movS (readSrc_ptr hw hedi (d := multOff) (by omega)) fun s₀ u₀ _ => ?_
+  simp only [Rt.mulStepAt]
+  refine wp_movS (readSrc_ptr hw hedi (d := mo) (by omega)) fun s₀ u₀ _ => ?_
   have hw₀ := hw.of_keeps u₀.keeps
   have hecx₀ : PtrAt s₀ W .ecx (bx + 4 * j) := by rw [PtrAt, u₀.other _ (by decide)]; exact hecx
   refine wp_movS (readSrc_ptr hw₀ hecx₀ (d := 0) (by omega)) fun s₁ u₁ _ => ?_
@@ -87,7 +87,7 @@ theorem mulStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N 
   have m₂' : s₂.mem = t.mem := by rw [m₂.mem, u₁.mem, u₀.mem]
   have m₄ : s₄.mem = t.mem := by rw [u₄.mem, u₃.mem, m₂']
   have m₆ : s₆.mem = t.mem := by rw [u₆.mem, u₅.mem, m₄]
-  have eax₁ : s₁.gpr .eax = t.mem.readW (off W (S + multOff)) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
+  have eax₁ : s₁.gpr .eax = t.mem.readW (off W (S + mo)) 32 := by rw [u₁.other _ (by decide), u₀.gpr]
   have eax₂ := m₂.eax
   have edx₂ := m₂.edx
   rw [eax₁, u₁.gpr, u₀.mem, Nat.add_zero] at eax₂ edx₂
@@ -103,16 +103,16 @@ theorem mulStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N 
   have edx₆ : s₆.gpr .edx = s₅.gpr .edx + 0 + (BitVec.ofBool _).setWidth 32 := u₆.gpr
   have eax₆ : s₆.gpr .eax = s₅.gpr .eax := u₆.other _ (by decide)
   have edx₅ : s₅.gpr .edx = s₄.gpr .edx := u₅.other _ (by decide)
-  have hpost := step_regs (t.mem.readW (off W (bx + 4 * j)) 32) (t.mem.readW (off W (S + multOff)) 32)
+  have hpost := step_regs (t.mem.readW (off W (bx + 4 * j)) 32) (t.mem.readW (off W (S + mo)) 32)
     (t.mem.readW (off W (w + 4 * j)) 32) (t.gpr .ebx) _ _ rfl rfl
   rw [Nat.mul_comm (t.mem.readW (off W (bx + 4 * j)) 32).toNat] at hpost
-  have ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off W (S + multOff)) 32).toNat *
+  have ex₆ : s₆.gpr .eax = BitVec.ofNat 32 ((t.mem.readW (off W (S + mo)) 32).toNat *
       (t.mem.readW (off W (bx + 4 * j)) 32).toNat) + t.mem.readW (off W (w + 4 * j)) 32 + t.gpr .ebx := by
     rw [eax₆, eax₅, ebx₄, eax₄, eax₃, eax₂]
   have dx₆ := edx₆
   rw [edx₅, edx₄, edx₃, edx₂, ebx₄, eax₄, eax₃, eax₂, m₂'] at dx₆
   simp only [Nat.add_zero] at dx₆
-  have hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem W (S + multOff) * w32 t.mem W (bx + 4 * j) +
+  have hx : s₆.gpr .eax = BitVec.ofNat 32 (w32 t.mem W (S + mo) * w32 t.mem W (bx + 4 * j) +
       (t.gpr .ebx).toNat + w32 t.mem W (w + 4 * j)) := by
     apply BitVec.eq_of_toNat_eq
     rw [ex₆, hpost.1, BitVec.toNat_ofNat, Nat.add_right_comm]
@@ -134,5 +134,22 @@ theorem mulStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N 
     rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
   · rw [PtrAt, u₁₁.other _ (by decide), ebp₁₀, ptr_add hebp 4]
     rw [show (4 : BitVec 32).toNat = 4 from rfl]; omega
+
+
+/-- One step of a row. -/
+theorem mulStep_ok {t : State} {W : Addr} {L : Nat} (hw : Ws t W L) {S bx w j N : Nat}
+    (hedi : PtrAt t W .edi S) (hecx : PtrAt t W .ecx (bx + 4 * j)) (hebp : PtrAt t W .ebp (w + 4 * j))
+    (hesi : (t.gpr .esi).toNat = 4 * (N - j)) (hj : j < N)
+    (hm : S + multOff + 4 ≤ L) (hb : bx + 4 * j + 4 ≤ L) (ht : w + 4 * j + 4 ≤ L) :
+    WP isa (.block Rt.mulStep) t fun u =>
+      u.mem = t.mem.writeW (off W (w + 4 * j)) (BitVec.ofNat 32
+        (w32 t.mem W (S + multOff) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat + w32 t.mem W (w + 4 * j))) ∧
+      (u.gpr .ebx).toNat = (w32 t.mem W (S + multOff) * w32 t.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
+          w32 t.mem W (w + 4 * j)) / 2 ^ 32 ∧
+      PtrAt u W .ecx (bx + 4 * (j + 1)) ∧ PtrAt u W .ebp (w + 4 * (j + 1)) ∧
+      (u.gpr .esi).toNat = 4 * (N - (j + 1)) ∧
+      u.zf = some (decide (j + 1 = N)) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] t u :=
+  mulStepAt_ok hw hedi hecx hebp hesi hj hm hb ht
 
 end VG.Proof.Mont.X86.Rt

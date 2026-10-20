@@ -88,6 +88,14 @@ def mulStep : List Instr :=
    .store (at_ .ebp 0) .eax, .mov .ebx (.reg .edx),
    .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]
 
+/-- `mulStep` with the multiplier at `[edi + mo]`. -/
+def mulStepAt (mo : Nat) : List Instr :=
+  [.mov .eax (.mem (sc mo)), .mov .edx (.mem (at_ .ecx 0)), .mul .edx,
+   .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0),
+   .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
+   .store (at_ .ebp 0) .eax, .mov .ebx (.reg .edx),
+   .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]
+
 /-- The carry `ebx` into the two words at `ebp`. -/
 def carryWords : List Instr :=
   [.mov .eax (.mem (at_ .ebp 0)), .alu .add .eax (.reg .ebx), .store (at_ .ebp 0) .eax,
