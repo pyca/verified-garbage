@@ -503,13 +503,13 @@ theorem long_crypted (enc : Bool) {s₀ : State} (hp : APre e s₀) {s : State} 
       exact ov₄ r hr h8 h9
     rw [vv₅, e4, v₃]; exact v₂ r hr
 
-theorem cryptStitched_ok (enc : Bool) (hse : (sve && enc) = false) {s₀ : State} (hp : APre e s₀)
+theorem cryptStitched_ok (enc : Bool) (he : enc = false) {s₀ : State} (hp : APre e s₀)
     {s : State} (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hr : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (cryptStitched sve enc) s fun u => ∃ T, Crypted enc s₀ s key msg T u := by
   unfold cryptStitched
-  rw [show afterBulk sve enc = .block (polyOut enc) by simp only [afterBulk, hse, Bool.false_eq_true,
+  rw [show afterBulk sve enc = .block (polyOut enc) by simp only [afterBulk, he, Bool.false_eq_true,
     ite_false]]
   refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
   apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)

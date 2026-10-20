@@ -229,16 +229,16 @@ theorem not_in {D : Addr} {a n k : Nat} (h : k < a ∨ a + n ≤ k) (hk : k < 2 
   omega
 
 /-- `Tail.rest`, after `T ≥ 1` chunks with a rest. -/
-theorem rest_ok {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {T : Nat}
+theorem rest_ok (sve : Bool) {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {T : Nat}
     (hc : Crypted true s₀ s key msg T u) (hT : 1 ≤ T) (hr : 512 * T < L s₀) :
-    WP isa Tail.rest u fun w => ∃ P, Sealed s₀ s key msg P (512 * T) w := by
+    WP isa (Tail.rest sve) u fun w => ∃ P, Sealed s₀ s key msg P (512 * T) w := by
   have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have wd := hp.wrap_d
   have pre_eq : pre true T = 512 * (T - 1) := rfl
   have oo : ∀ a b, off (cx s₀) a + BitVec.ofNat 64 b = off (cx s₀) (a + b) := fun a b => off_off _ a b
-  refine (WP.withSp (WP.preservedV (c := Tail.rest) (Q := fun w => ∃ P,
+  refine (WP.withSp (WP.preservedV (c := Tail.rest sve) (Q := fun w => ∃ P,
       (∀ r ∈ preservedV, (w.v r).extractLsb' 0 64 = (u.v r).extractLsb' 0 64) → w.sp = u.sp →
-        Sealed s₀ s key msg P (512 * T) w) ?_ (by lit_decide))).mono
+        Sealed s₀ s key msg P (512 * T) w) ?_ (by cases sve <;> lit_decide))).mono
     fun w ⟨⟨⟨P, hw⟩, vw⟩, spw⟩ => ⟨P, hw vw spw⟩
   unfold Tail.rest
   refine WP.seq ((load_ok hp hc hc.inv.x21).mono
@@ -262,7 +262,7 @@ theorem rest_ok {s₀ s u : State} (hp : APre true s₀) {key msg : List Byte} {
     · rw [rd₂', wr₂', x0₂, oo]; exact hp.in_ctx' (by lit_omega)
     · rw [rd₂', wr₂', x0₂, oo]; exact hp.in_ctx' (by lit_omega)
   have x20₂' : s₂.gpr .x20 = W := by rw [x20₂, hc.x22, pre_eq]
-  refine WP.seq ((kernel_ok x20₂' hin hw hst hrd a₂).mono
+  refine WP.seq ((kernel_ok sve x20₂' hin hw hst hrd a₂).mono
     fun s₃ ⟨ks₃, f₃, hv₃, h2₃, g₃, rd₃, wr₃, sp₃⟩ => ?_)
   have g₃' (r : Reg) (h1 : r ≠ .x1) (h4 : r ≠ .x4) (hp' : r ∉ Poly.regs) : s₃.gpr r = s₂.gpr r :=
     g₃ r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h4⟩) hp'
@@ -498,34 +498,29 @@ theorem wp_seq3 {a b c x : Prog isa} {s : State} {Q' Q : State → Prop}
   rw [WP.seq_iff] at ht ⊢
   exact ht.mono fun t' ht' => WP.seq (ht'.mono hx)
 
-/-- `cryptStitched` when encrypting, with or without SVE2. -/
+/-- `cryptStitched` when encrypting. -/
 theorem cryptStitchedSeal_ok (sve : Bool) {s₀ : State} (hp : APre true s₀) {s : State}
     (h : Inv s₀ s)
     (hst : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hr : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (cryptStitched sve true) s fun u => ∃ P A, Sealed s₀ s key msg P A u := by
-  cases sve with
-  | false =>
-    exact (cryptStitched_ok (sve := false) true rfl hp h hst hr).mono
-      fun u ⟨T, hc⟩ => ⟨_, _, hc.sealed⟩
-  | true =>
-    unfold cryptStitched afterBulk
-    simp only [Bool.and_self, ite_true]
-    refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
-    apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
-    · intro _
-      exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂).sealed⟩
-    · intro hs
-      refine wp_seq3 (long_crypted (sve := true) true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
-        (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
-      have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
-      refine WP.ite (decide (L s₀ - 512 * T = 0)) (by
-          rw [show isa.eval (.zero .x .x2) u = some (u.gpr .x2 == 0) from
-            VG.Proof.ChaCha20.AArch64.Xor.eval_zero u .x2, hc.x2,
-            VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun _ => ?_) (fun hz => ?_)
-      · exact WP.block_nil ⟨_, _, hc.sealed⟩
-      · have h₁ := of_decide_eq_false hz
-        have hle := hc.le
-        exact (rest_ok hp hc hT (by omega)).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
+  unfold cryptStitched afterBulk
+  simp only [ite_true]
+  refine WP.seq ((setup_ok hp h).mono fun s₂ ⟨m₂, x0₂, x1₂, x2₂, x3₂, x5₂, _, _, k₂, v₂⟩ => ?_)
+  apply WP.ite (decide (L s₀ < 512)) (VG.Proof.ChaCha20.AArch64.Mixed8.nonzero_short x5₂)
+  · intro _
+    exact WP.block_nil ⟨_, _, (short_crypted true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂).sealed⟩
+  · intro hs
+    refine wp_seq3 (long_crypted (sve := sve) true hp h hst hr m₂ x0₂ x1₂ x2₂ x3₂ k₂ v₂
+      (by have := of_decide_eq_false hs; omega)) fun u ⟨T, hT, hc⟩ => ?_
+    have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
+    refine WP.ite (decide (L s₀ - 512 * T = 0)) (by
+        rw [show isa.eval (.zero .x .x2) u = some (u.gpr .x2 == 0) from
+          VG.Proof.ChaCha20.AArch64.Xor.eval_zero u .x2, hc.x2,
+          VG.Proof.ChaCha20.AArch64.Xor.ofNat_beq_zero (by omega)]) (fun _ => ?_) (fun hz => ?_)
+    · exact WP.block_nil ⟨_, _, hc.sealed⟩
+    · have h₁ := of_decide_eq_false hz
+      have hle := hc.le
+      exact (rest_ok sve hp hc hT (by omega)).mono fun w ⟨P, hw⟩ => ⟨P, _, hw⟩
 
 end VG.Proof.ChaCha20Poly1305.AArch64.Tail
