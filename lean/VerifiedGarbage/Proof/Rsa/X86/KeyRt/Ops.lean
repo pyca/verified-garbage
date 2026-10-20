@@ -108,4 +108,87 @@ theorem copy_ok {s : State} (h : RtWs L s B Z len N) {o a : Nat} (ho : o < N) (h
   · simp only [num, ite_true, kk_false] at V ⊢; exact V
   · exact O.w32 (by simp only [kk_false]; omega) (by have := h.ws.workspace.nowrap; omega)
 
+open VG.Proof.Rsa.X86.Keys (slot) in
+/-- The mask of a header word zero or one: all ones where it is one. -/
+theorem mask_slot {s : State} (h : RtWs L s B Z len N) {sl : Nat} (hs : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr)
+    (bit : slot s.mem B sl ≤ 1) :
+    readSrc s (.mem (sc sl)) = some (BitVec.ofNat 32 (slot s.mem B sl)) ∧
+      (0 - BitVec.ofNat 32 (slot s.mem B sl) = cmask (decide (slot s.mem B sl ≠ 0))) ∧
+      (BitVec.ofNat 32 (slot s.mem B sl) - 1 = cmask (decide (slot s.mem B sl = 0))) := by
+  have := h.ws.hdr_le
+  refine ⟨by rw [readSrc_sc h.ws.workspace (by omega)]; simp [slot, w32], ?_⟩
+  rcases (show slot s.mem B sl = 0 ∨ slot s.mem B sl = 1 by omega) with e | e <;> rw [e] <;> decide
+
+open VG.Proof.Rsa.X86.Keys (slot) in
+/-- `[o]` set to `[b]` where the header word `sl` is one, else kept. -/
+theorem maskSel_ok {s : State} (h : RtWs L s B Z len N) {o b sl : Nat} (ho : o < N) (hb : b < N) (hob : o ≠ b)
+    (hs : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) (bit : slot s.mem B sl ≤ 1) :
+    WP isa (.seq (.block [.mov .ecx (.imm 0), .alu .sub .ecx (.mem (sc sl))]) (selectIn L o b false)) s fun t =>
+      RtWs L t B Z len N ∧ Keep B (kw len) [o] [] s.mem t.mem ∧
+      num t.mem B (kw len) o = (if slot s.mem B sl = 0 then num s.mem B (kw len) o else num s.mem B (kw len) b) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  have fo := h.ws.arr_fit ho
+  simp only [S] at fo
+  obtain ⟨rd, m0, _⟩ := mask_slot h hs bit
+  refine WP.seq (wp_movS rfl fun u U _ => ?_)
+  have rd' : readSrc u (.mem (sc sl)) = some (BitVec.ofNat 32 (slot s.mem B sl)) := by
+    rw [← rd]; exact src_keep' U.keeps U.mem
+  refine wp_subS rd' fun v V _ => WP.block_nil ?_
+  have K : Keeps [.ecx] s v := U.keeps.trans V.keeps
+  have mv : v.mem = s.mem := V.mem.trans U.mem
+  have hv := h.keep K (by decide) (by decide) (by rw [mv]; exact Outside.refl _ _ _ _)
+  have mask : v.gpr .ecx = cmask (decide (slot s.mem B sl ≠ 0)) := by rw [V.gpr, U.gpr]; exact m0
+  refine WP.mono (selectIn_ok hv ho hb hob false mask) fun t ⟨F, O, V', Kt⟩ => ?_
+  rw [mv] at O V'
+  refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega) (by simp), ?_,
+    (K.mono (by decide)).trans (Kt.mono (by decide))⟩
+  simp only [num, kk_false] at V' ⊢
+  rw [V']
+  by_cases e : slot s.mem B sl = 0 <;> simp [e]
+
+open VG.Proof.Rsa.X86.Keys (slot) in
+/-- `[o] = [b]` if the header word `sl` is one, else `[a]`, for `o` apart from `a` or `b`. -/
+theorem sel_ok {s : State} (h : RtWs L s B Z len N) {o a b sl : Nat} (ho : o < N) (ha : a < N) (hb : b < N)
+    (hs : sl + 4 ≤ VG.Impl.Rsa.X86.Keys.hdr) (bit : slot s.mem B sl ≤ 1) (hab : o ≠ a ∨ o ≠ b) :
+    WP isa (VG.Impl.Rsa.X86.KeyRt.sel L o a b sl) s fun t =>
+      RtWs L t B Z len N ∧ Keep B (kw len) [o] [] s.mem t.mem ∧
+      num t.mem B (kw len) o = (if slot s.mem B sl = 0 then num s.mem B (kw len) a else num s.mem B (kw len) b) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  have fo := h.ws.arr_fit ho
+  simp only [S] at fo
+  unfold VG.Impl.Rsa.X86.KeyRt.sel
+  by_cases hob : o = b
+  · subst hob
+    have hoa : o ≠ a := hab.resolve_right (fun e => e rfl)
+    rw [ite_eq_left rfl]
+    obtain ⟨rd, _, m1⟩ := mask_slot h hs bit
+    refine WP.seq (wp_movS rd fun u U _ => wp_subS rfl fun v V _ => WP.block_nil ?_)
+    have K : Keeps [.ecx] s v := U.keeps.trans V.keeps
+    have mv : v.mem = s.mem := V.mem.trans U.mem
+    have hv := h.keep K (by decide) (by decide) (by rw [mv]; exact Outside.refl _ _ _ _)
+    have mask : v.gpr .ecx = cmask (decide (slot s.mem B sl = 0)) := by rw [V.gpr, U.gpr]; exact m1
+    refine WP.mono (selectIn_ok hv ho ha hoa false mask) fun t ⟨F, O, V', Kt⟩ => ?_
+    rw [mv] at O V'
+    refine ⟨F, Keep.of_arr (d := 0) (by simpa using O) (by simp only [S, kk_false]; omega) (by simp), ?_,
+      (K.mono (by decide)).trans (Kt.mono (by decide))⟩
+    simp only [num, kk_false] at V' ⊢
+    rw [V']
+    by_cases e : slot s.mem B sl = 0 <;> simp [e]
+  · rw [ite_eq_right hob]
+    by_cases hoa : o = a
+    · subst hoa
+      rw [ite_eq_left rfl]
+      refine WP.seq (WP.block_nil ?_)
+      exact maskSel_ok h ho hb hob hs bit
+    · rw [ite_eq_right hoa]
+      refine WP.seq (WP.mono (copy_ok h ho ha hoa) fun u ⟨F, Kp, V, Ku, _⟩ => ?_)
+      have hsl : slot u.mem B sl = slot s.mem B sl :=
+        Kp.slot hs (by simp)
+      refine WP.mono (maskSel_ok F ho hb hob hs (by rw [hsl]; exact bit)) fun t ⟨F', Kp', V', Kt⟩ => ?_
+      refine ⟨F', Kp.trans Kp', ?_, Ku.trans Kt⟩
+      rw [V', hsl, V]
+      have nb : num u.mem B (kw len) b = num s.mem B (kw len) b := Kp.num (by simp; omega) (by simp)
+        (h.ws.fit64 hb)
+      rw [nb]
+
 end VG.Proof.Rsa.X86.KeyRt

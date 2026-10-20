@@ -69,6 +69,12 @@ theorem src_keep {s t : State} {rs : List Reg} (K : Keeps rs s t) (esp : .esp âˆ
     {d : Nat} : readSrc t (.mem (at_ .esp d)) = readSrc s (.mem (at_ .esp d)) := by
   simp only [readSrc, State.load32, State.ea, at_, K.1 _ esp, m, K.2.1, K.2.2]; rfl
 
+/-- Any operand read the same after writes to `ecx`, memory kept. -/
+theorem src_keep' {s t : State} (K : Keeps [.ecx] s t) (m : t.mem = s.mem) {d : Nat} :
+    readSrc t (.mem (sc d)) = readSrc s (.mem (sc d)) := by
+  have e : t.gpr .edi = s.gpr .edi := K.1 _ (by decide)
+  simp only [readSrc, State.load32, State.ea, sc, at_, e, m, K.2.1, K.2.2]; rfl
+
 section
 variable {is : List Instr} {s : State} {Q : State â†’ Prop}
 
