@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Impl.Blowfish.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Blowfish on ARMv7: the block function

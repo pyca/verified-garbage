@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Instructions of the batch code, one at a time

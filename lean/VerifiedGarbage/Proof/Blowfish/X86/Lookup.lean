@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Blowfish.X86
 public import VerifiedGarbage.Proof.Blowfish.F
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.Blowfish.X86.Run
+import VerifiedGarbage.Proof.Rc4.Dword
 
 /-!
 # Blowfish on x86 (32-bit): an S-box lookup

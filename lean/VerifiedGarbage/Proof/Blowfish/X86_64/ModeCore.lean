@@ -11,13 +11,9 @@ import VerifiedGarbage.Proof.Modes.X86_64.Steps
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Impl.Blowfish.X86_64
 import VerifiedGarbage.Impl.Rc2.X86_64.Sse2Lookup
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # Blowfish's core for the modes on x86-64

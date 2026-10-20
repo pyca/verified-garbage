@@ -8,9 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Impl.Blowfish.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # The blocks left

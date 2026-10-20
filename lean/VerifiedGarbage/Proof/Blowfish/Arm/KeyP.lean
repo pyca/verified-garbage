@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Impl.Blowfish.Arm
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Blowfish on ARMv7: the key into the P-array

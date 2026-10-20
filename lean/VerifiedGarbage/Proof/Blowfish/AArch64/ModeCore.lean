@@ -8,12 +8,8 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.Sbox
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Blowfish.AArch64.ModesLit
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
-import VerifiedGarbage.Impl.Blowfish.AArch64
 import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Spec.Blowfish
-import VerifiedGarbage.TCB.AArch64.Isa
-import VerifiedGarbage.TCB.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
