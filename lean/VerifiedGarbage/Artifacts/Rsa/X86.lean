@@ -7,7 +7,6 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.KcVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
-public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Public and private CRT RSA on baseline i686. -/
@@ -17,10 +16,13 @@ namespace VG.Artifacts.Rsa.X86
 
 def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact X86.target {
-    code := Impl.Rsa.X86.Recover.code
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul_at`. The candidates' search ends after the attempt that \
+      recovers the factors, so the number of attempts is public; the rest of each attempt selects no \
+      branch. Callee-saved registers reside in scratch."]
+    code := Impl.Rsa.X86.RecoverRt.code
     verified := Proof.Rsa.X86.Recover.verified
-    spSafe := Proof.Rsa.X86.Recover.code_sp
-    stack := 20 },
+    stack := 40 },
   Spec.Rsa.checkKeyApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
       its arrays' addresses from it. The length is public; only the checks of the modulus and the public \
