@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Impl.CmacTripleDes.AArch64.Round
 meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # The key schedule's code as a literal, for kernel-evaluated checks

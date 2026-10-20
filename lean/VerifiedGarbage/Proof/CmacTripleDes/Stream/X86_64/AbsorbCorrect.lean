@@ -15,10 +15,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.CmacTripleDes.X86_64.RoundLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 
 @[expose] public section
 

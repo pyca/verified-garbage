@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # Streaming TDEA-CMAC on AArch64: arithmetic, branches, memory and copying bytes
