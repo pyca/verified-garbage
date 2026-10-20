@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.KeyScalar
 public import VerifiedGarbage.Proof.Ffdh.Arm.Locals
 public import VerifiedGarbage.Proof.Ffdh.Arm.Octets
 public import VerifiedGarbage.Proof.Ffdh.Arm.Prepare
@@ -43,9 +44,19 @@ def G (p : Inputs) : Nat := Spec.Rsa.os2ip ((p.dom.drop p.k).take p.k)
 def Q (p : Inputs) : Nat := Spec.Rsa.os2ip ((p.dom.drop (2 * p.k)).take p.k)
 def w (p : Inputs) : Nat := Spec.Rsa.modulusWords p.k
 
+def boundSource (p : Inputs) : BitVec 32 := if p.hasQ = true then p.q else p.domain
+def boundOctets (p : Inputs) : List Byte := VG.Proof.Ffdh.KeyScalar.bnd p.k p.dom
+def scalarLead (p : Inputs) : Nat := VG.Proof.Ffdh.lead p.boundOctets
+def scalarWidth (p : Inputs) : Nat := p.k - p.scalarLead
+def scalarStart (p : Inputs) : BitVec 32 := p.privateValue + BitVec.ofNat 32 p.scalarLead
+def scalarMask (p : Inputs) : BitVec 32 :=
+  BitVec.ofNat 32 (VG.Proof.Ffdh.KeyScalar.smearN (p.boundOctets.getD p.scalarLead 0).toNat)
+
 def slotValue (p : Inputs) : Nat → BitVec 32
   | 0 => p.base
   | 4 => p.output
+  | 16 => p.scalarStart
+  | 20 => BitVec.ofNat 32 p.scalarWidth
   | 24 => p.domain
   | 28 => BitVec.ofNat 32 p.dom.length
   | 32 => BitVec.ofNat 32 p.k
@@ -55,6 +66,7 @@ def slotValue (p : Inputs) : Nat → BitVec 32
   | 48 => p.entropy
   | 56 => p.g
   | 60 => p.q
+  | 68 => p.scalarMask
   | _ => 0
 
 theorem publicSpace (p : Inputs) : Spec.Rsa.publicScratchWords p.k ≤ p.len := by

@@ -23,10 +23,13 @@ def smear : List Instr := [
   .mov .r12 (.shifted .r3 .lsr 2), .dp .orr .r3 .r3 (.reg .r12),
   .mov .r12 (.shifted .r3 .lsr 4), .dp .orr .r3 .r3 (.reg .r12)]
 
+def boundArgs : Prog isa := .seq (withQ (.block [.ldrSp .r4 60]) (.block [.ldrSp .r4 24]))
+  (.block [.ldrSp .r6 32])
+
+def boundSave : List Instr := [.addSp .r12 0, st .r6 20, st .r3 68]
+
 /-- p and p-1 have the same bit length for every valid odd p>2. -/
-def bound : Prog isa := .seq (withQ (.block [.ldrSp .r4 60]) (.block [.ldrSp .r4 24]))
-  (.seq (.block [.ldrSp .r6 32]) (.seq scan
-    (.block (smear ++ [.addSp .r12 0, st .r6 20, st .r3 68]))))
+def bound : Prog isa := .seq boundArgs (.seq scan (.block (smear ++ boundSave)))
 
 /-- Skip a zero byte count without branching on any secret. -/
 def unlessZero (r : Reg) (body : Prog isa) : Prog isa :=
@@ -46,12 +49,16 @@ def first : List Instr := [
 
 /-- Entropy is cut to the public bound's bit length without inspecting any
 secret leading byte. The significant scalar pointer is kept at offset 16. -/
-def scalar : Prog isa := .seq bound (.seq (.block [
+def scalarArgs : List Instr := [
   .ldrSp .r0 40, .ldrSp .r1 48, .ldrSp .lr 32, .ldrSp .r3 20,
   .dp .sub .lr .lr (.reg .r3), .dp .add .r3 .r0 (.reg .lr), .addSp .r12 0, st .r3 16,
-  .mov .r2 (.imm 0)])
-  (.seq (unlessZero .lr (.loop (.block prefixStep) .ne))
-    (.seq (.block first) (.seq (unlessZero .lr copyBytes) (.block [.ldrSp .r0 0])))))
+  .mov .r2 (.imm 0)]
+
+def cutEntropy : Prog isa := .seq (unlessZero .lr (.loop (.block prefixStep) .ne))
+  (.seq (.block first) (unlessZero .lr copyBytes))
+
+def scalar : Prog isa := .seq bound (.seq (.block scalarArgs)
+  (.seq cutEntropy (.block [.ldrSp .r0 0])))
 
 def clearOutput (slot : Nat) : Prog isa := .seq (.block [
   .ldrSp .r0 slot, .ldrSp .lr 32, .mov .r2 (.imm 0)]) zeros
