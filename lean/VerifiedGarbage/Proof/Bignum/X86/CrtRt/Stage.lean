@@ -30,23 +30,6 @@ theorem frameR_widen {base : Addr} {sp : BitVec 32} {ws ws' : List (Nat × Nat)}
       exact ⟨⟨off base q.1, q.2⟩, List.mem_cons_of_mem _ (List.mem_map.mpr ⟨q, hq, rfl⟩),
         VG.Offset.sub base h1 h2⟩
 
-/-- The low `a` words of a number below `2^(32 a)` are the number. -/
-theorem val32_low {m : Mem} {base : Addr} {d a b v : Nat} (h : val32 m base d (a + b) = v)
-    (hv : v < 2 ^ (32 * a)) : val32 m base d a = v := by
-  rw [val32_append] at h
-  have hl := val32_lt m base d a
-  have : val32 m base (d + 4 * a) b = 0 := by
-    by_contra hne
-    have : 2 ^ (32 * a) ≤ 2 ^ (32 * a) * val32 m base (d + 4 * a) b := Nat.le_mul_of_pos_right _ (by omega)
-    omega
-  rw [this, Nat.mul_zero, Nat.add_zero] at h
-  exact h
-
-/-- A number of `a` words zero-extended to `a + b`. -/
-theorem val32_ext {m : Mem} {base : Addr} {d a b : Nat} (h : val32 m base (d + 4 * a) b = 0) :
-    val32 m base d (a + b) = val32 m base d a := by
-  rw [val32_append, h, Nat.mul_zero, Nat.add_zero]
-
 section
 variable {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32}
 
@@ -66,13 +49,17 @@ theorem half_in_wide (h : In base bytes len args s) {j : Nat} (hj : j ≤ 8) :
     lo len (.slot .half j) + st len .half ≤ lo len (.slot .wide 9) := by
   have hb := bc_half_le' len
   have g := bc_ge h.lower' .wide
+  have e : lo len (.slot .half j) = numBase + j * st len .half := rfl
+  have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
+  have sh : st len .half = 2 * bc len .half + 32 := rfl
+  have sw : st len .wide = 2 * bc len .wide + 32 := rfl
   have := Nat.mul_le_mul_right (st len .half) hj
-  simp only [lo, st] at *
-  omega
+  rw [e, e9]; omega
 
 theorem prepR_fit (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len c, p.1 + p.2 ≤ bytes := by
   have f8 := h.slot_fit c (j := 8) (by decide)
   have est : st len c = 2 * bc len c + 32 := rfl
+  have e01 : lo len (.slot c 0) + st len c ≤ lo len (.slot c 1) := sl_le c (by decide)
   have e1 : lo len (.slot c 1) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
   have e3 : lo len (.slot c 3) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
   have e4 : lo len (.slot c 4) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
@@ -81,7 +68,7 @@ theorem prepR_fit (h : In base bytes len args s) (c : Ctx) : ∀ p ∈ prepR len
   have nb : numBase = 3336 := rfl
   intro p hp
   simp only [prepR, List.mem_cons, List.not_mem_nil, or_false] at hp
-  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> (try simp only [invOff]) <;> omega
+  rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [invOff] <;> omega
 
 /-- A prepared context: its modulus the odd number above one that slot 0 held (or three), one in
 slot 3 and `R² mod M` in slot 4. -/
@@ -106,19 +93,23 @@ theorem saveResult_ok (h : In base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 
   have bc' := bc_eq_cwc len c
   have hb := bc_half_le' len
   have g := bc_ge h.lower' .wide
-  have hcw : bc len c ≤ bc len .wide := by cases c <;> simp only <;> omega
+  have hcw : bc len c ≤ bc len .wide := by cases c <;> omega
+  have bl := h.bytes_lt
   have e69 : lo len (.slot c 6) + bc len c ≤ lo len (.slot .wide o) := by
     have e6 : lo len (.slot c 6) + st len c ≤ lo len (.slot c 8) := sl_le c (by decide)
     have e89 : lo len (.slot c 8) + st len c ≤ lo len (.slot .wide 9) := by
-      cases c
-      · exact half_in_wide h (by decide)
-      · exact sl_le .wide (by decide)
+      cases c with
+      | half => exact half_in_wide h (j := 8) (by decide)
+      | wide => exact sl_le (i := 8) (j := 9) .wide (by decide)
     have : lo len (.slot .wide 9) ≤ lo len (.slot .wide o) := by
-      have := Nat.mul_le_mul_right (st len .wide) ho9; simp only [lo]; omega
+      have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
+      have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
+      have := Nat.mul_le_mul_right (st len .wide) ho9; omega
     have est : st len c = 2 * bc len c + 32 := rfl
     omega
   have cb2 : cb len (two .wide) = 2 * bc len .wide := by simp [cb, two]
-  have cw2 : cw len (two .wide) = 2 * cwc len .wide := by simp only [cw, cb, two]; omega
+  have cw2 : cw len (two .wide) = 2 * cwc len .wide := by
+    have := bc_dvd len .wide; simp [cw, cb, two, cwc]; omega
   have cb1 : cb len (one c) = bc len c := by simp [cb, one]
   have cw1 : cw len (one c) = cwc len c := by simp [cw, cwc, cb, one]
   unfold saveResult
@@ -135,7 +126,7 @@ theorem saveResult_ok (h : In base bytes len args s) (c : Ctx) {o : Nat} (ho9 : 
       have z := Z₁
       rw [show 2 * cwc len .wide = cwc len c + (2 * cwc len .wide - cwc len c) by omega, val32_append] at z
       rcases Nat.eq_zero_of_add_eq_zero z with ⟨_, z2⟩
-      exact (Nat.mul_eq_zero.mp z2).resolve_left (Nat.two_pow_pos _).ne'
+      exact (Nat.mul_eq_zero.mp z2).resolve_left (Nat.ne_of_gt (Nat.two_pow_pos _))
     rw [show 2 * cwc len .wide = cwc len c + (2 * cwc len .wide - cwc len c) by omega,
       val32_ext (by rw [O₂.val32 (.inr (by omega)) (by omega)]; exact hz), V₂]
     simp only [sv]
