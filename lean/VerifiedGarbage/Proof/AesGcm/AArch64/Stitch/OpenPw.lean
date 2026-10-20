@@ -1,9 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenSh
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.OpenW
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.SealPw
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortOpenCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenStore
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
@@ -31,8 +34,8 @@ open VG.Proof.Gcm.AArch64.Stitch (Gh8Ok)
 
 /-- `pwTbl 16` writes the table, from the powers in `pw`. -/
 theorem pwTbl_forO {s : State} (hs : openPwN s) :
-    TbForO (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
-  fun u he hrd hwr hf _ => by
+    TbForOP (Impl.AesGcm.AArch64.Stitch.pwTbl 16) (s.gpr .x0) (stackArg s 3) s.sp (s.gpr .x6) (s.gpr .x7).toNat s :=
+  fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCallO_of hs (Y := stackArg s 3 + BitVec.ofNat 64 512)
       (S := stackArg s 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
     obtain ⟨ol, -, -⟩ := openLay hs.1
@@ -45,6 +48,12 @@ theorem pwTbl_forO {s : State} (hs : openPwN s) :
     rw [← hH]
     exact Stitch.pwTbl_ok (by decide) he hP hsl k.reads k.repr
 
+/-- The table from `pw`, then the rest of `openShortA`, from the registers it reads. -/
+theorem pwRestOpenShort_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp)
+    (hr : ∀ r ∈ Reg.x5 :: shRegs, u₁.gpr r = u₂.gpr r) :
+    RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) openRestZ) TT :=
+  rel_taint (.x5 :: shRegs) hsp hr ⟨_, by taint_decide⟩
+
 section
 variable (v : GcmImpl) (g : GhashWithImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (gh : Gh8Ok)
 include hMK gh
@@ -52,7 +61,7 @@ include hMK gh
 theorem openPwS_correctN (s : State) (hs : openPwN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       openAArch64.post s s' :=
-  WP.withPreservedV (openWithS_wp (w := 3) v _ hMK gh (.inr rfl) hs.1
+  WP.withPreservedV (openWithSh_wp (w := 3) v _ hMK gh (.inr rfl) hs.1
       (fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
         have q := gwCallO_of hs sY sS hrd hwr hsp hf
         pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_forO hs))
@@ -61,7 +70,7 @@ theorem openPwS_correctN (s : State) (hs : openPwN s) :
 theorem openPwS_ctN :
     ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Stitch.openWithPw v.callees g.fn) :=
-  openWithS_ct (w := 3) v _ hMK gh (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
+  openWithSh_ct (w := 3) v _ hMK gh (.inr rfl) (extra := fun s => [pwRO s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of p sY sS hrd hwr hsp hf
       pw_call g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
@@ -76,6 +85,17 @@ theorem openPwS_ctN :
       rw [← q0] at k₂
       exact pw_rel g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
     (fun p => pwTbl_forO p)
+    (fun {σ₁ σ₂} p₁ p₂ hq v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => by
+      obtain ⟨-, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
+      have e3 : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by decide)
+      have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
+      obtain ⟨hP₁, hs₁, -⟩ := gwCallO_of p₁ (Y := stackArg σ₁ 3 + BitVec.ofNat 64 512)
+        (S := stackArg σ₁ 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₁ w₁ sp₁ f₁
+      obtain ⟨hP₂, hs₂, -⟩ := gwCallO_of p₂ (Y := stackArg σ₂ 3 + BitVec.ofNat 64 512)
+        (S := stackArg σ₂ 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
+        (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂)
+      rw [← e2] at hP₂
+      exact pwTbl_rel (.inr rfl) (fun hsp hr => pwRestDec_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂)
     fun {σ₁ σ₂} p₁ p₂ hq v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨-, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
       have e3 : stackArg σ₁ 3 = stackArg σ₂ 3 := qa 3 (by decide)
@@ -86,7 +106,8 @@ theorem openPwS_ctN :
         (S := stackArg σ₂ 3 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
         (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂)
       rw [← e2] at hP₂
-      exact pwTbl_rel (.inr rfl) (fun hsp hr => pwRestDec_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂
+      exact pwTbl_relR shRegs (.inr rfl) (fun hsp hr => pwRestOpenShort_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂
+        hs₂
 
 end
 

@@ -1,11 +1,13 @@
 module
 
 import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
 import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Verified
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.ShortCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.SealStore
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.CT
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.RelSplit
@@ -44,12 +46,12 @@ theorem pwRestDec_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ r 
     RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) Impl.Gcm.AArch64.Stitch.dec) TT :=
   rel_taint (.x5 :: stRegs) hsp hr ⟨_, by taint_decide⟩
 
-/-- `pwTbl k` then `l`, in two runs that agree on the arguments and find the
+/-- `pwTbl k` then `l`, in two runs that agree on the registers `rs` and find the
 same `pw` at `[sp + k]`. -/
-theorem pwTbl_rel {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
-    (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: stRegs, u₁.gpr r = u₂.gpr r) →
+theorem pwTbl_relR (rs : List Reg) {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
+    (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: rs, u₁.gpr r = u₂.gpr r) →
       RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
-    {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) {P : Addr}
+    {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ rs, v₁.gpr r = v₂.gpr r) {P : Addr}
     (hP₁ : v₁.mem.readW (v₁.sp + BitVec.ofNat 64 k) 64 = P) (hsl₁ : InRegions (v₁.rd ++ v₁.wr) (v₁.sp + BitVec.ofNat 64 k) 8)
     (hP₂ : v₂.mem.readW (v₂.sp + BitVec.ofNat 64 k) 64 = P) (hsl₂ : InRegions (v₂.rd ++ v₂.wr) (v₂.sp + BitVec.ofNat 64 k) 8) :
     RelCT isa (Eq2 v₁ v₂) (.seq (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) l) TT := by
@@ -69,11 +71,27 @@ theorem pwTbl_rel {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
   · subst h5; rw [x5₁, x5₂]
   · rw [g₁ r h5, g₂ r h5]; exact hr r ((List.mem_cons.mp hr').resolve_left h5)
 
+/-- `pwTbl k` then `l`, in two runs that agree on the arguments and find the
+same `pw` at `[sp + k]`. -/
+theorem pwTbl_rel {k : Nat} (hk : k = 8 ∨ k = 16) {l : Prog isa}
+    (hl : ∀ {u₁ u₂ : State}, u₁.sp = u₂.sp → (∀ r ∈ Reg.x5 :: stRegs, u₁.gpr r = u₂.gpr r) →
+      RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) l) TT)
+    {v₁ v₂ : State} (hsp : v₁.sp = v₂.sp) (hr : ∀ r ∈ stRegs, v₁.gpr r = v₂.gpr r) {P : Addr}
+    (hP₁ : v₁.mem.readW (v₁.sp + BitVec.ofNat 64 k) 64 = P) (hsl₁ : InRegions (v₁.rd ++ v₁.wr) (v₁.sp + BitVec.ofNat 64 k) 8)
+    (hP₂ : v₂.mem.readW (v₂.sp + BitVec.ofNat 64 k) 64 = P) (hsl₂ : InRegions (v₂.rd ++ v₂.wr) (v₂.sp + BitVec.ofNat 64 k) 8) :
+    RelCT isa (Eq2 v₁ v₂) (.seq (.block (Impl.AesGcm.AArch64.Stitch.pwTbl k)) l) TT :=
+  pwTbl_relR stRegs hk hl hsp hr hP₁ hsl₁ hP₂ hsl₂
+
+/-- The table from `pw`, then the rest of `sealShort`, from the registers it reads. -/
+theorem pwRestShort_rel {u₁ u₂ : State} (hsp : u₁.sp = u₂.sp) (hr : ∀ r ∈ Reg.x5 :: shRegs, u₁.gpr r = u₂.gpr r) :
+    RelCT isa (Eq2 u₁ u₂) (.seq (.block pwRest) shortRestZ) TT :=
+  rel_taint (.x5 :: shRegs) hsp hr ⟨_, by taint_decide⟩
+
 /-! ## `vg_aes_gcm_seal_with_powers` -/
 
 /-- `pwTbl 8` writes the table, from the powers in `pw`. -/
-theorem pwTbl_for {s : State} (hs : sealPwN s) : TbFor (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
-  fun u he hrd hwr hf _ => by
+theorem pwTbl_for {s : State} (hs : sealPwN s) : TbForP (Impl.AesGcm.AArch64.Stitch.pwTbl 8) 2 s :=
+  fun u he hrd hwr hf => by
     obtain ⟨hP, hsl, k⟩ := gwCall_of hs (Y := stackArg s 2 + BitVec.ofNat 64 512)
       (S := stackArg s 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) hrd hwr he.sp hf
     obtain ⟨ol, -, -, -⟩ := sealLay hs.1
@@ -93,7 +111,7 @@ include hMK gh
 theorem sealPwS_correctN (s : State) (hs : sealPwN s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) s t s' ∧ abiPreserved s s' ∧
       sealAArch64.post s s' :=
-  WP.withPreservedV (sealWithS_wp (w := 2) v _ hMK gh (.inr rfl) hs.1
+  WP.withPreservedV (sealWithSh_wp (w := 2) v _ hMK gh (.inr rfl) hs.1
       (fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
         have q := gwCall_of hs sY sS hrd hwr hsp hf
         pw_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2) (pwTbl_for hs))
@@ -101,7 +119,7 @@ theorem sealPwS_correctN (s : State) (hs : sealPwN s) :
 
 theorem sealPwS_ctN :
     ConstantTime isa sealPwN (onePub 3) (Impl.AesGcm.AArch64.Stitch.sealWithPw v.callees g.fn) :=
-  sealWithS_ct (w := 2) v _ hMK gh (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
+  sealWithSh_ct (w := 2) v _ hMK gh (.inr rfl) (extra := fun s => [pwR s]) (fun _ h => h.1)
     (fun p hc sY sS hrd hwr hsp hf =>
       have q := gwCall_of p sY sS hrd hwr hsp hf
       pw_call g (k := 8) (by decide) q.1 q.2.1 hc q.2.2)
@@ -116,6 +134,17 @@ theorem sealPwS_ctN :
       rw [← q0] at k₂
       exact pw_rel g (.inl rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm))
     (fun p => pwTbl_for p)
+    (fun {σ₁ σ₂} p₁ p₂ hq v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => by
+      obtain ⟨-, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
+      have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
+      have e1 : stackArg σ₁ 1 = stackArg σ₂ 1 := qa 1 (by decide)
+      obtain ⟨hP₁, hs₁, -⟩ := gwCall_of p₁ (Y := stackArg σ₁ 2 + BitVec.ofNat 64 512)
+        (S := stackArg σ₁ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₁ w₁ sp₁ f₁
+      obtain ⟨hP₂, hs₂, -⟩ := gwCall_of p₂ (Y := stackArg σ₂ 2 + BitVec.ofNat 64 512)
+        (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
+        (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂)
+      rw [← e1] at hP₂
+      exact pwTbl_rel (.inl rfl) (fun hsp hr => pwRestEnc_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂)
     fun {σ₁ σ₂} p₁ p₂ hq v₁ v₂ sp₁ sp₂ hr r₁ w₁ f₁ r₂ w₂ f₂ => by
       obtain ⟨-, -, -, -, -, -, q6, q7, qsp, qa⟩ := hq
       have e2 : stackArg σ₁ 2 = stackArg σ₂ 2 := qa 2 (by decide)
@@ -126,7 +155,7 @@ theorem sealPwS_ctN :
         (S := stackArg σ₂ 2 + BitVec.ofNat 64 512) (Lay.wSub (by decide)) (Lay.wSub (by decide)) r₂ w₂
         (sp₂.trans qsp) (by rw [← e2, ← q6, ← q7]; exact f₂)
       rw [← e1] at hP₂
-      exact pwTbl_rel (.inl rfl) (fun hsp hr => pwRestEnc_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂
+      exact pwTbl_relR shRegs (.inl rfl) (fun hsp hr => pwRestShort_rel hsp hr) (sp₁.trans sp₂.symm) hr hP₁ hs₁ hP₂ hs₂
 
 end
 

@@ -245,19 +245,27 @@ def withPowersNote (v : GcmImpl) (g : GhashWithImpl) (name : String) : String :=
     name ++ v.suffix ++ "` does, calling `" ++ g.fn.name ++ "` once, on the whole blocks of the text, which reads \
     the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `" ++ name ++ v.suffix ++ "` does."
 
+/-- How the interleaved `*_with_powers` functions take a short TLS record. -/
+def shortNote (v : GcmImpl) (isSeal : Bool) : List String :=
+  if v.stitch then ["On the path for TLS records, a text of " ++
+    (if isSeal then "17 to " else "at most ") ++ toString Impl.AesGcm.AArch64.Stitch.shortMax ++
+    " bytes is " ++ (if isSeal then "sealed" else "opened") ++ " without the call: its blocks, the additional data \
+    and the lengths are laid out in `work`, encrypted in one pass of the loop's AES rounds and hashed in one \
+    pass of its products, from the table of the powers read from `pw`."] else []
+
 /-- `vg_aes_gcm_seal_with_powers` and `vg_aes_gcm_open_with_powers`, calling
 `g` on the path for TLS records. -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v
+    notes := [note v, withPowersNote v g Spec.Gcm.sealApi.name] ++ stitchNote v ++ shortNote v true
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g)
     stack := 2592
     verified := sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
     features := v.stitchFeatures },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v
+    notes := [note v, withPowersNote v g Spec.Gcm.openApi.name] ++ stitchNote v ++ shortNote v false
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
     verified := openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g
