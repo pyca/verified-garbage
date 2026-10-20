@@ -43,7 +43,8 @@ def entry : List Instr :=
     .ldrSp .r0 132, .str .r0 .r12 16,
     .ldrSp .r0 136, .str .r0 .r12 20,
     .ldrSp .r0 140, .str .r0 .r12 0,
-    .ldrSp .r0 144, .str .r0 .r12 36]
+    .ldrSp .r0 144, .str .r0 .r12 36,
+    .mov .r0 (.imm 0), .str .r0 .r12 40]
 
 def clearOutput : Prog isa := .seq
   (.block [.ldrSp .r0 4, .ldrSp .lr 12, .mov .r2 (.imm 0)]) Domain.GenerateKey.zeros
@@ -281,21 +282,32 @@ def round (name : String) (body : Prog isa) : Prog isa := seqs [roundKernel name
   .block [.cmp .r0 (.imm 0)],
   .ite .eq (.block [.mov .r3 (.imm 2), .cmp .r3 (.imm 4)]) onPass]
 
+def drawArgs : List Instr :=
+  [.ldrSp .r0 0, .ldrSp .r4 16, .ldrSp .r1 40, .ldrSp .r6 48,
+    .dp .add .r4 .r4 (.reg .r1), .dp .add .r1 .r1 (.reg .r6)]
+
+def drawHead : Prog isa := .seq (.block drawArgs) (.block (save .r1 40))
+
+def drawSample : Prog isa := .seq drawHead sampleWitness
+
+def drawRange : Prog isa := .seq drawSample (VG.Impl.Ffdh.Arm.inRange 1)
+
 def draw (name : String) (body : Prog isa) : Prog isa := seqs [
-  .block [.ldrSp .r0 0, .ldrSp .r4 16, .ldrSp .r1 40, .ldrSp .r6 48,
-    .dp .add .r4 .r4 (.reg .r1), .dp .add .r1 .r1 (.reg .r6)] ,
-  .block (save .r1 40), sampleWitness, VG.Impl.Ffdh.Arm.inRange 1,
+  drawRange,
   .block [.cmp .r11 (.imm 0)],
   .ite .eq (.block [.mov .r3 (.imm 4), .cmp .r3 (.imm 4)]) (round name body)]
 
-def millerRabin (name : String) (body : Prog isa) : Prog isa :=
-  .loop (seqs [.block witnessRoom,
-    .ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)]) (draw name body)]) .eq
+def witnessStep (name : String) (body : Prog isa) : Prog isa :=
+  seqs [.block witnessRoom,
+    .ite .eq (.block [.mov .r3 (.imm 0), .cmp .r3 (.imm 4)]) (draw name body)]
+
+def millerRabin (name : String) (body : Prog isa) : Prog isa := .loop (witnessStep name body) .eq
 
 def phasePrepared : Prog isa := .seq montPrep expSetup
 
-def test (q : Bool) (name : String) (body : Prog isa) : Prog isa :=
-  seqs [.block (phaseHead q), phasePrepared, millerRabin name body]
+def phaseRun (name : String) (body : Prog isa) : Prog isa := .seq phasePrepared (millerRabin name body)
+
+def test (q : Bool) (name : String) (body : Prog isa) : Prog isa := .seq (.block (phaseHead q)) (phaseRun name body)
 
 def result : Prog isa := seqs [
   .block [.cmp .r3 (.imm 0)], .ite .eq finNone
@@ -305,11 +317,15 @@ def tests (name : String) (body : Prog isa) : Prog isa := seqs [
   test true name body, .block [.cmp .r3 (.imm 1)],
   .ite .eq (seqs [shapeP, test false name body, result]) result]
 
+def screenQ (name : String) (body : Prog isa) : Prog isa := seqs [halveQ,
+  .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]
+
+def screenP (name : String) (body : Prog isa) : Prog isa := seqs [.block tableWrite, sieve,
+  .ite .eq (screenQ name body) finRejected]
+
 def main (name : String) (body : Prog isa) : Prog isa := seqs [
   .block ([.ldrSp .r1 12] ++ save .r1 40), shapeP, residue,
-  .ite .eq (seqs [.block tableWrite, sieve,
-    .ite .eq (seqs [halveQ,
-      .ite .eq finRejected (seqs [sieve, .ite .eq (tests name body) finRejected])]) finRejected]) finRejected]
+  .ite .eq (screenP name body) finRejected]
 
 def code (name : String) (body : Prog isa) : Prog isa := VG.Impl.Ffdh.Arm.framed
   (seqs [.block entry, .block initialRoom, .ite .eq finNone (main name body)])
