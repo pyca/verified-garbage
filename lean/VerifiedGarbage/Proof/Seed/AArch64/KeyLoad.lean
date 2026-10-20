@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Framework.AArch64.Straight
-import VerifiedGarbage.TCB.AArch64.Isa
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
