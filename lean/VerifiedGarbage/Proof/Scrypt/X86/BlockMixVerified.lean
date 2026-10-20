@@ -36,6 +36,12 @@ meta import VerifiedGarbage.Proof.Framework.X86.SseDword
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 meta import VerifiedGarbage.Proof.Scrypt.X86.Common
 meta import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 
 @[expose] public section
 

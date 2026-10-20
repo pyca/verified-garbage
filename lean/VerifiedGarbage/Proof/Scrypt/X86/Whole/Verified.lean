@@ -16,6 +16,10 @@ meta import VerifiedGarbage.Proof.Scrypt.Whole
 meta import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
 meta import VerifiedGarbage.Proof.Scrypt.X86.Common
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Scrypt.BlockMix
+meta import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 
 @[expose] public section
 
