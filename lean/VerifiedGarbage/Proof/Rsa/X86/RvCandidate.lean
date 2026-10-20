@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Rsa.X86.RvCandidateExp
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateSquare
 import VerifiedGarbage.Proof.Rsa.X86.RvCandidateNext
 import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 
 /-! # One complete recovery candidate -/
 

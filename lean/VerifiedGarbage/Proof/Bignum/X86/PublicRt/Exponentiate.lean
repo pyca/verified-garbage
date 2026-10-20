@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exp
 public import VerifiedGarbage.Proof.Mont.X86.ContextMath
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # The exponentiation of public RSA at a run-time width
 

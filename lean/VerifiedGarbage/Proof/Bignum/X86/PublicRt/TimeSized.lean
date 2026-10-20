@@ -68,7 +68,7 @@ def SizedIn (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32) (sp : Bit
     Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (byteAddr (args 2)) len)) len = true ∧
     val32 s.mem base 128 2 = k
 
-theorem sized_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32)
+theorem sized_relCT (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32)
     (k : Nat) : RelCT isa (Both (SizedIn base bytes len args sp k)) sized fun _ _ => True := by
   unfold sized
   refine VG.RelCT.seq (taint_both (F := fun s => ∃ M, ExpIn base bytes len args sp M k s)
@@ -115,10 +115,10 @@ theorem narrow_in {sp : BitVec 32} {k : Nat} {s : State} (S : SizedAt base bytes
     · exact Do
     · exact Ds
 
-theorem sizedNarrow_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
+theorem sizedNarrow_relCT (hbytes : bytes = (args 9).toNat * 8)
     (sp : BitVec 32) (k : Nat) : RelCT isa (Both (SizedAt base bytes len args sp k)) sized fun _ _ => True := by
   refine relCT_narrow (Pn := Both (SizedIn base bytes len args sp k)) (fun s => s.rd ++ s.wr) (fun _ => narrowW base bytes len args) (fun s₁ s₂ ⟨S₁, S₂⟩ => ?_)
-    (sized_relCT hbase hbytes sp k)
+    (sized_relCT hbytes sp k)
   have cov : ∀ {s : State}, SizedAt base bytes len args sp k s → Covers (narrowW base bytes len args) s.wr := by
     intro s S
     rintro a n ⟨r, hr, hc⟩

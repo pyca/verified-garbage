@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 public import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What a stage of private CRT at a run-time width changes
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.X86.Window
 public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # The window's exponent words: their top four bits, and the arithmetic of their shift -/
 

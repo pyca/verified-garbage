@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Mont.X86.WindowCopy
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontTracked
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 
 /-! # The candidate's window table, and the scan that reads its entries
 

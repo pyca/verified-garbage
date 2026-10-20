@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvWindowTable
 public import VerifiedGarbage.Proof.Rsa.X86.RvCount
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # The candidate's power, one 4-bit window of the exponent per iteration
 

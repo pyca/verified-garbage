@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.ExponentWord
 
 /-! # Shifting a number's words down by a bit, in a loop over its words
 

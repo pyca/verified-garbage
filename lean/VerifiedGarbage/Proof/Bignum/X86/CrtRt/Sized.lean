@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
 public import VerifiedGarbage.Proof.Bignum.CrtNatural
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Private CRT at a run-time width, from the arguments to the result
 

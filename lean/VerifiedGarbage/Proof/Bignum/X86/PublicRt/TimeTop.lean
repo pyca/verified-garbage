@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentsEq
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PublicObservations
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.PublicResources
 
 /-! # The trace of public RSA at a run-time width, from the entry to the return
 
@@ -73,7 +75,7 @@ theorem valid_relCT (sp : BitVec 32) :
       have U₂ := S₂.keep Kt (by decide) (by decide) Ot'
       have ns := scratch_bytes Os' (by have := S₁.1.upper; omega) S₁.1.nApart
       have nt := scratch_bytes Ot' (by have := S₁.1.upper; omega) S₁.1.nApart
-      have T2 := (sizedNarrow_relCT S₁.2.1.hbase S₁.2.1.hbytes sp _ _ _ _ _ _ _
+      have T2 := (sizedNarrow_relCT S₁.2.1.hbytes sp _ _ _ _ _ _ _
         ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, by rw [ns]; exact V₁, Ws, U₁.2.2.2⟩,
           ⟨U₂.1, U₂.2.1, U₂.2.2.1, by rw [nt]; exact V₂, by rw [Wt, Rb, Rd], U₂.2.2.2⟩⟩ E2 F2).1
       exact ⟨by rw [T1, T2], trivial⟩

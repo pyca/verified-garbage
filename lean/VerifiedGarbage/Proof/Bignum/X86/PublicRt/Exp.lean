@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
 public import VerifiedGarbage.Proof.Bignum.X86.ExponentBits
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # A step of the exponentiation of public RSA at a run-time width
 
@@ -66,7 +67,7 @@ theorem product_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → B
       (by rw [M₁, hX]; exact Nat.mod_lt _ hM)) fun t ⟨Et, Ct, cst, Ft, Tt⟩ => ?_
     have sp₁ : u.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
     refine ⟨Et, ?_, ?_, ?_, ?_, K₁'.trans cst, ?_⟩
-    · rw [M₁, ← sp₁]; exact Ct
+    · rw [← M₁, ← sp₁]; exact Ct
     · rw [Tt, ite_eq_left (by omega)]
     · rw [mulFrame_val32 E₁.room nw' Ft (.inl (by omega)) (by omega) (by omega) f2 f5, M₁]
     · rw [← read_eq_val32, ← read_eq_val32, mulFrame_hdr E₁.room nw' Ft (by decide) (by omega) f2 f5, M₁]

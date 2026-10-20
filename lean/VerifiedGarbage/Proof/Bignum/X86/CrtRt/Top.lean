@@ -6,6 +6,11 @@ public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
 public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
 public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.X86.CrtResources
+import VerifiedGarbage.Proof.Bignum.X86.CrtSave
 
 /-! # Functional correctness and cdecl preservation of private CRT RSA at a run-time width
 

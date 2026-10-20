@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What the timing of public RSA at a run-time width checks its pieces from
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Impl.Mont.X86.Window
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Reading the window's table entry by a masked scan of the whole table -/
 

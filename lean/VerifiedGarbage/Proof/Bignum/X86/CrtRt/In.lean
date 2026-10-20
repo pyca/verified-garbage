@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Base
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # What the pieces of private CRT at a run-time width need of their inputs
 

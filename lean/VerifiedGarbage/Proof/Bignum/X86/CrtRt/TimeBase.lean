@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeExp
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What the timing of private CRT at a run-time width checks its pieces from
 

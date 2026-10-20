@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Words copied into the working space from readable memory
 

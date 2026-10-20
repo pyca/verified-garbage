@@ -61,30 +61,26 @@ theorem exponentiate_any_ok {s : State} {base : Addr} {bytes len : Nat} {args : 
     mulFrame_val32 E₁.room nw' F₂ hd h5 (by omega) f1 f5
   have Y₂ := pv₂ (d := numAt len 2) (.inr (by omega)) (by omega)
   have O₂ := pv₂ (d := numAt len 3) (.inr (by omega)) (by omega)
-  refine WP.seq (wp_movS rfl fun u₃ e₃ _ => WP.block_nil ?_)
   have sp₁ : u₁.gpr .esp = s.gpr .esp := cs₁.1 _ (by decide)
   have sp₂ : u₂.gpr .esp = s.gpr .esp := (cs₂.1 _ (by decide)).trans sp₁
   obtain ⟨y, hy⟩ := exists_mont hR hM1 (val32 u₂.mem base (numAt len 2) (nw len))
   obtain ⟨b, hb⟩ := exists_mont hR hM1 (val32 u₂.mem base (numAt len 1) (nw len))
   rw [Nat.mod_eq_of_lt (by rw [Y₂]; exact L₁)] at hy
   rw [Nat.mod_eq_of_lt L₂] at hb
-  have I₀ : LoopInv base bytes len args M ((y * b ^ val32 u₃.mem base 128 2) % M) 0 u₃ u₃ :=
-    ⟨E₂.keep e₃.keeps (by decide) (by decide) (by rw [e₃.mem]; exact Frame.refl _ _), Frame.refl _ _,
-      e₃.gpr, val32_lt _ _ _ _, ⟨y, b, by rw [e₃.mem]; exact hy, by rw [e₃.mem]; exact hb, rfl⟩,
-      Keeps.refl _ _, rfl⟩
-  refine WP.seq (WP.mono (expLoop_ok hbase hbytes I₀) fun u₄ I => ?_)
-  have O₄ : val32 u₄.mem base (numAt len 3) (nw len) = 1 := by rw [I.one, e₃.mem, O₂, O₁, hO]
+  have I₀ : LoopInv base bytes len args M ((y * b ^ val32 u₂.mem base 128 2) % M) u₂ u₂ :=
+    ⟨E₂, Frame.refl _ _, ⟨y, b, hy, hb, rfl⟩, Keeps.refl _ _, rfl⟩
+  refine WP.seq (WP.mono (sparseLoop_ok hbytes I₀) fun u₄ ⟨I, _⟩ => ?_)
+  have O₄ : val32 u₄.mem base (numAt len 3) (nw len) = 1 := by rw [I.one, O₂, O₁, hO]
   refine WP.mono (mulRaw_ok I.env hbytes (o := 2) (a := 2) (b := 3) (by decide) (by decide) (by decide)
     (by decide) (by rw [O₄]; exact hM1)) fun t ⟨Et, Ct, cst, _, _, _⟩ => ?_
-  have sp₄ : u₄.gpr .esp = s.gpr .esp := by rw [I.keeps.1 _ (by decide), e₃.other _ (by decide), sp₂]
+  have sp₄ : u₄.gpr .esp = s.gpr .esp := by rw [I.keeps.1 _ (by decide), sp₂]
   refine ⟨Et, ?_, ?_⟩
   · have G₂ : Frame (Chg base len bytes (s.gpr .esp)) u₁.mem u₂.mem := by rw [← sp₁]; exact C₂
     have G₄ : Frame (Chg base len bytes (s.gpr .esp)) u₂.mem u₄.mem := by
-      have := I.frame; rwa [e₃.mem, e₃.other _ (by decide), sp₂] at this
+      have := I.frame; rwa [sp₂] at this
     have Gt : Frame (Chg base len bytes (s.gpr .esp)) u₄.mem t.mem := by rw [← sp₄]; exact Ct
     exact ((C₁.trans G₂).trans G₄).trans Gt
-  · exact (((cs₁.mono (by decide)).trans (cs₂.mono (by decide))).trans (e₃.keeps.mono (by decide))).trans
-      (I.keeps.trans (cst.mono (by decide)))
+  · exact ((cs₁.mono (by decide)).trans (cs₂.mono (by decide))).trans (I.keeps.trans (cst.mono (by decide)))
 
 /-- `exponentiate_ok`'s value when number 4 is `R² mod M`, from any number 4 below `M`. -/
 theorem exponentiate_cond_ok {s : State} {base : Addr} {bytes len : Nat} {args : Nat → BitVec 32} {M : Nat}

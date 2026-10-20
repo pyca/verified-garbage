@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 public import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Dsa.Frame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Bignum.X86.ReverseEncoding
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # Reading a number of public RSA at a run-time width
 

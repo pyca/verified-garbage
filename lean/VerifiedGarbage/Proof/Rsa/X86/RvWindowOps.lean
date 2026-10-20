@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.RvOps
 public import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 public import VerifiedGarbage.Proof.Mont.X86.WindowShift
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 
 /-! # The window operations on the recovery workspace
 

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 public import VerifiedGarbage.Proof.Bignum.ExportEncoding
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.WordsFrame
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Precomputed public RSA at a run-time width, from the values to the result
 

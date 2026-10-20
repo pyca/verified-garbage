@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 public import VerifiedGarbage.Proof.Bignum.X86.RtCall
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulArgs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # A multiplication by a call, in private CRT at a run-time width
 

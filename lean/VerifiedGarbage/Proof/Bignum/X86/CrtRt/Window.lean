@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Select
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Ctx
 import VerifiedGarbage.Proof.Mont.X86.WindowWords
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
 
 /-! # A window of a run-time-width exponentiation
 

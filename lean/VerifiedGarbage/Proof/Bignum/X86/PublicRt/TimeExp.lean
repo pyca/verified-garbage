@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeMul
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # The trace of the exponentiation, in public RSA at a run-time width
 
@@ -143,10 +144,11 @@ theorem sparseRound_relCT (hbytes : bytes = (args 9).toNat * 8) (k : Nat) :
         ⟨S₁.2.2.1, S₂.2.2.1, ⟨⟨_, S₁.1, lt S₁⟩, S₁.2.1⟩, ⟨⟨_, S₂.1, lt S₂⟩, S₂.2.1⟩⟩) fun _ _ h => h)
       fun _ ⟨M, S⟩ => WP.mono (mulSt_ok sp hbytes ho ho4 ha hb h1 h3 S (lt S)) fun _ h => ⟨M, h⟩
   unfold sparseRound
-  refine VG.RelCT.seq (VG.RelCT.seq (taint_both (F := fun s => (∃ M, St base bytes len args sp M k s) ∧
-      s.zf = some (decide (k % 2 = 0))) (fun _ _ ⟨_, S₁⟩ ⟨_, S₂⟩ => S₁.agree S₂) (.block [])
-    (by taint_decide) fun _ ⟨M, S⟩ => WP.mono (bit_st sp S) fun _ ⟨h, z⟩ => ⟨⟨M, h⟩, z⟩) ?_) ?_
-  · refine VG.RelCT.ite (M := isa) (c := .e) (fun _ _ h => h.1.2.trans h.2.2.symm) ?_ ?_
+  refine VG.RelCT.seq (R := Both fun s => ∃ M, St base bytes len args sp M k s) ?_ ?_
+  · refine VG.RelCT.seq (taint_both (F := fun s => (∃ M, St base bytes len args sp M k s) ∧
+        s.zf = some (decide (k % 2 = 0))) (fun _ _ ⟨_, S₁⟩ ⟨_, S₂⟩ => S₁.agree S₂) (.block [])
+      (by taint_decide) fun _ ⟨M, S⟩ => WP.mono (bit_st sp S) fun _ ⟨h, z⟩ => ⟨⟨M, h⟩, z⟩) ?_
+    refine VG.RelCT.ite (M := isa) (c := .e) (fun _ _ h => h.1.2.trans h.2.2.symm) ?_ ?_
     · exact RelCT.nil fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩
     · exact (mul (o := 2) (a := 2) (b := 1) (by decide) (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by taint_decide)).mono (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h

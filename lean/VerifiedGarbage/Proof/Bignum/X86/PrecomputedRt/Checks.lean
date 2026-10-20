@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 
 /-! # The checks of the precomputed values
 

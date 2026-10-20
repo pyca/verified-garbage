@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
 public import VerifiedGarbage.Proof.Bignum.CrtResult
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The values of private CRT RSA's arguments, and its specification's result
 

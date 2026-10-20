@@ -8,6 +8,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedArgumentsEq
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicArgumentTiming
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
+import VerifiedGarbage.Proof.Bignum.WordsFrame
 
 /-! # The trace of precomputed public RSA at a run-time width, from the entry to the return
 
@@ -92,11 +95,11 @@ theorem valid_relCT (sp : BitVec 32) :
       have mt := val32_apart (d := 0) (k := nw len) Ot (by omega) P₂.apart (by simp only [nw, wb]; omega)
       have ts := val32_apart (d := wb len) (k := nw len) Os (by omega) P₁.apart (by simp only [nw, wb]; omega)
       have tt := val32_apart (d := wb len) (k := nw len) Ot (by omega) P₂.apart (by simp only [nw, wb]; omega)
-      have T2 := (sizedNarrow_relCT S₁.2.1.hbase S₁.2.1.hbytes sp _ _ _ _ _ _
+      have T2 := (sizedNarrow_relCT S₁.2.1.hbytes sp _ _ _ _ _ _
         ⟨⟨U₁.1, U₁.2.1, U₁.2.2.1, ⟨by rw [Xs, es], by rw [es]; exact V₁.1⟩, U₁.2.2.2⟩,
           ⟨U₂.1, U₂.2.1, U₂.2.2.1, ⟨by rw [Xt, et], by rw [et]; exact V₂.1⟩, U₂.2.2.2⟩,
           by simp only [preM]; rw [ms, mt]; exact eM, by simp only [preT]; rw [ts, tt]; exact eT,
-          by rw [Xs, Xt, es, et, same]⟩ E2 F2).1
+          by rw [Xs, Xt]; simp only [expOf]; rw [same]⟩ E2 F2).1
       exact ⟨by rw [T1, T2], trivial⟩
 
 theorem body_relCT (sp : BitVec 32) :

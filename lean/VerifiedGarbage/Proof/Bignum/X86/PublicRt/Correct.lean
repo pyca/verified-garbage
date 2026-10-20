@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.X86.PublicResources
 
 /-! # Functional correctness and cdecl preservation of public RSA at a run-time width
 

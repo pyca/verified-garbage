@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTable
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.PowerInit
 
 /-! # The trace of a windowed power
 

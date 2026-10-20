@@ -75,7 +75,7 @@ theorem keyChecks_ok {sp : BitVec 32} {σ : State} (S : SIn base bytes len args 
     by rw [uv 4 (by decide), V4], by rw [uv 3 (by decide), V3],
     by rw [O₂.val32 (.inl (by decide)) (by decide), O₁.val32 (.inl (by simp only [numOff]; omega)) (by decide)]⟩
 
-theorem sized_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32) :
+theorem sized_relCT (hbytes : bytes = (args 9).toNat * 8) (sp : BitVec 32) :
     RelCT isa (fun s t => SIn base bytes len args sp s ∧ SIn base bytes len args sp t ∧
       preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
       val32 s.mem base 128 2 = val32 t.mem base 128 2) PrecomputedRt.sized
@@ -156,13 +156,13 @@ theorem narrow_in {sp : BitVec 32} {s : State} (S : SAt base bytes len args sp s
   · exact Do
   · exact Ds
 
-theorem sizedNarrow_relCT (hbase : (args 8).toNat = base.toNat) (hbytes : bytes = (args 9).toNat * 8)
+theorem sizedNarrow_relCT (hbytes : bytes = (args 9).toNat * 8)
     (sp : BitVec 32) : RelCT isa (fun s t => SAt base bytes len args sp s ∧ SAt base bytes len args sp t ∧
       preM len args s = preM len args t ∧ preT len args s = preT len args t ∧
       val32 s.mem base 128 2 = val32 t.mem base 128 2) PrecomputedRt.sized
       fun _ _ => True := by
   refine relCT_narrow (fun s => s.rd ++ s.wr) (fun _ => narrowW base bytes len args)
-    (fun s₁ s₂ ⟨S₁, S₂, eM, eT, eE⟩ => ?_) (sized_relCT (len := len) hbase hbytes sp)
+    (fun s₁ s₂ ⟨S₁, S₂, eM, eT, eE⟩ => ?_) (sized_relCT (base := base) (len := len) hbytes sp)
   have cov : ∀ {s : State}, SAt base bytes len args sp s → Covers (narrowW base bytes len args) s.wr := by
     intro s S
     rintro a n ⟨r, hr, hc⟩

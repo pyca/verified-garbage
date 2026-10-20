@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # `vg_rsa_mont_mul_at` on x86 against its contract
 

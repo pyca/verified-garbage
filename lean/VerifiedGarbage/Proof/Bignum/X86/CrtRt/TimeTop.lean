@@ -7,6 +7,8 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtFailureTiming
 public import VerifiedGarbage.Proof.Bignum.X86.CrtObservations
 public import VerifiedGarbage.Proof.Bignum.X86.CrtArgumentsEq
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.CrtResources
 
 /-! # Private CRT RSA at a run-time width on i686 against its contract
 

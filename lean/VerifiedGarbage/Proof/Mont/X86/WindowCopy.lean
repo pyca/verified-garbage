@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 public import VerifiedGarbage.Impl.Mont.X86.Window
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Copying a number to the words at a moving pointer (`esi`) -/
 

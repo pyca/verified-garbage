@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Validate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What the stages of private CRT share
 

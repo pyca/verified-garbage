@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.X86.ArgFar
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # What `vg_rsa_mont_mul_at`'s contract gives on entry
 

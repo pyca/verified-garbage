@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.WordsFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicSave
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedResources
 
 /-! # Functional correctness and cdecl preservation of precomputed public RSA at a run-time width
 

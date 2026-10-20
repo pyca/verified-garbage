@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
 public import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.ByteWords
 
 /-! # The comparison and the result of public RSA at a run-time width
 

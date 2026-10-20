@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Spec.Rsa.MontMul
+public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # A working space given as an argument

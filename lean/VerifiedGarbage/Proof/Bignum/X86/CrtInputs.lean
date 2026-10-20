@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
 public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Stable resources for all eighteen private CRT arguments -/
 

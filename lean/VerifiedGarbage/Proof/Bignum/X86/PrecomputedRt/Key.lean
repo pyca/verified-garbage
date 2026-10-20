@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Copy
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Callee
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The precomputed values into the working space
 
