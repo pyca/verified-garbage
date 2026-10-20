@@ -96,9 +96,9 @@ theorem alignCount_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
       KS g s0 A live AW liveW (upd V sCnt (8 * g.W - 2 * (dLen + eLen))) (sCnt :: ls) t := by
   have hW : g.W = VG.Impl.Rsa.X86.Recover.wide g.n := rfl
   unfold alignCount
-  refine wp_movS (h.argument ae).readSrc fun u U _ => ?_
+  refine wp_movS (h.arg ae (by decide)).readSrc fun u U _ => ?_
   have hu := h.of_rest U.keeps (by decide) U.mem
-  refine wp_addS (hu.argument ad).readSrc fun v D _ => ?_
+  refine wp_addS (hu.arg ad (by decide)).readSrc fun v D _ => ?_
   refine wp_addS rfl fun w W _ => ?_
   refine wp_movS rfl fun x X _ => ?_
   refine wp_subS rfl fun y Y _ => ?_
@@ -123,9 +123,9 @@ theorem windowCount_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List N
     WP isa (.block windowCount) s fun t =>
       KS g s0 A live AW liveW (upd V sCnt (2 * (dLen + eLen))) (sCnt :: ls) t := by
   unfold windowCount
-  refine wp_movS (h.argument ae).readSrc fun u U _ => ?_
+  refine wp_movS (h.arg ae (by decide)).readSrc fun u U _ => ?_
   have hu := h.of_rest U.keeps (by decide) U.mem
-  refine wp_addS (hu.argument ad).readSrc fun v D _ => ?_
+  refine wp_addS (hu.arg ad (by decide)).readSrc fun v D _ => ?_
   refine wp_addS rfl fun w W _ => ?_
   have hw := (hu.of_rest D.keeps (by decide) D.mem).of_rest W.keeps (by decide) W.mem
   have value : w.gpr .eax = BitVec.ofNat 32 (2 * (dLen + eLen)) := by

@@ -29,9 +29,9 @@ theorem KS.halfBit_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Na
     {AW : Nat → Nat} {liveW : List Nat} {V : Nat → Nat} {ls : List Nat}
     (h : KS g s0 A live AW liveW V ls s) (hr : wR ∈ liveW) (hc : sTc ∈ ls)
     (bound : V sTc ≤ 16384) :
-    WP isa (.block (halfBit g.n)) s fun t =>
+    WP isa (.block VG.Impl.Rsa.X86.RecoverRt.halfBit) s fun t =>
       KS g s0 A live AW liveW (Vhalf V (AW wR)) (sTc :: sBit :: sBit :: ls) t := by
-  unfold halfBit
+  unfold VG.Impl.Rsa.X86.RecoverRt.halfBit
   refine WP.block_append (WP.mono (h.bitOf_W hr (by decide)) fun u ⟨hu, _⟩ => ?_)
   refine WP.block_append (WP.mono (hu.loadSlot (d := sBit) (by simp) (r := .eax) (by decide))
     fun v ⟨hv, vx, _⟩ => ?_)
