@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvABI
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The shared recovery contract exposes call geometry and modulus bytes -/
 

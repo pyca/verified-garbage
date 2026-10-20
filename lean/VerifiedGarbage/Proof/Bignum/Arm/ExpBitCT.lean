@@ -1,9 +1,29 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBit
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpStepCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStepCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpStepCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
+meta import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Only the public exponent bit controls a branch -/
 

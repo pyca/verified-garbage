@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-public import VerifiedGarbage.Proof.Bignum.ExternalWords
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Workspace headers survive writes to disjoint output byte buffers. -/

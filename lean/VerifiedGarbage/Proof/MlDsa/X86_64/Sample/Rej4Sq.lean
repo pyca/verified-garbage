@@ -1,7 +1,9 @@
 module
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
+import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4SqT
-public import VerifiedGarbage.Impl.MlDsa.X86_64.Sample.RejNtt4
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4_avx2`, squeezing

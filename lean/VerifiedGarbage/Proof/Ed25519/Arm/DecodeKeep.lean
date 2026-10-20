@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.Power
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
-import VerifiedGarbage.Proof.Ed25519.Arm.MulKeep
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Decoding writes the saved sign and field workspace only. -/
 

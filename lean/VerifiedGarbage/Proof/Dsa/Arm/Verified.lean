@@ -1,8 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.VerifyCT
+import VerifiedGarbage.Proof.Dsa.Arm.VerifyCT
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Impl.Dsa.Arm.Entry
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Dsa.Arm.SignCT
+import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
 
 /-!
 # DSA on 32-bit ARM: `Verified`

@@ -6,6 +6,9 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.FillCompress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.FillCompressArgs`. -/
 

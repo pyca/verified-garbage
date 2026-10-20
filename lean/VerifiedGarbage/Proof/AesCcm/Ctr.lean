@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Mac
+import VerifiedGarbage.Proof.AesCcm.Mac
 public import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ccm
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Aes.Blocks
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # AES-CCM: counter mode in pieces

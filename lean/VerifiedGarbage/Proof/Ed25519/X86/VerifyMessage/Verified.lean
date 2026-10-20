@@ -1,49 +1,41 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Args
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
-meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverParity
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
-meta import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.Ed25519.Contract
-meta import VerifiedGarbage.Spec.Ed25519.Contract
-import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
-meta import VerifiedGarbage.Impl.Ed25519.X86.VerifyMessage
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86.Lit
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyLit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
-import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
-meta import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Proof.Framework.OffsetBelow
 import VerifiedGarbage.Proof.Framework.X86.Syms
-import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-import VerifiedGarbage.Spec.Rc2
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyMessage.Body
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
-meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyVerified
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.CTEquation`. -/
 

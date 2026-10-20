@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+import VerifiedGarbage.Proof.Bignum.Arm.MontOp
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # Convert any packed operand into Montgomery representation -/
 

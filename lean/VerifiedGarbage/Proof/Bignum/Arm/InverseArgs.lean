@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Precompute
-public import VerifiedGarbage.Proof.Bignum.Arm.InverseReady
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Address setup for the modulus inverse -/
 

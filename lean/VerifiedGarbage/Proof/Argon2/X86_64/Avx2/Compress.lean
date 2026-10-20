@@ -1,15 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
-meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Argon2.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Impl.Poly1305.X86_64
+meta import VerifiedGarbage.Impl.Poly1305.X86_64
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX2

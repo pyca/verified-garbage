@@ -1,25 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
-meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
 import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # Blowfish-CBC on x86-64 meets its contracts

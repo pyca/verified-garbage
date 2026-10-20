@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import VerifiedGarbage.Spec.P384
 
 /-! # ECDSA over P-384 on 32-bit ARM: six-word field elements and scalars -/
 

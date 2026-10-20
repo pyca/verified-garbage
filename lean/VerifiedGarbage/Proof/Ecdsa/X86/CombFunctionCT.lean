@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombBodyCT
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombSign
 
 /-! # Constant time of the complete comb signing function -/
 

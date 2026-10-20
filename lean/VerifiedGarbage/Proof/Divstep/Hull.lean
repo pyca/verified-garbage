@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Divstep.HullData
 
-public import VerifiedGarbage.Proof.Divstep.Incl
+import VerifiedGarbage.Proof.Divstep.Incl
 import VerifiedGarbage.Proof.Divstep.Steps
 
 /-!

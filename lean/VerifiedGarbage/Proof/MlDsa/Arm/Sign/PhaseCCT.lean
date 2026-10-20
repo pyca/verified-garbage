@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseDCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseC
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Rel
 import VerifiedGarbage.Proof.MlDsa.Arm.Sign.CopyTr
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.BlockTr
 
 /-!
 # ML-DSA signing on ARMv7: the commitment leaks only the pointers

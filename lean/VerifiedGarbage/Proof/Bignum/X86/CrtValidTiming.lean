@@ -1,8 +1,14 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtDispatchTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSizedTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.CrtDispatchTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtSizedTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Width selection and CRT dispatch depend only on public arguments -/
 

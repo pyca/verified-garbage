@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Md5.AArch64.Compress
-public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Md5.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Impl.Md5.AArch64.Stream
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 
 /-!
 # Md5 on AArch64: the shared contracts

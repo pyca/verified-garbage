@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Front
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Seal
+import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Layout
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM's short path on x86-64: `open`

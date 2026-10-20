@@ -1,23 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
-meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
 import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
 import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
-meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
-meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecChained
+meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncChained
+meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.ModeCore
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.CallPatch
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.BlockSum
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-!
 # Triple DES-CBC on x86-64 meets its contracts

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: the shared contracts imply ours

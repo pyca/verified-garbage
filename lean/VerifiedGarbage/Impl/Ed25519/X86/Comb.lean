@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 public import VerifiedGarbage.Impl.Ed25519.CombTable
 public import VerifiedGarbage.Impl.Ed25519.X86.PointSelect
-import VerifiedGarbage.Impl.Ed25519.X86.PointLoop
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-!
 # Ed25519: base-point multiplication with a comb, two digits per table

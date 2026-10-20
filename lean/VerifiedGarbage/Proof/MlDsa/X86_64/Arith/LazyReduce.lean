@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Lazy
+public import VerifiedGarbage.Proof.MlDsa.Arith.LazyButterfly
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyBase
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
 
 @[expose] public section
 

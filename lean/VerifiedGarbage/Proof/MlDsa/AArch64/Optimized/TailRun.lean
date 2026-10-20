@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailGroup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Layout
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

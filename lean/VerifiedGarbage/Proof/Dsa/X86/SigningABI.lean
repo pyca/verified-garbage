@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Signing resources supplied by the shared cdecl contract -/
 

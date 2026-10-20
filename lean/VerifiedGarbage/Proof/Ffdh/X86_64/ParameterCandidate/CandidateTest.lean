@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PolicyResult
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQ
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TestQ
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeOriginal
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseSetup

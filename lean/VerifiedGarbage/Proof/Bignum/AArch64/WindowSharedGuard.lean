@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedFast
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedFast
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowShared
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFrame
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawBody
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 

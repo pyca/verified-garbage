@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Dynamic
 public import VerifiedGarbage.Proof.Mont.X86.Ops
-import VerifiedGarbage.Proof.Mont.X86.Csub
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime-modulus Montgomery multiplication on 32-bit x86 -/
 

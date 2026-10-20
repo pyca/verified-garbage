@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.KeySetup
+import VerifiedGarbage.Proof.Camellia.AArch64.KeySetup
 import VerifiedGarbage.Proof.Camellia.Scratch
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyContract
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Modes.AArch64.Ctr
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
+public import VerifiedGarbage.Proof.Camellia.AArch64.Prologue
+public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.AArch64.KeyStore
+import VerifiedGarbage.Proof.Camellia.AArch64.Keys
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The Camellia key schedule on AArch64: the whole function

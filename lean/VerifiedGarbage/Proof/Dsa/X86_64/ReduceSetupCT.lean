@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
 import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetup
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetup
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of streaming-reduction setup -/
 

@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWitAll
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin

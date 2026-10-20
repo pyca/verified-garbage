@@ -1,10 +1,15 @@
 module
-
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+
 
 /-! # Constant-time scalar wrappers around the public rejection loop -/
 

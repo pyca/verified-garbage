@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.X86.CallWith
 import Mathlib.Tactic.SplitIfs
 
 /-!

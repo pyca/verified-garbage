@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutput
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Sample
 import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Math
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH on x86-64: generation's machine status matches the shared specification -/
 

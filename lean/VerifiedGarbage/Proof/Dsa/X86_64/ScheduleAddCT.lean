@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 
 /-! # Timing of adding the two reduced signing scalars -/
 

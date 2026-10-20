@@ -1,15 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
+import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
 import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
 import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
 import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
+public import VerifiedGarbage.Impl.AesGcm.Arm
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamInit
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamAad
+import VerifiedGarbage.Proof.AesGcm.Arm.Seal
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 
 /-!
 # AES-GCM on ARMv7: `Verified`

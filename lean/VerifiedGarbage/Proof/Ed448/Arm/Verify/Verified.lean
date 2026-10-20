@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import Mathlib.Logic.Function.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.X448.Arm.Ops
+import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 verification on ARMv7: constant time, and `Verified`

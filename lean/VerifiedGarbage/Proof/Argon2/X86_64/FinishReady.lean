@@ -1,33 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
-meta import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
 public import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
-meta import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
 import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-import VerifiedGarbage.Proof.Argon2.X86_64.ReducePointers
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReducePointers
-public import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
-meta import VerifiedGarbage.Impl.Argon2.X86_64.ReductionInit
 import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
 import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
-meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
-import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
-meta import VerifiedGarbage.Impl.Argon2.X86_64.ReduceLanes
 import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
+meta import VerifiedGarbage.Impl.Argon2.X86_64.FinalReduction
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlockLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ReduceBlockLit
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
+meta import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillLaneAdvance
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Argon2.Dimensions
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.ReduceLanesBody`. -/
 

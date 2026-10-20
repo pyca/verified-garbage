@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
-meta import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Encode
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # EMSA-PKCS1-v1_5 encoding on ARMv7: the taint analysis
 

@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterTailCT
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.TCB.Registration
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ParameterTailCT
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.TCB.Registration
 
 /-! # Timing of one complete outer seed-loop iteration -/
 

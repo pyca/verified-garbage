@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rounds
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

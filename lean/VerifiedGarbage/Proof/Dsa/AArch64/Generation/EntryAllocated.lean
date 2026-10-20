@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIGeometry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! The native frame leaves all incoming arguments and input bytes intact. -/
 @[expose] public section

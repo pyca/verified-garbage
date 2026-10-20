@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCrossRow
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCrossRow
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareZero
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareMath
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Triangular rows form the exact off-diagonal part of the square. -/
 

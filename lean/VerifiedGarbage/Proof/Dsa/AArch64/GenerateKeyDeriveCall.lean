@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCheck
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerive
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDerivePre
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveVerified
 
 /-! # Verified call of key derivation from the generation controller -/
 

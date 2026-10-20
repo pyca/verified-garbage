@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Open
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Pre
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Stitch
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ok
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on AArch64, interleaved: `open`'s branch on the tag

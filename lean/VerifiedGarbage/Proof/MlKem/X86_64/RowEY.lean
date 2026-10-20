@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.RowY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.RowY
-public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-meta import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
-public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: a row of products to an accumulator (`rowEY`)

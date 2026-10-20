@@ -1,11 +1,27 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-GCM on x86-64: `vg_aes_gcm_seal` is constant time

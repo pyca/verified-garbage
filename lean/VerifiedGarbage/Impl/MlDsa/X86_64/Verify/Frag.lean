@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample
-public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on x86-64: the pieces of `vg_mldsa*_verify`

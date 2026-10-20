@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.BytesTiming
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public operand addresses feed constant-time component loading -/
 

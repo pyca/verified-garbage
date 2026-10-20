@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Batch
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Vector
+import VerifiedGarbage.Proof.AesOcb.AArch64.Vector
+import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Register-resident offsets and checksums for payload batches. -/
 

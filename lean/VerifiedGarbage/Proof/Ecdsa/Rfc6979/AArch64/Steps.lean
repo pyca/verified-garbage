@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Hmac
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Msg
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on AArch64: the steps on `K` and `V`

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Complete full-width multiplication for factor validation and CRT recombination -/
 

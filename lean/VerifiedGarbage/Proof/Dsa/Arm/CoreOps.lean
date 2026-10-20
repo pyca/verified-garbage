@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.CoreBase
-public import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
+import VerifiedGarbage.Proof.Dsa.Arm.ArithCall
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PowCall
+import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-!
 # DSA on 32-bit ARM: the arithmetic operations

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # AArch64 taint tracking with the addresses of statics

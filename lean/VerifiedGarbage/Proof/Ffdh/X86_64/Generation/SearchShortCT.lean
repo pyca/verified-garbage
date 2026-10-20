@@ -1,10 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLeafCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLeafCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLeafCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # The native refill/exhaustion decision depends only on public policy -/
 

@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FinalCall
 public import VerifiedGarbage.Impl.Argon2.X86_64.FinalOutput
-public import VerifiedGarbage.Proof.Argon2.X86_64.ReductionLoopState
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Argon2.X86_64.ReduceLane
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.FinalOutputArgs`. -/
 

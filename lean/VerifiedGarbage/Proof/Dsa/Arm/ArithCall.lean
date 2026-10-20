@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Arith
-public import VerifiedGarbage.Proof.Dsa.Arm.PowCall
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.PowCall
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # DSA's reductions and products as functions on 32-bit ARM: their calls

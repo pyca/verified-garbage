@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Public buffer geometry of checked private RSA
 

@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCorrect
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCorrect
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchContract
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Complete native parameter generation preserves the System V ABI -/
 

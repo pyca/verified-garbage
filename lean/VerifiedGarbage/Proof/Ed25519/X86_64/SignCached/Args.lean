@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
-import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
+public import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! Short symbolic executions for the complete signer's call arguments. -/
 

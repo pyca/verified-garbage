@@ -1,16 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptU
 public import VerifiedGarbage.Impl.MlKem.AArch64.ReadonlyDecrypt
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVDecode
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyLayoutTables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemNoise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
+import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
 
 /-! # Ciphertext vector transformation with an explicit memory footprint -/
 

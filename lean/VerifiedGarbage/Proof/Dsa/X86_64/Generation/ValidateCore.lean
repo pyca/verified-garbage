@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ValidateArgs
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.AttemptStatus
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Validate
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
 
 /-! # Reuse the complete verified domain checker inside parameter generation -/
 

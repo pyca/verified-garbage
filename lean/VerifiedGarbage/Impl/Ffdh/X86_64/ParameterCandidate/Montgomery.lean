@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.MillerRabin.X86_64.Core
 
-public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 
 /-! # FFDH parameter candidates on x86-64: Montgomery precomputation -/
 

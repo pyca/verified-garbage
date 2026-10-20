@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyContext
-public import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyPrologue
 
 @[expose] public section
 

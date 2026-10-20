@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Blowfish.Contract
 import VerifiedGarbage.Proof.Blowfish.Schedule
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Blowfish with its working space as an argument

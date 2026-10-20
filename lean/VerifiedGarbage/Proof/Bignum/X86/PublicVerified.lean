@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import Mathlib.Tactic.SplitIfs
+public import Mathlib.Util.CompileInductive
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicOperationTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicObservations
+import VerifiedGarbage.Proof.Bignum.X86.PublicOperationTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicObservations
+import VerifiedGarbage.Proof.Bignum.X86.PublicCorrect
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Complete i686 certificate for checked public RSA -/
 

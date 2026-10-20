@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The final subtraction borrow is the exact unsigned multiword comparison -/
 

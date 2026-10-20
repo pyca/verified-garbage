@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Rounds
-public import VerifiedGarbage.Proof.Aes.InvBitsliced
 public import VerifiedGarbage.Impl.Aes.AArch64.AeseBlocks
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Aes.InvRounds
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # The Armv8 AES instructions: decryption

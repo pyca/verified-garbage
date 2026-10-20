@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointCall
+public import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Weierstrass.Arm.Fprog
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Field programs on slots at offsets known at run time, on 32-bit ARM

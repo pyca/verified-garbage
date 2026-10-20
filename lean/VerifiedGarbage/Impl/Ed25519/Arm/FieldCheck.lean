@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Freeze
-public import VerifiedGarbage.Impl.Ed25519.Arm.Field
 
 /-! Public field comparisons through their canonical sixteen-bit limbs. -/
 

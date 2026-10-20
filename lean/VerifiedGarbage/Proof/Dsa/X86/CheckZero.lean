@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Dsa.X86.WidthConstant
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Zero and nonzero checks with accumulated acceptance masks -/
 

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcSel
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-KEM on x86-64: decapsulation, its contract, layout, checks and entry

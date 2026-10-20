@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.CombLay
-public import VerifiedGarbage.Proof.Weierstrass.Law3
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The fixed-base comb on AArch64: what its digits and additions share

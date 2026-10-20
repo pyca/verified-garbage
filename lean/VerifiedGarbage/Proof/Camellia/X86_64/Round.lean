@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Linear
 public import VerifiedGarbage.Proof.Camellia.X86_64.Sbox
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Camellia.X86_64.Fl
 
 /-!

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Initialize the public R-squared loop count to 65*w -/
 

@@ -1,10 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Loop
-import VerifiedGarbage.Proof.Weierstrass.Layout
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Blocks
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: correctness

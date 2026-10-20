@@ -4,10 +4,12 @@ import VerifiedGarbage.Proof.TripleDes.Arm.Bytes
 import VerifiedGarbage.Proof.TripleDes.Arm.Initial
 public import VerifiedGarbage.Proof.TripleDes.Arm.Body
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## `BlockIO` -/
 

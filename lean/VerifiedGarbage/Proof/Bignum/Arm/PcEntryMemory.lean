@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
 public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
-public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The entry point changes only its two dedicated stack slots -/
 

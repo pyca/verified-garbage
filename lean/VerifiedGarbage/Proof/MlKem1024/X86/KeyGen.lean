@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
+import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
 public import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenFin
+public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPrf
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_keygen`

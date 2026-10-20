@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByte
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByte
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteCT
+public import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # Public buffer invariants for the exponent-byte timing proof -/
 

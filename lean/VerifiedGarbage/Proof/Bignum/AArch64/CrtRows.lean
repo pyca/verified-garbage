@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Multiword arithmetic on AArch64: a product by rows

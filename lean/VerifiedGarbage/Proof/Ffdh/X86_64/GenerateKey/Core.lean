@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Tail
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Reject
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Tail
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Reject
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.ResultMath
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Start
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Scalar
+import VerifiedGarbage.Proof.Ffdh.X86_64.Moves
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
 
 /-! # FFDH on x86-64: scalar rejection and generated public values -/
 

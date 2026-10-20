@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.PrivCallees
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # RSA with the CRT on AArch64: the shared contract

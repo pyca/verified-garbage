@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.Add
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exponentiation and multiplication in the DSA parent workspace -/
 

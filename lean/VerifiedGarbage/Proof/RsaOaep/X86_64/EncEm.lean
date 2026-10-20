@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-OAEP encryption on x86-64: `EM` before masking

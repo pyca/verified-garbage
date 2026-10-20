@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.VfBase
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Encode
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PKCS1-v1_5 verification with a precomputed public key on ARMv7: up to the call

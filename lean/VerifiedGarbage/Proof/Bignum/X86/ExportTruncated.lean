@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.StoreBE
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExportBE
+import VerifiedGarbage.Proof.Bignum.X86.ExportBE
+import VerifiedGarbage.Proof.Bignum.ReadPrefix
+import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Big-endian export of the low bytes of a native-word array -/
 

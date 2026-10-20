@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
-public import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Sha512.Shifts
 public import VerifiedGarbage.Impl.Sha512.X86
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # SHA-512 on x86 (32-bit) with SSE2: a round and two steps of the message schedule

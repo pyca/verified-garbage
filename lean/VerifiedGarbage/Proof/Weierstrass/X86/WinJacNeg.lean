@@ -1,10 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Window5
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacEntryState
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinJacRead
 import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! Conditional Y negation without changing the cached powers of Z. -/
 

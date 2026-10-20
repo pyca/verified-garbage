@@ -1,27 +1,39 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-meta import VerifiedGarbage.Proof.Ed25519.Recode
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEncode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBasePrecomputedEngine`. -/
 

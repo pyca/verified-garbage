@@ -1,15 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedNttTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MontDotCallTiming
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Optimized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDot
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlKem.Arith
 
 @[expose] public section
 

@@ -1,13 +1,29 @@
 module
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbBlocks
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratchW
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Init
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Finish
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Implies
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Absorb
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.SboxTables
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbBlocks
+meta import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+meta import VerifiedGarbage.Proof.CmacTripleDes.StreamScratchW
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Finish
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Finish
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbCorrect
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.AbsorbCorrect
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Implies
 meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Implies
+meta import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Absorb
+meta import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.TripleDes.SboxTables
 
 /-!
 # Streaming TDEA-CMAC on x86: `Verified`

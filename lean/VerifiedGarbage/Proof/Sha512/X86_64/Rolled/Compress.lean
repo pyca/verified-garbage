@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Rounds
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # SHA-512 on x86-64, rolled: the compression function

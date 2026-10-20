@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Finish
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.AbsorbCorrect
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.CT
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Implies
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Init
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Finish
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.AbsorbCorrect
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.CT
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Implies
 public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
-meta import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming TDEA-CMAC on AArch64: `Verified`

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Arm
-public import VerifiedGarbage.Spec.Secp256k1
 
 /-! # ECDSA over secp256k1 on 32-bit ARM: four-word field elements and scalars -/
 

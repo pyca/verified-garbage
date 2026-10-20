@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Frame
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Length
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: a bounded public length comparison -/
 

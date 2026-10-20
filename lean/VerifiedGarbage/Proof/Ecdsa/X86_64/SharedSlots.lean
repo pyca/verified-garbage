@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
 
 /-! # Shared arithmetic in ECDSA's outer phases -/
 

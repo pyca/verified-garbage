@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicResult
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportMasked
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+import VerifiedGarbage.Proof.Bignum.Arm.ExportMasked
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Public RSA output serialization and branchless rejection -/
 

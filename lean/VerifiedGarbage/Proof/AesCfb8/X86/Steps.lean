@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.AesCfb8.X86
+public import VerifiedGarbage.Proof.AesCfb8.Mem
 
-public import VerifiedGarbage.Proof.AesCfb8.X86.Loop
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.CmacAes.X86.Save
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CFB8 on x86: the code after the call

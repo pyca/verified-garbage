@@ -1,14 +1,25 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Arm.Context
-meta import VerifiedGarbage.Impl.Dsa.Arm.Context
 public import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
-public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
+public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
+import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.Arm.RegisterSave
 meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Timing
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.Context
+meta import VerifiedGarbage.Proof.Mont.Arm.Dyn.ContextInit
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Correctness and contract of shared ARMv7 Montgomery setup -/
 

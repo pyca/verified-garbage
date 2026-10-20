@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
+import VerifiedGarbage.Proof.Bignum.X86.ByteOps
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivContractGeometry
 
 /-! # Resources provided by the shared private RSA contract on i686 -/
 

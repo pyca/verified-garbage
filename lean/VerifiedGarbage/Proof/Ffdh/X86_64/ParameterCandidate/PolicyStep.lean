@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBodyCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundRun
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundBody
 
 /-! # FFDH parameter generation on x86-64: public state after a policy iteration -/
 

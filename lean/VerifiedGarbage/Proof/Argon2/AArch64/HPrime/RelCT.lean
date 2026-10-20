@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Composition helpers for ARM64 H′ timing proofs -/
 

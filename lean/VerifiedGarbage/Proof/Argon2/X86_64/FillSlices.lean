@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillSlicesBody
 public import VerifiedGarbage.Proof.Argon2.Slices
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Termination and correctness of the four-slice filling pass. -/
 

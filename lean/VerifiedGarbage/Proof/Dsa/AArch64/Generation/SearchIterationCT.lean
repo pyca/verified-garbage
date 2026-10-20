@@ -1,7 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchIterationCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchTailCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchBodyCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchIterationCTState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchTailCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchBodyCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Complete p-search iteration, including its public continuation decision -/
 

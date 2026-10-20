@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivImpl
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
 
 /-! # Public buffer geometry of checked private RSA
 

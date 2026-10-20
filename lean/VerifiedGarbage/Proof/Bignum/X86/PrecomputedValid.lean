@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSized
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSized
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedWidth
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicControls
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # A valid public exponent reaches the selected packed-key width -/
 

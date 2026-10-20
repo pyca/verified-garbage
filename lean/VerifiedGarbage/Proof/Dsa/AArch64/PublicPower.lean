@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponent
-public import VerifiedGarbage.Proof.Dsa.AArch64.Power
+import VerifiedGarbage.Proof.Dsa.AArch64.PublicExponent
 import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Dsa.AArch64.Load
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Dsa.AArch64.Power
 
 /-! # Public exponentiation through Montgomery encoding and decoding
 

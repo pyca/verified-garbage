@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV

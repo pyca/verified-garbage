@@ -1,12 +1,39 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowEnter
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+meta import VerifiedGarbage.Proof.Bignum.Arm.Stack
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Words
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Entering the narrow workspace depends only on public lengths and addresses -/
 

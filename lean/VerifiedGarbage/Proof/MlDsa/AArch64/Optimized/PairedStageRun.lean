@@ -1,14 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedGroupRun
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStage
 public import VerifiedGarbage.Proof.MlDsa.Arith.Pairs
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPackedRoot
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRoots
-import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## From `PairedStage.lean` -/
 

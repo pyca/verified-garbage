@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.CtComp
 public import VerifiedGarbage.Proof.RsaPss.CtPad
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaPss.AArch64.PadLen
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS on AArch64: the padded message in `Y`

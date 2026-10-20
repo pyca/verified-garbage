@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+public import VerifiedGarbage.Proof.Rsa.RecoverExp
+public import VerifiedGarbage.Proof.RsaKeyGen.Trial16
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Tab
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Algebra.NeZero
+import Mathlib.Tactic.Set
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A candidate on ARMv7: trial division by one prime (`prime_ok`)
 

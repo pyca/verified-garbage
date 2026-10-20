@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Body
-meta import VerifiedGarbage.Proof.AesXts.X86_64.Body
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Body
 meta import VerifiedGarbage.Proof.AesCbc.X86_64.CT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # XTS-AES on x86-64: constant time

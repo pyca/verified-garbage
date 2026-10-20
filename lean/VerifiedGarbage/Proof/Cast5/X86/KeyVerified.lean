@@ -1,10 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Key
-meta import VerifiedGarbage.Proof.Cast5.X86.Key
-public import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
-meta import VerifiedGarbage.Proof.Cast5.X86.EcbVerified
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.TaintSym
+public import VerifiedGarbage.Spec.Cast5.Contract
 import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
+meta import VerifiedGarbage.Proof.Cast5.X86.Key
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.TaintSym
+meta import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Proof.Cast5.X86.KeyGroup
 
 /-!

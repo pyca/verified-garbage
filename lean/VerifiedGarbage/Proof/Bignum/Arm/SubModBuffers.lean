@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SubState
+public import VerifiedGarbage.Impl.Bignum.Arm.SubModBuffers
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModControls
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModMath
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
-public import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
-public import VerifiedGarbage.Proof.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.SubModControls
+import VerifiedGarbage.Proof.Bignum.Arm.SubModMath
+import VerifiedGarbage.Proof.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+import VerifiedGarbage.Proof.Bignum.Arm.ProductRowMath
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact modular subtraction through the shared native arithmetic loops -/
 

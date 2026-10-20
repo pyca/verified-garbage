@@ -1,25 +1,37 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-public import VerifiedGarbage.Proof.X25519.X86_64.Lit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 import VerifiedGarbage.Proof.X25519.Invert
-meta import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+public import VerifiedGarbage.Proof.X25519.X86_64.Env
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
+meta import VerifiedGarbage.Proof.X25519.Invert
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
+meta import VerifiedGarbage.Proof.X25519.X86_64.Env
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.X25519.Field64
-meta import VerifiedGarbage.Spec.X25519.Field64
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on x86-64: `vg_gf25519_r64_invert`, verified

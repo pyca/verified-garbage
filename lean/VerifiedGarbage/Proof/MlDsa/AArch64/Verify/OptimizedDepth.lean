@@ -1,16 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.OptimizedTop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSamplesDepth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallee
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 
 @[expose] public section
 

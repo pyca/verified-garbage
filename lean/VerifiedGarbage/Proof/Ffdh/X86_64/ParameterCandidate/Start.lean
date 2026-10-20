@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Context
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Entry
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Entry
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: initialize the retained input state -/
 

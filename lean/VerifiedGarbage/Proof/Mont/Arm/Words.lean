@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.Arm
 public import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Mont.Arm
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-!
 # Montgomery arithmetic on 32-bit ARM: words and digits in the working space

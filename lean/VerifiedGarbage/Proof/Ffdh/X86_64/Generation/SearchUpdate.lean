@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Preserve the search invariant across native controller updates -/
 

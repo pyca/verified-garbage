@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignAfter
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignEncArgs
+import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
 /-! # Complete signing body produces the shared PKCS #1 signing outcome -/
 

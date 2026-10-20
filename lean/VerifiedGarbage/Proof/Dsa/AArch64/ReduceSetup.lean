@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Dsa.AArch64.Prepare
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Dsa.AArch64.Setup
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Preparing the ordinary accumulator for streaming byte reduction -/
 

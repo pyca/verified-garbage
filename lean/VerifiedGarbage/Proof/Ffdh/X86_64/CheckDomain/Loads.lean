@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Setup
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Work
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Data.Nat.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # FFDH domain validation on x86-64: load public components -/
 

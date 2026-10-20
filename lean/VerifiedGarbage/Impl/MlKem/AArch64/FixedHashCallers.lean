@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.FixedHashCallers
 open VG VG.AArch64 VG.Impl.MlKem.AArch64

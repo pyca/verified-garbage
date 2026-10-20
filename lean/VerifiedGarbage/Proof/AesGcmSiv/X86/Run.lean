@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86.Env
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
+public import VerifiedGarbage.Proof.AesGcm.X86.CT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.AesGcmSiv.X86
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 
 /-!
 # AES-GCM-SIV on x86: running straight-line blocks

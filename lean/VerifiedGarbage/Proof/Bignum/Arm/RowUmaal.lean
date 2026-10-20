@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.RowUmaal
-public import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Bignum.Arm.Row
 public import VerifiedGarbage.Proof.Framework.Subst
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Bignum.Arm.Mac
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.RowStep
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # `rowU` runs as `row` does

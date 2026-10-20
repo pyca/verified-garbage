@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20 keystream XOR with AVX2: the last bytes

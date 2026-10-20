@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
-public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Invalid public keys clear a public-length output with a fixed trace -/
 

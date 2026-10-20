@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Ed25519.BaseMultiples
 public import VerifiedGarbage.Impl.Ed25519.X86.PointTable
 public import VerifiedGarbage.Impl.Ed25519.X86.Point32
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldMemory
 
 /-!
 # Verification's equation with 4-bit windows

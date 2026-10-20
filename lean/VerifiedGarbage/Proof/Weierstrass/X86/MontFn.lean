@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
 import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 public import VerifiedGarbage.TCB.X86.Target
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontMul
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the functions

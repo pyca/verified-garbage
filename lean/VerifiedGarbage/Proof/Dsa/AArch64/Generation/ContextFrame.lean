@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSubgroup
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 
 /-! # Lift phase footprints to the full native parameter-search workspace -/
 

@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
 
 /-! # Preserved arguments around modulus preparation -/
 

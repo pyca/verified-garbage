@@ -1,9 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArraySwap
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBuffer
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Exact packed-word import into a shared RSA array -/
 

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 /-!

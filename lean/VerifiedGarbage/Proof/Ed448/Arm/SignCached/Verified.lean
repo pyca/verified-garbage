@@ -1,9 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
+import VerifiedGarbage.Proof.Ed448.Arm.SignCached.CT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Body
+import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: the whole function

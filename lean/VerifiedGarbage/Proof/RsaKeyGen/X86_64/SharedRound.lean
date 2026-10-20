@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedMid
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRound
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RSA's witness policy around the callable shared round -/

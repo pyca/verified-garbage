@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Minv64
 public import VerifiedGarbage.Proof.Bignum.Arm.Newton64
-public import VerifiedGarbage.Proof.Bignum.Arm.Newton64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Newton64Math
+import VerifiedGarbage.Proof.Bignum.Arm.Newton64Steps
+import VerifiedGarbage.Proof.Bignum.Arm.Sub64
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The initial approximation, lifting step, and final negation -/
 

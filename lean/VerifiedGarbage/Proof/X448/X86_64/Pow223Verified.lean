@@ -1,23 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86_64.Pow223
-meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
-public import VerifiedGarbage.Proof.X448.X86_64.Lit
-meta import VerifiedGarbage.Proof.X448.X86_64.Lit
-public import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.X448.X86_64.Pow223
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.X448.Invert
+public import VerifiedGarbage.Proof.X448.X86_64.Env
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X448.X86_64.Pow223
+meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.X448.Field64
-meta import VerifiedGarbage.Spec.X448.Field64
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.X448.Invert
+meta import VerifiedGarbage.Proof.X448.X86_64.Env
+meta import VerifiedGarbage.Proof.Mont.Words
+meta import VerifiedGarbage.Proof.X448.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X448 on x86-64: `vg_gf448_r64_pow223`, verified

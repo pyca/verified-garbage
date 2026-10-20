@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Top2
+public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Body
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # An RSA key on ARMv7: a call's result (`key_ok`)
 

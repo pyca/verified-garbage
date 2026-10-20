@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionExponentCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ReductionState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Double
 
 /-! # Public values and workspace preservation through the two candidate loads -/
 

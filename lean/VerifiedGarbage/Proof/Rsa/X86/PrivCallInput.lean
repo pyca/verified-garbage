@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivPrecomputeCall
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The call return address does not alter the private candidate or packed public key -/
 

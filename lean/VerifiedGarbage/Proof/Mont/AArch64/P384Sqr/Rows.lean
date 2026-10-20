@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.AArch64.Row
 
-public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
-public import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
+import VerifiedGarbage.Proof.Mont.AArch64.Round
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Mont.AArch64.P384Mul.Product
 
 /-!
 # P-384's Montgomery square on AArch64: the products of distinct words

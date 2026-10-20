@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
 public import VerifiedGarbage.Impl.Sha256.X86_64.Avx2
-import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Lit
 
 /-!
 # SHA-256 with AVX2 on x86-64: the message schedule of one lane

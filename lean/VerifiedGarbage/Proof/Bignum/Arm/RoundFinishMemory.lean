@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundMeta
+public import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The three finishing stores update only the high word and loop state -/
 

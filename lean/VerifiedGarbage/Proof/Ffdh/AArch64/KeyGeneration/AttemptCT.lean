@@ -1,10 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.LeafCT
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.LeafCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.AttemptRun
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CTTail
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.LeafCT
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.AttemptRun
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.CTTail
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Loop
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # An attempt leaks only the domain and its status (AArch64)
 

@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
+public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
+public import VerifiedGarbage.Spec.Ed25519
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.PointMul
 
 /-!
 # Cached points

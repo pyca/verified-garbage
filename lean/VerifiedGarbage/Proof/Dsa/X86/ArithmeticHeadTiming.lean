@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ArithmeticHead
-public import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
-public import VerifiedGarbage.Proof.Dsa.X86.CoreInputsTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetupTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreInputsTiming
+import VerifiedGarbage.Proof.Dsa.X86.CoreSetup
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Constant-time preparation of a binary modular operation -/
 

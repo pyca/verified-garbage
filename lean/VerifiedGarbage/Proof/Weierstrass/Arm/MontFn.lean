@@ -6,8 +6,6 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Const
 import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.TCB.Arm.Target
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on 32-bit ARM

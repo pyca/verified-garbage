@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestSmallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestFullCT
 
 /-! # Public width rejection and full-width primality form one native p test -/
 

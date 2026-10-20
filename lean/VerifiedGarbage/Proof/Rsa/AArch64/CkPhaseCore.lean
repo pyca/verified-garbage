@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkSteps
 import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # Shared RSA key-validation phases on AArch64

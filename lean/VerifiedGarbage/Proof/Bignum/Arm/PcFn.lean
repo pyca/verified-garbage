@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
-public import VerifiedGarbage.Proof.Bignum.Arm.PcBody
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryReady
+import VerifiedGarbage.Proof.Bignum.Arm.PcBody
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Callable ARMv7 RSA precomputation preserves AAPCS and implements the shared result -/
 

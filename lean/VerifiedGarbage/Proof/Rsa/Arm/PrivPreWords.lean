@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
-public import VerifiedGarbage.Proof.Bignum.Arm.PcHead
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Compute the reusable public precomputation length from the saved modulus length -/
 

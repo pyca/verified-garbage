@@ -3,8 +3,18 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Body
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Entry
 import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
+public import VerifiedGarbage.Proof.AesOcb.X86_64.HashChunk
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
+import VerifiedGarbage.Proof.AesOcb.X86_64.PadTo
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
 
 /-!
 # AES-OCB on x86-64: `vg_aes_ocb_seal`

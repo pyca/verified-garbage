@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Verified
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.CmacAes.X86.Verified
 
 /-!
 # AES-CCM on x86, with its working space on the stack

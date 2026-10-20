@@ -1,21 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
-meta import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
-import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
-meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
+meta import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Hash
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the hashes leak only the layout

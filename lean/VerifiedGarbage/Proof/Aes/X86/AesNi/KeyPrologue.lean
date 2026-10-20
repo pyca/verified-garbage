@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyMemory
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 

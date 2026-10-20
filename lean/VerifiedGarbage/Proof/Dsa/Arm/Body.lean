@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.Compute
-public import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.OutputBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.Bytes
+import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # DSA on 32-bit ARM: the bodies of signing and verifying

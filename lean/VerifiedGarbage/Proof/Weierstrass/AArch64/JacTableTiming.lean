@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoad
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-! Exact field equality through public in-scratch table transfers. -/
 

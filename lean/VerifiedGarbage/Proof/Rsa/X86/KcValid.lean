@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcLoads
+public import VerifiedGarbage.Proof.Rsa.X86.KcResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcSized
-public import VerifiedGarbage.Proof.Rsa.X86.KcDispatch
-public import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Rsa.X86.KcSized
+import VerifiedGarbage.Proof.Rsa.X86.KcDispatch
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # CRT dispatch follows the public modulus length -/
 

@@ -1,12 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
-public import VerifiedGarbage.Proof.AesGcm.Arm.Args
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Impl.AesGcmSiv.Arm
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Env
+public import VerifiedGarbage.Proof.GcmSiv.Words
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
+import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Polyval
+import VerifiedGarbage.Proof.AesGcmSiv.Arm.Keys
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
+import VerifiedGarbage.Proof.Framework.SigEval
 
 /-!
 # AES-GCM-SIV on ARMv7: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`

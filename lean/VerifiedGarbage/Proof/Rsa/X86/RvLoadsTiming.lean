@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoadTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvZero
-public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoadTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvZero
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Clearing the recovery workspace and importing all three integers has a public trace -/
 

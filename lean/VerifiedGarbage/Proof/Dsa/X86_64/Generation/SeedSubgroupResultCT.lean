@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSearchPlanCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.OnSuccessCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SeedSubgroup
 
 /-! # Subgroup outcomes determine the public phase status and entropy cursor -/
 

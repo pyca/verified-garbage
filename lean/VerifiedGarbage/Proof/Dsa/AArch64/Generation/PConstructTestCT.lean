@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityReadyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityTestCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityTestCT
 
 /-! # Complete candidate construction, width rejection and primality testing -/
 

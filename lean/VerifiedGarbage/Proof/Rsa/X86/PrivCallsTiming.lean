@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCallPublic
+import VerifiedGarbage.Proof.Rsa.X86.PrivCallPublic
 public import VerifiedGarbage.Proof.Rsa.X86.PrivStages
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Rsa.X86.PrivPublicCall
+import VerifiedGarbage.Proof.Rsa.X86.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Each nested call leaks only the shared public key and layout -/
 

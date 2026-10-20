@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.Lanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Contiguous stores in the 384-byte encoding -/
 

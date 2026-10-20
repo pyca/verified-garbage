@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Seed.Contract
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
 
-public import VerifiedGarbage.Proof.Seed.AArch64.KeyVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Seed.AArch64.KeyVerified
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
+import VerifiedGarbage.Proof.Seed.AArch64.Lit
+import VerifiedGarbage.Proof.Seed.SboxLit
 
 /-!
 # SEED on AArch64, with its working space on the stack

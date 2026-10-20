@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicValid
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
+import VerifiedGarbage.Proof.Bignum.X86.PublicValid
 public import VerifiedGarbage.Proof.Bignum.X86.PublicPost
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Exponent validation selects a fully checked public operation or zero output -/
 

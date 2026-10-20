@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.StreamFrame
+public import VerifiedGarbage.Spec.Dsa
 
-public import VerifiedGarbage.Proof.Dsa.X86.StreamInit
+import VerifiedGarbage.Proof.Dsa.X86.StreamInit
+import VerifiedGarbage.Proof.Dsa.X86.StreamLoop
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Complete streaming reduction, including the empty input -/
 

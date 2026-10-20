@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
+public import VerifiedGarbage.Impl.Bignum.Arm.SanitizeModulus
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulus
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.SelectArrayCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SanitizeModulus
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayoutCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+meta import VerifiedGarbage.Proof.Bignum.Arm.SanitizeBit
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Factor sanitization conceals the validation bit and the original modulus -/
 

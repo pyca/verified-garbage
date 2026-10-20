@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Data
+public import VerifiedGarbage.Proof.Ffdh.ControlMemory
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Entry
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Live
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # One candidate of the parameter search (AArch64)
 

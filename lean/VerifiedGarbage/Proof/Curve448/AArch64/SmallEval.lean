@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Curve448.AArch64
+public import VerifiedGarbage.Proof.X448.AArch64.Mul
+public import VerifiedGarbage.Proof.X448.Wide.Word
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Stage
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 

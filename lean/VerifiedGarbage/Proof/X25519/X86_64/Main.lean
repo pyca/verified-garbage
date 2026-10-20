@@ -1,14 +1,17 @@
 module
 
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
-import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
-public import VerifiedGarbage.Proof.X25519.X86_64.Invert
+import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Spec.X25519.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
-import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 import VerifiedGarbage.Proof.X25519.X86_64.Bits
+import VerifiedGarbage.Proof.X25519.X86_64.Freeze
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-!
 # X25519 on x86-64: the whole function

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtDifference
-public import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.SubModArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReduceOperand
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # CRT residue subtraction hides both residues and the secret factor -/
 

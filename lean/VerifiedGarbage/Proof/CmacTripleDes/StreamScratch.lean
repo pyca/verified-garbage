@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
-public import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.CmacTripleDes.Stream
 import VerifiedGarbage.Proof.CmacTripleDes.Scratch
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Streaming TDEA-CMAC with its working space as an argument

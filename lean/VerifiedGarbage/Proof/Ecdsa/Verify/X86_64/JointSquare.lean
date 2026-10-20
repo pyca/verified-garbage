@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 
 /-! Square the Jacobian denominator before the existing projective comparison. -/
 

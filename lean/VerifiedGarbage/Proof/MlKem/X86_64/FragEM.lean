@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: the call of `vg_mlkem*_encrypt_mul`

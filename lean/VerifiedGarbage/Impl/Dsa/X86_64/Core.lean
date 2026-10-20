@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Layout
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
 

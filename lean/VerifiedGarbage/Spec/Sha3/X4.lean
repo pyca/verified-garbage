@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3
-public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # Keccak-f[1600] on four interleaved states, as a function

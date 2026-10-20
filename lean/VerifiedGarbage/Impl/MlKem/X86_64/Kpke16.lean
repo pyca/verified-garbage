@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem
-public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith16
 
 /-!

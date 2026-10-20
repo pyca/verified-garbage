@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchDone
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchUpdate
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 
 /-! # Terminal controller writes preserve the accepted output and saved ABI -/
 

@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Mul
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: the entry

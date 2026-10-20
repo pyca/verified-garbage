@@ -1,17 +1,22 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCorrect
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointCT
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.Weierstrass.CombW
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Batteries.Data.List.Lemmas
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.LitShare
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA verification over P-384 on x86-64: `Verified`

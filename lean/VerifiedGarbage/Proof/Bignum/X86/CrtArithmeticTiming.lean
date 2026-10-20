@@ -3,9 +3,12 @@ module
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCoefficient
 public import VerifiedGarbage.Impl.Bignum.X86.CheckFactorProduct
 public import VerifiedGarbage.Impl.Bignum.X86.PrimeMask
-public import VerifiedGarbage.Proof.Bignum.X86.RuntimeSubTiming
-public import VerifiedGarbage.Proof.Bignum.X86.WideProductTiming
-public import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Bignum.X86.RuntimeSubTiming
+import VerifiedGarbage.Proof.Bignum.X86.WideProductTiming
+import VerifiedGarbage.Proof.Dsa.X86.ChecksTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # CRT validation and coefficient arithmetic have secret-independent traces -/
 

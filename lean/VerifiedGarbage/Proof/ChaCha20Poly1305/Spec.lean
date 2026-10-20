@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
 
 /-!

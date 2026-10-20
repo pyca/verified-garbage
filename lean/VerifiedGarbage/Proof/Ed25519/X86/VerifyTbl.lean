@@ -1,10 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
-public import VerifiedGarbage.Proof.Ed25519.X86.PointTable
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.ReadHalves
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.X86.Basic
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 
 /-!
 # Ed25519 verification on x86 (32-bit): `-[1]B … -[15]B` in a static

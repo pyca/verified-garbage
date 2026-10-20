@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Word copies in the OAEP decoding workspace

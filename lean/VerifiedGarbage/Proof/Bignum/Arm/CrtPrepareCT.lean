@@ -1,11 +1,29 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAllCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.PcFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAllCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtInitialize
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepareState
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAllCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCallCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtInitialize
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # CRT workspace preparation reveals only public geometry -/
 

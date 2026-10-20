@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.X448.AArch64.Wide
 public import VerifiedGarbage.Proof.X448.Wide.Word
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Untrusted: the register-only multiply-add used by wide X448 columns. -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyReduceCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.CallOperands
 
 /-! # Composable streaming-reduction timing steps -/
 

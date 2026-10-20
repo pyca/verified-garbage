@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputePair
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Invalid public keys clear a public-length output with a fixed trace -/
 

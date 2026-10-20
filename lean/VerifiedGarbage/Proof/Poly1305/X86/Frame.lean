@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86.Update
 public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
-public import VerifiedGarbage.Proof.Poly1305.X86.Lit
-public import VerifiedGarbage.Proof.Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming Poly1305 on x86, with its working space on the stack

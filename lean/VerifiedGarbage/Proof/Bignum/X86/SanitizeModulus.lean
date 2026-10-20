@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.SanitizeModulus
-public import VerifiedGarbage.Proof.Bignum.X86.SmallConstant
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.SmallConstant
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Secret modulus replacement preserves the accepted value without branching -/
 

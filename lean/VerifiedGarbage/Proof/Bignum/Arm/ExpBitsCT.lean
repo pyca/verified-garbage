@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpRoundCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExpRoundCT
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpBits
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Eight exponent-bit steps reveal only the public exponent byte -/
 

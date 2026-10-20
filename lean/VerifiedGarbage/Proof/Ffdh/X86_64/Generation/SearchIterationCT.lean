@@ -1,10 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassifyCT
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.Generation.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassifyCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchBranch
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassifyCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClearCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Constant-time native search iterations, including internal candidate calls -/
 

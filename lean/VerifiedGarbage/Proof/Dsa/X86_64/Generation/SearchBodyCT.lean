@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchCTState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchEntryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PAttemptTailCT
 
 /-! # One complete native p-search iteration has a public trace -/
 

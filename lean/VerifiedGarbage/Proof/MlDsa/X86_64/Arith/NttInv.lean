@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_inv_ntt`

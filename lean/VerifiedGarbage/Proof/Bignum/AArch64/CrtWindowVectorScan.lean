@@ -1,10 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorInner
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorInner
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
 meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorInner
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The 32-entry scan consumes every row and leaves the selected 64-byte block. -/
 

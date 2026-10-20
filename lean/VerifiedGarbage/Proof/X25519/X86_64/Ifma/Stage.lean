@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Carry
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the stages' operands

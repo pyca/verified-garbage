@@ -1,8 +1,21 @@
 module
+public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.Formulas
+public import VerifiedGarbage.Proof.X448.X86_64.Env
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
-public import VerifiedGarbage.Proof.X448.X86_64.Inv
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Nat.Totient
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Reset the accumulator after building the projective table. -/
 

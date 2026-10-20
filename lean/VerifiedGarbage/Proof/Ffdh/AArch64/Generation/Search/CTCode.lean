@@ -1,10 +1,31 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Entry
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CT
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CT
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CT
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Correct
+import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Loop
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Entry
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.CT
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Correct
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Loop
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # The parameter search is constant time for its public data (AArch64) -/
 

@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.EqualBuffers
 public import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Swap and rewind the comparison inputs while retaining the first borrow -/
 

@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Blowfish.Arm.KeyP
-public import VerifiedGarbage.Proof.Blowfish.KeySched
 import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Blowfish.KeyTable
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.Arm.Cipher
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish on ARMv7: key expansion's 521 encryptions

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
 import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-! Public-data mixed addition with called kernels retains a common field environment. -/
 

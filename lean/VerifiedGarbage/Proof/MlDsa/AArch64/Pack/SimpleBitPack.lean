@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Stream
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Loop
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_simple_bit_pack`

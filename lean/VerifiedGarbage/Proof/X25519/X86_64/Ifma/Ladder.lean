@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Finish
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X25519 on x86-64 with AVX512_IFMA: the ladder

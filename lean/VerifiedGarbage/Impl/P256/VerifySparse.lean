@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.P256.VerifyDouble
 
-public import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 /-! Canonical field arithmetic specialized to the P-256 prime's sparse words. -/
 

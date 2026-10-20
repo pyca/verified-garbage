@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportStateCT
+public import VerifiedGarbage.Impl.Bignum.Arm.PrecomputeOut
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Move to the second half of the RSA precomputation output -/
 

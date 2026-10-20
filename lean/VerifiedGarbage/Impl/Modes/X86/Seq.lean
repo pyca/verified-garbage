@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Impl.Modes.Ops
 public import VerifiedGarbage.Impl.Modes.X86.Counter
 

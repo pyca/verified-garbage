@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlKem.X86.Ntt
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlKem.X86.Compress
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Impl.MlKem.X86.Compress
+meta import VerifiedGarbage.Proof.MlKem.X86.NttSetup
+meta import VerifiedGarbage.Proof.MlKem.X86.Red
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_inv_ntt`

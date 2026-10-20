@@ -1,19 +1,35 @@
 module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
-meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
-meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
-public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
-meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
+public import VerifiedGarbage.Impl.Sha512.AArch64.Sha3
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+meta import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
+meta import VerifiedGarbage.Impl.Sha512.AArch64.Sha3
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Correctness of SHA-512 compression with the AArch64 SHA512 instructions. -/
 

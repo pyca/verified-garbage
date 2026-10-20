@@ -1,8 +1,85 @@
 module
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+import Mathlib.Tactic.NormNum.Pow
+import Mathlib.Tactic.NormNum.Inv
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Callee
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Contract
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Callee
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.CT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.CT
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.NormNum.Inv
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Gcm.X86_64
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Impl.Gcm.X86_64
+meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+meta import VerifiedGarbage.Proof.Cmac.Spec
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.Gcm.Spec
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86-64: by length

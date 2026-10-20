@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyCall
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Verified
+import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Correct
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the verification functions on `μ` it calls

@@ -1,13 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
-public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Exponent bytes remain secret; their addresses are public. -/
 

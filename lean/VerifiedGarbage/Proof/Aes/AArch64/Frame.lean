@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Spec.Aes.Contract
 
-import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-public import VerifiedGarbage.Proof.Aes.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Aes.Scratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The AES key expansion on AArch64, with its working space on the stack

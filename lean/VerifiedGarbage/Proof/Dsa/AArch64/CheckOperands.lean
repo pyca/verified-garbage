@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckEffects
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import Batteries.Logic
 
 /-! # Validation preserves every operand outside the arithmetic prefix -/
 

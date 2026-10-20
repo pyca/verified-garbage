@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Test
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
 
 /-!
 # An FFDH parameter candidate on AArch64: the tests of `q` and `p`

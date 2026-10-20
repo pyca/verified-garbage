@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvBody
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import VerifiedGarbage.Proof.Rsa.X86.CvInputs
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Resources supplied by the shared CRT-values cdecl contract -/
 

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
 
 /-!
 # ECDH on x86-64: `[d]P` by 4-bit windows with a Jacobian accumulator

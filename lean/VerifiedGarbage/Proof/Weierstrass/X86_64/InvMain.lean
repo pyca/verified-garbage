@@ -1,14 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvBatch
-public import VerifiedGarbage.Proof.Divstep.TcS
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.InvToM
-public import VerifiedGarbage.Proof.Divstep.Iter
+import VerifiedGarbage.Proof.Divstep.Iter
 public import Mathlib.Data.Nat.Prime.Basic
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import Mathlib.Tactic.FieldSimp
+public import VerifiedGarbage.Proof.Weierstrass.InvMask
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvRed
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
 
 /-!
 # Inversion by divsteps on x86-64: the whole inversion

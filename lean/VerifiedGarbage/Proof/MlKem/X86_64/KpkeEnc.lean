@@ -1,12 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.InlinePrim
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeDec
-public import VerifiedGarbage.Proof.MlKem.X86_64.Widen
-public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
-public import VerifiedGarbage.Proof.MlKem.X86_64.Add16
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.Widen
+import VerifiedGarbage.Proof.MlKem.X86_64.Add16
 import VerifiedGarbage.Proof.MlKem.X86_64.DcDec
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_kpke_encrypt`

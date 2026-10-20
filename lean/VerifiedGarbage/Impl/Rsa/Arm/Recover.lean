@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Impl.Rsa.Arm.MulMod
 public import VerifiedGarbage.Impl.Rsa.Arm.CrtValues
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
-public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 
 /-! # `vg_rsa_recover_primes` on ARMv7
 

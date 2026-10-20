@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
 public import VerifiedGarbage.Spec.RsaOaep.Precomputed
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP encryption on AArch64: entering the frames

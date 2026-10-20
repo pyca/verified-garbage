@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
-import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Dsa.Joint
-import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # Four joint windows consume two exponent bytes -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptanceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PreparePrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.PreparePrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Neither factor validation nor acceptance changes the preparation trace -/
 

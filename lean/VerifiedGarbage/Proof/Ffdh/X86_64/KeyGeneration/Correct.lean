@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Finish
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Attempt
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Loop
 
 /-! # The key-generation controller's correctness -/
 

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!
 # Deterministic ECDSA on x86-64: P-384 with BMI2 and ADX

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAcceptDone
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAcceptDone
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchShort
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectStep
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRejectStep
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
 
 /-! # The native controller classifies candidate outcomes without host decisions -/
 

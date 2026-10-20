@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
 public import VerifiedGarbage.Impl.Modes.X86.Seq
 public import VerifiedGarbage.Impl.Modes.CbcChained
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
 
 /-!
 # Triple DES's core for the modes on x86 (32-bit)

@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ffdh.AArch64.Domain
-public import VerifiedGarbage.Impl.Ffdh.AArch64.KeyGeneration.Search
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBody
+public import VerifiedGarbage.Spec.Ffdh.KeyGeneration
 
 /-! # The key-generation controller's contract in terms of the machine (AArch64)
 

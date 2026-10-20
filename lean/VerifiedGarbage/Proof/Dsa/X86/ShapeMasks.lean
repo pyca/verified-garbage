@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Impl.Dsa.X86.Bytes
 
-public import VerifiedGarbage.Impl.Dsa.X86.Shape
-public import VerifiedGarbage.Proof.Dsa.X86.Width
-public import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Combining supported public-width masks -/
 

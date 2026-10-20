@@ -1,13 +1,29 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.X86_64
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptCT
-import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.J0CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.AesGcm.X86_64
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 
 /-!
 # AES-GCM on x86-64: functions in two runs

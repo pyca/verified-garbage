@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 public import VerifiedGarbage.Proof.Bignum.CrtFrame
-public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
 /-!
 # Multiword arithmetic on AArch64: a prime's workspace

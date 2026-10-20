@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Recover
+public import VerifiedGarbage.Impl.Ed25519.X86.FieldCheck
 
 @[expose] public section
 

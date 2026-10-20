@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTail
 public import VerifiedGarbage.Proof.Rsa.X86.PrivLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivMasks
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Masking and erasure traces do not depend on the private acceptance decision -/
 

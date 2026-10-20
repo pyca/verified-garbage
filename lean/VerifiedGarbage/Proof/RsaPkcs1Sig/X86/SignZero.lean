@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
-public import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
-public import VerifiedGarbage.Proof.Bignum.FrameOutside
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
+import VerifiedGarbage.Proof.Dsa.X86.FailureLoop
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # Invalid encodings clear every output byte -/
 

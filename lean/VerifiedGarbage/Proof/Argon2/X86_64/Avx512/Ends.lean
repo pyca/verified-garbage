@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Rows
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Gb
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Mem
+public import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
 import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Rows
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Argon2.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Argon2.X86_64.Finish
 
 /-!
 # Argon2 on x86-64 with AVX-512: the first and last XOR

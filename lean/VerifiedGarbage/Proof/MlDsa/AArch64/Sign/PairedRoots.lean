@@ -1,13 +1,12 @@
 module
+public import Mathlib.Data.Fintype.Fin
+public import Mathlib.Tactic.FinCases
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Base
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZCallTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Arithmetic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 
 @[expose] public section
 

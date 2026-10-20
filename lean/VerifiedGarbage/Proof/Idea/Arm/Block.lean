@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.Round
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Arith32
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # IDEA on ARMv7: a block

@@ -1,37 +1,45 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0Timing
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0Timing
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedChecks
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintState
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedR0
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedZTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedR0Timing
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZ
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `OptimizedChecksPrefix.lean` -/
 

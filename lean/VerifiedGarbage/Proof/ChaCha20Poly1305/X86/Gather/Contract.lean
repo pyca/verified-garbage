@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
-public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.AesGcm.X86.Callee
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.VariantProof
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, x86: the contract

@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Spec.Cbc
 
-public import VerifiedGarbage.Proof.AesCbc.Spec
+import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # CBC: blocks moved as 64-bit words

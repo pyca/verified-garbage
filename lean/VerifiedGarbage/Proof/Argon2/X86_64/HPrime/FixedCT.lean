@@ -1,24 +1,30 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
-import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
-meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Finalize
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Update
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Merged from `Proof.Argon2.X86_64.HPrime.UpdateCT`. -/

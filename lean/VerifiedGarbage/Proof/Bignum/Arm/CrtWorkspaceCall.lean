@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
-public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+public import Batteries.Logic
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Workspace selection writes only the saved base pointer -/
 

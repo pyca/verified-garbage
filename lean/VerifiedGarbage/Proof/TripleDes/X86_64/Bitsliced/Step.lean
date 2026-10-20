@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # One S-box of a bitsliced round, and the exchange of the halves

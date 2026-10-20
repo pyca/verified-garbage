@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Spec.Argon2
 
-import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! The final lane reduction, without changing the reviewed finish specification. -/
 

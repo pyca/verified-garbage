@@ -1,11 +1,27 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CT
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.CT
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 @[expose] public section
 

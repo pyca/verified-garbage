@@ -1,13 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Open
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.Open
 public import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
 import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+import VerifiedGarbage.Proof.AesSiv.Ctr32
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.AesSiv.X86_64
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+meta import VerifiedGarbage.Impl.AesSiv.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.TCB.X86_64.Isa
+meta import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # AES-SIV on x86-64: the ends of `encrypt` and `decrypt` are constant time

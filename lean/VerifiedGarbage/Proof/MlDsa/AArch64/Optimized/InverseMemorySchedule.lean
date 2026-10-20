@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
-public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 @[expose] public section
 

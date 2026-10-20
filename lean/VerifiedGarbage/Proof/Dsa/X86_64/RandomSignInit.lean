@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareState
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Initialize randomized signing from the shared ABI's arguments. -/
 @[expose] public section

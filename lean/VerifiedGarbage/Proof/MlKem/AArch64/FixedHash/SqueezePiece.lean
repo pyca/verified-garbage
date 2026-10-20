@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeCode
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeWords
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.SqueezeWords
+import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # One output piece is the consecutive bytes of the padded permutation -/
 @[expose] public section

@@ -3,7 +3,10 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedValidate
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PackMemoryCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ArenaSource
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryWork
 
 /-! # Final domain validation uses the generation arena and exact packed bytes -/
 

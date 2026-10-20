@@ -1,8 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentSafe
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentSafe
+import VerifiedGarbage.Proof.Bignum.X86.PublicExponent
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
 /-! # Safe execution for all packed values, RSA correctness for a valid stored R² -/
 

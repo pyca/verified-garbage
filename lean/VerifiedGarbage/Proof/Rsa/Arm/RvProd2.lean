@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvProd
-public import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.RecoverProduct
+import VerifiedGarbage.Proof.Rsa.Arm.RvMmul2
+import VerifiedGarbage.Proof.Rsa.Arm.RvCtx
+import VerifiedGarbage.Proof.Rsa.Arm.MulMod
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `M = d e` as a piece (`prod_vp`), and the test of `M` (`skip_vp`) -/
 

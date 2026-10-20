@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Args
 
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Hash
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 @[expose] public section
 

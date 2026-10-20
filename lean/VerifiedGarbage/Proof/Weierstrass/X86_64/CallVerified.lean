@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 public import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # Verified elliptic-curve functions that call the field products

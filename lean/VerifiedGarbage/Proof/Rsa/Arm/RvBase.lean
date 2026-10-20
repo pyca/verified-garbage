@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the public parameters and the base of every stage
 

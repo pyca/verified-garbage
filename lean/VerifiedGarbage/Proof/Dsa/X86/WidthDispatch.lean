@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 
-public import VerifiedGarbage.Proof.Dsa.X86.WidthMatch
+import VerifiedGarbage.Proof.Dsa.X86.WidthMatch
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Selecting supported public component widths -/
 

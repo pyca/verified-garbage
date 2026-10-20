@@ -1,14 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCallTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.HashCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyCall
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

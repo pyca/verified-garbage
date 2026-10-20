@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvStoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvStoreTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvStore
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # All three masked CRT exports share a value-independent trace -/
 

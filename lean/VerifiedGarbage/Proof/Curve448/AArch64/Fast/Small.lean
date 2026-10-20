@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Butterfly
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
+public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Bounds
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Sub
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Prelude
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # `a + 39081 e`

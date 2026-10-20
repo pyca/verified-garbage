@@ -1,9 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportFinalResidue
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineGeometry
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportFinalResidue
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombine
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Reconstruct the integer result from the coefficient and q residue -/
 

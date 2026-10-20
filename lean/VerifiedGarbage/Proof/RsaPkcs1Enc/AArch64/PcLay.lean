@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
-public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Precomputed
+public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 
 @[expose] public section
 

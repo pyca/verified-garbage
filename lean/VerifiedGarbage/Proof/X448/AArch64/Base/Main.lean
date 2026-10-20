@@ -7,6 +7,9 @@ public import VerifiedGarbage.Impl.X448.AArch64.BaseFn
 public import VerifiedGarbage.Proof.X448.Edwards.Ladder
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.Bytes
 
 /-!
 # X448 of the base point on AArch64: the whole function

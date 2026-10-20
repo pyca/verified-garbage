@@ -1,8 +1,9 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTablesExec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
 public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Table
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64

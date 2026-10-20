@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Proof.Bignum.X86.CrtBodyFrame
+public import VerifiedGarbage.Proof.Bignum.X86.CrtOutputMath
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtSized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.X86.CrtSized
+import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # The private CRT wrapper implements the shared optional-output contract -/
 

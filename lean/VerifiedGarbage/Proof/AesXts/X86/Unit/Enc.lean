@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86.Unit.Run
 import VerifiedGarbage.Proof.Cmac.Frame
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # XTS-AES of data units on x86: encryption

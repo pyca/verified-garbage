@@ -1,9 +1,21 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCT
+import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyCTMain
 meta import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.CtHashCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # RSASSA-PSS verification on AArch64: constant time

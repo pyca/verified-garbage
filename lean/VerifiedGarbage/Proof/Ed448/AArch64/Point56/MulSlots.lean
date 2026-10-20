@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulCall
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Chain
 public import VerifiedGarbage.Proof.Framework.AArch64.StoreFrame
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.LaneSave
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # Curve448's field product on AArch64: calls on the slots

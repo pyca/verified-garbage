@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.R2
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The one and two needed by R-squared precomputation -/
 

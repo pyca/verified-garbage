@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignEnv
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomPrepareCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignInputs
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSaved
+meta import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Saving arguments and preparing q leaks no private key or random-tape bytes. -/
 @[expose] public section

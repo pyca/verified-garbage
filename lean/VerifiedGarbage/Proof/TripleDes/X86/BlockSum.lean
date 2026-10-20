@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
-meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.X86.Block
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+meta import VerifiedGarbage.Impl.TripleDes.X86.Block
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The constant-time analysis of Triple DES's x86 encryption block function, once

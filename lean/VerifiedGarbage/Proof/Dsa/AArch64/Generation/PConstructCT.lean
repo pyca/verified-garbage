@@ -1,7 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructReadyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PConstruct
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstructReadyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PShapeCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Constant time of complete p construction at every supported DSA size -/
 

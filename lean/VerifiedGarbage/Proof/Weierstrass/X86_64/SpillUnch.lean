@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Saving registers in the working space changes only their slots

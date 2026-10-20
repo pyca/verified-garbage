@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
+public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.TextAbsorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # AES-GCM on x86: the entry of `stream_encrypt` and `stream_decrypt`

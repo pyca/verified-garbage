@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Divstep.PackedDef
 
-public import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Divstep.Packed
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Order.Group.Unbundled.Abs
+public import Mathlib.Algebra.Group.Int.Defs
 
 /-!
 # Packed divsteps: the `g` row's low bits

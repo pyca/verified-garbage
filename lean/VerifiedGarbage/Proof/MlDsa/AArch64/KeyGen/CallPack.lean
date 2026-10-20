@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallRound
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ML-DSA key generation and verification on AArch64: calls of the decodings

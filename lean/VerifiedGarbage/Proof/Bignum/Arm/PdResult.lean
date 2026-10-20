@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhaseInput
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdControls
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhase
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpPhase
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
+import VerifiedGarbage.Proof.Bignum.Arm.SquareRedCT
 
 /-! # Precomputed exponentiation is safe unconditionally and computes RSA for valid R² -/
 

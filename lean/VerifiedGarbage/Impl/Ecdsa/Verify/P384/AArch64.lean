@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.PubNaf
 public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 

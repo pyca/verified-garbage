@@ -1,9 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Narrow
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd10Step
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Dword88
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Dd4
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdSplit
+public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Ce10
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.DdStore
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.Compress
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM-1024 on AArch64: `dd11Group`

@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
+import Mathlib.Tactic.Push
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Random
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
+meta import Mathlib.Tactic.Push
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The range check leaks its public pointers and width only. -/
 @[expose] public section

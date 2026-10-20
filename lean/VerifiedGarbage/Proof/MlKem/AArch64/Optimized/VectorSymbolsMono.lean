@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbols
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 
 /-!
 # The analysis with public table addresses is monotone, and at least the vector analysis

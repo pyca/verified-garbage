@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Limbs16
-public import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.X448.X86.Freeze
 import VerifiedGarbage.Proof.X448.X86.RowPass
-public import VerifiedGarbage.Proof.X448.X86.Carry
+import VerifiedGarbage.Proof.X448.X86.Carry
 public import VerifiedGarbage.Impl.Ed448.X86.Scalar
-import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Proof.X448.X86.Swap
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): one chunk

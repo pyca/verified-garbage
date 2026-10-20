@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Call
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.Sha512.Arm.Word64
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA signing on ARMv7: blocks that leak only their pointers

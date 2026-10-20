@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Core
-public import VerifiedGarbage.Proof.Dsa.X86.Layout
-public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Address selection for caller components and persistent DSA values -/
 

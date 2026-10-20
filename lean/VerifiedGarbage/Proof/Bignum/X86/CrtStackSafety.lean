@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-! # Compositional stack-pointer safety avoids rechecking every dispatched width -/
 

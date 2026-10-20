@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.DoubleLoopState
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # A loop-counter update preserves the RSA header, numbers, and saved base -/
 

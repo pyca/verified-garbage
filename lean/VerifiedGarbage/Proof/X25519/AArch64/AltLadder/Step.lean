@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Env
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
-public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Memory
+public import VerifiedGarbage.Impl.X25519.AArch64.AltLadder
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
+public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
+import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
+import VerifiedGarbage.Proof.X25519.AArch64.Ops
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 /-! # One iteration of the `_alt` ladder -/
 

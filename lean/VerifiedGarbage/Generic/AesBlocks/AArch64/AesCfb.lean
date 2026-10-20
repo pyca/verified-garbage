@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesCfb.AArch64.Body
 
 /-!
 # AES-CFB128 (NIST SP 800-38A §6.3) on AArch64

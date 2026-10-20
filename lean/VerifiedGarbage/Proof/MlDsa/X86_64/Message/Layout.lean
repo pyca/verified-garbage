@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Message
-public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-public import VerifiedGarbage.Proof.Framework.X86_64.Frame
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.MlDsa.Message.Common
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Sha3.X86_64.Permute
 
 /-!
 # ML-DSA on x86-64, `sign_message` and `verify_message`: where everything is

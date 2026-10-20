@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
 public import VerifiedGarbage.Proof.Sha3.Seed34
-import VerifiedGarbage.Proof.MlKem.AArch64.Noise.State
 import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

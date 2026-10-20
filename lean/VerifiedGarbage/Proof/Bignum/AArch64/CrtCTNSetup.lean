@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
 import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTMain
+public import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # RSA with the CRT on AArch64: `n`'s setup in constant time

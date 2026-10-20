@@ -1,22 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-public import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
-meta import VerifiedGarbage.Proof.Dsa.X86_64.BodyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parameters
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicScheduleCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
+meta import VerifiedGarbage.Proof.Dsa.SizeBounds
+meta import VerifiedGarbage.Proof.Dsa.Encoding
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicKeyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.DomainShapeCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+public import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the x86-64 DSA domain check
 

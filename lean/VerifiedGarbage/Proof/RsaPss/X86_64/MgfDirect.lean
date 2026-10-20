@@ -1,9 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! One-block MGF1 hashing without masked state selection. -/
 

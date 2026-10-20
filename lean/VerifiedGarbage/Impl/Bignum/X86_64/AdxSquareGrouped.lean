@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
-public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-! Keep the doubling and diagonal-addition carries live across square words. -/
 

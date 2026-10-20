@@ -1,13 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Mac
+public import VerifiedGarbage.Proof.AesCcm.X86_64.B0
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 import VerifiedGarbage.Proof.AesCcm.X86_64.Args
-meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.B0
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Args
 meta import VerifiedGarbage.Proof.AesCcm.X86_64.Tag
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Aad
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+meta import VerifiedGarbage.Proof.AesCcm.X86_64.Bytes
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on x86-64: the MAC is constant time

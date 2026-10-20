@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Csub
-public import VerifiedGarbage.Proof.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Bignum.Arm.Sub
 public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Include the high accumulator word in the reduction decision -/
 

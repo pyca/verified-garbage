@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorStep
+public import VerifiedGarbage.Proof.Dsa.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorEvaluate
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorFromFrame
 
 /-! # Generator range and power stages preserve their common memory invariant -/
 

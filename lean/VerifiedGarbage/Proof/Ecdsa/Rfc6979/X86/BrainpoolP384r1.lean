@@ -1,15 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Contract
+public import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Spec.Ecdsa.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Lit
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP384r1.X86
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+public import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP384r1.Verified
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): brainpoolP384r1

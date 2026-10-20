@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
+public import VerifiedGarbage.Impl.Tbl.AArch64
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
-public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
 @[expose] public section
 

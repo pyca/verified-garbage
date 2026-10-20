@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicInput
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicEntry
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
+import VerifiedGarbage.Proof.Bignum.Arm.PublicEntry
+import VerifiedGarbage.Proof.Bignum.Arm.PublicPush
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Establish the public RSA body invariants from native arguments -/
 

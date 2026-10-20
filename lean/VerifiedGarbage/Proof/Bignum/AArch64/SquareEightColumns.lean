@@ -1,10 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightAccumulate
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumn
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightColumn
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

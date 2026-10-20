@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareReduce
-public import VerifiedGarbage.Proof.Bignum.Arm.Csub
+import VerifiedGarbage.Proof.Bignum.Arm.SquareState
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The square's canonical result, and the whole square -/
 

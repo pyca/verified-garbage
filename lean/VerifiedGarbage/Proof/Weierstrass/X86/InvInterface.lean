@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-public import VerifiedGarbage.Proof.Weierstrass.InvToM
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import Mathlib.Data.Nat.Prime.Defs
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-public import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.Env
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! ## `InvSpec` -/
 

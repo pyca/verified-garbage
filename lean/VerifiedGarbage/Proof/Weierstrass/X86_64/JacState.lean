@@ -1,12 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
-public import VerifiedGarbage.Proof.Weierstrass.JacAdd
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

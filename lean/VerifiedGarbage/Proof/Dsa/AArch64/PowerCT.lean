@@ -1,19 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Power
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Power
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 public import VerifiedGarbage.Impl.Dsa.Layout
-meta import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
 import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
+import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+meta import VerifiedGarbage.Impl.Dsa.Layout
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EncodePower
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Exponent
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Frame
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time components of DSA exponentiation -/
 

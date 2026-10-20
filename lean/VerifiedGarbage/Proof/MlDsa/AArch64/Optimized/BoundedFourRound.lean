@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezePast
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezePast
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatchState
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSamplerState
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourReady
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Env
 
 /-! ## From `BoundedFourSqueezeReady.lean` -/
 

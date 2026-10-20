@@ -1,7 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchTailCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorSearchTailCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! A complete generator-tape iteration has a public trace. -/
 @[expose] public section

@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowFive
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 
 /-! The public Jacobian loop's arithmetic steps. -/
 

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.OutputCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParameters
-public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParametersCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterInvariant
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Generate
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParameters
 
 /-! # Complete search and output timing for each supported parameter size -/
 

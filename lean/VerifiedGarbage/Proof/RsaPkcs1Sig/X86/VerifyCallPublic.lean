@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicPre
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # The nested public operation observes only the shared exponent and key words -/
 

@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+public import VerifiedGarbage.Proof.Rsa.KeyMath
 
-public import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # `inverse` on ARMv7: the halving modulo `m` at the end of a step -/
 

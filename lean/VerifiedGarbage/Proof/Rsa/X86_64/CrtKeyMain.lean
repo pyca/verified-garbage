@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
-public import VerifiedGarbage.Proof.Rsa.CrtKeyParts
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+import VerifiedGarbage.Proof.Rsa.CrtKeyParts
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeySteps
+import VerifiedGarbage.Proof.Rsa.Octets
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: the checks

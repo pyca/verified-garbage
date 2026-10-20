@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdAccept
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareCT
+import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Comparing and saving secret input acceptance reveals no acceptance decision -/
 

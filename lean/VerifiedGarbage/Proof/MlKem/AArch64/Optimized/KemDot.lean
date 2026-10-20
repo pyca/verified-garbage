@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Result
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemEnc
-public import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Ready
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.Dot.Core
 
 /-! # Fused polynomial products preserve the KEM call invariant -/
 

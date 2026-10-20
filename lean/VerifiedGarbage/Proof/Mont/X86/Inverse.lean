@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Impl.Mont.X86.Inverse
 public import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime Montgomery inverse correctness on 32-bit x86 -/
 

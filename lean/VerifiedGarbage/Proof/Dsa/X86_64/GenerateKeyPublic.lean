@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySample
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
-public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's public inputs, and what its leak fixes -/
 

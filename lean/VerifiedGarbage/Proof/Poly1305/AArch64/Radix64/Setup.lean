@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Absorb
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -1,12 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttemptCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignStep
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttemptCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignStep
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignRunning
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignAttemptCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignStep
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSampleLoop
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSampleCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The outer retry loop reveals the sampling and signing decisions specified by its trace. -/
 @[expose] public section

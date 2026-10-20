@@ -1,19 +1,25 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
-meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Ed448.Contract
-meta import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed448 scalar arithmetic on ARMv7: `Verified`

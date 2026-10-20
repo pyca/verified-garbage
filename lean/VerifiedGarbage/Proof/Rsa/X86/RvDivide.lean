@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvDivSet
-public import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.KeyDiv
+import VerifiedGarbage.Proof.Rsa.X86.RvFrames
 
 /-! # Dividing the modulus to obtain the second recovered factor -/
 

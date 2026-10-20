@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackWidth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackDispatch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.KeygenPack
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `KeygenPackTiming.lean` -/
 

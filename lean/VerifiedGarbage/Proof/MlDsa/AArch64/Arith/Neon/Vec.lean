@@ -4,7 +4,8 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Word
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
 public import VerifiedGarbage.Proof.AesXts.AArch64.Unit.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.AesXts.AArch64.Body
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on AArch64

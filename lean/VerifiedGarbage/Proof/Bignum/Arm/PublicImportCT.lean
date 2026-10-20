@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicArithmetic
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicImport
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgsCT
+import VerifiedGarbage.Proof.Bignum.Arm.ImportOperandCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicArgs
 
 /-! # Importing different secret RSA inputs produces identical public traces -/
 

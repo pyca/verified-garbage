@@ -1,19 +1,21 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointAccumulate
-public import VerifiedGarbage.Impl.Ed25519.AArch64.BaseMultiply
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
-import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowLoop
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEqual
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverParity
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Ed25519.AArch64.Nibbles
+import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.ScalarBytes
+import VerifiedGarbage.Proof.Ed25519.AArch64.Points
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.AArch64.WindowTables`. -/
 

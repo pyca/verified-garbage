@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.AesOfb.X86
+public import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+public import VerifiedGarbage.Spec.Ofb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
-public import VerifiedGarbage.Proof.AesOfb.X86.Body
+import VerifiedGarbage.Proof.AesOfb.X86.Body
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OFB on x86: `Verified`

@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.Round
-import VerifiedGarbage.Proof.Sm4.Layout
-import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 
 /-!
 # Sixteen blocks of bitsliced SM4 on x86-64

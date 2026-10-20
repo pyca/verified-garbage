@@ -1,6 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyOps
+public import VerifiedGarbage.Proof.Rsa.Arm.RvKS
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps
+import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Rsa.KeyMath
 
 /-! # `vg_rsa_recover_primes` on ARMv7: copies, selections, subtractions, halvings and bits on a stage -/
 

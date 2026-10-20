@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Seed.Arm.Steps
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # A round on ARMv7

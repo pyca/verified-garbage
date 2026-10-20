@@ -1,13 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Verified
-public import VerifiedGarbage.Proof.CmacAes.Stream.Scratch
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.CmacAes.X86.Verified
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Streaming AES-CMAC on x86, with its working space on the stack

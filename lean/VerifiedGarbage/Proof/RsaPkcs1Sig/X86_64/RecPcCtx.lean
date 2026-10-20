@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
-public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverFrame
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the precondition

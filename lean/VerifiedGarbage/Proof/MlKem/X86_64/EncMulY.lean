@@ -2,7 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulY
-public import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
+public import VerifiedGarbage.Proof.MlKem.X86_64.RowY
+import VerifiedGarbage.Proof.MlKem.X86_64.RowEY16
+import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: the products of K-PKE.Encrypt with AVX2, row by row

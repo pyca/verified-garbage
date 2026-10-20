@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Gcd
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
-public import VerifiedGarbage.Proof.Rsa.RecoverMath
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Ops
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint5
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
+import VerifiedGarbage.Proof.Rsa.Arm.RvHalving
 
 /-! # A candidate on ARMv7: the exponent of 2 in `c − 1` (`halving_vp`)
 

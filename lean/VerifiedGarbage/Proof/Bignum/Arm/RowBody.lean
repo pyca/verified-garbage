@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.RowState
+public import VerifiedGarbage.Impl.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.RowStep
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One iteration preserves the full row invariant -/
 

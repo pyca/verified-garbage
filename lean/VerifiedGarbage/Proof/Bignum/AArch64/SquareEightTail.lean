@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightHead
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
-public import VerifiedGarbage.Proof.Weierstrass.CoZTable
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.CoZTable
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # The co-Z table's field programs

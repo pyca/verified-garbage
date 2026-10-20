@@ -1,10 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Round
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Stream
-import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Round
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.MillerRabin
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Shape
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 
 /-!
 # An FFDH parameter candidate on AArch64: a draw

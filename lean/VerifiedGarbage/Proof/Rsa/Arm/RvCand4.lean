@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvSq2
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvCand3
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand3
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand2
 
 /-! # `vg_rsa_recover_primes` on ARMv7: a candidate (`candBody_vp`) -/
 

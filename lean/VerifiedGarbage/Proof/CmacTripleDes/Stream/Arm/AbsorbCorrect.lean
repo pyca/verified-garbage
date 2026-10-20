@@ -4,7 +4,11 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Absorb
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.Arm.Common
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Streaming TDEA-CMAC on ARMv7: `vg_cmac_triple_des_absorb` is correct

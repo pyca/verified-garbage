@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-KEM on AArch64: the NTT in 16-bit lanes

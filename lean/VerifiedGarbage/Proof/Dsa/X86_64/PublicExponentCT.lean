@@ -1,14 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 public import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Impl.Dsa.X86_64.PublicPower
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Public exponentiation leaks only its public exponent and layout -/
 

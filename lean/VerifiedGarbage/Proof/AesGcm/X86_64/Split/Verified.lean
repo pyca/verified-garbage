@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.End
-import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
-import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchSplit
-import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.AesGcm.X86_64.Split.ShortRun
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM `seal_split` on x86-64: `Verified`

@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
+public import VerifiedGarbage.Proof.Rsa.X86.RvSquareStep
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvStoresTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvHelperTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvFinish
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvStoresTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvFactors
+import VerifiedGarbage.Proof.Rsa.X86.RvFinishY
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Computing and exporting factors keeps recovered values secret -/
 

@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Selecting a CRT workspace preserves all shared inputs and initializes its saved base -/
 

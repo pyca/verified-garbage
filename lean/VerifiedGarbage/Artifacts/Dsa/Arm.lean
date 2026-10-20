@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.Arm.Verified
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomSignVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 
 /-! DSA signing with a supplied or a sampled nonce, and verification, on ARMv7. -/
 

@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawRange
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawControl
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomMask
+public import VerifiedGarbage.Spec.Dsa.Random
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Dsa.DomainShape
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomCopyInit
 
 /-! A full scalar draw: copy, account for bytes, compare and update fuel. -/
 @[expose] public section

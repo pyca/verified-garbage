@@ -1,18 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-public meta import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
-import Mathlib.Data.Int.ModEq
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
-meta import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadGroup
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByteCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroupCT
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTakeBitCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadGroup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLoadTail
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailByteCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedGroupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! Batch and trailing-byte bodies have public source addresses and control. -/
 

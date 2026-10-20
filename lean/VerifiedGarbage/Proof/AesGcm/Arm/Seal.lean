@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesGcm.Arm.OneShot
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_seal`

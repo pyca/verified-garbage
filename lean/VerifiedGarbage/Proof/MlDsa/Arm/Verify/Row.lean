@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 
 /-!
 # ML-DSA verification on 32-bit ARM: the rows of `w′₁`

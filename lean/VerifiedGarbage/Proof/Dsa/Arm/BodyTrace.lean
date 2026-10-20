@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
-public import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
+import VerifiedGarbage.Proof.Dsa.Arm.PublicValidationCall
+import VerifiedGarbage.Proof.Dsa.Arm.ScheduleTrace
 public import VerifiedGarbage.Proof.Dsa.Arm.Body
+public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
 
 /-!
 # DSA on 32-bit ARM: the bodies' traces

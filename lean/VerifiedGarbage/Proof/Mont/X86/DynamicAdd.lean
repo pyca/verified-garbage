@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
-import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Modular addition for a runtime modulus on x86 -/
 

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
+import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # All fourteen CRT stack arguments are copied without changing retained slots -/
 

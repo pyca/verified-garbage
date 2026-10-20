@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Divstep.Alg
 
-public import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Batch
 
 /-!
 # Inversion by batches of divsteps: signed coefficients

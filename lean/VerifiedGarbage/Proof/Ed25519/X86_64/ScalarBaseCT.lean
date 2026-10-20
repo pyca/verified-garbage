@@ -1,21 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTBatch
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTBatch
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulLoop
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
-meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTBatch
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulLoop
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseMain
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86_64.PointMulCT`. -/
 

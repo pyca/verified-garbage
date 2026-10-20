@@ -1,9 +1,15 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedLookupTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedChecks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

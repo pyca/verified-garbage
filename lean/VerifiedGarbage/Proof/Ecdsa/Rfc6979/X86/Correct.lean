@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Loop
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Copy
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): correctness

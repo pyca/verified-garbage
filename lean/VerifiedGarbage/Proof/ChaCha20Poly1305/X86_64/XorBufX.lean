@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20-Poly1305 on x86-64: XORing keystream from a buffer, `2 ^ w` bytes at a time

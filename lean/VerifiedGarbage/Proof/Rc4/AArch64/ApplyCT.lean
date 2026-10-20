@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+public import VerifiedGarbage.Proof.Framework.AArch64.Taint
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Spec.Rc4
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+public import VerifiedGarbage.Impl.Rc4.AArch64
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Spec.Rc4
 meta import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Lit
+meta import VerifiedGarbage.Impl.Rc4.AArch64
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The PRGA's constant time

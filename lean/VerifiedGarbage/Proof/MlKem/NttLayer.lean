@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Ntt
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: the layers of the NTT, coefficient by coefficient

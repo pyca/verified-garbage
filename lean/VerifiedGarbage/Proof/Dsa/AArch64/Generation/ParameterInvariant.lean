@@ -1,8 +1,13 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Context
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeIteration
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SeedAttempt
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeLoop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.Chunks
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Memory
 
 /-! # The outer seed loop retains the exact remaining parameter search -/
 

@@ -1,23 +1,31 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
-public import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
-meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 public import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
 import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
-meta import VerifiedGarbage.Proof.Framework.X86.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
+import VerifiedGarbage.Proof.Ecdsa.X86.GMul
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJInvariant
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLays
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJFirst
 meta import VerifiedGarbage.Proof.Weierstrass.X86.TCombJStep
+meta import VerifiedGarbage.Proof.Ecdsa.X86.GMul
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.LadderP
 
 @[expose] public section
 

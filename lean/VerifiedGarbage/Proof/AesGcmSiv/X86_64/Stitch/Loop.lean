@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Group
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Aes
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM-SIV's interleaved loop: the body

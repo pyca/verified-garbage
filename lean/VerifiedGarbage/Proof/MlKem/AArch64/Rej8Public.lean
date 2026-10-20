@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BatchCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # Public stream prefixes determine the rejection loop's cursors -/
 

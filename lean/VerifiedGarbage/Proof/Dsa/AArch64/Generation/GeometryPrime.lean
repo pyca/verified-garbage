@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeometryTape
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeState
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Impl.Dsa.Generation.Layout
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.Dsa.Generation.Primality
+public import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! # Instantiate the shared probable-prime engine for each shaped q -/
 

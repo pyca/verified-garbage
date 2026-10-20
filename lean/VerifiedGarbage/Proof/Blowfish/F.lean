@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Spec.Blowfish
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Blowfish.Schedule
 
 /-!
 # F, one S-box at a time

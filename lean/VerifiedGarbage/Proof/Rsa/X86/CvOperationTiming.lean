@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.CvABI
+public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvBodyTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvEntryTiming
-public import VerifiedGarbage.Proof.Rsa.X86.CvArgumentsEq
-public import VerifiedGarbage.Proof.Rsa.X86.CvObservations
-public import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvBodyTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvArgumentsEq
+import VerifiedGarbage.Proof.Rsa.X86.CvObservations
+import VerifiedGarbage.Proof.Bignum.X86.PublicEntryTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvInstalled
+import VerifiedGarbage.Proof.Rsa.X86.CvBuffers
+import VerifiedGarbage.Proof.Rsa.X86.CvResources
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 
 /-! # The complete CRT operation leaks only the contract's declared public inputs -/
 

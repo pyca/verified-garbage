@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Core
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Store
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Memory
 
 /-! Multiply a modulus block by one stored cancellation digit. -/
 

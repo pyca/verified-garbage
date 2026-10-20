@@ -2,8 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
 public import VerifiedGarbage.Proof.Bignum.AArch64.Row
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Four-word steps preserve the existing row invariant. -/
 

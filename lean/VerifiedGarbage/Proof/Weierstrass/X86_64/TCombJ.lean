@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
+public import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
 import VerifiedGarbage.Proof.Weierstrass.CombFrame
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The fixed-base comb with Booth's digits and Jacobian mixed additions on x86-64

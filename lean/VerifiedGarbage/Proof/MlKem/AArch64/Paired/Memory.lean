@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Vector
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Extra
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Keep
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-! # Preserve independent paired-sampler streams and checkpoints -/
 @[expose] public section

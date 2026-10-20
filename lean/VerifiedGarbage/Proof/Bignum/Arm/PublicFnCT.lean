@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicInput
+public import VerifiedGarbage.Impl.Bignum.Arm.PublicFn
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicEntryReady
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The callable checked public RSA operation leaks only public arguments, modulus, and exponent -/
 

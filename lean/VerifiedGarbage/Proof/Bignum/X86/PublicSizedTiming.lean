@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PublicPair
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicImportTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicApplyTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicExportTiming
-public import VerifiedGarbage.Proof.Bignum.X86.PublicPrepared
+import VerifiedGarbage.Proof.Bignum.X86.PublicImportTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicApplyTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicExportTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicPrepared
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # The complete fixed-width public RSA operation keeps the input secret -/
 

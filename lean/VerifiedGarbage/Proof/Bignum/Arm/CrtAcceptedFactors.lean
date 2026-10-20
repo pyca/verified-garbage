@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
-public import VerifiedGarbage.Proof.Bignum.CrtResult
+import VerifiedGarbage.Proof.Bignum.CrtResult
 
 /-! # Accepted factors are safe odd moduli for both private powers -/
 

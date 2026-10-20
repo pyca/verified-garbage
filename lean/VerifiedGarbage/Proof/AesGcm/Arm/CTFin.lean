@@ -1,13 +1,31 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+public import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
-meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
-meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
-meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Args
+meta import VerifiedGarbage.Proof.AesGcm.Arm.Tag
+meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CTFn
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTCrypt
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
+meta import VerifiedGarbage.Proof.AesGcm.Arm.TextAbsorb
+import VerifiedGarbage.Impl.AesGcm.Arm
+import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.TCB.Arm.Isa
+meta import VerifiedGarbage.Impl.AesGcm.Arm
+meta import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
+meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-GCM on ARMv7: `finTag`, `vg_aes_gcm_stream_finish` and `vg_aes_gcm_stream_verify` are constant time

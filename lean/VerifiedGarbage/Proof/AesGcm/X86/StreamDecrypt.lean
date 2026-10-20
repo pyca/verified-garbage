@@ -1,7 +1,25 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
 
-public import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.X86.StreamEncrypt
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
+meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_stream_decrypt`

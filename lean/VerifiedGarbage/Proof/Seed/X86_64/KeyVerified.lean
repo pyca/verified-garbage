@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Proof.Seed.X86_64.ConstantTime
+public import VerifiedGarbage.TCB.X86_64.Target
 
 import VerifiedGarbage.Proof.Seed.X86_64.Key
-public import VerifiedGarbage.Proof.Seed.X86_64.Verified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Seed.X86_64.Lit
 
 /-! # Key expansion meets its contract, with the scratch buffer as an argument -/
 

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSemantics
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLoopGuards
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidate
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchClassify
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchExhausted
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchGuards
 
 /-! # Total correctness of the complete native parameter-search loop -/
 

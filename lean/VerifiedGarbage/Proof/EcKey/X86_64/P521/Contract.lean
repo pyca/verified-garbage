@@ -5,9 +5,6 @@ public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Tables
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # P-521 public keys on x86-64: the contract the proof is written against

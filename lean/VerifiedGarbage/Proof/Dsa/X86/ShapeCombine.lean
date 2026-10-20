@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Shape
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeMasks
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.Words32
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Execution of the supported-domain mask combination -/
 

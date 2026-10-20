@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerKeep
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
 
 @[expose] public section
 

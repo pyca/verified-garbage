@@ -2,7 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Stage
 public import VerifiedGarbage.Proof.Ed25519.DblPoint
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.Ifma.Block`. -/
 

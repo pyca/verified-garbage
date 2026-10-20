@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-meta import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Hash
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KCall
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Entry
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA verification on x86-64: the sponge leaks only addresses

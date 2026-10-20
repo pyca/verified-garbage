@@ -1,9 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcLoads
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
-public import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheckCT
+public import VerifiedGarbage.Proof.Bignum.Arm.ExponentScanCT
+public import VerifiedGarbage.Proof.Rsa.Arm.KcStart
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.ExponentCheck
+import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Rsa.Arm.CvFin
+import VerifiedGarbage.Proof.Rsa.Arm.CvLoads
 
 /-! # The checks of an RSA key on ARMv7: the entry, the checks of `n` and `e`, and the exit
 

@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtLayout
+public import VerifiedGarbage.Impl.Bignum.X86.CrtRecombine
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtProductLayout
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRecombine
+import VerifiedGarbage.Proof.Bignum.X86.CrtProductLayout
+import VerifiedGarbage.Proof.Bignum.X86.CrtRecombine
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Recombine from the saved q residue into the private result slot -/
 

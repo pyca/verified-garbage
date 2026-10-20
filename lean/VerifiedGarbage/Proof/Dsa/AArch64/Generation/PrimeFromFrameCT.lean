@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimalityCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
 
 /-! The retained frame supplies the complete verified primality operation. -/

@@ -1,9 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.RsaPss
+import VerifiedGarbage.Proof.Dsa.AArch64.BufferFrame
 
 /-! # State and operand preservation between complete DSA schedules -/
 

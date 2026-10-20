@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Serialize one lane of the paired permutation for the singleton fallback -/
 @[expose] public section

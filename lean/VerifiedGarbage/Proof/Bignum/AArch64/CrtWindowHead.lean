@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowLoop
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPrefixInv
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRun
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! Prepare the wider table within the existing RSA workspace allocation. -/
 

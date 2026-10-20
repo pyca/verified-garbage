@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRunning
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallMemory
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomRestore
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallLayout
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! Restore the complete signing-loop invariant after a supplied-nonce call. -/
 @[expose] public section

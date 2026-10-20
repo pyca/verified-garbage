@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningInput
-import VerifiedGarbage.Proof.Dsa.AArch64.DomainShape
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Argument capture and public-domain validation for a complete signing attempt -/
 

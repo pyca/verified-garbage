@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Enc
-import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # XTS-AES of data units on x86-64: decryption

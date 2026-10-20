@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
-public import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import Mathlib.Tactic.Conv

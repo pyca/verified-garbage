@@ -2,13 +2,25 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
+public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyMessage
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.Hash`. -/
 

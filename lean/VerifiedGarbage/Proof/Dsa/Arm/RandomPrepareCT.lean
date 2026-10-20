@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomScan
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepare
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Preparing leaks only public data (32-bit ARM)

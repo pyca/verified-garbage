@@ -1,12 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Weierstrass.CombW
 
 @[expose] public section
 

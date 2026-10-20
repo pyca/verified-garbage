@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.PublicOutput
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Status
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.OutputBytes
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Status
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskOutput
 
 /-! # FFDH on x86-64: generated-key outputs and status -/
 

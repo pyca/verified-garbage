@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Argon2.Contract
 import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Blake2.Spec
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # The RFC initialization blocks as byte strings in memory -/
 

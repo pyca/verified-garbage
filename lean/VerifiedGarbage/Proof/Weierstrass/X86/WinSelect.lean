@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.X86.Window
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.WinLay
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.Window
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Window
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 @[expose] public section
 

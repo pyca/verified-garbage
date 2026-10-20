@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 
-import VerifiedGarbage.Proof.AesGcm.Arm.StreamInit
-public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import VerifiedGarbage.Proof.AesGcm.Arm.Args
+import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_aad`

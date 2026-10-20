@@ -2,9 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 public import VerifiedGarbage.Proof.Ed25519.RootPower
+public import VerifiedGarbage.Impl.Ed25519.X86.Power
 import VerifiedGarbage.Proof.X25519.X86.Field32.Call
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86.Field32.Lit
 
 /-! The shared addition chain, a call of `vg_gf25519_r32_pow250`
 (`power250_ok`), computes the inversion and square-root powers with a few

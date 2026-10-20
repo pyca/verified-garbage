@@ -1,8 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParametersCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GenerateCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GenerateCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NativeParametersCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GenerateCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Dispatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextSuccess
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Public parameter lengths select one of the three verified generators -/
 

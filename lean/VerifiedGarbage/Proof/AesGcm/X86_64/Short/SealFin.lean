@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
-import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
+public import VerifiedGarbage.Impl.AesGcm.X86_64.SealFin
 import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import Mathlib.Data.List.Dedup
+import VerifiedGarbage.Proof.AesGcm.X86_64.SealCT
 
 /-!
 # AES-GCM on x86-64: `seal` ending without calls, with AES-NI

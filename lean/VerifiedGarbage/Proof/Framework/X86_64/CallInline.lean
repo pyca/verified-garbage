@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Calls as inlined code (x86-64)

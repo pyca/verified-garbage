@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Cbd16
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Input
-public import VerifiedGarbage.Spec.MlKem.Kpke16
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # `vg_mlkem16_cbd2` on AArch64: sixteen coefficients from their nibbles

@@ -1,20 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Pre
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
-import Mathlib.Data.List.Induction
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.SealSplit
-meta import Mathlib.Data.List.Induction
-meta import VerifiedGarbage.Proof.Aes.KeyExp
-meta import VerifiedGarbage.Proof.Aes.SboxSpec
-meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # ChaCha20-Poly1305 with the data's first bytes from `src`, x86-64: the encryption

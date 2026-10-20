@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcInput
 public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeState
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.PcHead
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Workspace preparation establishes the modular-arithmetic invariants -/
 

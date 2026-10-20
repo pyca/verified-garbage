@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.Linear
 public import VerifiedGarbage.Proof.Camellia.Arm.Sbox
-public import VerifiedGarbage.Proof.Framework.Offset
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Camellia.Bitsliced
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # A round of bitsliced Camellia on ARMv7

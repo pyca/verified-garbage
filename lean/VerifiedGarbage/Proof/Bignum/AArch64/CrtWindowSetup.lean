@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
+public import VerifiedGarbage.Proof.Framework.Contract
 
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowLayout
 
 /-!
 # RSA with the CRT on AArch64: setting up the primes

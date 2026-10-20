@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
+public import VerifiedGarbage.Proof.Mont.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PdEntry
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryMemory
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Packed-key entry memory preserves every saved argument except the count slot -/
 

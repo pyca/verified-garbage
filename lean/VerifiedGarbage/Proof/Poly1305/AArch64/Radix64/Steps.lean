@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import Mathlib.Tactic.SplitIfs
 
 /-! Instruction-level proofs for the radix-64 Poly1305 arithmetic. -/
 

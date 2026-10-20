@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin4
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial2
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Front
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Trial2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Fin2
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Seqs
+import VerifiedGarbage.Proof.Rsa.Arm.RvCand4
 
 /-! # A candidate on ARMv7: the body after the entry (`candBody_vp`)
 

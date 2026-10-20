@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivBody
-public import VerifiedGarbage.Proof.Rsa.X86.PrivNoSp
 public import VerifiedGarbage.Proof.Dsa.X86.RandomContext
+public import VerifiedGarbage.Proof.Rsa.X86.PrivContext
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Entry state and preserved saved-register words for checked private RSA -/
 

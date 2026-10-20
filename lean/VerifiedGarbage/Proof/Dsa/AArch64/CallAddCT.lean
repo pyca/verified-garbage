@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 
 /-! # Constant time of the complete parent-to-child scalar addition -/
 

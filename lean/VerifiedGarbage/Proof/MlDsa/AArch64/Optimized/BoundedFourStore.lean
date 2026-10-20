@@ -1,10 +1,11 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourTable
+public import VerifiedGarbage.Proof.MlDsa.Sample.HalfByte
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourVec
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourCompact
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
-import VerifiedGarbage.Proof.MlDsa.Sample.Mem
-import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourValues.lean` -/
 

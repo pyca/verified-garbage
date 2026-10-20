@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Framework.Cold
 public import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A function that chooses, on entry, between two verified functions

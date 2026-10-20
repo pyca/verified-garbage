@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyWords
+import VerifiedGarbage.Proof.Camellia.X86_64.KeyWords
 import VerifiedGarbage.Proof.Camellia.X86_64.Group
-import VerifiedGarbage.Proof.Camellia.KeySched
+public import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Camellia.Bytes
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Storing the subkeys on x86-64

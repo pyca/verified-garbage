@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtArgs
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The private CRT call satisfies the shared buffer contract -/
 

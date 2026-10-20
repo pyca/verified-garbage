@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignContext
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
-public import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignBlocksTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignZero
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignWipeArgs
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
 
 /-! # Erasure traces depend only on the common public pointer and byte count -/
 

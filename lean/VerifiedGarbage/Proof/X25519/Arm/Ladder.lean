@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # X25519 on 32-bit ARM: the ladder

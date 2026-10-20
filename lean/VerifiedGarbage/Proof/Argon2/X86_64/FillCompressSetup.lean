@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressOperation
 import VerifiedGarbage.Proof.Argon2.X86_64.Initialize
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Establish compression-and-write invariants from the frame and allocations. -/
 

@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcBody
-public import VerifiedGarbage.Proof.Bignum.Arm.PcPush
 
 /-! # Native AAPCS assumptions for public RSA precomputation -/
 

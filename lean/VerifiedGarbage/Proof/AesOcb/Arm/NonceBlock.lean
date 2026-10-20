@@ -1,8 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
 public import VerifiedGarbage.Proof.Ocb.Nonce
+public import VerifiedGarbage.Impl.AesOcb.Arm
+public import VerifiedGarbage.Proof.AesOcb.Arm.Env
 import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesOcb.Arm.Words
+import VerifiedGarbage.Proof.AesGcm.Arm.Loops
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
+import VerifiedGarbage.Proof.AesGcm.Arm.Env
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on ARMv7: the block `Nonce` (`nonceBlock`)

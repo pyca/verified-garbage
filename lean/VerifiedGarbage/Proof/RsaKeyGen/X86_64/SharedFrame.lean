@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerPre
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Preserve policy inputs around the shared round's private stack -/
 

@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.Sieve
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-public import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Ffdh
+import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
+import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! # FFDH parameter candidates on x86-64: reuse RSA's proven trial reductions -/
 

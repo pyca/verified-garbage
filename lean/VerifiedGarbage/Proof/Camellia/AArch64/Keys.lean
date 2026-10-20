@@ -1,10 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
+import VerifiedGarbage.Proof.Camellia.AArch64.Crypt8
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyChecks
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Camellia.AArch64.Core
 import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # The table of bitsliced subkeys on AArch64

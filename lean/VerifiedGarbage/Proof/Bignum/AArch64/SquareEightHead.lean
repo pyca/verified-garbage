@@ -1,13 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightFinish
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareLayout
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightTile
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
 
 @[expose] public section

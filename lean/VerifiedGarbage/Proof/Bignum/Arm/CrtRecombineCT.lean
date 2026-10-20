@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtRecombine
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineProduct
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombine
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProductCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombineCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFinishRecombineCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Full CRT reconstruction conceals both factors and residues -/
 

@@ -1,19 +1,25 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
 import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Top
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNtt
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 meta import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_rej_ntt_poly4`

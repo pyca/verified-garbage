@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Loop
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the last group and the end

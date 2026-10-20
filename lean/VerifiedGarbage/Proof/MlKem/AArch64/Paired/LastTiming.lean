@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStartTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastStartTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-! # The odd final matrix entry has public-seed-only timing -/
 @[expose] public section

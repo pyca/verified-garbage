@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCTLoop
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCounter
+import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCTLoop
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.AArch64.FoldedCounter
+meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 

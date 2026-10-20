@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivEntryReady
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Rsa.X86.PrivGeometry
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Decode checked RSA's cdecl arguments into its public buffer geometry -/
 

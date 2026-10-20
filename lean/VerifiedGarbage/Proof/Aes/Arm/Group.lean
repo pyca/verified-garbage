@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.Arm.Keys
 public import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
+public import VerifiedGarbage.Proof.Aes.Arm.Encrypt
 import VerifiedGarbage.Proof.Framework.Arm.Bytes
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # One group of counter-mode blocks on ARMv7

@@ -1,15 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
-meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
-meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Mul
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
+meta import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`

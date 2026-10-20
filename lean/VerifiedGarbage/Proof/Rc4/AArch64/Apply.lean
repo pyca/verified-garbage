@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplyFinish
 public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Rc4.AArch64
+public import VerifiedGarbage.Proof.Rc4.Iterate
+import VerifiedGarbage.Proof.Rc4.AArch64.ApplySetup
+import VerifiedGarbage.Proof.Rc4.AArch64.Group
+import VerifiedGarbage.Proof.Rc4.Memory
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # The PRGA

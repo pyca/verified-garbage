@@ -1,29 +1,25 @@
 module
 
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
-meta import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Mont.Read
-public import VerifiedGarbage.Spec.Weierstrass.Inverse
-meta import VerifiedGarbage.Spec.Weierstrass.Inverse
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
+public import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+meta import VerifiedGarbage.Proof.Framework.Pratt
+meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.InverseLit
+meta import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 
 /-!
 # `vg_p384_inv_mod_p` and `_n` on x86-64: `Verified`

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAdd
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 scalar multiply-add on ARMv7: the whole function

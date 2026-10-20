@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
+public import VerifiedGarbage.Proof.Divstep.BatchBasic
+import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Batch
 
 /-! # The inversion modulo `p` on AArch64: the batches' invariant
 

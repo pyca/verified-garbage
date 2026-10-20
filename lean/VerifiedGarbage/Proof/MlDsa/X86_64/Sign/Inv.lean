@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 
 /-!
 # ML-DSA signing on x86-64: what holds of the state between the pieces

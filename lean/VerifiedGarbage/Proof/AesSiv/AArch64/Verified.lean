@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Init
 public import VerifiedGarbage.Proof.AesSiv.AArch64.EncCT
-import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.Proof.AesSiv.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-SIV on AArch64: `Verified`

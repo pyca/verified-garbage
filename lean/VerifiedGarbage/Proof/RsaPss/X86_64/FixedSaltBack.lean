@@ -1,9 +1,12 @@
 module
+public import Mathlib.Data.Int.GCD
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignMain
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedSaltCopy
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBlocks
+import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 
 /-! Verification's fixed-length salt input, built without a masked shift. -/
 

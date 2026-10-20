@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-meta import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
+meta import VerifiedGarbage.Proof.Blowfish.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Blowfish.X86.ModesLit
 
 /-!
 # Blowfish-CBC on x86 (32-bit) meets its contracts

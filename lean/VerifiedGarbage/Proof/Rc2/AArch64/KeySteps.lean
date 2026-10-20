@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rc2.AArch64.ExpandKey
-public import VerifiedGarbage.Proof.Rc2.AArch64.BlockIO
-public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import VerifiedGarbage.Proof.Rc2.Expansion
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
+import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! # Individual AArch64 RC2 key-expansion steps -/
 

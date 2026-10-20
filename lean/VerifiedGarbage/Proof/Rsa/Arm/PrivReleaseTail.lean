@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseBuffer
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseArgs
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
+import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseBuffer
+import VerifiedGarbage.Proof.Rsa.Arm.PrivReleaseArgs
+import VerifiedGarbage.Proof.Rsa.Arm.PrivMask
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Fault status, branchless release, and temporary erasure as one verified stage -/
 

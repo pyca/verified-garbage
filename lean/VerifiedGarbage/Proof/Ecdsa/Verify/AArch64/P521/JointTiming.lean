@@ -1,6 +1,14 @@
 module
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointBoundaryTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointChecks
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Impl.AArch64Instrs
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Literals
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointBoundaryTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTopTiming
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521.Joint
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64

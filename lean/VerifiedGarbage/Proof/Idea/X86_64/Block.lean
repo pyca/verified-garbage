@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Round
+public import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # IDEA on x86-64: a block

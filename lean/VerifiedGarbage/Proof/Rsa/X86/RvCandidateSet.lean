@@ -1,8 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpLoop
-public import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
+import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+import VerifiedGarbage.Proof.Rsa.X86.RvSlots
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
+import VerifiedGarbage.Proof.Rsa.X86.RvWrite
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Initializing one candidate and its public exponentiation count -/
 

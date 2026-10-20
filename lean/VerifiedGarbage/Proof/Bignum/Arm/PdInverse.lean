@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdBodyInput
-public import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
+public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
+public import VerifiedGarbage.Proof.Bignum.Arm.PdCheckRest
+import VerifiedGarbage.Proof.Bignum.Arm.PdChecks
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeInverse
 
 /-! # Establish arithmetic readiness without recomputing the packed R² -/
 

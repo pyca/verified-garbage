@@ -1,13 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestPack
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestPack
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.RestRow
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp4
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-!
 # ML-DSA key generation on x86-64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

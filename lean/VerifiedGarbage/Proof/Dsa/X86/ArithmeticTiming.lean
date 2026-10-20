@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 
 /-! # Constant-time ordinary modular products and sums -/
 

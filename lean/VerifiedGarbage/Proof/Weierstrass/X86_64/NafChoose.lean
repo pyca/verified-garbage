@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! Selecting a signed width-five digit from the public scalar's low word. -/
 

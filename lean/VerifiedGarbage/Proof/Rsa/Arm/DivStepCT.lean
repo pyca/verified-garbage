@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Rsa.Arm.Div
+public import VerifiedGarbage.Proof.Rsa.Arm.DivContext
 
-public import VerifiedGarbage.Proof.Rsa.Arm.DivShift
-public import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivReduceCT
-public import VerifiedGarbage.Proof.Rsa.Arm.DivBitCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivShift
+import VerifiedGarbage.Proof.Rsa.Arm.DivShiftCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivReduceCT
+import VerifiedGarbage.Proof.Rsa.Arm.DivBitCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One division iteration is independent of the secret numerator and divisor -/
 

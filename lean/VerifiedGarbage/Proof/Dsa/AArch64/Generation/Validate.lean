@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Validate
+public import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ValidateCore
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.AttemptStatus
 
 /-! # Domain-check results control native seed retry or acceptance -/
 

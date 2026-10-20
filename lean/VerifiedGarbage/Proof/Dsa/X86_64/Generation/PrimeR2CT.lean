@@ -1,17 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeR2
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeSetup
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeSetup
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontSetup
-import VerifiedGarbage.Proof.Bignum.CrtRedc
-meta import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
 
 /-! # Constant-time Montgomery initialization for full and padded DSA candidates -/
 

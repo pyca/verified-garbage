@@ -1,8 +1,29 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicContextCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRun
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRun
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicContextCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBodyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicContextCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBodyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Compose register saves, public-input generation, and register restoration. -/
 @[expose] public section

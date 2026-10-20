@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeContext
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEncArgs
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLocal
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Encode
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Encode the digest into the private frame and retain its exact bytes -/
 

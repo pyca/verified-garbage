@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSetup
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Proof.Bignum.Layout
+import VerifiedGarbage.Proof.Bignum.AArch64.MontMul
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowSetup

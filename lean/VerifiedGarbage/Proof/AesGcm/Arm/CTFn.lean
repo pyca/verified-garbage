@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.Arm.Args
+public import VerifiedGarbage.Proof.AesGcm.Arm.CTBase
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
+import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
 # AES-GCM on ARMv7: constant time of the functions, the tools

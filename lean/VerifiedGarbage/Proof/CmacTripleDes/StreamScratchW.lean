@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.CmacTripleDes.StreamScratch
 
 /-!
 # Streaming TDEA-CMAC's `finish` with a larger working space

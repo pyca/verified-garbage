@@ -1,18 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.RelCT
-meta import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Open
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Correct
+meta import VerifiedGarbage.Impl.StackScratch.AArch64
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Main
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Short.Branch
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Seal
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 
 /-!

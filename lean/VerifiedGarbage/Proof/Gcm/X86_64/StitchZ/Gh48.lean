@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+public import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pair
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the GHASH of 48 blocks

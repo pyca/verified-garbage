@@ -1,17 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
-meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
+import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
 public import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Impl.Ed448.X86.SignCached
+public import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+public import VerifiedGarbage.Proof.Ed448.X86.Callee
+public import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
+import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Body
+meta import VerifiedGarbage.Proof.Ed448.X86.Shake.CT
+meta import VerifiedGarbage.Impl.Ed448.X86.SignCached
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseLocal
+meta import VerifiedGarbage.Proof.Ed448.X86.Callee
+meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Layout
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
-meta import VerifiedGarbage.Proof.X448.X86.Ops
+meta import VerifiedGarbage.Proof.Ed448.X86.SignCached.Calls
+meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): constant time, and `Verified`

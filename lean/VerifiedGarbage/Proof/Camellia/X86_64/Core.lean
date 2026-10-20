@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86_64.Round
 public import VerifiedGarbage.Proof.Camellia.X86_64.Moves
 public import VerifiedGarbage.Proof.Camellia.X86_64.Fl
-import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Camellia.Common
-import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Eight blocks of bitsliced Camellia on x86-64

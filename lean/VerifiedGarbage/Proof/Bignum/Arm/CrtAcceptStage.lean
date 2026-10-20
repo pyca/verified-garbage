@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptInput
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Connect the ciphertext range check to the shared private RSA call state -/
 

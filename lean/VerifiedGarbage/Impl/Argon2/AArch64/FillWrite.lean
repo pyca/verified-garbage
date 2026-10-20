@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Write the compression result into the current matrix block. `x1` points
 to the temporary result and `x0` to the matrix destination; `x5` is the public

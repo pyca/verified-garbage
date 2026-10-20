@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
+import VerifiedGarbage.Proof.Bignum.CrtExp
 
 /-! # Workspace initialization preserves the public frame arguments and input tapes -/
 

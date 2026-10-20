@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.EntryBranch
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.AArch64
 public import VerifiedGarbage.Spec.Hmac.Generic
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.InstancePriority
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # HMAC's `init` for a key of any length on AArch64, choosing on entry

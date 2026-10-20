@@ -5,7 +5,6 @@ public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
-public import VerifiedGarbage.Spec.Weierstrass.MulBase
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 public import VerifiedGarbage.Spec.Weierstrass.CheckPoint

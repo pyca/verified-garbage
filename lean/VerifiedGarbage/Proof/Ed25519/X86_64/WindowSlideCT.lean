@@ -1,13 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
-import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Verification's windows: what their traces depend on

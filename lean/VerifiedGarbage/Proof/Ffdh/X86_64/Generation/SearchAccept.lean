@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchMemory
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchTerminal
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchData
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Record final candidate consumption and finish native parameter search -/
 

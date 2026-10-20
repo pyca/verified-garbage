@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PrepareCTData
+public import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PreparePrefix
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Montgomery
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # FFDH parameter generation on x86-64: timing of inverse and R² setup -/
 

@@ -1,15 +1,15 @@
 module
 
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # `vg_rsa_private_crt` on x86-64: the fixes and the products

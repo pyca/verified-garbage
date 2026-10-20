@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Run
+import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Run
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Stitch.Tables
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Entry
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Run
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Spec
 
 /-!
 # AES-GCM on AArch64, interleaved: `seal`'s code with the interleaved loops (`sealWithS`)

@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddCTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Cache
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Digit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-!
 # Timing of the public NAF's digits

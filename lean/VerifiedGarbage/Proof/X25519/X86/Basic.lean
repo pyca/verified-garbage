@@ -1,12 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.X25519.X86
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on x86 (32-bit): words of the working space

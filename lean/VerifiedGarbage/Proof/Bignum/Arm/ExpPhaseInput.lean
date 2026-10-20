@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpInit
+import VerifiedGarbage.Proof.Bignum.Arm.ExpInit
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteState
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBytes
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBytes
 
 /-! # The complete inputs for native RSA exponentiation -/
 

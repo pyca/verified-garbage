@@ -1,11 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+public import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
+import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTPieces
+meta import VerifiedGarbage.Impl.Rsa.X86_64.CheckCrtKey
 meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTLoads
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyPhases
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Rsa.X86_64.KeyCTSetup
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyReduce
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA key checking on x86-64: constant time of bounded remainders

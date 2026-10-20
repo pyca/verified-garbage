@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.P256.VerifyTable.Build
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.JacMadd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import all Init.Data.Nat.Bitwise.Basic
 
 /-! The co-Z table's values: entry `a` of the build's environment is

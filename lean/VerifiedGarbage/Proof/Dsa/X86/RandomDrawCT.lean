@@ -1,8 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
+public import VerifiedGarbage.Proof.Dsa.X86.RandomDraw
+import VerifiedGarbage.Proof.Dsa.X86.RandomCT
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomCTDefs
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomDraw
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomCT
+meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # A draw leaks only its public bounds and its decision (x86)

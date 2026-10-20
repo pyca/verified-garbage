@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Wrap
-public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 
 /-!

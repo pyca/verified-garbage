@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.RestBase
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 
 /-!
 # ML-DSA key generation on 32-bit ARM: `s₁ ‖ s₂` to `sk`, and `ŝ₁`

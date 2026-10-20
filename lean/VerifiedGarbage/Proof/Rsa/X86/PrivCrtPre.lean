@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtArgs
+import VerifiedGarbage.Proof.Rsa.X86.PrivStackWord
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The CRT call's narrowed regions satisfy the shared cdecl signature -/
 

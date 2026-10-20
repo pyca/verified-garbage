@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ImportArray
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportArray
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArray
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 
 /-! # Import a packed precomputation while preserving workspace layout -/
 

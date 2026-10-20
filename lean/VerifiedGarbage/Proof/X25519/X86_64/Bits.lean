@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.X25519.X86_64.Mem
+public import VerifiedGarbage.Proof.X25519.Ladder
+public import VerifiedGarbage.Spec.X25519.Contract
 
-public import VerifiedGarbage.Proof.X25519.X86_64.Iter
-public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Proof.Framework.BitByte
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.BitByte
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.X25519.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X25519 on x86-64: the bits of the scalar

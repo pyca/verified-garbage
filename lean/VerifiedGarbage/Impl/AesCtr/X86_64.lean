@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.AesCbc.X86_64
-public import VerifiedGarbage.Impl.Aes.X86_64.Callee
 
 /-!
 # AES-CTR: x86-64 implementation

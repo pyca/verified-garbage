@@ -1,11 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
-public import VerifiedGarbage.Proof.X448.X86_64.Inv
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Init
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Invariant
+public import VerifiedGarbage.Impl.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
 import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
 import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Recode
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Loop
+import VerifiedGarbage.Proof.Ed448.Wnaf.Recoding
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-! Sparse multiplication with full-width scalar semantics. -/
 

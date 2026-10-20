@@ -1,15 +1,29 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
+public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
+meta import VerifiedGarbage.Proof.MlKem.Bits
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
 meta import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_encode12_avx2`

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract

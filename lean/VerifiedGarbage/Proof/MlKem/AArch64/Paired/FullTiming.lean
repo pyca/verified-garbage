@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FinishTiming
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullReject
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FullPrefix
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.TCB.Axioms
 
 /-! # Singleton fallback timing depends only on the shared matrix seed -/
 @[expose] public section

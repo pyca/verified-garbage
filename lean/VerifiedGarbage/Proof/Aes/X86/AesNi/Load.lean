@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

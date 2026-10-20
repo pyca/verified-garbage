@@ -2,6 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.EncCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the bytes left

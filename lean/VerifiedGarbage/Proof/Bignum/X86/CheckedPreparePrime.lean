@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CheckedPreparePrime
 public import VerifiedGarbage.Proof.Bignum.X86.CheckedPrimePower
+import VerifiedGarbage.Proof.Bignum.X86.PrimeMask
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Secret-factor setup always supplies a usable Montgomery context -/
 

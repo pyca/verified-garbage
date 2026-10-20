@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdArithmetic
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
+import VerifiedGarbage.Proof.Bignum.Arm.PublicAccepted
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 
 /-! # Preserve the secret acceptance bit across workspace-only arithmetic -/
 

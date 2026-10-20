@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-public import VerifiedGarbage.Spec.Ed25519
+public import VerifiedGarbage.Spec.X25519
 
 /-! Extended Edwards formulas on the four-word field representation.
 Slots 0–21 occupy bytes 64–767 of the eight-KiB workspace. -/

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.CrtPost
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValid
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.CrtValid
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 
 /-! # Private CRT rejects invalid public moduli before processing private data -/
 

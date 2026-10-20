@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PcStack
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PcValid
-public import VerifiedGarbage.Proof.Bignum.Arm.PcFail
-public import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Arm.PcValid
+import VerifiedGarbage.Proof.Bignum.Arm.PcFail
+import VerifiedGarbage.Proof.Bignum.Arm.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The RSA precomputation body implements both outcomes of the shared specification -/
 

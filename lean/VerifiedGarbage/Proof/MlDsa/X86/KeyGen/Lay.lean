@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 public import VerifiedGarbage.Impl.MlDsa.X86.KeyGen.KeyGen
 public import VerifiedGarbage.Spec.MlDsa.Contract
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.MlDsa.DecideAt
-import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlKem.X86.Top
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # ML-DSA key generation on x86 (32-bit): parameters and layout

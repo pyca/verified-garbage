@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Impl.CmacTripleDes.Arm
+public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 import VerifiedGarbage.Proof.CmacTripleDes.Cmac
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Update
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # TDEA-CMAC on ARMv7: `vg_cmac_triple_des_finalize` is correct

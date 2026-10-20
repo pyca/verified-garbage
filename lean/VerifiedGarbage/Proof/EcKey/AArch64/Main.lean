@@ -4,10 +4,18 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 public import VerifiedGarbage.Impl.EcKey.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-public import VerifiedGarbage.Proof.EcKey.PublicKey
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Spec.EcKey
+import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
+import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Elliptic curve public keys on AArch64: the result, and the whole function

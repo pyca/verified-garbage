@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ocb
 
 /-!
 # AES-OCB on AArch64: the contracts the proofs are written against

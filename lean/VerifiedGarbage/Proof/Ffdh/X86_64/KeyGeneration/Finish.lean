@@ -1,7 +1,13 @@
 module
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Loop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Returning from the key search: the octets consumed, the status and r12 -/
 

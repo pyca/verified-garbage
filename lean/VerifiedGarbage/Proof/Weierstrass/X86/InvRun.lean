@@ -1,7 +1,13 @@
 module
+public import Mathlib.Algebra.Order.Ring.Abs
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Ring
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.InvBatch
+import VerifiedGarbage.Proof.Weierstrass.X86.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # The fixed twenty-batch inversion loop -/
 

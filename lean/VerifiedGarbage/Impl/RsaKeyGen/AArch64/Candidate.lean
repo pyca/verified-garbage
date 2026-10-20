@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Core
 

@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignCall
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Inst
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignVerified
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the signing functions on `μ` it calls

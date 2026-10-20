@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # CRT input imports depend only on the public call geometry -/
 

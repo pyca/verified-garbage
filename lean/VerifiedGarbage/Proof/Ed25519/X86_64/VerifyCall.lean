@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Verification calling the point functions: `Verified`

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.SegmentStart
+import VerifiedGarbage.Proof.Argon2.SegmentStart
 public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupPrepare
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Merged from `Proof.Argon2.X86_64.SegmentSetupCheck`. -/
 

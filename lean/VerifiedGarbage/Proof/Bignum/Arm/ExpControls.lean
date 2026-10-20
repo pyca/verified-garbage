@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ExpControls
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Initialize exponent control slots while preserving every RSA arithmetic array -/
 

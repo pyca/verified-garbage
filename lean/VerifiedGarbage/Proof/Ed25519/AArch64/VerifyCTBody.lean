@@ -1,15 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointDecode
+public import VerifiedGarbage.Proof.Ed25519.Group.Extended
+public import VerifiedGarbage.Proof.Ed25519.Recover
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.WindowCT
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyContext
+meta import VerifiedGarbage.Proof.Ed25519.Group.Extended
+meta import VerifiedGarbage.Proof.Ed25519.Recover
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+meta import VerifiedGarbage.Impl.Ed25519.AArch64.Verify
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyCTPublic`. -/
 

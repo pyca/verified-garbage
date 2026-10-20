@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ops
-public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring.RingNF
 

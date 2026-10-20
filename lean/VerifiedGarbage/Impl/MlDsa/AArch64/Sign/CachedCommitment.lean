@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedCommitment
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CommitTail
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedMasks
 
 @[expose] public section
 

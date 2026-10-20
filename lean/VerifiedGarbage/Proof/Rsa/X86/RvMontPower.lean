@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMontFrame
-public import VerifiedGarbage.Proof.Mont.X86.PowerTwo
+import VerifiedGarbage.Proof.Mont.X86.PowerTwo
+import VerifiedGarbage.Proof.Rsa.X86.RvMontClear
 
 /-! # Computing Montgomery R squared inside the recovery workspace -/
 

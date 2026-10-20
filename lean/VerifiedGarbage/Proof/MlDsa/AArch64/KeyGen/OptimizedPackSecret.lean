@@ -2,12 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRow
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

@@ -1,14 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingInit
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingStep
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTimingStep
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! Public table construction has equal traces for equal input field values. -/

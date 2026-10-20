@@ -1,6 +1,6 @@
 module
+import VerifiedGarbage.Proof.Bignum.PublicWritten
 
-public import VerifiedGarbage.Proof.Bignum.PublicWritten
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm

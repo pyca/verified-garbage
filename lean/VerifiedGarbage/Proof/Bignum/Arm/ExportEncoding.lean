@@ -1,6 +1,9 @@
 module
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Bignum.ExportEncoding
 
-public import VerifiedGarbage.Proof.Bignum.ExportEncoding
 
 @[expose] public section
 namespace VG.Proof.Bignum.Arm

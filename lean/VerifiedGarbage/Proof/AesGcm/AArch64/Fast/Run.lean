@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Front
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Pad
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64, the path for TLS records: `run`

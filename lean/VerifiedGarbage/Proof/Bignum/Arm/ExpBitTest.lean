@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Extract the next public RSA exponent bit from its shifted byte -/
 

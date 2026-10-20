@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Contract
 import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Correct
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Outputs
+import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Live
 
 /-! # One attempt of the key-generation controller (AArch64)
 

@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Step
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Pass
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Round
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Round
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # An SSE2 DES pass on the machine

@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Sm3
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming SM3: facts about the specification

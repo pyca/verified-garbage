@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
-public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Set up and select the narrow workspace at a factor's own width -/
 

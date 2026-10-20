@@ -1,23 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompress
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillKernel
-public import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapState
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.X86_64.BlockAddress
-public import VerifiedGarbage.Impl.Argon2.X86_64.FillColumn
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Impl.Argon2.X86_64.FillPointers
 import VerifiedGarbage.Proof.Argon2.X86_64.Wrap
 import VerifiedGarbage.Proof.Argon2.X86_64.Relative
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceMapLane
+public import VerifiedGarbage.Proof.Argon2.X86_64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.ReferenceStart
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.ReferenceMapWindow`. -/
 

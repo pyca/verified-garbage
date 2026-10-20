@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointTable
-public import VerifiedGarbage.Proof.Ed25519.AArch64.PointLoop
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Ed25519.AArch64.PointTable`. -/
 

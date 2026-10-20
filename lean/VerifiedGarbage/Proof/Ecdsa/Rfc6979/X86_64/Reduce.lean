@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Bytes
-public import VerifiedGarbage.Proof.X25519.X86_64.Step
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.X25519.X86_64.Step
+import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
-public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.X86_64.Row
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
+public import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Bytes
 
 /-!
 # Deterministic ECDSA on x86-64: `h = bits2octets(digest)`

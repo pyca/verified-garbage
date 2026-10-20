@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.Lanes
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc4.AArch64.Rotate
 
 /-!
 # The groups

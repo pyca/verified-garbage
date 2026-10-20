@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvLoopTiming
 public import VerifiedGarbage.Proof.Rsa.X86.RvExpInvariant
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.RelCT
 
 /-! # Binary exponentiation has the same fixed schedule for different private exponents -/
 

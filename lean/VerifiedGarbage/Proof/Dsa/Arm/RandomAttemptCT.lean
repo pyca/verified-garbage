@@ -1,10 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomAttempt
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 meta import VerifiedGarbage.Proof.Dsa.Arm.RandomCallCT
-public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
 meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSampleCT
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomSample
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # An attempt leaks only its trace (32-bit ARM)

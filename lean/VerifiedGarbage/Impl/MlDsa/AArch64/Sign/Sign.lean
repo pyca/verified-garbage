@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Frag
 public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa{44,65,87}_sign`

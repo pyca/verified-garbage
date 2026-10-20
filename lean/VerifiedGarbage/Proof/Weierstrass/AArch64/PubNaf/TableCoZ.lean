@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.CoZTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # The public NAF's table by co-Z arithmetic

@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
-meta import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.TripleDes.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
+import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.TripleDes.CbcScratch
-public import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 meta import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 
 /-!
 # Triple DES-CBC on x86 (32-bit) meets its contracts

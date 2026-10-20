@@ -1,25 +1,39 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.EcKey.X86.Main
-meta import VerifiedGarbage.Proof.EcKey.X86.Main
 public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Contract
-meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Contract
-public import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
-meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
+import Mathlib.Data.Finset.Attr
+import Mathlib.Data.List.Forall2
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.EcKey.X86.Main
+meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Spec.EcKey.BrainpoolP256r1
 meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Verified
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.X25519.X86.Column
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.EcKey.X86.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Data.List.Forall2
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import VerifiedGarbage.Proof.Ecdsa.X86.BrainpoolP256r1.Lit
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # brainpoolP256r1 public keys on x86 (32-bit): `Verified`

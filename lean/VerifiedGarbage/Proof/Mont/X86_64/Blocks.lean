@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Mont.X86_64.Row
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Montgomery arithmetic on x86-64: the small blocks of a round

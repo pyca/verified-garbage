@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.Arm.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Layout
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Setup
 public import VerifiedGarbage.Spec.Ed448.Contract
 import Mathlib.Tactic.SplitIfs

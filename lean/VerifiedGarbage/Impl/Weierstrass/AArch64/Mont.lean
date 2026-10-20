@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.AArch64
-public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
 public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
 public import VerifiedGarbage.Spec.Weierstrass.Mont

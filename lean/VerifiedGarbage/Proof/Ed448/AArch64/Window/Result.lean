@@ -10,6 +10,9 @@ public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Ladder
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.X448.AArch64.Finish
 
 /-!
 # Ed448 verification on AArch64: the result

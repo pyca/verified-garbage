@@ -1,13 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Field
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+public import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Field
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
-import VerifiedGarbage.Impl.Mont.Mod
-meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.RecoverSign
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

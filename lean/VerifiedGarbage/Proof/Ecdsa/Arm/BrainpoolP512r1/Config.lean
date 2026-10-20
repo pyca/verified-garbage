@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
+public import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on Arm -/
 

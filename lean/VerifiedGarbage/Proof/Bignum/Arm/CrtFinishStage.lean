@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Bignum.Arm.CrtExportGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Reconstruct and export exactly the accepted CRT result, or all zero bytes -/
 

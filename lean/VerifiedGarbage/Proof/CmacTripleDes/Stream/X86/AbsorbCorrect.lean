@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Absorb
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Absorb
+public import VerifiedGarbage.Impl.CmacTripleDes.Stream.X86
+public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Update
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 
 /-!
 # Streaming TDEA-CMAC on x86: `vg_cmac_triple_des_absorb` is correct

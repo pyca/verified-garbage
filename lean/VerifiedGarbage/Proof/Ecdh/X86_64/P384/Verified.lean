@@ -1,29 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
-meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
+import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
+public import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.DoubleIn
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
+meta import VerifiedGarbage.Proof.Ecdh.X86_64.P384.LitErase
+meta import VerifiedGarbage.Impl.Ecdh.P384.X86_64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJStep
 
 /-!
 # ECDH over P-384 on x86-64: `Verified`

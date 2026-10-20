@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyTiming
 public import VerifiedGarbage.Impl.Rsa.X86.MulMod
+public import VerifiedGarbage.Proof.Mont.X86.ExponentTiming
 
 /-! # Public schedules for binary modular multiplication on i686 -/
 

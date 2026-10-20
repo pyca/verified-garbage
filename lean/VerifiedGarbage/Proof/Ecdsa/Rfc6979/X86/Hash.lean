@@ -1,11 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!

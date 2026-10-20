@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.EcKey.Secp256k1
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # secp256k1 public keys on x86 (32-bit): the contract the proof is written against

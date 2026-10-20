@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Round
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # IDEA on AArch64: a block

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Spec.RsaOaep
 
-public import VerifiedGarbage.Proof.RsaOaep.Decode
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
 # RSAES-OAEP: the encoding, on any target

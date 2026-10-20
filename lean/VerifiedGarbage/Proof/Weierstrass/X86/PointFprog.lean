@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCall
-public import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Weierstrass.Env
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Field programs on slots at offsets known at run time, on x86 (32-bit)

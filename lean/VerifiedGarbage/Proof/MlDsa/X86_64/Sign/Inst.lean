@@ -1,5 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Prims
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
+import VerifiedGarbage.Proof.MlDsa.Sign.Leak
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
@@ -7,16 +19,26 @@ import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+public import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.MlDsa.Pack.Stream
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseCCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseDCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.SignCT
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 
 /-!
 # ML-DSA signing on x86-64: the primitives it calls

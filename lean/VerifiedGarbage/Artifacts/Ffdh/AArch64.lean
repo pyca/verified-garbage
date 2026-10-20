@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPublic.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
@@ -9,7 +8,6 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Init
 public import VerifiedGarbage.Proof.Ffdh.AArch64.KeyGeneration.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Init
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 

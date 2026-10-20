@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductState
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Combined modulus padding and product validation are constant-time -/
 

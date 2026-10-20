@@ -1,10 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBlockCT
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyBlockCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomPrepareCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleAgreement
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySampled
+import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyDeriveCall
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomMemory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation's sampling and derivation leak only its public trace -/
 

@@ -1,13 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Fwd
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Inv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.At
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.Readonly
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.W.Inv
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on AArch64: the 16-bit NTT and its inverse of polynomials stored with 16 bits, inlined

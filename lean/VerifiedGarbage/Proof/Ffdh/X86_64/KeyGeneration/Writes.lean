@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.ControlMemory
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Outputs
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.InitValues
 
 /-! # The key-generation controller's writes of its own words -/
 

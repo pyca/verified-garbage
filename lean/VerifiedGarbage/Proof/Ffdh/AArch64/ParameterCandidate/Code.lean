@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Main
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
+import VerifiedGarbage.Proof.Rsa.AArch64.CvFail
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # An FFDH parameter candidate on AArch64: correctness

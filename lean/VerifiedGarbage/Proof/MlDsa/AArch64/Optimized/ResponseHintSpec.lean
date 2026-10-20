@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.ResponseHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintContract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Response
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintWord
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintContract
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintField
 
 @[expose] public section

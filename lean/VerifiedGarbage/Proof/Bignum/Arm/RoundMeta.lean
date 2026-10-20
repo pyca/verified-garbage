@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words
+public import VerifiedGarbage.TCB.Arm.Isa
 
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The Montgomery loop's temporary state and its preservation -/
 

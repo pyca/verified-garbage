@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverCorrect
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on AArch64: after the call

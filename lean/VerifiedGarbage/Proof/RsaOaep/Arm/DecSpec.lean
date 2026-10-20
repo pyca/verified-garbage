@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaOaep.Arm.DecScan
+public import VerifiedGarbage.Proof.RsaOaep.Decode
 
-public import VerifiedGarbage.Proof.RsaOaep.Arm.DecShift
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
 # RSAES-OAEP decryption on ARMv7: what the decoding returns

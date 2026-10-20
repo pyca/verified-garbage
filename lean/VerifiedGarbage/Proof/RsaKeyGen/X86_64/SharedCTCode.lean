@@ -1,12 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTFront
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTFront
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTCode
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCTFront
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedContract
+meta import VerifiedGarbage.Impl.RsaKeyGen.X86_64.SharedCandidate
+meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedCall
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTCode
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant time of the complete RSA candidate with the shared call -/
 

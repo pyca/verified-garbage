@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
-public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-! # secp256k1 on AArch64, using complete general addition -/

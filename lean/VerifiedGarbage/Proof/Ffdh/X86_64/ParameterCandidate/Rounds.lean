@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.RoundLoop
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.Rounds
 
 /-! # FFDH parameter generation on x86-64: the complete uniform primality policy -/
 

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Body
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448 on AArch64: calls of the functions

@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+public import VerifiedGarbage.Proof.AesGcm.AArch64.OneShot
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
+import VerifiedGarbage.Proof.AesGcm.AArch64.Seal
 import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open`

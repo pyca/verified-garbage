@@ -2,16 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
-public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.MdStream.AArch64.Words
-public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Pbkdf2.Hmac
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function

@@ -1,9 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstruct
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PConstruct
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PPrimalityPlan
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestFull
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestFull
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PTestSmall
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Arithmetic
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # A p candidate is constructed and tested entirely by verified native code -/
 

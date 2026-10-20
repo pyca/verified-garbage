@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Call
-import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Cmac.Stream
 
 /-!

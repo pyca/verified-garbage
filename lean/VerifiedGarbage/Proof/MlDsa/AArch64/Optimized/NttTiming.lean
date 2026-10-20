@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 @[expose] public section

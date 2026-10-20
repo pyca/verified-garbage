@@ -1,6 +1,8 @@
 module
+public import Mathlib.Data.Nat.Prime.Defs
+public import VerifiedGarbage.Spec.P192
 
-public import VerifiedGarbage.Proof.P192.Prime
+import VerifiedGarbage.Proof.Framework.Pratt
 
 /-! # Primality of the P-192 subgroup order
 

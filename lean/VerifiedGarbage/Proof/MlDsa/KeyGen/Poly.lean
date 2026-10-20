@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.MlDsa.Poly
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA key generation: coefficients and polynomials in memory

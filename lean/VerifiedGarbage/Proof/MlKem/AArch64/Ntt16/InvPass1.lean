@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.InvIdx
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass2
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Gs
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Mem
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: pass 1

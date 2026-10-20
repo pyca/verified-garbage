@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The next significant witness bytes are a disjoint slice of the random tape -/
 

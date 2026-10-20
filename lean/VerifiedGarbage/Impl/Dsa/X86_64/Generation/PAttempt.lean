@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PShape
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.CandidateWidth
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Search
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PHash
 
 /-! # One complete native p-search attempt
 

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Siv.Contract
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Siv
 
 /-!
 # AES-SIV on x86: the contracts the proofs are written against

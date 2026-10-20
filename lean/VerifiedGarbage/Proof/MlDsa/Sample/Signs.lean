@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.Sample.ExpandMask
 
 import VerifiedGarbage.Proof.MlDsa.Sample.Word
-public import VerifiedGarbage.Proof.MlDsa.Sample.LeNat
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA: the sign bits of `SampleInBall` in two 32-bit words

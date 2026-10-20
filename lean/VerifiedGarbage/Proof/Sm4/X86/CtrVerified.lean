@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-public import VerifiedGarbage.Proof.Sm4.X86.CtrLit
-meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
-public import VerifiedGarbage.Proof.Modes.X86.Ctr
-meta import VerifiedGarbage.Proof.Modes.X86.Ctr
+import VerifiedGarbage.Proof.Modes.X86.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Sm4.X86.CtrLit
+public import VerifiedGarbage.Impl.Sm4.X86.Ctr
+meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.Ctr
 meta import VerifiedGarbage.Proof.Sm4.Scratch
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Sm4.X86.CtrLit
+meta import VerifiedGarbage.Impl.Sm4.X86.Ctr
 
 /-! # SM4-CTR on x86 meets its correctness and constant-time contracts -/
 

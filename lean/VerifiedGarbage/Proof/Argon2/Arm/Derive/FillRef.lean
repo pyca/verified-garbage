@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillDep
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCache
-public import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillInput
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.Arm.Mix
 
 /-!
 # Argon2 on ARMv7: the reference block's lane, start and base

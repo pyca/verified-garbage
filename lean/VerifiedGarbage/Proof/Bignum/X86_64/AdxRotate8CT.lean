@@ -3,7 +3,8 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
 /-! Constant time of the complete register-tiled Montgomery reduction. -/
 

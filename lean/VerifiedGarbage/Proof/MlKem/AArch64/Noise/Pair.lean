@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.PairTail
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.InitCall
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Complete paired-noise operation -/
 @[expose] public section

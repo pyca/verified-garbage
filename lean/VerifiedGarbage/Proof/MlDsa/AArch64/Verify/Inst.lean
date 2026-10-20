@@ -1,20 +1,13 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
+public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA verification on AArch64, with this library's primitives

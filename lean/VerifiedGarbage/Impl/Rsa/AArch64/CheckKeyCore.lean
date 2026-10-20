@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
+public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 
 /-!
 # Shared RSA key-validation operations on AArch64

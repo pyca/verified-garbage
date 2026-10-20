@@ -1,10 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Contract
+public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Init
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
-public import VerifiedGarbage.Impl.Argon2.X86_64.MemoryInit
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Correct
+import VerifiedGarbage.Proof.MdStream.X86_64.Common
 
 /-! # A verified H′ call to initialize a memory block -/
 

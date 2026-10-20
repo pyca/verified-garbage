@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
-meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
+public import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Child
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ChildCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-public import VerifiedGarbage.Proof.Dsa.Layout
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.Layout
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-meta import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.X86_64.BoundaryCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Child
+import VerifiedGarbage.Proof.Dsa.X86_64.Parent
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Parent
 
 /-! # Constant time of initializing both Montgomery workspaces -/
 

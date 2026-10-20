@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Sse
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.X86.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
 
 @[expose] public section
 

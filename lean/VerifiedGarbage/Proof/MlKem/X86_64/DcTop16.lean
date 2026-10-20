@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
+public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: decapsulation with 16-bit polynomials

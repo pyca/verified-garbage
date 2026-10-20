@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemorySchedule
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
 
 @[expose] public section
 

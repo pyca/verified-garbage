@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBitTest
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # One binary exponent bit updates the proved Montgomery power -/
 

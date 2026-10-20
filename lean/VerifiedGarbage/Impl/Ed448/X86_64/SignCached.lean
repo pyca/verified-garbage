@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86_64.Verify
-import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
 
 /-!
 # Ed448 signing with a cached public key on x86-64

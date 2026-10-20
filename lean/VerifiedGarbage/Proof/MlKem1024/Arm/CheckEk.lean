@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-import VerifiedGarbage.Proof.MlKem.EkCheck
-meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
-meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 public import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_check_ek`

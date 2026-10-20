@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtModulusTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtFailureTiming
-public import VerifiedGarbage.Proof.Bignum.X86.CrtValidTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtModulusTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtFailureTiming
+import VerifiedGarbage.Proof.Bignum.X86.CrtValidTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Private RSA branches only on the public modulus -/
 

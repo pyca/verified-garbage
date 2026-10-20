@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Words
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Pass1
 public import VerifiedGarbage.Proof.Framework.Covers
 

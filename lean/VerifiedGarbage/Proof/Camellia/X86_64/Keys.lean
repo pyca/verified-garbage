@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyChecks
+public import VerifiedGarbage.Proof.Camellia.X86_64.Core
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The table of bitsliced subkeys on x86-64

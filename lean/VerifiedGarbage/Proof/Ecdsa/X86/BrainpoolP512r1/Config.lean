@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86
+public import VerifiedGarbage.Proof.Ecdsa.X86.Layout
+public import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
-public import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on X86 -/
 

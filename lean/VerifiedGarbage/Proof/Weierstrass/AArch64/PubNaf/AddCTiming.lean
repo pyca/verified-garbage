@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.PubNaf
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-!
 # Timing of the cached addition

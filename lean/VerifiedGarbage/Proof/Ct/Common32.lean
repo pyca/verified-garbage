@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.TCB.Mem
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.Ct.Common
 
 @[expose] public section
 

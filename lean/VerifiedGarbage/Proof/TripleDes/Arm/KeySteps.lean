@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.Arm.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.TripleDes.Arm.Word
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 @[expose] public section
 

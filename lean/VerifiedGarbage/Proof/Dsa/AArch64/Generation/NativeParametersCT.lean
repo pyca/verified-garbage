@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ParameterLoopCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeState
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ContextFrame
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Timing of the complete native DSA parameter search -/
 

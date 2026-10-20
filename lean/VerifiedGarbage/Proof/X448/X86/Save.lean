@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.Frame
+import VerifiedGarbage.Proof.X448.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.X448.X86.Contract
+public import VerifiedGarbage.Proof.X448.X86.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on x86 (32-bit): saving the callee-saved registers

@@ -1,16 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheFields
-import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafDigitRead
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Signed peer lookup keeps exact point coordinates and cached powers. -/
 

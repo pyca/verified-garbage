@@ -1,7 +1,21 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Rest
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Aes.Circuit
+import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Impl.AesGcm.X86_64.StreamTo
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: the head

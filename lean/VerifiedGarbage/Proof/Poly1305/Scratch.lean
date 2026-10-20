@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming Poly1305 with its working space as an argument

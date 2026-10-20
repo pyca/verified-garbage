@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessRound
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Round
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The shared round preserves DSA's tape pointers and witness counters -/

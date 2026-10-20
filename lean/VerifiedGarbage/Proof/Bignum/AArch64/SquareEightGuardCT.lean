@@ -1,19 +1,21 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtHead
+meta import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightDispatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEightDispatch

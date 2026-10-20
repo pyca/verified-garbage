@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimalityCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrameCTState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceCTState
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceCTState
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceCTState
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrameCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrameCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFromFrameCT
 
 /-! # The complete native primality call accepts uninitialized arithmetic scratch -/

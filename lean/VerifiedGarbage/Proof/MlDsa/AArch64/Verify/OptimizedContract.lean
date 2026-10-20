@@ -1,15 +1,16 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSat
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedTimingBase
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Layout
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSat
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
 
 @[expose] public section
 

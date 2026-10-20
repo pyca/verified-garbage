@@ -2,10 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Ecb
 public import VerifiedGarbage.Proof.Seed.AArch64.ConstantTime
-public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Seed.Scratch
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Seed.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Seed.AArch64.Lit
 
 /-! # The ECB functions meet their contracts, with the scratch buffer as an argument -/
 

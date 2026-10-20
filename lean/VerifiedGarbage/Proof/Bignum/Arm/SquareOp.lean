@@ -1,9 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.Bases
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.Square
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.SquareBody
+import VerifiedGarbage.Proof.Bignum.Arm.MontOpArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.MontMath
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The Montgomery square in an RSA frame meets `montOp o a a`'s specification -/
 

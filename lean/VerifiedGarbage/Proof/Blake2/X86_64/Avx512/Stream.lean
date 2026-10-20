@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Compress
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Compress
-public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
-meta import VerifiedGarbage.Proof.Blake2.X86_64.Backend
+import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Compress
 import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Common
+meta import VerifiedGarbage.Proof.Blake2.X86_64.Avx512.Compress
 meta import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # BLAKE2b on x86-64 with AVX-512: the streaming functions

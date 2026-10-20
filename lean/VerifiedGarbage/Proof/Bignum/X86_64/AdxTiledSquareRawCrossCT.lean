@@ -1,23 +1,35 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Block
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRowsCT
+meta import VerifiedGarbage.Impl.Bignum.X86_64.AdxTiledSquare
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Sum
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsChoiceCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRawCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
-meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledInit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8RowCore
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## AdxTri8RowCT -/
 

@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSuccess
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Dispatch only the three reviewed parameter-generation sizes -/
 

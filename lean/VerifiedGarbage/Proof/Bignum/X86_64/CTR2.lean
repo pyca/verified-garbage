@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.R2
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Double
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Row
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public` on x86-64: `R² mod m` is constant time but for `m`

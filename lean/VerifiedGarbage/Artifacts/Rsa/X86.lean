@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified

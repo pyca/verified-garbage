@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
-public import VerifiedGarbage.Impl.Weierstrass.AArch64
-import VerifiedGarbage.Proof.Mont.AArch64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Field programs on AArch64

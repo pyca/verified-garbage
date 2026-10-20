@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint0
+public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint0
+meta import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # A candidate on ARMv7: the taint analysis of Miller–Rabin -/
 

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Points
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP256r1.AArch64
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP256r1.Points
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 
 /-! # brainpoolP256r1 signature verification -/
 

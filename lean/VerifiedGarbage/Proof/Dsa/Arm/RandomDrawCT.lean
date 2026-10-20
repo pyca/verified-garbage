@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomDraw
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-meta import VerifiedGarbage.Proof.Dsa.Arm.RandomPrepareCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomDraw
+meta import VerifiedGarbage.Proof.Dsa.Arm.RandomTwo
+meta import VerifiedGarbage.Proof.Dsa.RandomEncoding
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A draw leaks only its public bounds and its decision (32-bit ARM)

@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MdStream.X86.Common
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.MdStream.X86.ArgWord
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): `finalize`

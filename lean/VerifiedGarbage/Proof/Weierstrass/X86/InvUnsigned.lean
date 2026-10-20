@@ -2,10 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86.InvMemory
 public import VerifiedGarbage.Proof.Mont.X86.Chain
-public import VerifiedGarbage.Proof.Mont.X86.Ops
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! ## `InvAdd` -/
 

@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Mont.X86_64
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 public import VerifiedGarbage.Impl.Weierstrass.Slots
 

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
-meta import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Rsa.Arm.Recover
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_recover_primes` on ARMv7: the pieces of Montgomery multiplication's setup the taint analysis checks -/
 

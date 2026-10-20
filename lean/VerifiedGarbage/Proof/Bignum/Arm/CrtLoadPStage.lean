@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLoadPBody
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSavedSources
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSelectWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Complete p and qInv import, validation, and return to the main workspace -/
 

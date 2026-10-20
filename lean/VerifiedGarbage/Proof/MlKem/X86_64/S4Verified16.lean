@@ -1,10 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Base
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.MlKem.Bits
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 
 /-!

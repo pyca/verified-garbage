@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
-public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMath
 
 @[expose] public section
 

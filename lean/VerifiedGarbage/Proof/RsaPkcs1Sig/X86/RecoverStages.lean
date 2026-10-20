@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEncoding
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBody
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverCmpArgs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverDigestArgs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # Intermediate verifier states used to compose independent executions -/
 
