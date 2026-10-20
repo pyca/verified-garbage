@@ -1,14 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Matrix
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Matrix
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TopTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.PairTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.RejectTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Paired.PairTiming
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
+public import VerifiedGarbage.Impl.MlKem.AArch64.Hybrid
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.State
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
 
 /-! # The matrix with the rows of `t̂` between its pairs leaks only public data
 

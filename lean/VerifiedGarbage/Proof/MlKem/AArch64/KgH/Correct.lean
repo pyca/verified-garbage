@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Matrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Prefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Tail
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Matrix
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Prefix
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Tail
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgCommon
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
 
 /-! # The key generation hashing `ek` during the matrix is correct
 

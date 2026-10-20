@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Pair
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTiming
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPair
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixPost
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixLast
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Last
 
 /-! # The pairs of the matrix between the rows of `t̂`
 

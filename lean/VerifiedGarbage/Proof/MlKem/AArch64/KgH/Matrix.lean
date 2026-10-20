@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Pair
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Inv
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Row
 
 /-! # The matrix with the rows of `t̂` between its pairs
 

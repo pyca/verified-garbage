@@ -2,14 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Contracts
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Verified
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
-import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
-import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Top
@@ -24,6 +21,14 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Consts
+public import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
+meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Correct
 
 /-! # `vg_mlkem768_keygen` and `vg_mlkem1024_keygen` hashing `ek` during the matrix
 
