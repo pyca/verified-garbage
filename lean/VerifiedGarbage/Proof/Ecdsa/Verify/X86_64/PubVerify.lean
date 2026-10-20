@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! A curve's facts hold with any `pubVerify`, which only verification reads
 (its final check), so a verification config `{ c with pubVerify := true }`

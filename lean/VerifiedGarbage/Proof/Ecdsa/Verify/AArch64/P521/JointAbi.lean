@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,12 +1,20 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256Bounds
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CoZField
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.DigitTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
+import VerifiedGarbage.Proof.Weierstrass.CoZTable
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 
 /-!
 # Timing of the public NAF's table

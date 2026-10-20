@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Red
 public import VerifiedGarbage.Impl.MlDsa.X86.Arith.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mont
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.X86.Common
+public import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # ML-DSA on x86 (32-bit): the reductions modulo `q`

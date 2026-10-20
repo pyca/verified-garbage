@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInput
-import VerifiedGarbage.Proof.Dsa.X86_64.DomainShape
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
-import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Argument capture and public-domain validation for a complete signing attempt -/
 

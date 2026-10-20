@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateArguments
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateStores
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Candidate arithmetic and output storage from retained frame arguments -/

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SubRow
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.SubRow
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # ARMv7 Montgomery subtraction-loop leakage: pointers and the word count are public -/
 

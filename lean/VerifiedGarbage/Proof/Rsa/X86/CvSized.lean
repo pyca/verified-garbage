@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvLoads
 public import VerifiedGarbage.Proof.Rsa.X86.CvStores
+public import VerifiedGarbage.Proof.Rsa.X86.CvChecksB
+import VerifiedGarbage.Proof.Rsa.X86.CvLoad
+import VerifiedGarbage.Proof.Rsa.X86.CvCore
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Complete fixed-width CRT parameter calculation -/
 

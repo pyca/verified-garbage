@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Body
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8StepCT
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BodyCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8BodyCT
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Public
 
 /-! # Relational timing of bounded mixed rejection -/
 

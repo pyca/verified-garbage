@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.Run
+import VerifiedGarbage.Proof.Cast5.AArch64.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.CallLay
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Cast5.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # CAST5 on AArch64: the scan of a table

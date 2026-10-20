@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+meta import VerifiedGarbage.Proof.RsaPss.X86_64.Checks
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-meta import VerifiedGarbage.Proof.RsaPss.X86_64.CtBase
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSASSA-PSS verification on x86-64: the taint checks of the pieces that do

@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomDrawCT
-public import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomDrawCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.RandomTrace
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # Sampling leaks only its public trace (x86)

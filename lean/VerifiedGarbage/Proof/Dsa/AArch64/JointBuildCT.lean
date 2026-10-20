@@ -1,17 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.JointEntries
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 
 import VerifiedGarbage.Proof.Dsa.AArch64.SmallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.JointTableInit
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Dsa.AArch64.JointStore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointEntries
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Dsa.AArch64.SmallCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.JointTableInit
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointTableInit
-import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
-meta import VerifiedGarbage.Proof.Dsa.AArch64.JointBuild
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-public import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ProductCT
-import VerifiedGarbage.Spec.Dsa
-meta import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.AArch64.JointStore
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time construction of the joint power table -/
 

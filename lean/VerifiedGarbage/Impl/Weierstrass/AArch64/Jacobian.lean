@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.P256.VerifyDouble
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
-import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
 
 /-!
 P-256 verification with public scalar digits and Jacobian accumulators.

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QShape
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Prepare the shared candidate shaper's arguments -/
 

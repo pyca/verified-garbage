@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.Pad
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.OmegaLit
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # RSASSA-PSS on AArch64: `0x80` at a public offset, and the length field

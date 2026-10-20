@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Impl.Bignum.X86.ImportArray
 
-public import VerifiedGarbage.Proof.Bignum.X86.ImportArrayArgs
-public import VerifiedGarbage.Proof.Bignum.X86.CopyRead
-public import VerifiedGarbage.Proof.Bignum.X86.PublicContext
-public import VerifiedGarbage.Proof.Bignum.PackedRead
+import VerifiedGarbage.Proof.Bignum.X86.ImportArrayArgs
+import VerifiedGarbage.Proof.Bignum.X86.CopyRead
+import VerifiedGarbage.Proof.Bignum.PackedRead
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.Mem
 
 /-! # Packed imports preserve their integer value and advance the input -/
 

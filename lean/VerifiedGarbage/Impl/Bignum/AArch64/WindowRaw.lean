@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.SquareEightRaw
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSparse
 public import VerifiedGarbage.Impl.Bignum.AArch64.WindowSetup
 

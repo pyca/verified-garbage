@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.MlDsa.X86.Round.Hint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_make_hint` and `vg_mldsa_use_hint`

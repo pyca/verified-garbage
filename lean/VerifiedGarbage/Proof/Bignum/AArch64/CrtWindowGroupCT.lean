@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCoreCT
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowGroupCore
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowDigit
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowStep
 
 /-! Constant-time composition of a full group. Its value remains secret. -/
 

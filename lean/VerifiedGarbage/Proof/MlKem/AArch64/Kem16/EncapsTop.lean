@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 
 /-! # The 16-bit hashing encapsulation is constant time
 

@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerStages
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CT
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Prepared
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Correct
 
 /-! # Constant time of calling the shared prepared round -/
 

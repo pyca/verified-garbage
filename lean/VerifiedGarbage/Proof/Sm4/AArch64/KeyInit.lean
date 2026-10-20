@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.AArch64.Round
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.Ecb
-import VerifiedGarbage.Proof.Sm4.Planes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+import VerifiedGarbage.Proof.Sm4.AArch64.Group
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 
 /-!
 # The start of the SM4 key schedule on AArch64

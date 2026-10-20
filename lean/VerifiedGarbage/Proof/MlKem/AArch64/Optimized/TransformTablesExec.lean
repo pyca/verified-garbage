@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TransformTables
-import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized

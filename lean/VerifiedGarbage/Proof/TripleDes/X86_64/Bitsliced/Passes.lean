@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Keys
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!

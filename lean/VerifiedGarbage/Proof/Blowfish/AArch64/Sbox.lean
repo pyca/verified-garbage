@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Blowfish.AArch64.Lookup
 
-public import VerifiedGarbage.Proof.Blowfish.AArch64.Planes
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Blowfish.AArch64.Lanes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # One S-box

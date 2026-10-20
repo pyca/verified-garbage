@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.MlDsa.ResidentMask
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

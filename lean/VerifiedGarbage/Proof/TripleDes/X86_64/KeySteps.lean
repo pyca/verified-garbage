@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.TripleDes.Word
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.Bitslice.Dom
 
 @[expose] public section
 

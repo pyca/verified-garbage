@@ -1,8 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationPreserved
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValues
+import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Accumulate the exact factor-product validation bit -/
 

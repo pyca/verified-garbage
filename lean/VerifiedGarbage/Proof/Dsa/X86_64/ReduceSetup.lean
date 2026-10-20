@@ -1,8 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # Preparing the ordinary accumulator for streaming byte reduction -/
 

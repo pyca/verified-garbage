@@ -1,11 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.CbcMemory
 public import VerifiedGarbage.Proof.Rc2.X86_64.Block
 public import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.X86_64.Lit
 
 @[expose] public section
 

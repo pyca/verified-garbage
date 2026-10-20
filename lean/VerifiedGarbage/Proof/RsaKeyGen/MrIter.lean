@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
-public import VerifiedGarbage.Proof.RsaKeyGen.CandSpec
 
 /-!
 # A candidate for an RSA prime: Miller–Rabin, witness by witness

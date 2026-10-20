@@ -4,18 +4,17 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkInline16
-public import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Enc16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Encaps16
-import VerifiedGarbage.Proof.MlKem.X86_64.S4Absorb
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key with 16-bit polynomials, the fragments

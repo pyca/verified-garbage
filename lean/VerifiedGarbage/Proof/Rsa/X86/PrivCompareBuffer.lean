@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.PrivChecked
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Rsa.X86.PrivCompare
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
-public import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Rsa.X86.PrivCompare
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Rsa.PrivCheck
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Byte-exact equality for two readable buffers without input-dependent branches -/
 

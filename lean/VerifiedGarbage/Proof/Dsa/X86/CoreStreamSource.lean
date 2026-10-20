@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Pointer
-public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-public import VerifiedGarbage.Proof.Dsa.X86.Stream
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
 
 /-! # The public byte-source pointer for scalar reduction -/
 

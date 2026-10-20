@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.Proof.Sha256.Digest
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Sha256.X86.Shared
 
 /-!
 # Streaming SHA-224 on x86 (32-bit): `finalize224`

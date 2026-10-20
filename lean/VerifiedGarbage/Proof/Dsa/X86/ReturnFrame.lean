@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 public import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+public import VerifiedGarbage.Impl.Dsa.X86.Entry
+public import VerifiedGarbage.Proof.Framework.X86.Spill
+import VerifiedGarbage.Proof.Dsa.X86.ABIResources
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Restoring the cdecl registers and protecting the return address -/
 

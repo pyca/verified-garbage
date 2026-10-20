@@ -1,9 +1,35 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
+public import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCTBase
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.RsaOaep.AArch64.Precomputed
+meta import VerifiedGarbage.Proof.Mgf1.Basic
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCall
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
+meta import VerifiedGarbage.Proof.Mgf1.Bytes
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSAES-OAEP encryption on AArch64: `EM` and the call in constant time

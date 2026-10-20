@@ -1,9 +1,35 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinish
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinish
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinish
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignZero
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Output clearing and publication reveal only the public status and addresses. -/
 @[expose] public section

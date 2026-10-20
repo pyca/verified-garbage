@@ -4,13 +4,19 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtArith
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtMath
 public import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Bignum.X86_64.Exp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Impl.Rsa.X86_64.Crt
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Mathlib.Order.Lattice
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # RSA with the CRT on x86-64: `x R_X^(-K) mod X`

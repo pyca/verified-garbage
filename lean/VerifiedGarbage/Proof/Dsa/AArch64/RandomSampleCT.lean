@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSamplePublic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoopCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoopCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSamplePublic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSampleLoopCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSample
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The complete sampler's leakage is determined by its public decision trace. -/
 @[expose] public section

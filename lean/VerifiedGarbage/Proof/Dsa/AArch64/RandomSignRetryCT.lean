@@ -1,10 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Impl.Dsa.AArch64.RandomSign
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignRetry
-meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Algebra.Group.Nat.Defs
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Retry control reveals only the signer's low-word success bit and attempt budget. -/
 @[expose] public section

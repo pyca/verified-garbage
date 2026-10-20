@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Tail
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Split.CT
+meta import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.CT
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: at most 16 bytes left, in two runs

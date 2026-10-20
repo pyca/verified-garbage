@@ -2,8 +2,11 @@ module
 
 import VerifiedGarbage.Proof.Mont.Words32
 public import VerifiedGarbage.Impl.Mont.X86.Sparse
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Bounds and accumulated multiples for full-product P-256 REDC -/
 

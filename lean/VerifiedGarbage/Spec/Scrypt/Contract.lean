@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.Scrypt
-import VerifiedGarbage.Spec.Pbkdf2
 public import VerifiedGarbage.TCB.Artifact
 
 /-!

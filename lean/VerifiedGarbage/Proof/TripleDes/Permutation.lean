@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Fixed permutations in the FIPS numbering convention. Untrusted. -/

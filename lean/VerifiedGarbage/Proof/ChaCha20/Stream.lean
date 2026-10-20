@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Keystream
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # The streaming state of ChaCha20

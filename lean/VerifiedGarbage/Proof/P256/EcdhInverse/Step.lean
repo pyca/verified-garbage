@@ -1,12 +1,15 @@
 module
 
-public import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Mont.AArch64.Row
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Algebra.Order.Group.Nat
+public import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 @[expose] public section
 

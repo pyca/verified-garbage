@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.InvAb
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvCount
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Divstep.Word32
+import VerifiedGarbage.Proof.Weierstrass.X86.Fprog
 
 /-! # A complete thirty-step inversion batch -/
 

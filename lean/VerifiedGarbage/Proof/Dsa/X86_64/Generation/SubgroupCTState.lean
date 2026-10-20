@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuildCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeCallCT
+public import VerifiedGarbage.Proof.Dsa.Encoding
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrameCTState
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public subgroup-generation data excludes unused frame contents -/

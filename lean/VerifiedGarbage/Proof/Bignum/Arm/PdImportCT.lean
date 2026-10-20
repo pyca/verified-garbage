@@ -1,9 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PdImport
-public import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.PdImport
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.PdImport
+meta import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ImportArrayLayout
+meta import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeOutArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.CallLay
+meta import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Reading the public precomputation has only public addresses and counts -/
 

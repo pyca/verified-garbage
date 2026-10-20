@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceSlice
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Read exactly the complete seed chunk selected by the native tape loop -/
 

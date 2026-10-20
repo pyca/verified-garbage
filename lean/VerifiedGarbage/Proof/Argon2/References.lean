@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Argon2
 
-import VerifiedGarbage.Proof.Argon2.Iterations
-public import VerifiedGarbage.Proof.Argon2.FillStep
+import VerifiedGarbage.Proof.Argon2.FillStep
 
 /-! The reviewed flattened reference log determines every lane/column pair. -/
 

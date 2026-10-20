@@ -1,16 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 public import VerifiedGarbage.Proof.MlKem.Mem
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # ML-KEM on AArch64: what the proofs share

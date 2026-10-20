@@ -1,10 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
+public import VerifiedGarbage.Proof.Camellia.Common
+public import VerifiedGarbage.Proof.Camellia.X86_64.Core
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.KeyPair
-import VerifiedGarbage.Proof.Camellia.KeySched
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Camellia.X86_64.KeyPair
 import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import VerifiedGarbage.Proof.Camellia.X86_64.Crypt8
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # `KA` and `KB` on x86-64

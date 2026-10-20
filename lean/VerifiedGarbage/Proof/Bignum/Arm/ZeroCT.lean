@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.Zero
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.Zero
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Only the zeroing pointer and word count are public -/
 

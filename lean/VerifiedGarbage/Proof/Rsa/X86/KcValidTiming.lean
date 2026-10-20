@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcPair
+public import VerifiedGarbage.Spec.Rsa
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcDispatchTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcSizedTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcValid
+import VerifiedGarbage.Proof.Bignum.X86.PublicDispatch
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # CRT limb-width selection depends only on the public modulus length -/
 

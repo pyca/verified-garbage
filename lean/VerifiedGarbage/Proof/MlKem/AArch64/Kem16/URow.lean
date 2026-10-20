@@ -1,15 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Noise
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReady
-public import VerifiedGarbage.Proof.MlKem.AArch64.KemOps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemUContext
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemURow
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemReadonlyTransform
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
-public import VerifiedGarbage.Impl.MlKem.AArch64.Optimized
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
+public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.DotReady
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemTransformFrames
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DotSpec
+import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Ops
 
 /-! # The 16-bit ciphertext rows
 

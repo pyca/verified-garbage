@@ -1,9 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.Arm.DecScan
-public import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
+import VerifiedGarbage.Proof.RsaPss.Arm.VfShift
 import all Init.Data.Nat.Bitwise.Basic
 meta import VerifiedGarbage.Impl.RsaOaep.Arm
+import VerifiedGarbage.Proof.RsaPss.Arm.VfPass
+import VerifiedGarbage.Proof.RsaPss.Arm.CtLoop
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # RSAES-OAEP decryption on ARMv7: the shift

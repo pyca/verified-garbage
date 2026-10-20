@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailPro
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `CommitTailRestoreV.lean` -/
 

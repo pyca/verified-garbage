@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.KeyStep
+import VerifiedGarbage.Proof.Framework.Arm.Syms
+import VerifiedGarbage.Proof.Cast5.Arm.Scan
+import VerifiedGarbage.Proof.Cast5.Arm.Round
 
 /-!
 # CAST5 key expansion on ARMv7: the steps of a half, run

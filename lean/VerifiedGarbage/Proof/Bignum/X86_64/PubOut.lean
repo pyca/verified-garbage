@@ -1,9 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
 
 /-!

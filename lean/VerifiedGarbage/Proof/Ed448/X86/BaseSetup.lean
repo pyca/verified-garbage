@@ -3,12 +3,11 @@ module
 public import VerifiedGarbage.Proof.X448.X86.Env
 import VerifiedGarbage.Proof.X448.X86.RowMem
 public import VerifiedGarbage.Proof.X448.X86.Bits
-public import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.Ed448.Scalar
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import VerifiedGarbage.Impl.X25519.X86
+public import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.X448.X86.Ops
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the entry

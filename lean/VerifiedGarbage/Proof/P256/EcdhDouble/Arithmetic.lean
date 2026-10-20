@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 /-! The fused small linear combinations implement the existing Jacobian double. -/
 

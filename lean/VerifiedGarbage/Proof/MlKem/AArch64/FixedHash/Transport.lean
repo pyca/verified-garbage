@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Link
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.AbsorbPlan
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.FixedHash

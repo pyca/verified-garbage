@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.MergeAcceptance
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Merging validation bits reveals only the public stack address -/
 

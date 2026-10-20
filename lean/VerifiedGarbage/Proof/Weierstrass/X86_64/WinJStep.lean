@@ -4,6 +4,11 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Weierstrass.WindowJ
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration

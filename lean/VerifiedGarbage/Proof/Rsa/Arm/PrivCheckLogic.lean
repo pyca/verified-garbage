@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.PrivCheckLogic32
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCompareArgs
+import Batteries.Tactic.Alias
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Compatibility names for shared 32-bit private-result logic -/
 

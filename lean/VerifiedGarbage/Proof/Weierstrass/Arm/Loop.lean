@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Weierstrass.Arm
+public import VerifiedGarbage.Proof.Mont.Arm.Words
 
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: loops counted down in `r11`

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.OmegaLit
 public meta import VerifiedGarbage.Proof.Framework.OmegaLit
 
 /-!

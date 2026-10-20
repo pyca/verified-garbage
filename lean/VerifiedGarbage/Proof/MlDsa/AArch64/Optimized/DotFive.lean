@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Slice
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

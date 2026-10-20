@@ -1,9 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
-meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Random
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomFrame
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Tactic.Push
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.Attr.Core
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! The range check leaks its public pointers and width only. -/
 @[expose] public section

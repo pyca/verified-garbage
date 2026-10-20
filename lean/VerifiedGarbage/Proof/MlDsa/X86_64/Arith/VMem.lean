@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Table
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMem
 public import VerifiedGarbage.Proof.MlDsa.Arith.Ntt
+public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Ntt
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: four coefficients at a time in memory

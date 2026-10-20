@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay
 public import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Avx2
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLanes
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VMem
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-DSA on x86-64: coefficients in the lanes of AVX2 registers

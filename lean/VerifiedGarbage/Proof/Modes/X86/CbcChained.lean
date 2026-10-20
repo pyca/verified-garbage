@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Modes.StepsChained
+public import VerifiedGarbage.Impl.Modes.CbcChained
+import VerifiedGarbage.Proof.Modes.StepsChained
 
 /-!
 # CBC that updates the chaining value on x86 (32-bit), for any core

@@ -1,17 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLayout
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.P521Joint
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 
 /-! Concrete timing certificates for the joint P-521 verifier. -/
 @[expose] public section

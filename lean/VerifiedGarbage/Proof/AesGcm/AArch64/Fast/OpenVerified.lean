@@ -1,8 +1,15 @@
 module
+public import Mathlib.Data.List.Dedup
+public import VerifiedGarbage.Impl.StackScratch.AArch64
+public import VerifiedGarbage.Proof.AesGcm.Scratch
+public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
-import VerifiedGarbage.Spec.Gcm.Contract
+import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenCT
+import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_open`, with the path for TLS records where PMULL is there

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Top
-public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 
 /-!
 # ML-KEM on AArch64: what a parameter set's top-level functions depend on

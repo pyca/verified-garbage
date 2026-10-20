@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableFields
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.RegFieldTiming
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointTransfer
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 @[expose] public section
 

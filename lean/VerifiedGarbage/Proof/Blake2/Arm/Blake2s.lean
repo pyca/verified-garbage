@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
-public import VerifiedGarbage.Proof.Blake2.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Blake2.Scratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
+public import VerifiedGarbage.Impl.Blake2.Arm.CompressS
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # BLAKE2s on ARMv7: the streaming functions

@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedState
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFive
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedStore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFiveSlice
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedShape
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ## From `PairedBank.lean` -/
 

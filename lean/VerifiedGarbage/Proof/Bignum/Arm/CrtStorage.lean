@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLayout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Derive the three CRT subworkspaces from the caller's scratch region
 

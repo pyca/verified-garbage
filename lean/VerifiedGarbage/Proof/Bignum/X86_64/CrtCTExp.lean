@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation is constant time

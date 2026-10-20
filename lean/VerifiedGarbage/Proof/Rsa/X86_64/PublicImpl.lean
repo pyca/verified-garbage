@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-! # A precomputed public operation for verified RSA callers -/
 

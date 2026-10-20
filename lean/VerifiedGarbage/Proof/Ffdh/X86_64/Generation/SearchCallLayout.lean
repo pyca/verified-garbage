@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallPre
 import VerifiedGarbage.Proof.Dsa.PackedBytes
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Internal candidate permissions and the exact unconsumed entropy suffix -/
 

@@ -1,15 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
-meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
 public import VerifiedGarbage.Proof.MlKem.Arm.Sample
-meta import VerifiedGarbage.Proof.MlKem.Arm.Sample
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
-meta import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 public import VerifiedGarbage.Proof.MlDsa.Sample.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.MlDsa.Arm.Sample.Common
+meta import VerifiedGarbage.Proof.MlKem.Arm.Sample
+meta import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 meta import VerifiedGarbage.Proof.MlDsa.Sample.Mem
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-meta import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 
 /-!
 # ML-DSA on 32-bit ARM: the sampling functions' SHAKE

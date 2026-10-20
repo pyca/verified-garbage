@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.Sha256.Spec
+public import VerifiedGarbage.TCB.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # SHA-256 with the SHA extensions: the values in the SSE registers

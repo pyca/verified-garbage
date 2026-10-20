@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.KeyArrays
+import VerifiedGarbage.Proof.Rsa.KeyArrays
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The values of the arrays of the key working space
 

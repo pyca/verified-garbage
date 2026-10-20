@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeValid
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailure
-public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeFailure
+import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Public precomputation succeeds exactly for valid moduli -/
 

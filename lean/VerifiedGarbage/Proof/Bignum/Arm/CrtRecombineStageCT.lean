@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineStage
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportResidueCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineGeometry
+import VerifiedGarbage.Proof.Bignum.Arm.CrtImportFinalResidue
+import VerifiedGarbage.Proof.Bignum.Arm.CrtValidationGeometry
 
 /-! # Reconstruct the wide CRT result without leaking its inputs -/
 

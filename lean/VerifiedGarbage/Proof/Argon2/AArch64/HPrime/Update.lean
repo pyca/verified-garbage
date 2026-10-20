@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Backend
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Init
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Argon2
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # H′: absorbing bytes with the selected BLAKE2b backend -/
 

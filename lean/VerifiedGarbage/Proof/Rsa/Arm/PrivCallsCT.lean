@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCallPublic
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCallPublic
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivStages
+import VerifiedGarbage.Proof.Rsa.Arm.PrivPdCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 
 /-! # Each nested call leaks only the shared public key and layout -/
 

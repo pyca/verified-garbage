@@ -1,7 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
+import VerifiedGarbage.Proof.Bignum.Arm.WindowBytes
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+public import VerifiedGarbage.Proof.Bignum.Arm.WindowBit
+import VerifiedGarbage.Proof.Bignum.Arm.WindowScan
+import VerifiedGarbage.Proof.Bignum.Arm.WindowState
+import VerifiedGarbage.Proof.Bignum.Arm.WindowCtl
+import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! # Windowed private RSA exponentiation implements the modular-exponentiation specification -/
 

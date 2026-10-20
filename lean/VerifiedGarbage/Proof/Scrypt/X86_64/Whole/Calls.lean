@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Steps
-public import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
+import VerifiedGarbage.Proof.Scrypt.X86_64.DirectFill
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
+import VerifiedGarbage.Proof.Scrypt.Whole
+import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

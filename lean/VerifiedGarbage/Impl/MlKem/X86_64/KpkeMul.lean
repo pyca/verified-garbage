@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
-public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 /-!
 # ML-KEM on x86-64: the products of K-PKE in one call

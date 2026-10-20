@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.Impl.ChaCha20.X86_64
 
-public import VerifiedGarbage.Impl.ChaCha20.X86_64
 
 /-!
 # XORing keystream from a buffer into the data, eight bytes at a time

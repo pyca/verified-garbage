@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.KeyTrace
+public import VerifiedGarbage.Proof.Dsa.Arm.Env
 
-public import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
-public import VerifiedGarbage.Proof.Dsa.Arm.SignCT
+import VerifiedGarbage.Proof.Dsa.Arm.VerifyCorrect
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Arm.OpTrace
+import VerifiedGarbage.Proof.Dsa.Arm.ShapeTrace
+import VerifiedGarbage.Proof.Dsa.Arm.BodyTrace
+import VerifiedGarbage.Proof.Dsa.Arm.SignCorrect
+import VerifiedGarbage.Proof.Dsa.OutputBytes
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # DSA on 32-bit ARM: verification is constant time

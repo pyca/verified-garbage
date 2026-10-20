@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceSetup
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-! # Reading a byte for DSA streaming reduction -/
 

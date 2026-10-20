@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
-public import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
 /-!

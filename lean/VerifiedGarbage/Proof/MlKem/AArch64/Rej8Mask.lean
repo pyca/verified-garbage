@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Sum
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Value
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Connecting acceptance predicates to the packed table index and count -/
 

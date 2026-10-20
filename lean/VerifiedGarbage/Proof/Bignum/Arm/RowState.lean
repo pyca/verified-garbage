@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.RowAdvance
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # The invariant of a packed-word multiply-add row -/
 

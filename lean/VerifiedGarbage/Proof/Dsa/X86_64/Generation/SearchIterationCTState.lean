@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchBodyReadyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchTailReadyCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchTailReadyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStable
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Retrying a p iteration advances a public counter and an exact witness cursor -/

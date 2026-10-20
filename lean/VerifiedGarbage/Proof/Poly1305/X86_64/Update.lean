@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Buffer
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
-import VerifiedGarbage.Spec.Poly1305.Contract
-public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+import VerifiedGarbage.Proof.Poly1305.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # Poly1305 on x86-64: `update`, up to the call

@@ -1,8 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ImportOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.Arm.LoadBEFn
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Import operands before validating a secret modulus -/
 

@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of the SHA-1 compression function on x86-64

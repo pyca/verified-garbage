@@ -1,7 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckRegions
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCheckRegions
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivTail
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
+import VerifiedGarbage.Proof.Rsa.Arm.PrivCrtCall
+import VerifiedGarbage.Proof.Rsa.Arm.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The call context supplies every bound and retained argument for release -/
 

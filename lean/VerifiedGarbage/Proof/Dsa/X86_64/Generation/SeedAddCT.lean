@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
-meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.SeedAdd
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Wrapped-seed addition leaks only its buffer addresses -/
 

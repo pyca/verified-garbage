@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomInRange
-public import VerifiedGarbage.Proof.Dsa.RandomEncoding
-public import VerifiedGarbage.Proof.Dsa.Encoding
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-!
 # The copied draw is the specification's candidate (x86)

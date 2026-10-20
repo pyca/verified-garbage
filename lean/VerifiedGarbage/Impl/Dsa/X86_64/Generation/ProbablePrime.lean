@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeSetup
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PrimeLoop
+public import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 
 /-! # DSA's full probable-prime operation in native code -/
 

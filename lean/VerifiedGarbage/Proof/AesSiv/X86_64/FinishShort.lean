@@ -1,12 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.CmacOf
 import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Env
 import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Siv.Spec
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # AES-SIV on x86-64: finishing S2V with a string shorter than a block

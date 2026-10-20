@@ -1,9 +1,18 @@
 module
+public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Pre
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Steps
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.AesCbc.X86_64.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.AesXts.Alpha16
+import VerifiedGarbage.Proof.AesXts.Batch
+import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 
 /-!
 # XTS-AES of data units on x86-64: the tweak, and what every piece keeps

@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarColumns
-public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
+public import VerifiedGarbage.Proof.Ed448.AArch64.ScalarWord
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarMain
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed448.AArch64.ScalarLoop
+import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # Ed448 scalar multiply-add on AArch64: the whole function

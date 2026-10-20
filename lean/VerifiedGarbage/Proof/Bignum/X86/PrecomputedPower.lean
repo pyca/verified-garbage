@@ -1,8 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedPower
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetupFrame
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponent
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Bignum.X86.PublicBody
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetupFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponent
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedSetup
+import VerifiedGarbage.Proof.Bignum.X86.PublicPower
+import VerifiedGarbage.Proof.Mont.X86.ContextFrame
 
 /-! # Reused precomputation is safe unconditionally and computes RSA when valid -/
 

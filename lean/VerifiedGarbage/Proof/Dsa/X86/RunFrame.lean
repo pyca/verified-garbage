@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
 public import VerifiedGarbage.Proof.Dsa.X86.StackFrame
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Memory and pointer invariants across complete DSA arithmetic schedules -/
 

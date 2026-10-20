@@ -1,12 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.FailureCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.SigningPublic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningReadyCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Dsa.AArch64.SigningReadyCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Constant time of the complete signing entry point -/
 

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Invalid public keys clear a public-length output with a fixed trace -/
 

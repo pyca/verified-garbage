@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Multiword arithmetic on x86-64: constant time

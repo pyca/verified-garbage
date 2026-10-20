@@ -1,7 +1,16 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
+import VerifiedGarbage.Proof.AesOcb.AArch64.PadTo
 import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # AES-OCB on AArch64: checking the tag and masking the data (`cmp`, `mask`)

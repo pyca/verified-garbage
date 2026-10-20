@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
-meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 meta import VerifiedGarbage.Proof.Framework.Scratch
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Aes.KeyExp
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Gathering a list of slices, AArch64: constant time

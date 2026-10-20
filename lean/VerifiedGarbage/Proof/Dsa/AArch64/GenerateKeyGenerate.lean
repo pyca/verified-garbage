@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeyState
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.GenerateKeySample
-import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBody
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Key generation after an accepted domain: x sampled, then the key derived -/
 

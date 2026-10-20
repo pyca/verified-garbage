@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
-public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.JointEncode
+import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
+import VerifiedGarbage.Proof.Dsa.X86_64.JointBuild
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
 
 /-! # Loading and preparing both bases for joint DSA exponentiation -/
 

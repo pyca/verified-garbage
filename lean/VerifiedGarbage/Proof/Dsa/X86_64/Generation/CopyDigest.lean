@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.ParameterCandidate.WitnessCut
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessCut
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
 
 /-! # Copy a complete digest using the shared byte loop -/
 

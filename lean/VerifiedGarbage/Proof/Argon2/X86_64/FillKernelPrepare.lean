@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelArgs
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Complete active-cell update from a random word and the matrix allocation. -/
 

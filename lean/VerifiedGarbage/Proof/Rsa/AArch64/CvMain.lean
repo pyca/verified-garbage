@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvCheck
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvStore
 import VerifiedGarbage.Proof.Rsa.KeyMath
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-!
 # `vg_rsa_crt_values` on AArch64: `main`

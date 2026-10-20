@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-public import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
+import VerifiedGarbage.Proof.Bignum.Arm.WindowPhase
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControls
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.Stack
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpPhaseInput
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # The private exponentiation in the narrow workspace -/
 

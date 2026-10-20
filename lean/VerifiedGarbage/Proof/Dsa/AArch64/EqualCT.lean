@@ -1,15 +1,21 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+public import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
+import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Checks
 meta import VerifiedGarbage.Proof.Dsa.AArch64.EqualHead
-public import VerifiedGarbage.Proof.Dsa.AArch64.Masks
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Masks
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Spec.Dsa.SignVerify
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time equality of DSA byte buffers -/
 

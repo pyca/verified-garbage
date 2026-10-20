@@ -3,8 +3,12 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Ctx
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.Bignum.AArch64.HdrPairs
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Front
 
 /-!
 # An RSA key from its primes on AArch64: the entry and the head

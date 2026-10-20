@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SampleRound
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.KernelFrame
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.KernelFrame
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! The chosen witness is tested by the shared callable windowed round. -/

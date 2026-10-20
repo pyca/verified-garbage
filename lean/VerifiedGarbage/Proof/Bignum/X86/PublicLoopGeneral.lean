@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLoop
+import VerifiedGarbage.Proof.Bignum.X86.PublicStep
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Mont.X86.Row
 
 /-! # Exponentiation also terminates from arbitrary encoded accumulators -/
 

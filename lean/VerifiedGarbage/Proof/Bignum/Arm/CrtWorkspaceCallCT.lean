@@ -1,12 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
-public import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtWorkspaceCall
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ActivateWorkspaceCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Bignum.Arm.PcEntryCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Switching the active workspace leaks only the public stack address -/
 

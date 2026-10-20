@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Sieve
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH parameter generation on x86-64: timing of either modulus's sieve -/
 

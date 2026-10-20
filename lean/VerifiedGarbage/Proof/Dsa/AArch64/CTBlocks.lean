@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.TCB.AArch64.Isa
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTRedc
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! # Timing-preserving composition of adjacent DSA instruction blocks -/
 

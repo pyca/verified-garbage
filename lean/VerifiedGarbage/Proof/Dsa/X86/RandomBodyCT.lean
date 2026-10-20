@@ -1,11 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptCT
-public import VerifiedGarbage.Proof.Dsa.X86.RandomPrepareCT
-public import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+public import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+public import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+public import VerifiedGarbage.Proof.Dsa.X86.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.X86.RandomPrepareCT
+import VerifiedGarbage.Proof.Dsa.X86.RandomBody
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptCT
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomFinish
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepare
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomSampleCT
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomPrepareCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomBody
+meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+meta import VerifiedGarbage.Proof.Mont.X86.Instr
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # The randomized signer's body leaks only its public data (x86)

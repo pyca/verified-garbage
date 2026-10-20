@@ -1,9 +1,15 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Coeff16
+public import VerifiedGarbage.Impl.MlKem.AArch64.Codec12W
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLanes
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
-public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
-public import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Store
-meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec12W.Enc
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecLoop
+import VerifiedGarbage.Proof.MlKem.AArch64.DotW.Store
+import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecInput
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 /-!
 # ByteDecode₁₂ to a polynomial stored with 16 bits, on AArch64

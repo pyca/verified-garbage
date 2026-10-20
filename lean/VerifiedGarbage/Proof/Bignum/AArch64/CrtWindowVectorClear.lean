@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoad
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBlock
-import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Basic.IsEmpty.Defs
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Clear the four selection accumulators without disturbing scalar state. -/
 

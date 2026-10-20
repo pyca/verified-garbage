@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86_64.Row
 
-public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Montgomery arithmetic on x86-64: the conditional subtraction

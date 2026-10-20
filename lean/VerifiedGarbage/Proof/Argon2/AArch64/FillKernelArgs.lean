@@ -2,20 +2,17 @@ module
 
 import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMap
 import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillKernel
-import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 import VerifiedGarbage.Proof.Argon2.FillPositions
 import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
-public import VerifiedGarbage.Impl.Argon2.AArch64.FillColumn
-import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Impl.Argon2.AArch64.FillPointers
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.Dimensions
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! Merged from `Proof.Argon2.AArch64.FillPointersNat`. -/
 

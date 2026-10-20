@@ -1,8 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86_64.Recover
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpCands
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Row
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import Mathlib.Algebra.GroupWithZero.Nat
+public import Mathlib.Algebra.Group.Nat.Defs
+import Mathlib.Data.Nat.Basic
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.Order.ZeroLEOne
+import Mathlib.Tactic.Attr.Core
+import Mathlib.Tactic.Push
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: comparing numbers

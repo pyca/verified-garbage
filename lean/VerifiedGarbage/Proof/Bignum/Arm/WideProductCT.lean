@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.WideProduct
+public import VerifiedGarbage.Proof.Bignum.Arm.WideProductState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductBodyCT
+import VerifiedGarbage.Proof.Bignum.Arm.WideProductBody
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Wide multiplication leaks no operand values -/
 

@@ -1,15 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
+meta import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.FieldWide
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 
 /-! Scratch counters are public by correctness, including after table stores. -/
 

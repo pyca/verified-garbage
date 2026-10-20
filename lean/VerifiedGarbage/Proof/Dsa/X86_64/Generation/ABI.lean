@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.Generate
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyABI
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Public parameter-generation ABI and its disjoint input buffers -/
 

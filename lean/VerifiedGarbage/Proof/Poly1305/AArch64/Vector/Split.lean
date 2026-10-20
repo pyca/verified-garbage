@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: two blocks into limbs

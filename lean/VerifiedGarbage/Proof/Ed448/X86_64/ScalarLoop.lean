@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 scalar arithmetic on x86-64: the loop over the words

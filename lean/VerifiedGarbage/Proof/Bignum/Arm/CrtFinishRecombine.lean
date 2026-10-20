@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFinishRecombine
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineValue
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWide
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtRecombineValue
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulus
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact CRT product-plus-residue reconstruction -/
 

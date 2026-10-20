@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomState
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Dsa.Random
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDraw
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomMemory
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! Value and status observations after one complete draw. -/
 @[expose] public section

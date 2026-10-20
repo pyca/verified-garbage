@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.X86_64
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # Code templates over a Montgomery multiplication, with calls

@@ -1,7 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillDep
 public import VerifiedGarbage.Proof.Argon2.AddressInput
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillCall
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillSteps
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Clear
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Initial
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Argon2 on ARMv7: the input of the address block

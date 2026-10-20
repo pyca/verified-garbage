@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.RowCarry
 public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Integrate the two top-word stores into a full accumulator value -/
 

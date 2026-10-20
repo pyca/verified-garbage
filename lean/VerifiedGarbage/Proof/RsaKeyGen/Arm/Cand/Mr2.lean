@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mr1
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Taint7
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Mont7
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
+import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.St
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # A candidate on ARMv7: Miller–Rabin's start (`mrInit_vp`)
 

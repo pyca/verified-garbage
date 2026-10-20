@@ -2,6 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.CrtValuesMask
 public import VerifiedGarbage.Proof.Rsa.X86.CvChecksA
+public import VerifiedGarbage.Proof.Rsa.X86.InvLoop
+import VerifiedGarbage.Proof.Rsa.X86.KeyCopy
+import VerifiedGarbage.Proof.Rsa.X86.KeyWord
+import VerifiedGarbage.Proof.Rsa.X86.KeyEq
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import Mathlib.Tactic.Push
+import Mathlib.Algebra.NeZero
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # CRT inverse checks and the mask for releasing calculated parameters -/
 

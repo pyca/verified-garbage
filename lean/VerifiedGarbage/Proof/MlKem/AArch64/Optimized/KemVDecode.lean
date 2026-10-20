@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KemVInv
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Lists
 
 /-! # Decode the public vector after the matrix has been consumed -/
 

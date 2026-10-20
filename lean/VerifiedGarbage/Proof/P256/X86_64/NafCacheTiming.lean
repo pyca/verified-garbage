@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+meta import VerifiedGarbage.Impl.Ecdh.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Building the cache uses fixed addresses; lookup depends only on the public digit. -/
 

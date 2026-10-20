@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Spec.MlKem.Poly
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
-public import VerifiedGarbage.Impl.MlKem.AArch64.Noise
+import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-! # CBD sampling and optional transform of one paired PRF output -/
 @[expose] public section

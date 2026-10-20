@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
 public import VerifiedGarbage.Proof.RsaOaep.Scan
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Loops
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-!
 # RSAES-OAEP decryption on x86-64: the loops of the decoding

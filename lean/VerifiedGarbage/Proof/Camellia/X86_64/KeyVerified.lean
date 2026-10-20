@@ -1,11 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.ExpandKey
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Camellia.Scratch
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintSum
 
 /-!
 # The Camellia key schedule on x86-64 meets its contracts

@@ -1,8 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Stages
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.R2CT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.R2CT
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Body
+import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Stages
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.R2CT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Body
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH public-key validation on x86-64: constant time -/
 

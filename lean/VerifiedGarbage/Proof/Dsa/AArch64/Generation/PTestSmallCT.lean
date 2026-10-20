@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Width rejection has a fixed trace and does not enter primality testing -/
 

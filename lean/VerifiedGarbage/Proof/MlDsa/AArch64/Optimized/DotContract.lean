@@ -3,14 +3,23 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotCore
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseStaticCore
 public import VerifiedGarbage.Spec.MlDsa.FusedInverse
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemoryValues
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemoryValues
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseMemoryCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSpecPre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InnerBank
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.InverseTable
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSliceComposition
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversalCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! ## From `DotStatic.lean` -/
 

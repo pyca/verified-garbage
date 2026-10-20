@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.CkCorrect
-public import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
-public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
+import VerifiedGarbage.Proof.Rsa.Arm.CkTaint
+import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.KcFnCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

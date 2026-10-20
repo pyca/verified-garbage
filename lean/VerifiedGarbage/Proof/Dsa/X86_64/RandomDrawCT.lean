@@ -1,10 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawPublic
+public import VerifiedGarbage.Spec.Dsa.Random
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCheckCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawFinishCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCheckCT
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawFinishCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawPublic
+meta import VerifiedGarbage.Spec.Dsa.Random
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCheckCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawFinishCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! A draw leaks its public bounds and the declassified acceptance decision. -/
 @[expose] public section

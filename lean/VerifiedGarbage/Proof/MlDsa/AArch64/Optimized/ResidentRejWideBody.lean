@@ -3,10 +3,10 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

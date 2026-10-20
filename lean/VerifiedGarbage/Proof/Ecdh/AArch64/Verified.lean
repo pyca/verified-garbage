@@ -1,23 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
-meta import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Data.Finset.Card
-meta import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
+public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Impl.P256.VerifyDouble
-meta import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
+meta import VerifiedGarbage.Impl.Ecdh.P256.AArch64
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # ECDH over P-256 on AArch64: `Verified`

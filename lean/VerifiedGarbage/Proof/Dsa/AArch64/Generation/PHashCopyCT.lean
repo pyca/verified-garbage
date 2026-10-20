@@ -1,9 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QShapeCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSeedHash
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PSeedHash
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PHashArgs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Copy each p hash contribution with a public address trace -/
 

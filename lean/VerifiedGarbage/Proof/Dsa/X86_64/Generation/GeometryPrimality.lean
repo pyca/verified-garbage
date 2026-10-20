@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeometryConstruct
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Concrete p-primality buffers preserve the generated candidate and exponent -/
 

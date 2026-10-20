@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
-public import VerifiedGarbage.Impl.Ffdh.X86_64.Domain
 
 /-! # FFDH parameter candidates on x86-64: shape p and halve it for q -/
 

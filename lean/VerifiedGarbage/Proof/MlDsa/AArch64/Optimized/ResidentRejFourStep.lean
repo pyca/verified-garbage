@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoice
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejValue
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 
 @[expose] public section
 

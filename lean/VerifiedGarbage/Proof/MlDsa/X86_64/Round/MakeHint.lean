@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.OneOut
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_make_hint`

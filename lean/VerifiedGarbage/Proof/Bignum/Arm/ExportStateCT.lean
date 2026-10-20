@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExportState
+public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Array export preserves the public state needed by the next export -/
 

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.SgBase
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # RSASSA-PSS signing on ARMv7: the contract is satisfiable

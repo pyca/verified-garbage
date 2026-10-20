@@ -2,7 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtCore
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Import a cdecl byte-slice argument into private scratch -/
 

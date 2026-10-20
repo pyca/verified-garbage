@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtValidateProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValidationState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProduct
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProduct
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductValidationState
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Exact full product validation against the original RSA modulus -/
 

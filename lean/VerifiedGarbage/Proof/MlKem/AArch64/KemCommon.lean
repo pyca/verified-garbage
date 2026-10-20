@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # ML-KEM on AArch64: what the proofs of `encaps` and `decaps` share

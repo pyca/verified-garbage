@@ -1,21 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-public import VerifiedGarbage.Proof.Sha256.X86_64.Variant
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha256.X86_64.Shared
-meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+meta import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # SHA-256 on x86-64, as a Merkle–Damgård hash function

@@ -2,7 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Squeeze
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.BeginTiming
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Pair
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.NextBlock
+import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Constants
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Finish
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 
 /-!
 # A hashing pair

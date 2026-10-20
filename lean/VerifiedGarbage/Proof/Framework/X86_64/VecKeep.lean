@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.X86_64.Isa
+public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # x86-64: code that does not touch the vector registers

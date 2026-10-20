@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InitInverse
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.InitInverse
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Inverse initialization uses only public memory addresses -/
 

@@ -1,11 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtContext
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtSetup
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCtRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
 import VerifiedGarbage.Proof.Bignum.AArch64.WideDiagonal
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSave
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.SquareEight

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
-public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 
 /-! Save borrowed header words in the raw-product buffer's padding. -/
 

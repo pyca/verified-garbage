@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
-meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
+import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
-meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 public import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
+public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
+meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_check_ek`

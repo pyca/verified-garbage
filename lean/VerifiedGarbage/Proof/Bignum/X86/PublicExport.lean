@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicMask
-public import VerifiedGarbage.Proof.Bignum.X86.PublicWrite
+import VerifiedGarbage.Proof.Bignum.X86.PublicMask
+import VerifiedGarbage.Proof.Bignum.X86.PublicWrite
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
 
 /-! # Masking and export preserve saved registers while releasing accepted results -/
 

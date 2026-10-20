@@ -1,8 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtMask
-public import VerifiedGarbage.Proof.Bignum.X86.CrtWrite
+import VerifiedGarbage.Proof.Bignum.X86.CrtMask
+import VerifiedGarbage.Proof.Bignum.X86.CrtWrite
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
+public import VerifiedGarbage.Spec.Rsa.Contract
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Mont.X86.DynamicSelect
 
 /-! # Masking and export preserve saved registers while releasing accepted results -/
 

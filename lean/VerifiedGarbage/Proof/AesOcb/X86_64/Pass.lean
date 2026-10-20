@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
+public import VerifiedGarbage.Proof.Ocb.Spec
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Hash
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.AesOcb.X86_64.Args
+import VerifiedGarbage.Proof.AesOcb.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Run
+import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-OCB on x86-64: a pass over the whole blocks (`pass`)

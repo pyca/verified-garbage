@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.VPack
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 public import VerifiedGarbage.Impl.MlKem.X86_64.Mul
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+public import VerifiedGarbage.Proof.MlKem.X86_64.VLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `BaseCaseMultiply` on words

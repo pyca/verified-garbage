@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-! Identities for pairs of 64-bit SIMD lanes. -/
 

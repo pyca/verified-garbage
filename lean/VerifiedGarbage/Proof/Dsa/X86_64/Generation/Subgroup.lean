@@ -1,7 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SubgroupState
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Subgroup
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeResult
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFootprint
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QBuild
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Generation.Memory
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Complete native subgroup-candidate generation and primality testing -/
 

@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
-public import VerifiedGarbage.Proof.MlKem.CoeffW
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM on AArch64: `keygen`, the matrix `Â`

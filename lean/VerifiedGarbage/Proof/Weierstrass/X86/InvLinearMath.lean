@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Proof.Mont.Words32
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-public import VerifiedGarbage.Proof.Divstep.Tc32Words
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Data.Finset.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Truncated products and signed corrections -/
 

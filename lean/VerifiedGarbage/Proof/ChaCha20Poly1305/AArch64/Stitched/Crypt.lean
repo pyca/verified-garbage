@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Bulk
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: the chunks in the context

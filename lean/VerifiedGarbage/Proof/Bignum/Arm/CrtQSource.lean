@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceCall
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedFrame
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-! # Read the q-workspace pointer without modifying the active workspace -/
 

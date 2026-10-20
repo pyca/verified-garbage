@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.AArch64.Mem
 
-public import VerifiedGarbage.Proof.X448.AArch64.Carry
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.AArch64.Carry
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: modular reduction

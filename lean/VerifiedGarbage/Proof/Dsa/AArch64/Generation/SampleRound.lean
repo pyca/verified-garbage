@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundHeader
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailResult
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Sample
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundHeader
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailResult
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! A complete native witness iteration through the shared windowed round. -/

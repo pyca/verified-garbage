@@ -2,7 +2,12 @@
 """Plans how CI splits the Lean build across runners.
 
 CI restores the last build `main` saved, and Lake rebuilds only the modules
-whose sources changed since, and the modules importing them. The build is
+whose sources changed since, and the modules that read their outputs: those
+importing them, and those importing a module that passes them on (`public
+import`, `reads`). A module that imports a changed module privately is
+rebuilt, but its own outputs come out as they were, so Lake rebuilds nothing
+beyond it on its account; the plan counts it among the modules to rebuild
+but not what imports it. The build is
 limited mostly by throughput, so the modules to rebuild are split into
 shards that build in parallel on separate runners, as many as the work
 needs: none when one would do (the `lean` job builds it), or when shards
@@ -108,6 +113,8 @@ UP_TO_DATE = 0.02
 DEFAULT_TIME = 3.0
 # `import`, and in a module `public`, `meta` and `all` imports.
 IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", re.M)
+# The same, with whether it is `public` and whether `all`.
+IMPORT_KIND = re.compile(r"^\s*(public\s+)?(?:meta\s+)?import\s+(all\s+)?(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 # The steps of a module of a precompiled library after its `.olean`.
 NATIVE_FACETS = ("c.o", "dynlib")
@@ -190,6 +197,84 @@ def imported_by(text: str, mods) -> list[str]:
 def imports(mods: dict[str, pathlib.Path]) -> dict[str, list[str]]:
     """The modules of the project each module imports."""
     return {m: imported_by(f.read_text(), mods) for m, f in mods.items()}
+
+
+def is_module(text: str) -> bool:
+    """Whether the source `text` starts with `module`, after any comments."""
+    comment = False
+    for line in text.split("\n"):
+        s = line.strip()
+        if comment:
+            comment = not s.endswith("-/")
+        elif s.startswith("/-") and not s.startswith("/-!"):
+            comment = not s.endswith("-/")
+        elif s == "module":
+            return True
+        elif s and not s.startswith("--"):
+            return False
+    return False
+
+
+def visibility(text: str, mods) -> tuple[list[str], list[str]] | None:
+    """Of the modules of the project (of `mods`) the source `text` imports,
+    those it passes on to its importers (`public` imports: Lake's trace of a
+    module importing it has their outputs too) and those it imports `all`;
+    None for a file that is not a module, which Lake builds with the whole
+    closure of its imports, every module's outputs, private parts included."""
+    if not is_module(text):
+        return None
+    kinds = [(bool(p), bool(a), i) for p, a, i in IMPORT_KIND.findall(text) if i in mods]
+    return [i for p, _, i in kinds if p], [i for _, a, i in kinds if a]
+
+
+def visibilities(mods: dict[str, pathlib.Path]) -> dict[str, tuple[list[str], list[str]] | None]:
+    """`visibility` of each module of the project."""
+    return {m: visibility(f.read_text(), mods) for m, f in mods.items()}
+
+
+def reads(
+    imps: dict[str, list[str]],
+    closure: dict[str, frozenset[str]],
+    vis: dict[str, tuple[list[str], list[str]] | None],
+) -> dict[str, frozenset[str]]:
+    """The modules of the project whose outputs each module's build reads
+    (its trace), as Lake reads them: each module it imports, and what those
+    pass on (`public import`), transitively; with an `import all`, also what
+    that module imports; with the whole closure for a file that is not a
+    module. A module's public outputs are made from its source and what it
+    reads publicly, so a change to a module that a module imports only
+    privately (or through a private import) rebuilds the importer, which
+    then (but for its own changes) produces the outputs it did, and Lake
+    rebuilds nothing beyond it: such a module need not be rebuilt."""
+    passed: dict[str, frozenset[str]] = {}
+    for root in imps:
+        stack = [(root, False)]
+        while stack:
+            m, ready = stack.pop()
+            if m in passed:
+                continue
+            on = imps[m] if vis.get(m) is None else vis[m][0]
+            if ready:
+                passed[m] = frozenset({m}).union(*(passed[i] for i in on))
+            else:
+                stack.append((m, True))
+                stack += [(i, False) for i in on if i not in passed]
+    out = {}
+    for m in imps:
+        if vis.get(m) is None:
+            out[m] = closure[m] - {m}
+        else:
+            read = set().union(*(passed[i] for i in imps[m]))
+            for i in vis[m][1]:
+                read |= set().union(*(passed[j] for j in imps[i]))
+            out[m] = frozenset(read)
+    return out
+
+
+def stale_of(changed: set[str], read: dict[str, frozenset[str]]) -> set[str]:
+    """The modules a build rebuilds when the modules `changed` change: those,
+    and every module that reads one of them (`reads`)."""
+    return set(changed) | {m for m, r in read.items() if r & changed}
 
 
 def closures(imps: dict[str, list[str]]) -> dict[str, frozenset[str]]:
@@ -330,19 +415,24 @@ def plan(manifest: dict) -> dict:
         changed |= {m for m in mods for _, e in moved if matches(e, m, closure)}
     else:
         changed = set(mods)
-    stale = {m for m in mods if closure[m] & changed}
-    work, _, (loads, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
+    stale = stale_of(changed, reads(imps, closure, visibilities(mods)))
+    work, _, (estimates, targets, shards) = schedule(imps, closure, stale, manifest.get("times", {}))
     owner = {}
     for i, shard in enumerate(shards):
         for m in sorted(shard):
             owner.setdefault(m, i)
-    return {
+    out = {
         "stale": len(stale),
         "work": round(work),
-        "loads": [round(t) for t in loads],
+        "loads": [round(t) for t in estimates],
         "targets": [sorted(t) for t in targets],
         "owner": owner,
     }
+    # The modules whose sources differ from the last build's, whatever its
+    # inputs: what `check_lean_public_imports.py` checks.
+    if sources:
+        out["edited"] = sorted(m for m, f in mods.items() if sources.get(m) != digest(f))
+    return out
 
 
 def shard_index(p: dict, name: str) -> int:

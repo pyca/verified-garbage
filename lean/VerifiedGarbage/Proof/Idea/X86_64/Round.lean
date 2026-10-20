@@ -3,7 +3,9 @@ module
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Mul
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Idea.Arith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # IDEA on x86-64: a round

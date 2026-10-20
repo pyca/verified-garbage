@@ -1,9 +1,19 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRestore
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryRestore
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedAbi
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySavedLink
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBody
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Functional results at the complete AAPCS64 generation boundary. -/
 @[expose] public section

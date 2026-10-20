@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntry
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryTail
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchEntryTail
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchLayout
 
 /-! # Establish the complete parameter-search invariant -/
 

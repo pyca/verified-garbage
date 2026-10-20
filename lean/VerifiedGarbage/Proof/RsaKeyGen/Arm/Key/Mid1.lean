@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Front4
-public import VerifiedGarbage.Proof.RsaKeyGen.Arm.Key.Taint2
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.RecoverSubtract
 
 /-! # An RSA key on ARMv7: `e`'s flags, and `d` for `e = 0` and `e = 1`
 

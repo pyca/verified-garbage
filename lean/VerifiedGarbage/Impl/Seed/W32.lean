@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Seed.Layers
 
 /-!
 # `G` on 32-bit words: the constants of its last layer

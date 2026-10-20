@@ -1,14 +1,37 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
-meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.Gcm.Be64
-meta import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Cmac.Mem32
-meta import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Cmac.Block32
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+public import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RelCT
+meta import VerifiedGarbage.Proof.Gcm.Compose
+meta import VerifiedGarbage.Proof.Gcm.Stream
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Gcm.Compose
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES-GCM on x86: padding the buffer (`flush`) and the lengths block (`lens`)

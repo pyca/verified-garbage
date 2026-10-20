@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitCT
-public import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpRound
-meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
+import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBit
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBitCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.ConditionalExp.ExpBit
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Advancing exponent-loop controls has no secret-dependent address -/
 

@@ -1,8 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchSafety
+public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAbi
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchImplies
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchAbi
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchImplies
 
 /-! # Verified complete native FFDH parameter generation for every arithmetic backend -/
 

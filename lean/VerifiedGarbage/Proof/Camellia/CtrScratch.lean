@@ -1,7 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.Camellia.Ctr
-public import VerifiedGarbage.Proof.Camellia.Scratch
+public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Camellia-CTR with its working space as an argument

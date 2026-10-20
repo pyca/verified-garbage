@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.Ecb
 public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
-public import VerifiedGarbage.Impl.Modes.X86_64.Fb
 
 /-!
 # SEED-CBC, -OFB and -CFB128 on x86-64

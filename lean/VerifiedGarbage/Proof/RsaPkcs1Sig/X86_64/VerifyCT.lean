@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 meta import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
-public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: constant time

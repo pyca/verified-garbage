@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # The ARMv7 PKCS #1 v1.5 functions: bytes and words in memory

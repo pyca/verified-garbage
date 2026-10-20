@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
+public import VerifiedGarbage.Proof.Sha3.Stream
+public import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Permute
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha3.Contract
-meta import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The SHA-3 sponge on x86-64: `absorb`

@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on x86-64: decapsulation, the choice of the key

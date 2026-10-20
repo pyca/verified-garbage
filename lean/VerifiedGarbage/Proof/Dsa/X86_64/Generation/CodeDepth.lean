@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySafety
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Bignum.X86_64
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Compositional bounds for stack use below the persistent search frame -/
 

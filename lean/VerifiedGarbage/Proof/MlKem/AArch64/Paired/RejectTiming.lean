@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Trace
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired

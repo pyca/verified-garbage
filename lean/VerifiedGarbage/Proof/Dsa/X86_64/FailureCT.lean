@@ -1,15 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+public import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Failure
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Failure
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.Layout
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Impl.Dsa.X86_64.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Dsa.Layout
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Operands
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time clearing of a rejected DSA signature -/
 

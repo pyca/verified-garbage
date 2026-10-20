@@ -1,17 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.ParametersVerified
-public import VerifiedGarbage.Proof.Dsa.X86_64.DeriveVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
+public import VerifiedGarbage.Spec.Dsa.Derive
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
 /-! # Arithmetic variants for the complete DSA entry points
 

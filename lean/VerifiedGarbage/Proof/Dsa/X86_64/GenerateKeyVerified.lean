@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCheck
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyConstantTime
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyConstantTime
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyCorrect
 
 /-! # Complete verification of DSA key generation for every x86-64 backend -/
 

@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2CT
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AnyKey.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Pbkdf2
+import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Words
 
 /-!
 # HMAC's `init` for a key of any length over any Merkle–Damgård hash function on x86-64: correct

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SearchBody
 public import VerifiedGarbage.Proof.Dsa.Generation.Search
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.Generation.RandomSuffix
 
 /-! # Match each native body result to the reviewed p-search recursion -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
-public import VerifiedGarbage.Impl.Dsa.X86_64.Generate
 
 /-! # DSA key generation on x86-64
 

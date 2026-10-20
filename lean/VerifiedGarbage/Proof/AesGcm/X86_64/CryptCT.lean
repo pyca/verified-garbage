@@ -1,13 +1,25 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CryptOk
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # AES-GCM on x86-64: `crypt` in two runs

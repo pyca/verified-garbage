@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Body
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Argon2 on ARMv7: the derivation's use of H′'s hash macros

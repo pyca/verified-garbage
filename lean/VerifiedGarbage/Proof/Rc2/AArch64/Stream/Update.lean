@@ -2,10 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Prep
 public import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Contract
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Contract
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Verified
 import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.Rc2.Memory
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Lit
 
 /-!
 # Streaming RC2-CBC on AArch64: the update functions

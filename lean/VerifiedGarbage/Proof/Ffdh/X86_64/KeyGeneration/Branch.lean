@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.ClassifyCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Guards
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Classify
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptStep
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
 
 /-! # Where an iteration of the key search leads, from a public point -/
 

@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
 import VerifiedGarbage.Proof.Ed25519.Group.Decode
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTBody
 meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverCTBlocks
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyPoints
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.PointMulBatch
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Block
+meta import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed25519 verification on AArch64: `R` and `A` decoded by one loop

@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.KeyScalar
 public import VerifiedGarbage.Impl.Rsa.X86.Inverse
 public import VerifiedGarbage.Proof.Rsa.InverseArithmetic
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Rsa.X86.KeySelect
+import VerifiedGarbage.Proof.Rsa.X86.KeySub
 
 /-! # Subtraction modulo the odd RSA inverse modulus -/
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.Seed.Contract
 public import VerifiedGarbage.Spec.Cbc.Contract
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # SEED-CBC: the contracts, on every target

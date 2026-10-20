@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha1.X86_64.Compress
 import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Impl.StackScratch.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # Sha1 on X86_64: the shared contracts

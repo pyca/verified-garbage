@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Context
+public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
 
-public import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Runtime context invariants across modular operations -/
 

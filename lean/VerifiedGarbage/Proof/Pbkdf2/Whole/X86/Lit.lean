@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 public import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Md5.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Lit
 meta import VerifiedGarbage.Impl.Pbkdf2.Whole.X86
+meta import VerifiedGarbage.Spec.Pbkdf2.Generic
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the functions it calls, and its code as literals

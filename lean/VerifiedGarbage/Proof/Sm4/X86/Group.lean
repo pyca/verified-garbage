@@ -1,11 +1,17 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Omega
 
 public import VerifiedGarbage.Proof.Sm4.X86.Prologue
 public import VerifiedGarbage.Proof.Sm4.Common
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Sm4.X86.Copy
+import VerifiedGarbage.Proof.Sm4.X86.Crypt8
+import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # A group of blocks of SM4 ECB on x86 (32-bit)

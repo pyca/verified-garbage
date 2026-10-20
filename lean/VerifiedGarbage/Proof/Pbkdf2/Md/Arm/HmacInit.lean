@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Hash
 import VerifiedGarbage.Proof.Pbkdf2.MdKeys
-public import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # HMAC's `init` over a Merkle–Damgård hash function on ARMv7: correct

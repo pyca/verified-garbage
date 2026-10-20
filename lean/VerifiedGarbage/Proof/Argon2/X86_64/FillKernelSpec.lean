@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.Argon2.FillStep
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernel
 public import VerifiedGarbage.Proof.Argon2.Matrix
-import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Merged from `Proof.Argon2.X86_64.FillKernelMatrix`. -/
 

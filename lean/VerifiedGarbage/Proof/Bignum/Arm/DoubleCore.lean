@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Double
+public import VerifiedGarbage.Proof.Bignum.Arm.MontCoreCT
+public import VerifiedGarbage.Proof.Bignum.Arm.Csub
 
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleProduct
+import VerifiedGarbage.Proof.Bignum.Arm.MontFinish
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Canonical modular doubling from the initialized workspace -/
 

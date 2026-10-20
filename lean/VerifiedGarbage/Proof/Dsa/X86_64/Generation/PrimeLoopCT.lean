@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoopCTData
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeLoopCTData
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopInit
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Constant-time composition of the complete blinded primality loop -/
 

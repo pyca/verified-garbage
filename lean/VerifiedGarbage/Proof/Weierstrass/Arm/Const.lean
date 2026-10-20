@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Mont.Arm
+public import VerifiedGarbage.Proof.Mont.Arm.Words
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Mont.Arm.Ops
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Spec.X25519
 
 /-!
 # Constants in the working space, on 32-bit ARM

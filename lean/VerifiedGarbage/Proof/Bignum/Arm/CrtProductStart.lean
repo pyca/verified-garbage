@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtProductState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtProductArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
 
 /-! # Product arguments establish the full schoolbook-loop invariant -/
 

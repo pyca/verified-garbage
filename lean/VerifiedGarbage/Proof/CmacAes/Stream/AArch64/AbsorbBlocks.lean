@@ -1,7 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.CmacAes.Stream.AArch64
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
 
 /-!
 # Streaming AES-CMAC on AArch64: `vg_cmac_aes_absorb`'s straight-line code

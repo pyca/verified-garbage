@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AArch64: straight-line bitwise AdvSIMD code, doubleword lane by doubleword lane

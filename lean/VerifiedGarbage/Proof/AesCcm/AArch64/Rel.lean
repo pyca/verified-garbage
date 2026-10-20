@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.AArch64.Env
+public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Common
+public import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Open
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 
 /-!
 # AES-CCM on AArch64: relating two runs

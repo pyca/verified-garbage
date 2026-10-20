@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowFive
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupWs
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTSetupWs
 
 /-!
 # RSA with the CRT on AArch64: constant time of the primes' setup

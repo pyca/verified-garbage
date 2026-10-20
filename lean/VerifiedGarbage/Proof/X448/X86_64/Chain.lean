@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Basic
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Spec.X25519
+public import Batteries.Data.List.Basic
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86-64: carry chains, loads and stores

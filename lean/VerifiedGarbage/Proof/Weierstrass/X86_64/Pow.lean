@@ -1,14 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Layout
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
+public import VerifiedGarbage.Impl.Weierstrass.X86_64
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Mont.X86_64.OpsReg
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Unch
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 import VerifiedGarbage.Proof.Weierstrass.Pow
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.X25519.X86_64.Mem
 
 /-!
 # Short Weierstrass curves on x86-64: powers

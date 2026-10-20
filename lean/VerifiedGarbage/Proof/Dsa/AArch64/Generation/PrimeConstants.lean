@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeSetup
+public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.MontPrep
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! Complete the Montgomery constants using the shared arithmetic backend. -/
 @[expose] public section

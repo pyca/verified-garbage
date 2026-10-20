@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.G
 public import VerifiedGarbage.Proof.Aes.Bitsliced
-public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+public import VerifiedGarbage.Proof.Seed.Sbox
 
 /-!
 # G on sixteen words, bitsliced

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Resident
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
+public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-! Two independent 66-byte ExpandMask seeds, with the paired Keccak state
 resident through all five SHAKE256 blocks. The outer caller ABI is ordinary

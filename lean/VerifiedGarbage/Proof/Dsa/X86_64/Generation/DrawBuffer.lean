@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFrame
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TapeSlice
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawCopy
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # A whole tape draw supplies the sampler and preserves all loop arguments -/
 

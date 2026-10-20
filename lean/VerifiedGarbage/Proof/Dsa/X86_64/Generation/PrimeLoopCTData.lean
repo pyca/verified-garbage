@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.IterationPublic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoopStep
 
 /-! # Public transitions of the finite DSA witness loop -/
 

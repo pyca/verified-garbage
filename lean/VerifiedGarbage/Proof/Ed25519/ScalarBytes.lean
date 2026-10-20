@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 
 /-!
 # The bytes of a little-endian scalar are its base-256 digits

@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyReturn
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyReturn
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignRestore
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBody
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyNoSp
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEntryCache
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnInput
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyNoSp
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEntryCache
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Dsa.X86.RandomBody
+import VerifiedGarbage.Proof.Dsa.X86.RandomSignCorrect
+import VerifiedGarbage.Proof.Mont.X86.Chain
 
 /-! # Callable PKCS #1 signing restores the i686 calling convention -/
 

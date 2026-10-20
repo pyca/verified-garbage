@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Check
+import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
+import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ECDSA verification on x86-64: the arguments and the key

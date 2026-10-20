@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.X25519.Arm.Field
 
 import VerifiedGarbage.Proof.X25519.Arm.Mul
-public import VerifiedGarbage.Proof.X25519.Arm.Cswap
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # X25519 on 32-bit ARM: the field elements the working space holds

@@ -1,15 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
 public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
+import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: brainpoolP512r1

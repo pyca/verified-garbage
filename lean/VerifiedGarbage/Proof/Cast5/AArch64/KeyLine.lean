@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.Block
+import VerifiedGarbage.Proof.Cast5.AArch64.Block
 public import VerifiedGarbage.Proof.Cast5.KeyMem
+public import VerifiedGarbage.Proof.Cast5.AArch64.Run
+public import VerifiedGarbage.Proof.Cast5.AArch64.Scan
 import VerifiedGarbage.Proof.Framework.CallLay
 
 /-!

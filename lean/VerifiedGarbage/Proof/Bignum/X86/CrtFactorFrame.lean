@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86.CrtFactorPower
+import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
 
 /-! # Saving a factor residue leaves every other preserved component intact -/
 

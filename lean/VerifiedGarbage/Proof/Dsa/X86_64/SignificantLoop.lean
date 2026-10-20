@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Significant
 public import VerifiedGarbage.Proof.Dsa.DomainShape
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Dsa.X86_64.ReduceCount
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
 
 /-! # Complete actual-width scanning for DSA's public moduli -/
 

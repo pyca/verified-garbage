@@ -1,10 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointTableAddr
-import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import Mathlib.Tactic.SplitIfs
 
 /-! The scalar bit mask and the selection of the saved point. -/
 

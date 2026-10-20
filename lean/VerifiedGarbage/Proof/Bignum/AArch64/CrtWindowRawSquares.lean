@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowCore
 import VerifiedGarbage.Proof.Bignum.CrtWindowRelation
 import Mathlib.Data.Int.ModEq
 

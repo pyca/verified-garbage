@@ -1,14 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasks
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Rel
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.MaskPairTiming
 
 @[expose] public section
 

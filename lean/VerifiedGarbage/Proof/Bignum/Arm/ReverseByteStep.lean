@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.ReverseBytes
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # One endian-conversion byte and its exact memory effect -/
 

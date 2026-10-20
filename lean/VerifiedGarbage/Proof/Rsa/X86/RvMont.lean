@@ -1,7 +1,12 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.X86.RvMontGeometry
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvMontSetup
-public import VerifiedGarbage.Proof.Rsa.X86.RvSubtract
+import VerifiedGarbage.Proof.Rsa.X86.RvMontSetup
+import VerifiedGarbage.Proof.Rsa.X86.RvSubtract
+import VerifiedGarbage.Proof.Rsa.X86.RvMontStage
+import VerifiedGarbage.Proof.Rsa.X86.RvScalarOps
+import VerifiedGarbage.Proof.Rsa.X86.RvOps
 
 /-! # The prime-recovery Montgomery setup stage -/
 

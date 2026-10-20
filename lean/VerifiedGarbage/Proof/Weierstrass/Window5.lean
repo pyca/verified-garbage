@@ -1,7 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.Window
-import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Framework.PowLit
 

@@ -5,9 +5,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPowerCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.CallHeadCT
 import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-import VerifiedGarbage.Spec.Dsa.SignVerify
 meta import VerifiedGarbage.Proof.Dsa.AArch64.JointPower
-meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant-time binding, execution and storage of a joint call -/
 

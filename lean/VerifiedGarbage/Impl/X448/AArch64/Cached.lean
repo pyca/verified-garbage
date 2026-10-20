@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Common
 
-public import VerifiedGarbage.Impl.X448.AArch64.Wide
 
 /-! Squaring with all eight wide operands retained in caller-saved registers. -/
 

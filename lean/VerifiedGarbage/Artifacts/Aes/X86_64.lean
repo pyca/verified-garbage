@@ -8,6 +8,40 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+public import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Aes.X86_64.Decrypt
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
+import VerifiedGarbage.Proof.Gcm.Spec
 
 /-! # AES on x86-64 -/
 

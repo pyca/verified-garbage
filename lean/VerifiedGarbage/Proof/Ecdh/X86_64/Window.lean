@@ -1,15 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Ecdh.X86_64
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
+import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ECDH on x86-64: `[d]P` by windows, and `Z^(p-2)`

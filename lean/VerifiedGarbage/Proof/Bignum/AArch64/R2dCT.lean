@@ -1,11 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
+import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
-public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dStep
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dRecip
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dQuot
+meta import VerifiedGarbage.Proof.Bignum.AArch64.R2dSub
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # `R² mod m` by long division on AArch64 is constant time

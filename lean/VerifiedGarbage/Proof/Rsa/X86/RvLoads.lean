@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvZero
+import VerifiedGarbage.Proof.Rsa.X86.RvZero
 public import VerifiedGarbage.Proof.Rsa.X86.RvProductCore
-public import VerifiedGarbage.Proof.Rsa.BytesFrame
-public import VerifiedGarbage.Proof.Rsa.Octets
-public import VerifiedGarbage.Proof.Dsa.Frame
+public import VerifiedGarbage.Proof.Rsa.X86.RvInputs
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Dsa.Frame
+import VerifiedGarbage.Proof.Rsa.X86.RvLoad
+import VerifiedGarbage.Proof.Rsa.X86.RvViews
 
 /-! # Importing the three key integers into the recovery workspace -/
 

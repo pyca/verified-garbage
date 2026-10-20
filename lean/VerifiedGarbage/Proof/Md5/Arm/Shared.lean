@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Md5.Arm.Compress
-public import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
-public import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
+import VerifiedGarbage.Proof.Md5.Arm.Stream.Init
+import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Spec.Md5.Contract
+public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+public import VerifiedGarbage.Proof.MdStream.Arm.Update
+public import VerifiedGarbage.Impl.Md5.Arm.Stream
+public import VerifiedGarbage.Impl.StackScratch.Arm
 import VerifiedGarbage.Proof.Md5.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Md5 on Arm: the shared contracts

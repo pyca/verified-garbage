@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.AArch64.Square
-public import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
+import VerifiedGarbage.Proof.Bignum.AArch64.Row
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Clear the existing two-array square buffer. -/
 

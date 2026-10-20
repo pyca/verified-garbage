@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStages
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyTailTiming
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyTailTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyCallPublic
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyBlocksTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyLength
+import VerifiedGarbage.Proof.Rsa.X86.PrivSetupTiming
+import VerifiedGarbage.Proof.Rsa.X86.PrivReleaseTiming
 
 /-! # The verifier body relates even calls with inconsistent precomputed moduli -/
 

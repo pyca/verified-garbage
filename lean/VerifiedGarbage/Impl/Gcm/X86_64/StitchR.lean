@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 

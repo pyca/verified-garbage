@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampC
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.SampA
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 
 /-!
 # ML-DSA verification on 32-bit ARM: after the samplers

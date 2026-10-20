@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomDrawCT
-public import VerifiedGarbage.Proof.Dsa.RandomTrace
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.RandomTrace
+import VerifiedGarbage.Proof.Dsa.RandomEncoding
 
 /-! The public sampling trace determines the next draw's declassified decision. -/
 @[expose] public section

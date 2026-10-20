@@ -3,9 +3,11 @@ module
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Layout
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 public import VerifiedGarbage.Proof.Framework.AArch64.Linear
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # A DES round on AArch64

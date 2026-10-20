@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.SetSmallFn
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Mont
 
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
-public import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmall
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Small-integer initialization through the shared RSA array layout -/
 

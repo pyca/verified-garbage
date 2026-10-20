@@ -1,10 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Impl.Bignum.Arm.MontFinish
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
 
-public import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.StageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
+import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFinish
+meta import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+meta import VerifiedGarbage.Proof.Bignum.Arm.FinishArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CsubCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Final reduction leaks only its count and pointers -/
 

@@ -1,7 +1,25 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.Calls
+public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+public import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 
-public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.Arm.Calls
+meta import VerifiedGarbage.Proof.MlKem.Arm.HashCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.KemLay
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.Prf
+meta import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on 32-bit ARM: the `PRF`s in constant time

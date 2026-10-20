@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointBuildContext
 public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Spec.Dsa
 
 /-! # Writing one entry of the joint exponentiation table -/
 

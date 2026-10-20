@@ -1,10 +1,28 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Seed.X86.Key
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Seed.X86.Lit
+public import VerifiedGarbage.Proof.Seed.Scratch
+public import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Seed.X86.Verified
 meta import VerifiedGarbage.Proof.Seed.X86.Key
-public import VerifiedGarbage.Proof.Seed.X86.Verified
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Seed.X86.Lit
+meta import VerifiedGarbage.Proof.Seed.Scratch
+meta import VerifiedGarbage.Proof.Framework.X86.NativeHintData
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Seed.X86.Verified
 
 /-!

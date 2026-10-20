@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Code that keeps a general-purpose register

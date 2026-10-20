@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Contract
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Front
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 
 /-! # FFDH public-key validation on x86-64: input context -/
 

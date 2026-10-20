@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtAddWide
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAddWideArgs
+import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Exact full-width addition in the CRT result buffer -/
 

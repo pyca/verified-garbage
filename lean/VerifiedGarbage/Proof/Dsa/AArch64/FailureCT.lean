@@ -1,13 +1,35 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Failure
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Failure
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Dsa.AArch64.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
 meta import VerifiedGarbage.Proof.Dsa.Layout
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Operands
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import Mathlib.Tactic.Attr.Core
+meta import Aesop.BuiltinRules
+meta import Mathlib.Tactic.ToDual
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Run
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant-time clearing of a rejected DSA signature -/
 

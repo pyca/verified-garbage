@@ -1,7 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 on x86-64 with AVX-512: the last 513 to 1023 bytes

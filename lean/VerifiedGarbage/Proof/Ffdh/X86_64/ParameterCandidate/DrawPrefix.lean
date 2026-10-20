@@ -1,9 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.WitnessState
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestore
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadWitness
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CutRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.LoadWitness
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 
 /-! # FFDH parameter generation on x86-64: consume, mask and load one draw -/
 

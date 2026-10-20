@@ -1,15 +1,23 @@
 module
 
 import VerifiedGarbage.Proof.MdStream.Arm.Common
-meta import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Md5.Arm.Compress
-meta import VerifiedGarbage.Proof.Md5.Arm.Compress
 import VerifiedGarbage.Proof.Md5.Stream
-meta import VerifiedGarbage.Proof.Md5.Stream
 public import VerifiedGarbage.Impl.Md5.Arm.Stream
-meta import VerifiedGarbage.Impl.Md5.Arm.Stream
 import VerifiedGarbage.Proof.Md5.StateMem
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MdStream.Arm.Common
+meta import VerifiedGarbage.Proof.Md5.Arm.Compress
+meta import VerifiedGarbage.Proof.Md5.Stream
+meta import VerifiedGarbage.Impl.Md5.Arm.Stream
 meta import VerifiedGarbage.Proof.Md5.StateMem
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming MD5 on ARMv7: `init`

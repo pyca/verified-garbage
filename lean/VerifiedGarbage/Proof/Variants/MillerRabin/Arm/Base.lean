@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Backend
+public import VerifiedGarbage.Proof.MillerRabin.Arm.Verified
 
 /-!
 # The baseline shared round on ARMv7: the variant's code and proofs

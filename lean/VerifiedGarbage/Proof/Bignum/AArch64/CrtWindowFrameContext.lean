@@ -1,7 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+public import VerifiedGarbage.Proof.Bignum.CrtWindowFiveLayout
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowHead
-import Mathlib.Data.Int.ModEq
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+public import Mathlib.Tactic.ToAdditive
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! The wider table leaves the modulus and prime workspace headers unchanged. -/
 

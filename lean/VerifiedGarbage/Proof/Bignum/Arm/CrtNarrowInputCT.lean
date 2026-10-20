@@ -1,11 +1,33 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.CrtNarrowPower
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowShared
+meta import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowInput
+meta import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.CopyBytesCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.Stack
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Copying the reduced input reveals only the public workspace addresses and width -/
 

@@ -1,7 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
 meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-GCM on x86: the rest of the keystream block (`cryptHead`)

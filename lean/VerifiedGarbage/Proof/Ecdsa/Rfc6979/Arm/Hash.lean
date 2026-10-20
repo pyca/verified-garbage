@@ -2,13 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Upd
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Curve
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.X25519.Arm.Limbs
+public import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the hash function

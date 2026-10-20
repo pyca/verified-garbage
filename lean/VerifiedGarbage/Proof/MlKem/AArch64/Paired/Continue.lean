@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Segment
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
 
 /-! # Resume rejection from the saved accepted prefix -/
 

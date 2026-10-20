@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
-meta import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.RsaPkcs1Enc.Arm.Precomputed
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key on ARMv7: the pieces the taint analysis checks -/
 

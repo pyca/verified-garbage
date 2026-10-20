@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.RvFin5
 
-public import VerifiedGarbage.Proof.Rsa.Arm.RvRest
-public import VerifiedGarbage.Proof.Rsa.Arm.RvTaint5
-public import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Rsa.Arm.RvRest
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint5
+import VerifiedGarbage.Proof.Rsa.Arm.CvFail
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
 
 /-! # `vg_rsa_recover_primes` on ARMv7: zeros written out and 0 returned (`fail_vp`) -/
 

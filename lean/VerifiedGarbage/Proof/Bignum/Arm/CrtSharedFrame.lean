@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStorage
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared CRT inputs survive arithmetic and mutable stack-slot updates -/
 

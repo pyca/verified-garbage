@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.P256.EcdhJac.State
-public import VerifiedGarbage.Proof.P256.Linear.WeakAdd
-import VerifiedGarbage.Proof.P256.Linear.Linear41
-import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
-import VerifiedGarbage.Proof.Weierstrass.Booth
+public import VerifiedGarbage.Proof.P256.Linear.WeakCertificate
+import VerifiedGarbage.Proof.P256.Linear.FortyOneCertificate
 
 @[expose] public section
 

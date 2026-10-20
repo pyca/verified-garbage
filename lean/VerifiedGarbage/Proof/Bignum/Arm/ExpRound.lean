@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpState
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpBit
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.ExpBit
+import VerifiedGarbage.Proof.Bignum.Arm.ExpControl
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Execute an exponent bit and advance its byte-loop controls -/
 

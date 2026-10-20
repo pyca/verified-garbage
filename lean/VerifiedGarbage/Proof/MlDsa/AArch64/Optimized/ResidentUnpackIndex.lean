@@ -1,11 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentUnpack
-import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

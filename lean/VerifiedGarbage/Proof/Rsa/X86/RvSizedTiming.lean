@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvPair
+public import VerifiedGarbage.Proof.Rsa.X86.RvResult
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvNumbersTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvRestTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
-public import VerifiedGarbage.Proof.Rsa.X86.RvPublicFacts
+import VerifiedGarbage.Proof.Rsa.X86.RvNumbersTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvRestTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvFailureTiming
+import VerifiedGarbage.Proof.Rsa.X86.RvPublicFacts
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # Both sized-recovery branches obey the declared timing contract -/
 

@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 
-public import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectP
+import VerifiedGarbage.Proof.Dsa.X86.ShapeParity
+import VerifiedGarbage.Proof.Dsa.X86.ShapeLoadFrame
+import VerifiedGarbage.Proof.Dsa.X86.ShapeLoadWidths
+import VerifiedGarbage.Proof.Dsa.X86.ShapeMasks
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Completing public domain-size and oddness validation -/
 

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
 public import VerifiedGarbage.Impl.Dsa.Generation.Layout
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ProbablePrime
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Bound every write of the complete native candidate-primality call. -/

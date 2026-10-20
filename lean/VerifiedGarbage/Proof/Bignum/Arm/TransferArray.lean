@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
-public import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArray
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayFrame
+import VerifiedGarbage.Proof.Bignum.Arm.ClearArrayWide
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Exact transfer of a secret residue between disjoint RSA workspaces -/
 

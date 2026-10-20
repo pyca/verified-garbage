@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Cast5.X86_64
 public import VerifiedGarbage.Proof.Cast5.Table
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5 on x86-64: the scan of a table

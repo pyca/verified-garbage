@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.X86.Shape
 public import VerifiedGarbage.Impl.Dsa.X86.Minus
+public import VerifiedGarbage.Impl.Dsa.X86.Core
+public import VerifiedGarbage.Impl.Dsa.X86.Width
 
 /-! # DSA domain, key, and scalar validation
 

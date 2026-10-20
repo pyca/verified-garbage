@@ -1,27 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-meta import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
-meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
-meta import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Bignum.Amm52
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSA-CRT with AVX512_IFMA on x86-64: the code as a literal

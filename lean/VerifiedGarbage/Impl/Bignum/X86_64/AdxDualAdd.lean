@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Isa
 
-public import VerifiedGarbage.Impl.Bignum.X86_64.Adx
 
 /-! Interleave two independent additions into the eight live columns. -/
 

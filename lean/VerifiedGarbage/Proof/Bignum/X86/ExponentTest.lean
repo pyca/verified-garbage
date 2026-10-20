@@ -1,6 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.ExponentCheck
+public import VerifiedGarbage.Proof.Bignum.ExponentTestMath
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentTests
+import VerifiedGarbage.Proof.Bignum.X86.ExponentTests
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public-exponent decision matches the shared RSA limits exactly -/
 

@@ -8,7 +8,6 @@ public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 public import VerifiedGarbage.Spec.Weierstrass.PointOps
-public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-!
 # ECDSA signing on AArch64

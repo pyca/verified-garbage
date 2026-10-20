@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
-meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
+meta import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Instances
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
+meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 
 /-!
 # PBKDF2-HMAC-SHA-224 on 32-bit ARM, the whole derivation

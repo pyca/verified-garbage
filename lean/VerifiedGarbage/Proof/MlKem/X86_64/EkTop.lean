@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
+import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key

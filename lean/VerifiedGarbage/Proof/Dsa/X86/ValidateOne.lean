@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.Validate
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
+public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-public import VerifiedGarbage.Proof.Dsa.X86.ValidateEqual
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Mont.X86.WordConst
+import VerifiedGarbage.Proof.Mont.X86.WordConst
+import VerifiedGarbage.Proof.Dsa.X86.ValidateMasks
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Checking that a public subgroup power equals one -/
 

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSaves
-public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-! Six caller-saved vector registers hold the eleven saved general registers. -/
 

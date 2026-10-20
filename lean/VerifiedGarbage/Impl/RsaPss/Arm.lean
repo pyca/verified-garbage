@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.Arm
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.Arm.Wrap
-public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Impl.Bignum.Arm.MaskBytes
 public import VerifiedGarbage.Impl.Bignum.Arm.CompareBytes
 

@@ -2,9 +2,37 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Check
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Setup
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Counter
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Scalar
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Last
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.LoopRounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.SaveGP
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Tail
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon.Lanes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Feed
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rotate
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.RoundLoop
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Transpose
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.CachedAdd
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Chunk
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Finish
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Save
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Tail
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`

@@ -1,13 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
-meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
 import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.MontFnVerified
 meta import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
 meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The callable Montgomery primitive shares RSA's accumulator-square kernel.
 The dispatch depends only on the three public, 32-bit array indices. -/

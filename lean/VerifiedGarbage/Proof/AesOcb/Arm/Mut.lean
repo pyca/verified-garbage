@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Calls
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on ARMv7: what the pieces write

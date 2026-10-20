@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTCode
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Rsa.X86_64.CvCode
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_crt_values` on x86-64: verified against the shared contract

@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Entry
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Spec.Dsa.Generate
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ConstantTime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Satisfiable
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.BackendCorrect
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ConstantTime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Satisfiable
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HashVariants
 
 /-! # Complete verification of parameter generation with existing hash and primality backends -/
 

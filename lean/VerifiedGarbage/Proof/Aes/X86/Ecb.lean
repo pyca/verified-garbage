@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.X86.Decrypt
-public import VerifiedGarbage.Proof.Aes.X86.Group
+import VerifiedGarbage.Proof.Aes.X86.Decrypt
+import VerifiedGarbage.Proof.Aes.X86.Group
 public import VerifiedGarbage.Spec.Aes.Contract
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Aes.X86.Blocks
+public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
+public import VerifiedGarbage.Proof.Aes.X86.Encrypt
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # AES on whole blocks on x86 (32-bit): the groups

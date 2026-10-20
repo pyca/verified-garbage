@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Spec.MlDsa
 
-public import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
+import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.Framework.Mem
+import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ML-DSA: the signing loop

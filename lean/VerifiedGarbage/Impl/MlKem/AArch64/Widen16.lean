@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.TCB.AArch64.Isa
 
-public import VerifiedGarbage.Impl.MlKem.AArch64.Basic
 
 /-!
 # ML-KEM on AArch64: a polynomial from 16-bit to 32-bit coefficients

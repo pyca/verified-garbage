@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvCandidate
-public import VerifiedGarbage.Proof.Rsa.RecoverTries
+import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # The state and specification of the candidate search -/
 

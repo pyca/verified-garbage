@@ -2,10 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyArrs
-public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
-public import VerifiedGarbage.Proof.Framework.CallLay
-public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.CandLeak
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # A candidate on ARMv7: the public parameters and the stages
 

@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Seeds
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Masked
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-DSA key generation on AArch64: the samplers

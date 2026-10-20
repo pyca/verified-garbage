@@ -2,8 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-public import VerifiedGarbage.Spec.Blake2.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.CT
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Omega

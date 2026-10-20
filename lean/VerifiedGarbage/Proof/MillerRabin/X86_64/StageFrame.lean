@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.FrameCT
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Contract
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallStack
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StageContext
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackPrepared
 import VerifiedGarbage.Proof.MillerRabin.X86_64.StackRegions
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.MillerRabin.Representation
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.StackContext
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Stage
 
 /-! # The callable's public inputs supply the framed body's context -/
 

@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Accesses to the randomized-signing frame. -/
 @[expose] public section

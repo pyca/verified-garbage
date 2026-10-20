@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Framework.Arm.Exec
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # A block that stores only at given offsets of `sb` (ARMv7)

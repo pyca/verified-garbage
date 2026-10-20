@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.CheckDomain
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Parent
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Minus
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Minus
+import VerifiedGarbage.Proof.Ffdh.X86_64.Scan
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # FFDH domain validation on x86-64: significant bytes of q -/

@@ -1,9 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptCT
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LeafCT
-meta import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LeafCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Classify
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Rejects
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.AttemptCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.LeafCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Classify
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Rejects
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # The attempt's classification branches on its status alone -/
 

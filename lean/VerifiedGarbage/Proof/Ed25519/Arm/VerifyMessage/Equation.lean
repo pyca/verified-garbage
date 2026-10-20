@@ -4,6 +4,28 @@ import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
 public import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
+import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFinal
+import VerifiedGarbage.Proof.Ed25519.Arm.PackField
+import VerifiedGarbage.Proof.Ed25519.Arm.PointAffine
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEncode
+import VerifiedGarbage.Proof.Ed25519.Arm.PointFromScalar
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
+import VerifiedGarbage.Proof.Ed25519.Arm.Points
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.Cswap
 
 @[expose] public section
 

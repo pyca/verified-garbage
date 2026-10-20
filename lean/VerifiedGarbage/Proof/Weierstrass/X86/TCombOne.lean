@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import VerifiedGarbage.Proof.Weierstrass.X86.TCombDigit
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.TCombScan
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-! # The comb's selected point at infinity -/
 

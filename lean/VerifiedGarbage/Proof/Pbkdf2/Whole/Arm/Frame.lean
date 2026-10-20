@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Pbkdf2.Scratch
+import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # PBKDF2 on ARMv7, with its working space on the stack

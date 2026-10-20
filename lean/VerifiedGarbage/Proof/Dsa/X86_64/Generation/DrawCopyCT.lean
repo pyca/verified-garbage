@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeState
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.ShapeCT
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Witness draws reveal their public tape position and widths -/
 

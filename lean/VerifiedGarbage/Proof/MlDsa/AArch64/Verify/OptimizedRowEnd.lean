@@ -1,15 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowProduct
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCallTiming
 public import VerifiedGarbage.Proof.MlDsa.Arith.Montgomery
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowStart
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseSingleCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 @[expose] public section
 

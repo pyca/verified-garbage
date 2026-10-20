@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.MlDsa
 
-public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
 
 /-!
 # ML-DSA: the NTT as butterflies, for every target

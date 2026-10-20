@@ -1,8 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRangePlanCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorRangePlanCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStatus
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorOutput
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorStages
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-! # Generator decisions branch on masks determined by public generation inputs -/
 

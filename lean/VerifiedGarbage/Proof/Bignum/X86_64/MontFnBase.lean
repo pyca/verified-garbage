@@ -1,19 +1,21 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
-meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 public import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareMont
-meta import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareMont
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+meta import VerifiedGarbage.Proof.Bignum.X86_64.BaseSquareMont
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Recover
+public import VerifiedGarbage.Impl.Ed25519.X86_64.FieldCheck
 
 /-! Check negative zero and select the decoded x-coordinate's public sign. -/
 

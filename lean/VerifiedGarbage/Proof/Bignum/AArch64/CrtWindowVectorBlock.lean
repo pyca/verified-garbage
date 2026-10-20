@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStore
-import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorScan
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Attr.Core
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! A full table scan followed by the four stores of one selected block. -/
 

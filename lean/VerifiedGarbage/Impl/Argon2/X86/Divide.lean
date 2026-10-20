@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.Impl.Argon2.X86.Layout
 public import VerifiedGarbage.Impl.Sha512.X86
-import VerifiedGarbage.Impl.Blake2.X86.CompressB
 
 /-!
 # Fixed-time unsigned division on x86 (32-bit)

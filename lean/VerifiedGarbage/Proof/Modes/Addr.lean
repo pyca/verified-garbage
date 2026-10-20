@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Addresses at offsets, for the modes

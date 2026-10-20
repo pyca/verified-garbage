@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # BLAKE2b compression function on x86 (32-bit): one block and the loop

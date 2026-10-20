@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Reduce
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Deterministic ECDSA on AArch64: the messages of steps d, f and h.3

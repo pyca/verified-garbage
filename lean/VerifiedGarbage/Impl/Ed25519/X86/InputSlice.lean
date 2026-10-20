@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Ed25519.X86.InputBits
 public import VerifiedGarbage.Impl.Ed25519.X86.CommonMemory
 
 @[expose] public section

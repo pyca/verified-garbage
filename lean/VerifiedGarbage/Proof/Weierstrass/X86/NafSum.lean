@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Words32
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
+import VerifiedGarbage.Proof.Weierstrass.X86.JacState
 
 /-! Adding a signed digit to the doubled accumulator. -/
 

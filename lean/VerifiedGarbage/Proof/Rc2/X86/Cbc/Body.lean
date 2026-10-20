@@ -2,14 +2,18 @@ module
 
 import VerifiedGarbage.Proof.Rc2.X86.KeyLoop
 import VerifiedGarbage.Proof.Rc2.CbcMemory
-public import VerifiedGarbage.Proof.Rc2.X86.KeySteps
 import VerifiedGarbage.Proof.Rc2.PairMem
 public import VerifiedGarbage.Proof.Rc2.X86.Block
 public import VerifiedGarbage.Impl.Rc2.X86.Cbc
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Rc2.X86.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

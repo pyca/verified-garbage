@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Blake2
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 import VerifiedGarbage.Proof.Blake2.Stream
 import VerifiedGarbage.Proof.MdStream.X86_64.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # H′: emitting a digest or its 32-byte prefix -/
 

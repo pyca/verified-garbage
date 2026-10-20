@@ -1,9 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.Recover
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpBase
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpMont
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Tactic.Finiteness.Attr
+public import Mathlib.Algebra.Group.Nat.Defs
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: the candidates' constants

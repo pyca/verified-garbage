@@ -1,8 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+public import VerifiedGarbage.Spec.Argon2.Contract
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Words
-public import VerifiedGarbage.Proof.Framework.Arm.Spill
-public import VerifiedGarbage.TCB.Arm.Target
 
 /-!
 # Argon2 compression on ARMv7: the contract of the proof

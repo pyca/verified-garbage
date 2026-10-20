@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.JacAdd
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
 
 /-! Jacobian point operations for public verification data. -/
 

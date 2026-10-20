@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
-public import VerifiedGarbage.Proof.Weierstrass.JacAdd
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Fixed-base public comb with a Jacobian accumulator. -/
 

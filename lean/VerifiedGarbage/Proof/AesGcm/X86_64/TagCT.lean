@@ -1,13 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
+import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
-meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # AES-GCM on x86-64: `flush`, `lens` and `tag` in two runs

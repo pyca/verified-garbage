@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.ByteMem
+import VerifiedGarbage.Proof.X448.X86.ByteMem
 public import VerifiedGarbage.Proof.X448.Radix16Bytes
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Impl.X25519.X86
-import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.X448.X86.Field
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.Framework.X86.Exec
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # X448 on x86 (32-bit): encoding a limb

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Scan
+public import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
 import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Rc2.X86_64.Sse2Vector
+import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # A row of the scan, instruction by instruction

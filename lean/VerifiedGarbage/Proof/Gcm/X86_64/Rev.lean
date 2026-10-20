@@ -1,7 +1,11 @@
 module
+public import VerifiedGarbage.TCB.X86_64.Sse
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.Gcm.Spec
-public import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # GCM blocks in SSE registers

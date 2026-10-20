@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Callee
 public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Spec.Ocb
 import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-OCB on x86: doubling a block

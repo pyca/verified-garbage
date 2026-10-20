@@ -1,9 +1,17 @@
 module
+public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 
-public import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
-meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.CmacAes.Arm.UpdateLoop
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CMAC on ARMv7: `vg_cmac_aes_update` is constant time

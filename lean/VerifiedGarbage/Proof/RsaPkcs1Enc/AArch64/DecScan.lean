@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecAl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncLay
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: the scan of `EM`

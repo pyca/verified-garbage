@@ -1,13 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableFields
+import VerifiedGarbage.Proof.Weierstrass.X86.NafTableFields
 public import VerifiedGarbage.Proof.Weierstrass.X86.RegFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTable
 public import VerifiedGarbage.Proof.Weierstrass.X86.JacAddTiming
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
-import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointTransfer
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.X86.PointFieldTiming
 
 /-! ## `NafTableStoreTiming` -/
 

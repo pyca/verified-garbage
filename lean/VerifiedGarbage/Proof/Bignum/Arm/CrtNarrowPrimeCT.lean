@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtNarrowPrime
-public import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrepareAcceptedPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandLayoutCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtStageCT
 
 /-! # Preparing the factor in the narrow workspace hides the factor and acceptance -/
 

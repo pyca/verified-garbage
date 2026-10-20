@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.Arm.Encaps
+public import VerifiedGarbage.Impl.MlKem1024.Arm.Top
+public import VerifiedGarbage.Spec.MlKem.Contract1024
 
-public import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
-public import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
+import VerifiedGarbage.Proof.MlKem1024.Arm.Calls
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # ML-KEM-1024 on 32-bit ARM: `vg_mlkem1024_encaps`, `Verified`

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 
-public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 
 /-! Swap field elements under a mask, without secret-dependent branches. -/
 

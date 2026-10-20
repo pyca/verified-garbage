@@ -1,8 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ABIContext
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntrySpill
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryBody
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryLink
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Every generation phase leaves the saved link word untouched. -/
 @[expose] public section

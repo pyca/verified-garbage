@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCfb8.X86.Body
-meta import VerifiedGarbage.Proof.AesCfb8.X86.Body
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
+meta import VerifiedGarbage.Proof.AesCfb8.X86.Body
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 
 /-!

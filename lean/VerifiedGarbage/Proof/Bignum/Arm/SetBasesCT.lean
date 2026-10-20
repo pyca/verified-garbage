@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.SetBases
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.SetBases
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Header initialization reveals only the destination and fixed count -/
 

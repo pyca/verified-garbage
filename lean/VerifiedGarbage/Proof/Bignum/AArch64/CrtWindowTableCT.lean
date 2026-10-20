@@ -1,11 +1,27 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBuild
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTDefs
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-! The scalar 32-entry fallback scans the whole table at public addresses. -/
 

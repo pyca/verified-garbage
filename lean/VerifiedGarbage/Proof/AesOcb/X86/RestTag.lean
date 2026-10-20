@@ -1,10 +1,20 @@
 module
 
-import VerifiedGarbage.Proof.AesOcb.X86.Whole
 public import VerifiedGarbage.Proof.AesOcb.X86.PadTo
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.Ocb.Bytes
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import VerifiedGarbage.Proof.AesOcb.X86.Blk
+import VerifiedGarbage.Proof.AesOcb.X86.Run
+import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.Cmac.Spec
 
 /-!
 # AES-OCB on x86: the rest of the data and the tag (`rest`, `tag`)

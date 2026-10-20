@@ -2,8 +2,10 @@ module
 
 import VerifiedGarbage.Proof.X448.X86.Fill
 public import VerifiedGarbage.Proof.X448.X86.RowMem
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.X86.Instr
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on x86 (32-bit): initializing multiplication

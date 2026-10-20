@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The point functions keep `rbp` and `r12`–`r15`

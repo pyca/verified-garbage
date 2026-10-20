@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Z
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Control
+import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Steps
 
 /-!
 # ML-DSA verification on 32-bit ARM: the entries of `Â`

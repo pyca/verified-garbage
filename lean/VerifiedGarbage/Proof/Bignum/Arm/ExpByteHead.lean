@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ExpBits
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteSave
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteLoad
+import VerifiedGarbage.Proof.Bignum.Arm.ExpByteSave
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Read a byte and establish the complete exponent-bit-loop invariant -/
 

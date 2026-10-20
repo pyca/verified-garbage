@@ -1,7 +1,17 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallObserve
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallObserve
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingle
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCallObserve
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! One complete signing call leaks its public key and success bit only. -/
 @[expose] public section

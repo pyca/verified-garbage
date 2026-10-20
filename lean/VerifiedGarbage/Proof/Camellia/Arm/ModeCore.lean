@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Camellia.Arm.Cbc
 import VerifiedGarbage.Proof.Camellia.CtrCipher
 public import VerifiedGarbage.Spec.Camellia.Cbc
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
+public import VerifiedGarbage.Proof.Camellia.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Framework.Sig
 
 /-!
 # Camellia's ECB functions on ARMv7 as the modes' core

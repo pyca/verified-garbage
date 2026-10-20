@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalCheck
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalAdvance
-public import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

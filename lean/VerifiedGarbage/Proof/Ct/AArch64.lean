@@ -24,6 +24,10 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

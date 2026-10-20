@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawSampleCT
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawSampleCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawBody
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.DrawCTData
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.TapeHead
 
 /-! # FFDH parameter generation on x86-64: timing of a rejection-sampling step -/
 

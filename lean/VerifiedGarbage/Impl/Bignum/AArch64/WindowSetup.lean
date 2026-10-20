@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.Core
 
-public import VerifiedGarbage.Impl.Bignum.AArch64.Square
 
 /-! Load only the public pointers and width needed by the next window phase.
 The zero register is retained across the arithmetic; reduction loads its own modulus. -/

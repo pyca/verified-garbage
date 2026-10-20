@@ -1,19 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejProbePublic
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejChoiceTiming
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! ## From `ResidentRejFourTiming.lean` -/
 

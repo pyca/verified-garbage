@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Impl.Bignum.Arm.Sub
+import VerifiedGarbage.Proof.Mont.Words
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.TCB.Arm.Isa
 
 /-! # In-place selection preserves unread source words -/
 

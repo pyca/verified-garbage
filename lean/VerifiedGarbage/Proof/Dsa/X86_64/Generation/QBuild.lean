@@ -1,8 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QArgs
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.QCandidate
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Label
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.QShape
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hash
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 
 /-! # Native subgroup-candidate construction from a seed
 

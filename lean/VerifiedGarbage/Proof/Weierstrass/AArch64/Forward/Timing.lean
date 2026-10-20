@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Selected
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 
 @[expose] public section
 

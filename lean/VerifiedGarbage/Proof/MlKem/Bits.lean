@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.MlKem
 
-public import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM: bit arrays as numbers, for every target

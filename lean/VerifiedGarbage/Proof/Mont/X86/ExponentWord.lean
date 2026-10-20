@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Mont.X86.Exponent
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Shifting a secret exponent word without branches on its value -/
 

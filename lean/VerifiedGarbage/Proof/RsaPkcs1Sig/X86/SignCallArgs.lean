@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignArguments
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignLocalArgument
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.SignStackWord
 
 /-! # Install all twenty cdecl arguments for checked RSA signing -/
 

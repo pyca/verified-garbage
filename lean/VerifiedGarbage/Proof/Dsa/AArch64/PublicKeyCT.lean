@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicScheduleCT
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-meta import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyMinusCT
-meta import VerifiedGarbage.Proof.Dsa.AArch64.ReadyRangeCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # Constant time of DSA domain and public-key validation -/
 

@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Flag
-import VerifiedGarbage.Proof.MlDsa.Verify.Norm
 public import VerifiedGarbage.Spec.MlDsa.Contract
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.X86_64.Round
 
 /-!

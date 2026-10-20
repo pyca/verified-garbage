@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Verified
+public import VerifiedGarbage.Impl.StackScratch.X86
+import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import Mathlib.Data.List.Dedup
 import VerifiedGarbage.Proof.AesGcm.X86.Frame
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 
 /-!
 # AES-GCM-SIV on x86, with its working space on the stack

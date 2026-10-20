@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepareCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicApplyCT
-public import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepareCT
+import VerifiedGarbage.Proof.Bignum.Arm.PublicApplyCT
+import VerifiedGarbage.Proof.Bignum.Arm.PrecomputeCT
+import VerifiedGarbage.Proof.Bignum.Arm.PcDimensions
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Modulus precomputation and the public RSA arithmetic path share a public trace -/
 

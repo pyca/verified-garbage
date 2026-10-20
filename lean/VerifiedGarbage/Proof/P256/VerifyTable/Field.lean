@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.P256.VerifyTable
 public import VerifiedGarbage.Proof.P256.EcdhTable.Dblu
 public import VerifiedGarbage.Proof.P256.EcdhTable.Zaddu
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
 public import VerifiedGarbage.Proof.P256.EcdhJac.TableMath
 import VerifiedGarbage.Proof.P256.VerifySparse.Fprog
 import all Init.Data.Nat.Bitwise.Basic
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-! ECDH's allocated DBLU and ZADDU blocks on any slot predicate holding their
 slots: the raw field programs' contract, carried to the allocated code through

@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.KcDiv
+import VerifiedGarbage.Proof.Rsa.Arm.InvParts
+import VerifiedGarbage.Proof.Rsa.Arm.KeyWord
+import VerifiedGarbage.Proof.Rsa.Arm.KeyBits
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # The checks of an RSA key on ARMv7: the start, and `r7`–`r9` after a division
 

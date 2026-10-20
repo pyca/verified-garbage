@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleCT
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeSlice
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawBuffer
 
 /-! A complete entropy draw and shared primality round have a public trace. -/

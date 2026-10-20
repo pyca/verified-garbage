@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.TransferPadded
-public import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.TransferArray
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.ExportArrayCT
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArrayArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Moving a residue from a narrower workspace reveals only the public addresses and widths -/
 

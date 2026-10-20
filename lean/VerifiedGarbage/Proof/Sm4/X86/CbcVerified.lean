@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-public import VerifiedGarbage.Proof.Modes.X86.CbcChained
-meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
+import VerifiedGarbage.Proof.Modes.X86.CbcChained
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+import VerifiedGarbage.Proof.Sm4.X86.CbcLit
+import VerifiedGarbage.Proof.Sm4.X86.Lit
+import VerifiedGarbage.Proof.Sm4.X86.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86.FbVerified
+meta import VerifiedGarbage.Proof.Modes.X86.CbcChained
 meta import VerifiedGarbage.Proof.Sm4.CbcScratch
-public import VerifiedGarbage.Proof.Sm4.X86.CbcLit
+meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcLit
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sm4.X86.Lit
+meta import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 
 /-!
 # SM4-CBC on x86 (32-bit) meets its contracts

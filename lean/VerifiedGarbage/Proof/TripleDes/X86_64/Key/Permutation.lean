@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Permutation
-import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.Permutation
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

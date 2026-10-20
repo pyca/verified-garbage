@@ -1,13 +1,18 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lay
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
-public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.X86_64.Round
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 
 /-!
 # ML-DSA signing on x86-64: the blocks between the calls

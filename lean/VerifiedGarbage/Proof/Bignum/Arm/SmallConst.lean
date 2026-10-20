@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Initialize a public array index to a fixed small constant -/
 

@@ -1,13 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Apply
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Calls
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Apply
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Calls
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on AArch64: `apply`, constant time

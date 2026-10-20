@@ -1,7 +1,15 @@
 module
+public import VerifiedGarbage.Spec.RsaKeyGen
 
-public import VerifiedGarbage.Proof.RsaKeyGen.Generate
-public import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.RsaKeyGen.Generate
+import VerifiedGarbage.Proof.Rsa.Checked
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Data.Nat.Prime.Defs
 
 /-!
 # RSA key generation: generated keys and the checked private operation

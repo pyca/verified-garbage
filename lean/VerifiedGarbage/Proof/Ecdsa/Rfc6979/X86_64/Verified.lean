@@ -1,7 +1,8 @@
 module
+public import Mathlib.Tactic.Tauto
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hash
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
-import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
 
 /-!
 # Deterministic ECDSA on x86-64: `Verified`

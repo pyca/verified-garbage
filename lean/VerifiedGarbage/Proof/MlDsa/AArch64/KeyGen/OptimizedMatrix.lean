@@ -1,16 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedMatrix
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixSeeds
+public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixFour
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.TCB.Axioms
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedMatrixTwo
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

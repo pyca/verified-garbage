@@ -1,8 +1,13 @@
 module
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.RsaPkcs1Sig.X86.Verify
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.X86.RelCT
+public import VerifiedGarbage.Spec.Weierstrass.Point
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStages
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.EncodeTiming
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.EntryTiming
 
 /-! # Public stack addresses suffice for every verifier straight-line fragment -/
 

@@ -1,10 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExportBE
-public import VerifiedGarbage.Proof.Bignum.Arm.ReverseBytesCT
+import VerifiedGarbage.Proof.Bignum.Arm.ReverseBytesCT
 public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
+public import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
+import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.ReverseBytesCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.ExportBE
+meta import VerifiedGarbage.Proof.Bignum.Arm.ExportBEArgs
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # I2OSP serialization has public addresses and output length -/
 

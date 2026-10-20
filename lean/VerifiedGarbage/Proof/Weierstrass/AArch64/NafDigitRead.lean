@@ -1,10 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafInvariant
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Bits
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Weierstrass.Words
 
 @[expose] public section
 

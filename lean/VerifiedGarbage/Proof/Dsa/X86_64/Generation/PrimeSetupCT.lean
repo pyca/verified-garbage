@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ExponentCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeConstantsCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ExponentCT
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # Constant-time preparation of every shared primality-round input -/
 

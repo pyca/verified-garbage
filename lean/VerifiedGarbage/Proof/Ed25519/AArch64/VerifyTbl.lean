@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyWindow
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 public import VerifiedGarbage.Proof.Framework.ConstMem
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Ed25519 verification on AArch64: the cached `-[1]B … -[15]B` in a static

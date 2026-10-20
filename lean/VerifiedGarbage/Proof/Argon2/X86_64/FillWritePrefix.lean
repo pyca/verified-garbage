@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Finish
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillWrite
-import VerifiedGarbage.Proof.Argon2.X86_64.Memory
-import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-! Merged from `Proof.Argon2.X86_64.FillWriteWord`. -/
 

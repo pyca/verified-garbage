@@ -2,8 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SampleState
 public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
+public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Memory
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.StoredWitness
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # The forced branch replaces the draw while preserving the uniform flag -/
 

@@ -1,8 +1,20 @@
 module
+public import VerifiedGarbage.Proof.AesCcm.Ctr
+public import VerifiedGarbage.Proof.AesCcm.X86.Env
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Mac
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.X86.Absorb
+import VerifiedGarbage.Proof.AesCcm.X86.Blocks
+import VerifiedGarbage.Proof.AesCcm.X86.Callee
+import VerifiedGarbage.Proof.AesCcm.X86.Run
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CCM on x86: counter mode (`ctr`)

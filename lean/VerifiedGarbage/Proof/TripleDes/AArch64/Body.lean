@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Ready
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 
 @[expose] public section
 

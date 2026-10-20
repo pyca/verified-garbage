@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
-public import VerifiedGarbage.Proof.Bignum.Arm.SaveAcceptanceLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.MergeAcceptanceLayout
-public import VerifiedGarbage.Proof.Bignum.Arm.SmallConstLayout
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Stable workspace and stack geometry for public precomputation checks -/
 

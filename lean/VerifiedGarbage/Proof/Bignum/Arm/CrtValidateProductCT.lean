@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateProduct
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProductCT
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductCT
+public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtFactorProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # Complete factor-product validation is constant-time -/
 

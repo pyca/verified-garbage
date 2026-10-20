@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.MulPow
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP384r1.AArch64
+import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP384r1.MulPow
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Tactic.ClearExcept
+import VerifiedGarbage.Proof.Ecdh.Exchange
+import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # brainpoolP384r1 ECDH with the general ladder -/
 

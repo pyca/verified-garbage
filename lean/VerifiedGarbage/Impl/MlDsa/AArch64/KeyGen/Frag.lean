@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
-public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
-public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlKem.AArch64.Top
 
 /-!
 # ML-DSA on AArch64: the pieces of the top-level functions

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
 
-public import VerifiedGarbage.Impl.Bignum.X86.InputCompare
 
 /-! # Compare two public workspace arrays without data-dependent branches -/
 

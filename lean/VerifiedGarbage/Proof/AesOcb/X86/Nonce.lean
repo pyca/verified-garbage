@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.AesOcb.X86.Callee
+public import VerifiedGarbage.Proof.AesOcb.X86.Env
+public import VerifiedGarbage.Spec.Ocb
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Calls
+import VerifiedGarbage.Proof.AesOcb.X86.Calls
 import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.AesOcb.X86.Offset0
+import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # AES-OCB on x86: `Offset_0` from the nonce (`nonce`)

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.Arm.ContextBody
+public import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The shared context helper against its public arithmetic contract -/
 

@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.JacMadd
 public import VerifiedGarbage.Proof.Weierstrass.JacAdd
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+public import VerifiedGarbage.Proof.Weierstrass.Window5
 
 /-! Architecture-independent masked Jacobian window arithmetic, including invalid scalars. -/
 

@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+import VerifiedGarbage.Proof.Framework.GetElem
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
 
 /-! # Extract the shared contract's public cdecl arguments and key bytes -/
 

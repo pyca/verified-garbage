@@ -1,10 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Bignum.AArch64.WindowRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetupCT
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
-meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCTRows
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
+import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtRows
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Impl.Bignum.AArch64.WindowRaw
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSetupCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowRawCtContext
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.AArch64.WindowSparseCTRows
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightCtRows
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowRaw

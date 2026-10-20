@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Setup
-import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
+public import VerifiedGarbage.Proof.Bignum.X86_64.Words
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 
 /-! ## AdxRect8Counter -/
 

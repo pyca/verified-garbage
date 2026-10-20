@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
-public import VerifiedGarbage.Impl.Bignum.Arm.Square
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 
 /-! # RSA exponentiation in Montgomery form -/

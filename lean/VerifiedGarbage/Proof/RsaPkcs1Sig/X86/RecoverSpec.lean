@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverAfter
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+public import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 
 /-! # Re-encoding the trailing digest implements the shared recovery specification -/
 

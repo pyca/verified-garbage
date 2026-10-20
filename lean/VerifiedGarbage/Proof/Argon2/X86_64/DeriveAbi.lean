@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.TCB.X86_64.Target
 
 /-! Decode the reviewed System V contract without requiring normalized upper bits. -/
 

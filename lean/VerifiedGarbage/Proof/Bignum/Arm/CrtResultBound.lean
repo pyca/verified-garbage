@@ -1,7 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Bignum.CrtResult
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtValidateStage
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCoefficientMath
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptedFactors
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Accepted CRT reconstruction fits the original RSA output width -/
 

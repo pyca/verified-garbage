@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Square.ReductionWords
+public import VerifiedGarbage.Impl.Mont.AArch64.P521Square
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Spec.Weierstrass
 
 @[expose] public section
 namespace VG.Proof.Mont.AArch64.P521Square

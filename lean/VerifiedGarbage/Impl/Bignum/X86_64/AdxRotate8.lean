@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-! Eight register-resident columns of a multiply-add, shifted by one word. -/
 

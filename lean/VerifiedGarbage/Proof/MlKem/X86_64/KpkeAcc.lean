@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodies
-public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: the pieces of `vg_mlkem*_{en,de}crypt_mul`

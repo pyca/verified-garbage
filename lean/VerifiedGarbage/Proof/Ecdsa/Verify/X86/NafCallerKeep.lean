@@ -1,15 +1,31 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerInput
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerInput
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.X25519.X86.Column
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
-meta import VerifiedGarbage.Proof.Framework.X86.Sse
-meta import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerInput
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+meta import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
+meta import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 @[expose] public section
 

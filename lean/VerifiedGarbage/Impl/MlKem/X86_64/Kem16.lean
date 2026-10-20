@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kpke16
 public import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
-public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag16
+public import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 
 /-!
 # ML-KEM on x86-64: the layout of the top-level functions with 16-bit polynomials

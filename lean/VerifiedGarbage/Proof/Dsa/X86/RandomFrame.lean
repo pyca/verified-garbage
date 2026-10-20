@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Impl.Dsa.X86.Random
 
-public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
-public import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # The randomized signer's frame (x86)

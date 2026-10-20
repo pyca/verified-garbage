@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
+import VerifiedGarbage.Proof.Bignum.Arm.ReductionArgs
 public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
-public import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
-public import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+public import VerifiedGarbage.Impl.Bignum.Arm.Round
+import VerifiedGarbage.Proof.Bignum.Arm.RoundMath
+import VerifiedGarbage.Proof.Bignum.Arm.RowFull
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The cancellation multiply-add of a Montgomery round -/
 

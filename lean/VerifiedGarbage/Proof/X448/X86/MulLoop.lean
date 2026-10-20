@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Proof.X448.X86.Init
 public import VerifiedGarbage.Proof.X448.X86.Row
 import Mathlib.Tactic.SplitIfs
 

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.RvFin2
-public import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
-public import VerifiedGarbage.Proof.Rsa.Arm.DivCT
+public import VerifiedGarbage.Proof.Rsa.Arm.KeyDiv
+import VerifiedGarbage.Proof.Rsa.Arm.CvDivN
+import VerifiedGarbage.Proof.Rsa.Arm.DivCT
+import VerifiedGarbage.Proof.Rsa.Arm.RvTaint4
+import VerifiedGarbage.Proof.Rsa.Arm.RvOps2
 
 /-! # `vg_rsa_recover_primes` on ARMv7: `q = n / p` (`div_vp`) -/
 

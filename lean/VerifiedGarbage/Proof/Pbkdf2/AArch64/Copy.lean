@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Impl.Pbkdf2.AArch64
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Sha256
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # PBKDF2-HMAC's iteration on AArch64: copying words

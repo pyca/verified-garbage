@@ -1,7 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKey
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedKey
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPair
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Importing a public packed key preserves its shared values across executions -/
 

@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.Arm.PrivFnInput
+import VerifiedGarbage.Proof.Rsa.Arm.PrivBody
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 /-! # Callable checked private RSA restores the ARM procedure-call convention -/
 

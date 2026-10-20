@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PShape
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PHash
 
 /-! Construct p and its generator exponent entirely in the native workspace. -/
 @[expose] public section

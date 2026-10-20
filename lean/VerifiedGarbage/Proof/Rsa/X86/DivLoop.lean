@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Impl.Rsa.X86.Div
+public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Rsa.X86.DivContext
 
-public import VerifiedGarbage.Proof.Rsa.X86.DivStep
-public import VerifiedGarbage.Proof.Rsa.X86.DivInit
+import VerifiedGarbage.Proof.Rsa.X86.DivStep
+import VerifiedGarbage.Proof.Rsa.X86.DivInit
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Termination and quotient/remainder correctness of fixed-count division -/
 

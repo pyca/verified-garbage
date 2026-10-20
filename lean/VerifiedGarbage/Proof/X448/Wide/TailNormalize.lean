@@ -1,9 +1,13 @@
 module
+public import VerifiedGarbage.Impl.X448.AArch64.Tail
+public import VerifiedGarbage.Proof.X448.Wide.CarryStep
+public import VerifiedGarbage.Proof.X448.Wide.Column
 
-public import VerifiedGarbage.Proof.X448.Wide.Fold
+import VerifiedGarbage.Proof.X448.Wide.Fold
 import VerifiedGarbage.Proof.X448.Wide.TailPass
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X448.Wide.TailBounds
+import VerifiedGarbage.Proof.X448.Wide.Pass
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! Untrusted: normalize wide coefficients and restore the field-slot interface. -/
 

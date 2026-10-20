@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Spec.Ofb.Contract
+public import VerifiedGarbage.Spec.Ofb
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # OFB: the mode one block at a time

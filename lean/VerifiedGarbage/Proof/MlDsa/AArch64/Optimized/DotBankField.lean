@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBatch
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 
 @[expose] public section
 

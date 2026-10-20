@@ -1,34 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Idea.FbScratch
-meta import VerifiedGarbage.Proof.Idea.FbScratch
 public import VerifiedGarbage.Proof.Idea.X86.ModeCore
+import VerifiedGarbage.Proof.Modes.X86.Modes
+import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Spec.Idea.Cfb
+public import VerifiedGarbage.Proof.Modes.X86.Seq
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
+import VerifiedGarbage.Proof.Idea.KeyLit32
+meta import VerifiedGarbage.Proof.Idea.FbScratch
 meta import VerifiedGarbage.Proof.Idea.X86.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
-public import VerifiedGarbage.Proof.Idea.X86.ModesLit
-meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.AesSiv.Ctr32
-public import VerifiedGarbage.Proof.AesSiv.Words
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Idea.KeyBits32
-public import VerifiedGarbage.Proof.Idea.KeyLit32
-public import VerifiedGarbage.Proof.Idea.Memory32
-meta import VerifiedGarbage.Proof.AesSiv.Ctr32
-meta import VerifiedGarbage.Proof.AesSiv.Words
-meta import VerifiedGarbage.Proof.Cmac.Stream
-meta import VerifiedGarbage.Proof.Gcm.Bits
-meta import VerifiedGarbage.Proof.Idea.KeyBits32
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Framework.X86.Inline
+meta import VerifiedGarbage.Spec.Idea.Cfb
+meta import VerifiedGarbage.Proof.Modes.X86.Seq
+meta import VerifiedGarbage.Proof.Idea.X86.ModesLit
 meta import VerifiedGarbage.Proof.Idea.KeyLit32
-meta import VerifiedGarbage.Proof.Idea.Memory32
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Idea.ModeBytes
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Sig
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Idea.ModeBytes
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # IDEA-OFB and IDEA-CFB64 on x86 (32-bit) meet their contracts

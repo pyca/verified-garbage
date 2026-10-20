@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.Aes.X86_64.VaesZH
 

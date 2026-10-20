@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishResult
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignPublic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Connect saved wrapper arguments to the return-path leakage proof. -/
 @[expose] public section

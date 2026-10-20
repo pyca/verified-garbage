@@ -1,8 +1,11 @@
 module
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Impl.Rsa.X86.KeyCheck
+public import VerifiedGarbage.Proof.Rsa.X86.KeyWs
+public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBytes
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBody
-public import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
-public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+import VerifiedGarbage.Proof.Bignum.X86.ArgumentFrame
 
 /-! # Buffer and argument geometry for CRT parameter calculation -/
 

@@ -1,11 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.Stream
-meta import VerifiedGarbage.Proof.ChaCha20.Stream
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Stream
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.ChaCha20.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.ChaCha20.Stream
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Stream
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Spec.ChaCha20.Contract
+meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming ChaCha20 on x86-64: `init` and `set_nonce`

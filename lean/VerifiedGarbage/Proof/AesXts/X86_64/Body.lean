@@ -2,8 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.AesXts.X86_64.Steps
 public import VerifiedGarbage.Proof.AesXts.Batch
-import VerifiedGarbage.Proof.AesCbc.X86_64.CT
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Callee
+public import VerifiedGarbage.Proof.AesCbc.X86_64.Loop
+public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # XTS-AES on x86-64: all the blocks in one call

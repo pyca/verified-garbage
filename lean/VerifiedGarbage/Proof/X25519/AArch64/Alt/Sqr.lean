@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.AArch64.AltOps
-public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
+public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mem
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Mul
+import VerifiedGarbage.Proof.X25519.AArch64.Alt.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! # `sqr_4`
 

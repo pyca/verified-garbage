@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.PcFn
-public import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
+public import VerifiedGarbage.Proof.Framework.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreSlots
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The public RSA frame saves arguments and all callee-saved registers -/
 

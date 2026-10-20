@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorRange
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
+public import VerifiedGarbage.Proof.Rsa.Ranges
+public import VerifiedGarbage.Proof.Rsa.X86_64.Pieces
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateArithmetic
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Load a modulus and a candidate into the range-check workspace -/

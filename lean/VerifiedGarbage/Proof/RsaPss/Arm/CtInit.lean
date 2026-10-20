@@ -1,8 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.CtBase
-public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
+import VerifiedGarbage.Proof.RsaPss.Arm.Step
 
 /-!
 # RSASSA-PSS on ARMv7: hashing, the hash value and the length field

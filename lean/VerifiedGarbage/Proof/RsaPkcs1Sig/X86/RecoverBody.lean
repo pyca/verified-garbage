@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverPublicCall
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverSpec
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverLength
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverZero
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # The recovery body releases precisely the digest accepted by the shared spec -/
 

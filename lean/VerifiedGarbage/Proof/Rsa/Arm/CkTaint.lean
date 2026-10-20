@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
-meta import VerifiedGarbage.Impl.Rsa.Arm.CheckKey
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+public import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+meta import VerifiedGarbage.Impl.Rsa.Arm.KeyCheck
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # `vg_rsa_check_key` on ARMv7: the pieces that read the stack arguments
 

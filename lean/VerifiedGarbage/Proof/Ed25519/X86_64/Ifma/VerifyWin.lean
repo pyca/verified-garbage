@@ -1,7 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyAdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyPoints
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Ed25519 verification with AVX512_IFMA: the windows in the lanes

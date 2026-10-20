@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-public import VerifiedGarbage.Proof.Framework.X86.Wp
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.PruneArithmetic`. -/
 

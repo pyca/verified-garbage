@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidthCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeCallCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrimeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateWidth
 
 /-! # Full-width candidates proceed to the shared native primality call -/
 

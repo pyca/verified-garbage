@@ -1,27 +1,33 @@
 module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.MlKem.Mem
+import Std.Tactic.BVDecide.Normalize.Prop
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.DecideAt
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
-import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
-meta import Mathlib.Tactic.Conv
-meta import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.MlKem.Mem
+meta import Std.Tactic.BVDecide.Normalize.Prop
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+meta import VerifiedGarbage.Proof.MlDsa.DecideAt
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # ML-DSA key generation on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`

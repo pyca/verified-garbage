@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P192
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P192Sha256
-import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA over P-192 with HMAC-SHA-256 on x86 (32-bit)

@@ -1,8 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
-public import VerifiedGarbage.Spec.Cmac.TripleDesContract
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Spec.Cmac
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # TDEA-CMAC on AArch64: the contracts the proofs are written against

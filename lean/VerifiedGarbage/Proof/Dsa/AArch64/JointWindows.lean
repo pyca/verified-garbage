@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindow
 import VerifiedGarbage.Proof.Dsa.Joint
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 
 /-! # Four joint windows consume two exponent bytes -/
 

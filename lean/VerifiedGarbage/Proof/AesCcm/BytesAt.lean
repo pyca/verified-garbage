@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesCcm.Ctr
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Ccm
 import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-CCM: bytes of a buffer

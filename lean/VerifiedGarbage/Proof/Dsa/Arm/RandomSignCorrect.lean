@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Arm.RandomFinish
 
-public import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
+import VerifiedGarbage.Proof.Dsa.Arm.RandomBody
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!

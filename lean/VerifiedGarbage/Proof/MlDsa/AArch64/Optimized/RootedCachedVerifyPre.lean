@@ -1,16 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRoots
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.CachedVerify
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
 public import VerifiedGarbage.Spec.MlDsa.CachedVerify
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedPre
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseL
 
 @[expose] public section
 

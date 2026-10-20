@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
-public import VerifiedGarbage.Proof.Rsa.X86.KcEntry
+import VerifiedGarbage.Proof.Rsa.X86.KcBuffers
+import VerifiedGarbage.Proof.Rsa.X86.KcEntry
+import VerifiedGarbage.Proof.Rsa.X86.KcResources
 
 /-! # Install key-check call resources after saving the caller's registers -/
 

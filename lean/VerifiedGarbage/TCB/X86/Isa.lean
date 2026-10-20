@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Sse
 public import VerifiedGarbage.TCB.X86.Mmx
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # x86 (32-bit) machine model

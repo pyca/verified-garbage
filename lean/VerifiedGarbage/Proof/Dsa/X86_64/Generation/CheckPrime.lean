@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Arguments
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ProbablePrime
+public import Mathlib.Data.Int.ModEq
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFromFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PrimeFromFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # The native primality operation starts with arbitrary scratch contents -/

@@ -1,6 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCTData
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.StageCT
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Consume
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckGenerator
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.CheckPrime

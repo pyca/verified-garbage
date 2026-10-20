@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.LastSpecPost
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SpecPost
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixFrame
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixFrame
 
 /-! # Advance the existing key-generation matrix invariant by a pair -/
 @[expose] public section

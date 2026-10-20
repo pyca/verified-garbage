@@ -1,15 +1,19 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Top
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Top
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4CT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5ParseCT
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4CT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Sq
 
 @[expose] public section
 

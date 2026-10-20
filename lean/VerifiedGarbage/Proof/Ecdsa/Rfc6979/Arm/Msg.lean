@@ -1,8 +1,18 @@
 module
 
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Copy
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Layout
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Regs
+import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the messages of steps d, f and h.3

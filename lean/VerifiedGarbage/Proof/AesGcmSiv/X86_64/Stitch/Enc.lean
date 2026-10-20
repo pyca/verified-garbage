@@ -1,6 +1,14 @@
 module
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Loop
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
 
 /-!

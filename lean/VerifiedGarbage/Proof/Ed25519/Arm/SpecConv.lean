@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
+import VerifiedGarbage.Proof.Ed25519.Arm.FnCall
 public import VerifiedGarbage.Spec.Ed25519.Point16
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Ed25519.Arm.FieldOn
+import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed25519 on ARMv7: the elements as the specification of the functions reads them

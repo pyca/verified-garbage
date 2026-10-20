@@ -1,12 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.Arm.Permute
-meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
 public import VerifiedGarbage.Proof.Sha3.Stream
-meta import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.Sha3.Arith
-meta import VerifiedGarbage.Proof.Sha3.Arith
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.Arm.Permute
+meta import VerifiedGarbage.Proof.Sha3.Stream
+meta import VerifiedGarbage.Proof.Sha3.Arith
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The SHA-3 sponge on ARMv7: `absorb`

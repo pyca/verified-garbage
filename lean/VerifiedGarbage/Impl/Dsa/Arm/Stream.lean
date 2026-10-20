@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Checks
+public import VerifiedGarbage.Impl.Mont.Arm.Context
 
 /-! # Reduction of a big-endian byte string, byte by byte, on 32-bit ARM
 

@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Cover
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
+public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16.ReadonlyCalls
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Layout
+public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Pair
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.ReadonlyPair
+import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Execute a pair using only the public scratch allocation -/
 @[expose] public section

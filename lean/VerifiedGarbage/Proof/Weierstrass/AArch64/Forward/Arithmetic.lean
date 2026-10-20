@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Impl.P256.VerifyArithmetic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeOk
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
-import VerifiedGarbage.Spec.Weierstrass.CheckPoint
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Double
 
 @[expose] public section
 

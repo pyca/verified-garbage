@@ -1,6 +1,10 @@
 module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.PackedLayout
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.PrimeOrder
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Prep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
 @[expose] public section
 namespace VG.Proof.Ecdsa.Verify.AArch64.P521
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass

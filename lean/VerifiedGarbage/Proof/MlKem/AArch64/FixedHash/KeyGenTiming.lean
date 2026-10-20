@@ -1,12 +1,10 @@
 module
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-public import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
-public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
-public import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrix
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
+import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenPrefix
+import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.TableApart
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Tables
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
+public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenMatrixTable
+public import VerifiedGarbage.Proof.MlKem.AArch64.KgA
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.KeyGenTiming
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized

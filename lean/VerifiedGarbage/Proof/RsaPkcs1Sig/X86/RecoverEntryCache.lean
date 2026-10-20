@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverEntryReady
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverBody
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverFnInput
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Rsa.BytesFrame
 
 /-! # Saving caller registers leaves the precomputed public key unchanged -/
 

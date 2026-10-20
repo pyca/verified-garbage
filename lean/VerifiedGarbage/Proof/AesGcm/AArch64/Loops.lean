@@ -1,7 +1,19 @@
 module
+public import VerifiedGarbage.Impl.AesGcm.AArch64
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
-import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # AES-GCM on AArch64: the byte loops and `minK`

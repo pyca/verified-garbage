@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubOut
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # `vg_rsa_public` on x86-64: the computation for a valid modulus

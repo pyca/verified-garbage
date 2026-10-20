@@ -1,17 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Common
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.EkCheck
-meta import VerifiedGarbage.Proof.MlKem.EkCheck
 public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Spec.MlKem.Contract
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.EkCheck
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
-import VerifiedGarbage.Spec.MlKem.Contract
 meta import VerifiedGarbage.Spec.MlKem.Contract
-import VerifiedGarbage.Spec.MlKem.Contract1024
-meta import VerifiedGarbage.Spec.MlKem.Contract1024
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.TCB.AArch64.Target
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_check_ek` and `vg_mlkem1024_check_ek`

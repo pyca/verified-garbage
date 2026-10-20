@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCombine
+import VerifiedGarbage.Proof.Ecdsa.X86.Flags
+import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Branch-free clamping to the actual subgroup byte width -/
 

@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyPublicCall
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyObservations
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFn
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyObservations
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFn
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnTiming
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractInput
 
 /-! # The complete precomputed verifier satisfies its shared correctness and timing contract -/
 

@@ -1,27 +1,25 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.X86.Steps
-meta import VerifiedGarbage.Proof.Sha512.X86.Steps
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86.Spill
-meta import VerifiedGarbage.Proof.Framework.X86.Spill
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Sha512
-meta import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.X86.Target
-meta import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha512.X86.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86.Lit
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
-meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha512.X86.Steps
+meta import VerifiedGarbage.Proof.Framework.X86.Spill
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+meta import VerifiedGarbage.Proof.Sha512.Spec
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Sha512.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Sha512.X86.Lit
 
 /-!
 # SHA-512 compression function on x86 (32-bit): the whole function

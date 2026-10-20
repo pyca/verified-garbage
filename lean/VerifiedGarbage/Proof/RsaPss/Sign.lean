@@ -1,7 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Spec.RsaPss
 
-public import VerifiedGarbage.Proof.RsaPss.Verify
+import VerifiedGarbage.Proof.RsaPss.Verify
 import VerifiedGarbage.Proof.Rsa.Checked
+import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Nat.Totient
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.Positivity.Finset
+import Mathlib.Algebra.Order.Field.Basic
 
 /-!
 # RSASSA-PSS: every signature verifies

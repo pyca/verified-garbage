@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Gcm
 
 /-!
 # AES-GCM on AArch64: the entry of `seal` and `open`

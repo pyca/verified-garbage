@@ -1,10 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
-import VerifiedGarbage.Impl.Sha3.AArch64.Stream
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
-import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
 
 /-!

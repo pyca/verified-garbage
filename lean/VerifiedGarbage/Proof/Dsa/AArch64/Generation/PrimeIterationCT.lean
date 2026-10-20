@@ -1,13 +1,25 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRoundCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRoundCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControlCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRound
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
+meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRoundCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControlCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControlCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoopState
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRound
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! # The guarded primality iteration reveals only the public tape and round -/
 

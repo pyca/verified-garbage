@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.TripleDes.AArch64.Lit
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
-public import VerifiedGarbage.Proof.TripleDes.Core
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
+import VerifiedGarbage.Proof.TripleDes.Core
+import VerifiedGarbage.Proof.Framework.Mem
 
 @[expose] public section
 

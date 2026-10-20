@@ -2,6 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.CmacAes.Arm.Call
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Spec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
 
 @[expose] public section
 

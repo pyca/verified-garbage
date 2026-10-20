@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Spec
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
-public import VerifiedGarbage.Impl.Rsa.X86_64.PubIfma
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Vec
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Conv
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CoreU
+import VerifiedGarbage.Proof.Bignum.CrtFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # The public operation with AVX512_IFMA on x86-64: the numbers of the vector code

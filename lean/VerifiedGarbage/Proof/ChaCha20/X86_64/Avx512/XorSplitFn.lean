@@ -1,14 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LastSel
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Copy
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplit
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # ChaCha20 keystream XOR with the data's first bytes from another buffer on x86-64 with AVX-512: the function

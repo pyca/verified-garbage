@@ -1,9 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.DoubleFnBody
-public import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
-public import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
+public import VerifiedGarbage.Proof.Bignum.Arm.RoundState
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Bignum.Arm.DoubleBody
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsBridge
+import VerifiedGarbage.Proof.Bignum.Arm.MontCore
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Modular doubling from the shared RSA header preserves all unrelated arrays -/
 

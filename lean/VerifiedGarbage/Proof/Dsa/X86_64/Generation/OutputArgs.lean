@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Output
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Memory
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Prepare output copying and the existing verified zero-output loop -/
 

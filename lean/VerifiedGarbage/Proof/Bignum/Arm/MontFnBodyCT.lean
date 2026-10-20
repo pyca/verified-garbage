@@ -1,9 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
+public import VerifiedGarbage.Impl.Bignum.Arm.MontFn
+public import VerifiedGarbage.Spec.Rsa.Mont
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.LayoutBridge
+meta import VerifiedGarbage.Proof.Bignum.Arm.MontBodyCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.MontFn
+meta import VerifiedGarbage.Spec.Rsa.Mont
+meta import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The callable body reveals only the workspace, indices, and RSA word count -/
 

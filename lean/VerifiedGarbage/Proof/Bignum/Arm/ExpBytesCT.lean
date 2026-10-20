@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteState
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
 
 /-! # The full exponent loop reveals only public exponent bytes and buffer dimensions -/
 

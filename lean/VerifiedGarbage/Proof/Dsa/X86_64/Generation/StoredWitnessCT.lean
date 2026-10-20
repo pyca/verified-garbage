@@ -1,11 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitnessCT
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
+public import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitnessCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.StoredWitness
+meta import VerifiedGarbage.Proof.Dsa.Generation.WitnessBytes
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
-import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Fixed-address transformation of a nonuniform DSA witness -/
 

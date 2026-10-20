@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.Arm.PrivChecked
 public import VerifiedGarbage.Proof.Rsa.SuccessBits32
-public import VerifiedGarbage.Proof.Bignum.Arm.PcEntry
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Set up the private fault comparison and accumulate the three call-status bits -/
 

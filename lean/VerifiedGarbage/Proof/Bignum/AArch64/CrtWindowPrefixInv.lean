@@ -1,8 +1,6 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowPendingInv
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAdvance
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowAppliedBatch
-import VerifiedGarbage.Proof.Bignum.CrtWindowPrefix
 import Mathlib.Data.Int.ModEq
 
 /-! The outer loops preserve source bytes and the exact consumed exponent prefix. -/

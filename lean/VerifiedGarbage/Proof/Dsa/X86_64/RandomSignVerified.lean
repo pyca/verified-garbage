@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCall
+public import VerifiedGarbage.Spec.Dsa.RandomSign
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCorrect
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCorrect
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Complete verification of randomized DSA signing for every x86-64 backend. -/

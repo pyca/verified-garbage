@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Calls
+public import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+public import VerifiedGarbage.Spec.Mgf1
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Mgf
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # RSAES-OAEP on x86-64: the label's hash

@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCT
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
 public import VerifiedGarbage.Proof.Bignum.CrtWindowFrame
 import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRawCore
 
 /-! The complete window body, including reset and caller-state preservation. -/
 

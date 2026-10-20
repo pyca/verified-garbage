@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtFn
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredState
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedState
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredTransfer
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.CrtQSource
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPoweredTransfer
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSharedWorkspace
+import VerifiedGarbage.Proof.Bignum.Arm.TransferArray
+import VerifiedGarbage.Proof.Bignum.Arm.LayoutFrameReady
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Transfer the q residue to p while retaining p's completed arithmetic state -/
 

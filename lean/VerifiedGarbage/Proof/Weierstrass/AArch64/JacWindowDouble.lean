@@ -1,12 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
 
-public import VerifiedGarbage.Proof.Weierstrass.JacMul
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Impl.Weierstrass.JacMul
+public import VerifiedGarbage.Proof.Weierstrass.Jac
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Direct-product Jacobian doubling for the public verification loops. -/
 

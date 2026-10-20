@@ -1,9 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Algebra.GroupWithZero.Nat
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
-import Mathlib.Data.Int.ModEq
-meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
+meta import Mathlib.Algebra.GroupWithZero.Nat
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! The number of tiles and all table addresses depend only on public widths. -/
 

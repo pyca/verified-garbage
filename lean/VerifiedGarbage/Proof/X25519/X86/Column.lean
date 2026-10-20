@@ -5,9 +5,8 @@ public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Wp
-import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.X86.RegUpd
+public import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # X25519 on x86 (32-bit): columns

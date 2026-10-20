@@ -1,7 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.CT
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.CT
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Contract
+public import VerifiedGarbage.Proof.AesXts.X86_64.Variant
+import VerifiedGarbage.Proof.AesXts.X86_64.Unit.Dec
+import VerifiedGarbage.Proof.AesXts.X86_64.Body
 
 /-!
 # XTS-AES of data units on x86-64: `Verified`

@@ -1,17 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.FnContract
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.X448.Arm.FnLit
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.X448.Arm.FnContract
-public import VerifiedGarbage.Proof.X448.Arm.FnLit
-meta import VerifiedGarbage.Proof.X448.Arm.FnLit
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.X448.Arm.FnLit
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # X448 on ARMv7: the field functions, verified

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.CrtAddWide
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Set an extended addition's scalar and carry to one and zero -/
 

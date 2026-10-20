@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.Math
 
 /-! # Arithmetic facts obtained from a runtime Montgomery context -/

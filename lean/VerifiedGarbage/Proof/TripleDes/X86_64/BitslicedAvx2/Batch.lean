@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Passes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Pass
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.TripleDes.Schedule
 import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # An AVX2 batch

@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 public import VerifiedGarbage.Proof.Dsa.X86_64.Product
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
 /-! # Frames for construction of the joint exponentiation table -/
 

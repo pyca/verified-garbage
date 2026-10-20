@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Call
 import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.X448.AArch64.BitBody
 public import VerifiedGarbage.Proof.X448.AArch64.Counters
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Ed448 verification on AArch64: one window of the challenge

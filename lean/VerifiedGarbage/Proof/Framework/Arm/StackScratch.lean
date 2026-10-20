@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Scratch
-public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import VerifiedGarbage.Proof.Framework.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.TCB.Arm.Target
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # A scratch buffer on the stack (ARMv7)

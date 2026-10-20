@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Spec.Gcm
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import VerifiedGarbage.Proof.AesGcm.X86_64.Run
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM's short path on x86-64: what `G` holds

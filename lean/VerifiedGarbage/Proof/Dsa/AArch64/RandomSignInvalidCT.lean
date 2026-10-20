@@ -1,7 +1,23 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignCall
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignFinishAgreement
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignSingleCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalid
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Rejection before sampling has a fixed schedule for the same public arguments. -/
 @[expose] public section

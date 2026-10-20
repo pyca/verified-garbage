@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Table
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # Exact SIMD horizontal sum used for the rejection mask -/
 

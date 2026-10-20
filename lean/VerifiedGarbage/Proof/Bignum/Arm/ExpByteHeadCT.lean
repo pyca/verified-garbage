@@ -1,9 +1,23 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.Exp
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ExpByteHead
-public import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Bignum.Arm.Exp
+meta import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.StageCT
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Loading an exponent byte reveals only its public pointer -/
 

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Framework.Semantics
 
 /-!
 # Relating two runs by their public data (x86)

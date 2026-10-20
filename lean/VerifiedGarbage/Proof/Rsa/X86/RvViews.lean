@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyArrs
-public import VerifiedGarbage.Proof.Rsa.KeyViews
+import VerifiedGarbage.Proof.Rsa.KeyViews
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # The key working space read with `w` and with `W = 2 w + 2` words
 

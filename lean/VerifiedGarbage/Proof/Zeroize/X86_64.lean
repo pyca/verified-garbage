@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Zeroize.X86_64
-meta import VerifiedGarbage.Impl.Zeroize.X86_64
 public import VerifiedGarbage.Proof.Zeroize.Common
-meta import VerifiedGarbage.Proof.Zeroize.Common
-public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
-public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.Spec.Zeroize.Contract
+public import VerifiedGarbage.TCB.X86_64.Target
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Zeroize.X86_64
+meta import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 meta import VerifiedGarbage.Spec.Zeroize.Contract
-import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.Semantics
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Mem
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 @[expose] public section
 

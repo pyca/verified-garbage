@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 import all Init.Data.Nat.Bitwise.Basic
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EkBase
+meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
+meta import Init.Data.Nat.Bitwise.Basic
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: encapsulation hashing the key with the sponge functions

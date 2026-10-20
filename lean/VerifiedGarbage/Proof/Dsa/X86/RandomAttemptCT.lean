@@ -1,9 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
-public import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
+import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+import VerifiedGarbage.Proof.Dsa.X86.RandomSampleCT
+import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
+import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Spec.Weierstrass
 meta import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+meta import VerifiedGarbage.Proof.Dsa.RandomSignTrace
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
+meta import VerifiedGarbage.Proof.Dsa.RandomTraceResult
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomSampleCT
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomAttempt
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomCallArgs
+meta import VerifiedGarbage.Proof.Dsa.X86.RandomSample
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Spec.Weierstrass
 
 /-!
 # An attempt leaks only its public trace (x86)

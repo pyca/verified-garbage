@@ -1,9 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Round
-public import VerifiedGarbage.Proof.CmacTripleDes.Words
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.CmacTripleDes.Block
+import VerifiedGarbage.Proof.CmacTripleDes.Words
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # TDEA on 32-bit ARM: the passes and the block

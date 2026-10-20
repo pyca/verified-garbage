@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperandState
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+import VerifiedGarbage.Impl.Bignum.Arm.CrtDifference
+import VerifiedGarbage.Impl.Bignum.Arm.R2
 
-public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
-public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
-public import VerifiedGarbage.Proof.Bignum.Arm.MontMixedProduct
 
 /-! # The secret CRT inverse is read from the original private-key bytes -/
 

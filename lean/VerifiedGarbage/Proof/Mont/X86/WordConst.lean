@@ -1,8 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Mont.X86.Words
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
-public import VerifiedGarbage.Proof.Mont.X86.WordOps
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # A constant in the working space, by a zeroing loop and its nonzero words (x86, 32-bit) -/
 

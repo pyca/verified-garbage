@@ -1,6 +1,9 @@
 module
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
-public import VerifiedGarbage.Proof.Mont.Words32
 
 /-! # Bit arithmetic for 32-bit RSA key workspaces -/
 

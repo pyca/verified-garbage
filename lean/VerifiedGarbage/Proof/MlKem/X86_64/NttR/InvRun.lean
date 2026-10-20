@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Run
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
-public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 
 /-!
 # ML-KEM on x86-64: `NTT⁻¹` on registers, the run of its terms

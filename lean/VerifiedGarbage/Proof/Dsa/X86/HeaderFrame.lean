@@ -1,6 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.Pointer
 
-public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Dsa.X86.Layout
+import VerifiedGarbage.Proof.Mont.Words32
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Disjoint fields in the saved argument header -/
 

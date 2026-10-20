@@ -1,6 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.KcABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.KcReturn
+import VerifiedGarbage.Proof.Rsa.X86.KcReturn
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Both i686 key-check operations satisfy their existing shared contracts -/
 

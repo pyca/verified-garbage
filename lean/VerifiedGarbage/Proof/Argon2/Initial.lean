@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.HPrime
+import VerifiedGarbage.Proof.Argon2.HPrime
 public import VerifiedGarbage.Proof.Framework.PowLit
+public import VerifiedGarbage.Spec.Argon2
 
 /-! # H₀ as a sequence of BLAKE2b streaming inputs -/
 

@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerSave
-public import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Saving the workspace preserves its mathematical preparation -/
 

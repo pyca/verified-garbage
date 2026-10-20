@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
 public import VerifiedGarbage.Impl.Ed448.X86_64.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Fn
 import VerifiedGarbage.Proof.X448.X86_64.Iter
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # Ed448 base-point multiplication on x86-64: one bit

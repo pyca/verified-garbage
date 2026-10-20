@@ -1,8 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Scratch
 public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Argon2.Arm.Mix
+public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Parameters
+import VerifiedGarbage.Proof.Argon2.Arm.Derive.Locals
+import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Finish
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Argon2 on ARMv7: H₀

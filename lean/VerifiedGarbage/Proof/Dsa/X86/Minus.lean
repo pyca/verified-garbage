@@ -1,9 +1,17 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86.Minus
-public import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
-public import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-public import VerifiedGarbage.Proof.Mont.X86.WordConst
+public import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
+public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.Set
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Dsa.X86.CoreFrame
+import VerifiedGarbage.Proof.Mont.X86.WordConst
+import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Exact non-underflowing subtraction from the loaded modulus -/
 

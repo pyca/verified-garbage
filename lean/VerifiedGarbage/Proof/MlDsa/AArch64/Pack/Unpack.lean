@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Arith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`

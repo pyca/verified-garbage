@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Compress
-meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
 import VerifiedGarbage.Proof.Md5.Stream
-meta import VerifiedGarbage.Proof.Md5.Stream
-public import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Impl.Md5.X86_64.Stream
-meta import VerifiedGarbage.Impl.Md5.X86_64.Stream
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
+meta import VerifiedGarbage.Proof.Md5.Stream
+meta import VerifiedGarbage.Impl.Md5.X86_64.Stream
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Streaming MD5 on x86-64: `init`

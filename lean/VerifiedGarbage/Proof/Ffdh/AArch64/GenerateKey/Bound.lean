@@ -1,11 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.AArch64.Out
 public import VerifiedGarbage.Proof.Ffdh.KeyScalar
-import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
 
 /-!
 # `vg_ffdh_generate_key` on AArch64: the bound's scan

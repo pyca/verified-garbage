@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointByte
-import Mathlib.Tactic.Set
-import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindows
 
 /-! # Loading a pair of exponent bytes without secret-dependent addresses -/
 

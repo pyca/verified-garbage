@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 and Poly1305 together (x86-64): `tailK`'s rounds

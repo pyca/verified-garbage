@@ -1,27 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
-meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Hmac.Generic.Implies
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
-import VerifiedGarbage.Proof.Sha256.Md
-meta import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Hmac.Generic.Common
-meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.TCB.AArch64.Target
-meta import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Framework.TaintBatch
-meta import VerifiedGarbage.Proof.Framework.TaintBatch
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Word64
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-meta import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 
 /-!
 # SHA-224 on AArch64, as a Merkle–Damgård hash function

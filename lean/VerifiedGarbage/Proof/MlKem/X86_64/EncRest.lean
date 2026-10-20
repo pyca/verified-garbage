@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncBase
-import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.KgB
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
+import VerifiedGarbage.Proof.MlKem.X86_64.FragC
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
 
 /-!
 # ML-KEM on x86-64: K-PKE.Encrypt, the ciphertext

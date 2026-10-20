@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.X86.CrtRecombine
-public import VerifiedGarbage.Proof.Bignum.X86.WideProductWords
+public import VerifiedGarbage.Proof.Bignum.X86.WideLoop
+import VerifiedGarbage.Proof.Bignum.X86.WideProductWords
+import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # The full-width recombination adds the q residue without truncating a valid result -/
 

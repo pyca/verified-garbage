@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Verified
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
-public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+public import VerifiedGarbage.Impl.StackScratch.Arm
+import VerifiedGarbage.Proof.Framework.Arm.RegScratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Streaming AES-CMAC on ARMv7, with its working space on the stack

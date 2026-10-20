@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupContext
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupAll
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrimeCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLeavePrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupPrime
+import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
+import VerifiedGarbage.Impl.Bignum.Arm.Zero
 
 /-! # Per-execution invariants for the complete setup timing proof -/
 

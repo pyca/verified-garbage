@@ -2,7 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Run
 public import VerifiedGarbage.Proof.Blowfish.Scan32
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Blowfish.F
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
 
 /-!
 # Blowfish on ARMv7: an S-box lookup

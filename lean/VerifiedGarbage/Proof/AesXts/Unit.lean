@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Spec.Xts.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
 
-public import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import Std.Data.DTreeMap.Internal.Operations
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # XTS-AES of whole data units: what every target shares

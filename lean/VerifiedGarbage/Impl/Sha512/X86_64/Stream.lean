@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Sha512.X86_64
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
 public import VerifiedGarbage.Impl.Sha512.X86_64.Rolled
 public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi

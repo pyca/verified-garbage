@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Planes
-import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 
 /-! # The bits of the key schedule's constant planes -/

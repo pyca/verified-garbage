@@ -1,8 +1,22 @@
 module
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemGLanes
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
+import VerifiedGarbage.Proof.Framework.X86_64.MaskedPrefix
+import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+import VerifiedGarbage.Proof.Aes.X86_64.VaesZ.Ctr
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The blocks after the last group, added to their keystream in registers

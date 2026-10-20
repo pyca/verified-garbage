@@ -1,9 +1,12 @@
 module
+public import VerifiedGarbage.Impl.ChaCha20.X86_64.Stream
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Streaming ChaCha20 on x86-64: XORing bytes

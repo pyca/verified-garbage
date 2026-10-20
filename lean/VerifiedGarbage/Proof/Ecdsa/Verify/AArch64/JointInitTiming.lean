@@ -1,22 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoop
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigit
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedMixed
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! ## `JointWindow` -/
 

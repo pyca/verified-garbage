@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityPlan
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestFullCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PTestSmallCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.HeaderCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Public p-search data and the live frame words used by primality -/

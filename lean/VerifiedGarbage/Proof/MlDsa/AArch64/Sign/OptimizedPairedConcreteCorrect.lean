@@ -1,20 +1,23 @@
 module
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inst
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedRest
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsExec
 
 /-! ## From `OptimizedPairedCorrect.lean` -/
 

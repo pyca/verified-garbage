@@ -2,6 +2,36 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
+import VerifiedGarbage.Impl.AesGcm.X86
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.TCB.X86.State
+import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.Impl.AesGcm.X86
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86.Call
+meta import VerifiedGarbage.TCB.X86.Isa
+meta import VerifiedGarbage.TCB.X86.State
+meta import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Cmac.Block32
+import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
+meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
+meta import VerifiedGarbage.Proof.Cmac.Block32
+meta import VerifiedGarbage.Proof.Cmac.Mem32
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.Gcm.Ctr
+meta import VerifiedGarbage.Proof.AesGcm.X86.Flush
+meta import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.AesGcm.X86.Crypt
+meta import VerifiedGarbage.Proof.AesGcm.X86.Crypt
 
 /-!
 # AES-GCM on x86: `vg_aes_gcm_init`

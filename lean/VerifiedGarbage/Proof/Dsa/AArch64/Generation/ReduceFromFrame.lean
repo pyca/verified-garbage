@@ -1,9 +1,18 @@
 module
+public import VerifiedGarbage.Proof.Dsa.AArch64.Run
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+public import Mathlib.Data.Int.ModEq
+public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
+public import VerifiedGarbage.Spec.Dsa
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Arguments
+public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFromFrame
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.CandidateFromFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WorkspaceBase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.FrameWord
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Workspace
 
 /-! # Reduce the shaped candidate from an uninitialized arithmetic workspace -/
 

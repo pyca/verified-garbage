@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
+public import VerifiedGarbage.Proof.MlKem.Mem
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
+import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-KEM's 16-bit NTT on AArch64: polynomials in halfwords

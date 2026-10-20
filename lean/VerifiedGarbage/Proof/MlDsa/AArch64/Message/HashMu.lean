@@ -2,9 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.MlKem.KPke
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: `μ` and `tr`

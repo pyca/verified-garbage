@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCallStack
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtPrepare
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Shared state retained across private CRT validation and arithmetic -/
 

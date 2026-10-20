@@ -1,7 +1,25 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructReadyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructReadyCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeCT
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.TCB.Registration
+meta import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructCTState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstructReadyCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PShapeCT
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.TCB.Registration
 
 /-! # Constant time of complete p construction at every supported DSA size -/
 

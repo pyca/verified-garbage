@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Implementations of the SHA-256 compression function on x86-64

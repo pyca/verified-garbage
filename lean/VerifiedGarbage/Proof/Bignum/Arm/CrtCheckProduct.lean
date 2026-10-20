@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductState
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtCheckProduct
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # Full-width factor validation against the original modulus -/
 

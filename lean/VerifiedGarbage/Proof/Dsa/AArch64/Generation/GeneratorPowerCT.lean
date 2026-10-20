@@ -2,10 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 public import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.GeneratorPlan
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicFinishCT
-import VerifiedGarbage.Proof.Bignum.CrtRedc
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.GeneratorPower
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+meta import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
 
 /-! # Generator exponentiation reuses the verified public-power timing proof -/
 

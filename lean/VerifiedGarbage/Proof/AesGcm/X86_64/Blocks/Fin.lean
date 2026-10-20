@@ -2,6 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Tail
 import VerifiedGarbage.Proof.Gcm.Split
+import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Impl.Aes.Circuit
+import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on whole blocks, x86-64: the end

@@ -1,11 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
-meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
-public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+public import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+meta import VerifiedGarbage.Impl.TripleDes.AArch64.ExpandKey
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # Constant-time Triple DES block and key-expansion programs -/
 

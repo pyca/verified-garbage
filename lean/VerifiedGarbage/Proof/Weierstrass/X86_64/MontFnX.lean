@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # P-521's product modulo `p` as a function, with BMI2 and ADX, on x86-64

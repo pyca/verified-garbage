@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SubgroupCTState
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.QBuild
+import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Subgroup
 
 /-! # Hash and shape the subgroup candidate before the native primality call -/
 

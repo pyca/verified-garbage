@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Camellia.X86_64.Core
 public import VerifiedGarbage.Proof.Camellia.Layout
 import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on x86-64

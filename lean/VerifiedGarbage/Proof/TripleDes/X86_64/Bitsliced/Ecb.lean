@@ -2,9 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Batch
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 
 /-!
 # The function

@@ -1,6 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesCtr.X86_64.Body
+import VerifiedGarbage.Proof.AesCtr.X86_64.Steps
+import VerifiedGarbage.Proof.AesCbc.X86_64.Body
+import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-CTR on x86-64: one iteration

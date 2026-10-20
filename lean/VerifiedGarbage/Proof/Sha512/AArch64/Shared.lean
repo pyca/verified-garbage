@@ -1,15 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-public import VerifiedGarbage.Spec.Sha512.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Proof.Sha512.Digest
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # Sha512 on AArch64: the shared contracts

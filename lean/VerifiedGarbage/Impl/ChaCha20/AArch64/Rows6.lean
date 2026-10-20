@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.AArch64.Neon4
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Small
 
 /-!

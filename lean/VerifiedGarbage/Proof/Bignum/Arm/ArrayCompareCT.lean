@@ -1,11 +1,15 @@
 module
+public import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
+public import VerifiedGarbage.Proof.Bignum.Arm.SanitizeModulusCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompare
-public import VerifiedGarbage.Proof.Bignum.Arm.SubRowCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFnCT
-public import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Bignum.Arm.SubRowCT
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
 meta import VerifiedGarbage.Impl.Bignum.Arm.ArrayCompare
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Bignum.Arm.ArrayCompareArgs
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Bignum.Arm.StackCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # RSA input range checking reveals only the public word count and addresses -/
 

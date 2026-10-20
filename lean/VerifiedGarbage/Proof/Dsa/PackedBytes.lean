@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Dsa.SignVerify
-import VerifiedGarbage.Proof.Dsa.Encoding
-public import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Component slices of packed big-endian DSA keys and signatures -/
 

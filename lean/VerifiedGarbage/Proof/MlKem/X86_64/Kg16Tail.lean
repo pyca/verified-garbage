@@ -1,14 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
+import VerifiedGarbage.Proof.MlKem.X86_64.KgCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragKpke
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgA16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS16
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 public import VerifiedGarbage.Impl.MlKem.X86_64.Kem16
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgB
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: key generation with 16-bit polynomials, after the samples

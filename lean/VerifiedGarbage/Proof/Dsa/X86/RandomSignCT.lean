@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Impl.Dsa.X86.RandomSign
+public import VerifiedGarbage.Proof.Dsa.X86.RandomAttemptState
+public import VerifiedGarbage.Proof.Dsa.X86.RandomCallCT
 
-public import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86.RandomBodyCT
 
 /-!
 # The randomized signer is constant time (x86)

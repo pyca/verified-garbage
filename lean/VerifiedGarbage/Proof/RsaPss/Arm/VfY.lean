@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.Arm.VfTail
 import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.RsaPss.Arm.YDig
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 
 /-!
 # RSASSA-PSS verification with a precomputed public key on ARMv7: the start of both paths

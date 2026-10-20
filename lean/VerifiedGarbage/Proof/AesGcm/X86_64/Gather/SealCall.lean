@@ -1,10 +1,29 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyPath
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
+import VerifiedGarbage.Proof.Aes.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+import VerifiedGarbage.Impl.Aes.Circuit
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.TCB.X86_64.Isa
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the call of `vg_aes_gcm_seal`

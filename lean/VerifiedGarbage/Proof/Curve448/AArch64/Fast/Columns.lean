@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X448.Wide.Product
 
 /-!
 # Karatsuba's columns are the reduced product's coefficients

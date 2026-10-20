@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.Moduli
-public import VerifiedGarbage.Proof.Dsa.X86.StageValues
+public import VerifiedGarbage.Proof.Dsa.X86.StageFrame
+import VerifiedGarbage.Proof.Dsa.X86.StageValues
+import VerifiedGarbage.Proof.Dsa.X86.LocalOperand
+import VerifiedGarbage.Proof.Dsa.X86.Layout
 
 /-! # Persistent scalar and group-element buffers in the DSA schedule -/
 

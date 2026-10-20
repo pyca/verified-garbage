@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBoth
+import VerifiedGarbage.Proof.MlKem.AArch64.Paired.ZeroBoth
 public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Stream
 public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Saved
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Checkpoint
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Context
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Bounded fourth/fifth-block continuation and exact failure cleanup -/
 @[expose] public section

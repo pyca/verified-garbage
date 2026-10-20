@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Finish
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # AES-GCM `seal_split`'s path for TLS records: the additional data

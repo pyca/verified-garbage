@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.AArch64.P384Sqr.Rows
-import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Rounds
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # P-384's Montgomery square on AArch64: the square

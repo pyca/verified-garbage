@@ -1,17 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 public import VerifiedGarbage.Proof.Weierstrass.JacCoZ
-public import VerifiedGarbage.Proof.Weierstrass.Layout
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Fprog
+import VerifiedGarbage.Proof.Weierstrass.Layout
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.Weierstrass.Point
-import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
 
 /-!
 # The Jacobian window method on x86-64: its field programs

@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Spec.Ocb.Contract
 import VerifiedGarbage.Proof.AesGcm.Scratch
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # AES-OCB with its working space as an argument

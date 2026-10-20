@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PPrimalityCTState
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstruct
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.PAttempt
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PConstruct
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SourceFrame
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Construction preserves the public primality inputs and entropy cursor -/
 

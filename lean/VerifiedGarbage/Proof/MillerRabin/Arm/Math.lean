@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
-public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Spec.MillerRabin
 import VerifiedGarbage.Proof.Bignum.Math
 

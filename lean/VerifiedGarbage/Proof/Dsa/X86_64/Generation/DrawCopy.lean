@@ -1,10 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
+public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Prepared
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.DrawCopy
+public import VerifiedGarbage.Spec.Rsa.Contract
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PreparedFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.DrawArgs
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CopyDigest
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.PreparedFrame
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.RsaKeyGen.Table
 
 /-! # Copy a complete draw and advance its tape cursor in verified code -/
 

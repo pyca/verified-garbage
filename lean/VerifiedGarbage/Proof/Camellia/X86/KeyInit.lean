@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.KeyPair
 public import VerifiedGarbage.Proof.Camellia.X86.Prologue
-public import VerifiedGarbage.Proof.Camellia.Planes32
 public import VerifiedGarbage.Proof.Camellia.Common
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Impl.Camellia.X86.ExpandKey
+import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Camellia.Planes32
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the prologue

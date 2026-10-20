@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.PairedTable
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableLayout
 
 @[expose] public section
 

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.EqualBuffers
-public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Branchless setup and result combination for exact buffer equality -/
 

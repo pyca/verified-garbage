@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.Lane
 import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 
 /-!

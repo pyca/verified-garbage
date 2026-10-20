@@ -2,9 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.Sample
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.TestWitness
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ForceSample
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontAll
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.LoadWitness
+import VerifiedGarbage.Proof.Rsa.Octets
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Native DSA witness selection implements RSA's exact sampler -/
 

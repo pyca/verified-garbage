@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.MaskBytes
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Branchless masking of an ordinary RSA output buffer -/
 

@@ -1,8 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+public import VerifiedGarbage.Impl.Dsa.AArch64.Random
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomScan
-public import VerifiedGarbage.Proof.Dsa.AArch64.RandomFrame
-import VerifiedGarbage.Proof.Framework.Omega
+import Mathlib.Tactic.Attr.Core
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Dsa.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Source slices and the right-aligned nonce's memory frame. -/
 @[expose] public section

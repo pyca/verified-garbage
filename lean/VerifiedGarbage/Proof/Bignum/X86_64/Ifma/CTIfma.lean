@@ -1,13 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
-meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTLemmas
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtWs
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: constant time, `ifma`

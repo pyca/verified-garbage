@@ -1,19 +1,33 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.Ecb
-meta import VerifiedGarbage.Proof.Idea.X86.Ecb
-public import VerifiedGarbage.Proof.Idea.X86.Lit
-meta import VerifiedGarbage.Proof.Idea.X86.Lit
-public import VerifiedGarbage.Proof.Idea.Local
-meta import VerifiedGarbage.Proof.Idea.Local
-public import VerifiedGarbage.Proof.Framework.X86.Taint
-meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.StackScratch
-meta import VerifiedGarbage.Proof.Framework.X86.StackScratch
+import VerifiedGarbage.Proof.Idea.Local
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
+public import VerifiedGarbage.Impl.StackScratch.X86
+public import VerifiedGarbage.Proof.Idea.X86.Invert
+import VerifiedGarbage.Proof.Idea.X86.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Batteries.Data.List.Lemmas
+import Mathlib.Order.RelClasses
+import Mathlib.Tactic.Finiteness.Attr
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Idea.X86.Ecb
+meta import VerifiedGarbage.Proof.Idea.Local
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Impl.StackScratch.X86
+meta import VerifiedGarbage.Proof.Idea.X86.Invert
+meta import VerifiedGarbage.Proof.Idea.X86.Lit
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.SetLike
+meta import Batteries.Data.List.Lemmas
+meta import Mathlib.Order.RelClasses
+meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Verified IDEA on x86 (32-bit), with its working space on the stack

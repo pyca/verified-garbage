@@ -1,7 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.TCB.Arm.Target
+import VerifiedGarbage.Proof.Framework.SigEval
+import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Taint
 
 /-!
 # AES-GCM on ARMv7: the contracts the proofs are written against

@@ -1,7 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
-public import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Mont.X86.ExponentTimingBlocks
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
 
 /-! # The unrolled modular subtraction uses only fixed workspace addresses -/
 

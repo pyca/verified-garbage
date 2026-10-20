@@ -1,13 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Md
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
-public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.AArch64.Stream.InitPairs
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # SHA-512 compression backends on AArch64

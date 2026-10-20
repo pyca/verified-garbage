@@ -1,10 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Body
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+public import Mathlib.Logic.Function.Basic
+public import VerifiedGarbage.Impl.Ed448.Arm.SignCached
+public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+public import VerifiedGarbage.Proof.Ed448.Arm.ScalarLit
+public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
+public import VerifiedGarbage.Proof.Ed448.Ref
+public import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Calls
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.EntryCT
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: constant time

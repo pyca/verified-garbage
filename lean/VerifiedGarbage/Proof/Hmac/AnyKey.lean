@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Hmac.Scratch
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # HMAC's `init` for a key of any length: its postcondition reads the states alone

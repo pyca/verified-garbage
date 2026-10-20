@@ -1,15 +1,29 @@
 module
 
-import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
 import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
 import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
-public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
+public import VerifiedGarbage.Proof.X448.X86_64.Setup
+public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 import VerifiedGarbage.Proof.Ed448.VerifyEq
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.AddSmall
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Proof.Ed448.Group.Decode
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.X448.X86_64.Main
 
 /-!
 # Ed448 verification's equation on x86-64: the whole function

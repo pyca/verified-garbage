@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
-public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
 
 /-!

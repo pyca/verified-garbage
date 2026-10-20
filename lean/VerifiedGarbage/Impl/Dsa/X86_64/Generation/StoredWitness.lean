@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.ForceWitness
-public import VerifiedGarbage.Impl.Rsa.X86_64
+public import VerifiedGarbage.Impl.Bignum.X86_64
 
 /-! # Transform a witness buffer while retaining the primality workspace base -/
 

@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointBatch
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowersLoop
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
+import VerifiedGarbage.Proof.Ed25519.X86_64.Points
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! Merged from `Proof.Ed25519.X86_64.PointBatch`. -/
 

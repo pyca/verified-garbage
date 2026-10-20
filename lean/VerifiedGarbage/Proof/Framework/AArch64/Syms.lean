@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # AArch64: the addresses of statics never change

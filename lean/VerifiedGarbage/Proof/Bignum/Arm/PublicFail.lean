@@ -1,8 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicPrepare
-public import VerifiedGarbage.Proof.Bignum.Arm.StackPair
-public import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
+import VerifiedGarbage.Proof.Bignum.Arm.StackPair
+import VerifiedGarbage.Proof.Bignum.Arm.MaskOutput
+import VerifiedGarbage.Proof.Bignum.Arm.MaskBuffer
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Bignum.Arm.WideMul
+import VerifiedGarbage.Proof.Bignum.Words
 
 /-! # Invalid public keys produce an all-zero output and failure status -/
 

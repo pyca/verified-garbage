@@ -1,12 +1,12 @@
 module
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCall
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.VerifyCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Inst
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message`: verified

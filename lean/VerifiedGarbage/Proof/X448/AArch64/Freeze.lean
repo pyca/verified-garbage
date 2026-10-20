@@ -3,9 +3,10 @@ module
 import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
 import VerifiedGarbage.Proof.X448.AArch64.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Env
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.X448.AArch64.Carry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # X448 on AArch64: canonical reduction

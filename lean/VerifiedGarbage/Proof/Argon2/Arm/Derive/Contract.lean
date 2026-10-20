@@ -1,10 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Argon2.Arm.Push
+public import VerifiedGarbage.Spec.Argon2.Contract
 
-public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
-import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-public import VerifiedGarbage.Proof.Argon2.Dimensions
-import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Impl.Argon2.Arm.Derive
+import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import VerifiedGarbage.Proof.Blake2.Arm.CompressB
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Argon2 on ARMv7: the contract of the derivation's proof

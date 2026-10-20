@@ -1,10 +1,18 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedFn
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Bignum.Words
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecks
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckExponent
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyPost
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
-public import VerifiedGarbage.Proof.Bignum.PackedFrame
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedChecks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedCheckExponent
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedApplyPost
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
+import VerifiedGarbage.Proof.Bignum.PackedFrame
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Bignum.MemoryFrame
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-! # Validate packed arithmetic inputs and choose a safe public-operation path -/
 

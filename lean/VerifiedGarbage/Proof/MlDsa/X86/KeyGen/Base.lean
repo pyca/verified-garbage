@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Lay
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
+public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
-public import VerifiedGarbage.Proof.MlDsa.KeyGen.Rest
-public import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the setting

@@ -2,12 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedChecksBase
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksEnd
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChallenge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedChecksInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
-import VerifiedGarbage.Proof.MlKem.AArch64.Shared
-import VerifiedGarbage.Proof.MlKem.AArch64.Vec
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 

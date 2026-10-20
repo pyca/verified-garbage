@@ -1,7 +1,8 @@
 module
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowTail
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTable
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowReset
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTailBit
 import Mathlib.Data.Int.ModEq
 
 /-! Tail-bit preparation preserves the Montgomery context and all source bytes. -/

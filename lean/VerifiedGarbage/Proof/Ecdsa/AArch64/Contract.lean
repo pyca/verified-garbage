@@ -1,12 +1,9 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.P256
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Tables
 import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
 
 /-!
 # ECDSA over P-256 on AArch64: the contract the proof is written against

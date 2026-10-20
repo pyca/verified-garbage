@@ -1,11 +1,27 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstantsCT
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWit
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeConstantsCT
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
-meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TestWitness
-public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
-meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTDraw
+meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Sample
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleState
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMrWit
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
+meta import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Draw
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.LoadWitness
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-! Loading and classifying a stored witness has a public trace. -/
 @[expose] public section

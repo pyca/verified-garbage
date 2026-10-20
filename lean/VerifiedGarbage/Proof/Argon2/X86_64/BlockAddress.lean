@@ -1,17 +1,25 @@
 module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
-meta import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
-meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
-meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Impl.Argon2.X86_64.BlockAddress
+meta import VerifiedGarbage.Proof.Argon2.X86_64.DivideStep
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Argon2.X86_64.MemoryInitScale
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! Fault-free matrix pointer calculation, with no memory accesses. -/
 

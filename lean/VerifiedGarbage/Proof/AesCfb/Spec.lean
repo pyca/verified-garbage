@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.Spec
-public import VerifiedGarbage.Spec.Cfb.Contract
+public import VerifiedGarbage.Spec.Cfb
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # CFB128: the mode one block at a time

@@ -1,8 +1,15 @@
 module
+public import VerifiedGarbage.Spec.Rsa.Mont
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtSetup
+public import VerifiedGarbage.Proof.Bignum.Arm.Workspace
+public import VerifiedGarbage.Proof.Framework.RelCT
 
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtSetupMain
-public import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksCT
-public import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtLinksCT
+import VerifiedGarbage.Proof.Bignum.Arm.SetupCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtWorkspaceState
+import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+import VerifiedGarbage.Proof.Bignum.Arm.StageCT
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-! # Public geometry determines the main CRT initialization trace -/
 

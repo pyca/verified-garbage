@@ -1,13 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce11Step
-public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 import VerifiedGarbage.Proof.MlKem.Compress1024
-meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
+import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
+import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce11Step
+meta import VerifiedGarbage.Spec.MlKem.Contract1024
+meta import VerifiedGarbage.Proof.MlKem.Compress1024
+meta import VerifiedGarbage.Proof.MlKem.AArch64.CodecV.CeRun
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Ce5Step
 meta import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
+meta import VerifiedGarbage.Proof.MlKem1024.AArch64.CodecV.Widths
+meta import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 /-!
 # ML-KEM-1024 on AArch64: `vg_mlkem1024_compress_encode`

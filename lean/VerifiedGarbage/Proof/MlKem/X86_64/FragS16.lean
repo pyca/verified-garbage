@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 public import VerifiedGarbage.Proof.MlKem.X86_64.Frag16Prim
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragOf
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.FragL
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 
 /-!
 # ML-KEM on x86-64: `SamplePolyCBD₂` and `Â[i, j]` with 16-bit coefficients, in a layout

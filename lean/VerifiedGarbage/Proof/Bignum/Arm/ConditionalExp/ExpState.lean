@@ -1,8 +1,9 @@
 module
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
 
-public import VerifiedGarbage.Proof.Bignum.Arm.MontOp
-public import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderStore
+import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
+import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 
 /-! # Binary exponentiation invariants in the shared RSA workspace -/
 

@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.DecryptM
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 
 /-! # Decapsulation seed derivation after the fused decryption path -/
 

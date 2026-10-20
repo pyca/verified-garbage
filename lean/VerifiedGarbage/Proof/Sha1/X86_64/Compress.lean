@@ -1,33 +1,29 @@
 module
 
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.Omega
-meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Offset
-meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Sha1.Spec
-meta import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.Impl.Sha1.X86_64
-meta import VerifiedGarbage.Impl.Sha1.X86_64
-public import Mathlib.Tactic.SplitIfs
-meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
-meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
-meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Sha1.Spec
+meta import VerifiedGarbage.Impl.Sha1.X86_64
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Sha1
-meta import VerifiedGarbage.Spec.Sha1
-import VerifiedGarbage.TCB.X86_64.Target
-meta import VerifiedGarbage.TCB.X86_64.Target
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SHA-1 compression function on x86-64: the message schedule and the rounds

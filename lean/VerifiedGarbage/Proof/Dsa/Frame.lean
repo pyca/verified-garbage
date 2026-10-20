@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words32
-public import VerifiedGarbage.Proof.Dsa.Encoding
+import VerifiedGarbage.Proof.Dsa.Encoding
 public import VerifiedGarbage.Spec.Rsa.Contract
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Spec.Dsa
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # DSA's operands in memory, on any target

@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SquareCTBase
-public import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
-public import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
-meta import VerifiedGarbage.Impl.Bignum.Arm.Square
-public import VerifiedGarbage.Proof.Framework.Arm.Taint
-meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
+import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
+import VerifiedGarbage.Proof.Bignum.Arm.Row
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareCTBase
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareInit
+meta import VerifiedGarbage.Proof.Bignum.Arm.SquareCross
+meta import VerifiedGarbage.Proof.Bignum.Arm.RowLoopCT
+meta import VerifiedGarbage.Proof.Bignum.Arm.Row
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # The square's setup and rows of cross products leak only the width -/
 

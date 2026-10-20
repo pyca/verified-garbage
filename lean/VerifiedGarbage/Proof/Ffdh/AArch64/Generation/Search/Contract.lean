@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.GenerationContract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Impl.Ffdh.AArch64.Generation.Search
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Contract
-public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+public import VerifiedGarbage.Spec.Ffdh.Generation
 
 /-! # The parameter-search controller's contract in terms of the machine (AArch64)
 

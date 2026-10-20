@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha224
-public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.Registration
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha256
 
 /-!
 # SHA-256 backends on x86

@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Sm4.X86_64.Sbox
 public import VerifiedGarbage.Proof.Sm4.SboxTable
 public import VerifiedGarbage.Proof.Framework.X86_64.Straight
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # The bitsliced SM4 S-box on x86-64

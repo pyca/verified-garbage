@@ -4,14 +4,10 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindowTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedAddTiming
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticJacTail
 

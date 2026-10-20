@@ -1,8 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.Arm.Shape
+public import VerifiedGarbage.Proof.Dsa.Arm.CoreTrace
 
-public import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
-public import VerifiedGarbage.Proof.Dsa.Arm.Shape
+import VerifiedGarbage.Proof.Dsa.Arm.ValidateTrace
+import VerifiedGarbage.Proof.Dsa.Arm.Shape
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # DSA on 32-bit ARM: the shape check's trace

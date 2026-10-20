@@ -1,8 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.P192
 public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Spec.P192
+public import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA over P-192 on x86 (32-bit): the contract the proof is written against

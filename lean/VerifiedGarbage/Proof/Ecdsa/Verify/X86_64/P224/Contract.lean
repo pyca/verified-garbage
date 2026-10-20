@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Tables
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Spec.Ecdsa.P224
+public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # ECDSA verification over P-224 on x86-64: the contract the proof is written against

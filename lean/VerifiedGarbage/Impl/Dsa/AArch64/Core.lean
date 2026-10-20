@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Impl.Dsa.Layout
-import VerifiedGarbage.Impl.Dsa.AArch64.Arithmetic
 public import VerifiedGarbage.Impl.Dsa.AArch64.Joint
 public import VerifiedGarbage.Impl.Dsa.AArch64.PublicPower
 

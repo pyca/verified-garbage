@@ -1,6 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectState
+public import VerifiedGarbage.Impl.Bignum.Arm.Select
+import VerifiedGarbage.Proof.Bignum.Arm.SubAdvance
+import VerifiedGarbage.Proof.Bignum.Arm.SelectStep
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # One selection iteration preserves the full prefix invariant -/
 

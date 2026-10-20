@@ -1,37 +1,23 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 import VerifiedGarbage.Proof.P521.X86_64.JacTiming
-meta import VerifiedGarbage.Proof.P521.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
-public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
+public import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
+public import VerifiedGarbage.Impl.P521.X86_64.Joint
 import VerifiedGarbage.Proof.P521.X86_64.JointPartsLit
-meta import VerifiedGarbage.Proof.P521.X86_64.JointPartsLit
 import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
-meta import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
-meta import VerifiedGarbage.Proof.Weierstrass.CombLay
+meta import VerifiedGarbage.Proof.P521.X86_64.JacTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafTiming
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.X86_64
+meta import VerifiedGarbage.Impl.P521.X86_64.Joint
+meta import VerifiedGarbage.Proof.P521.X86_64.JointPartsLit
+meta import VerifiedGarbage.Proof.P521.X86_64.JointPartsLitAdx
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! Baseline and ADX taint checks of the rest of P-521's joint loop: its digits'
 reads and entries, the cache of `Z²`, `Z³`, the seed, the counter, the

@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.Framework.InstancePriority
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Lit
 
 @[expose] public section
 

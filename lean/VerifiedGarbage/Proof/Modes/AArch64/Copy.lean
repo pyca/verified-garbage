@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Modes.AArch64.Words
+import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Modes.AArch64.Xor
 public import VerifiedGarbage.Impl.Modes.AArch64.Cbc
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Modes.Ctr
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Modes.Addr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Loops over blocks on AArch64

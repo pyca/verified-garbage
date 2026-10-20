@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
-import VerifiedGarbage.Proof.MillerRabin.X86_64.CT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerEntry
+import VerifiedGarbage.Proof.MillerRabin.X86_64.Prepared
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 
 /-! # Constant time of the complete shared-round caller -/
 

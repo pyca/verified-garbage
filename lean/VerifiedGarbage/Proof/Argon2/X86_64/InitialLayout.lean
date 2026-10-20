@@ -1,11 +1,13 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.InitialArgs
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Frame
-public import VerifiedGarbage.Proof.Argon2.Initial
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Impl.Argon2.X86_64.Initial
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.TCB.X86_64.State
+import VerifiedGarbage.TCB.X86_64.Target
 
 /-! # The stack inputs and scratch allocation used by H₀ -/
 

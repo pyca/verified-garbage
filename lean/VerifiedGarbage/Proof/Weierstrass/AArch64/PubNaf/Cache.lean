@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.State
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The public NAF's cache of the entries' `Z²` and `Z³`

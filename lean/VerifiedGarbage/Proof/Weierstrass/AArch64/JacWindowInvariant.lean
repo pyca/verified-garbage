@@ -1,11 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowState
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLayout
-public import VerifiedGarbage.Proof.Weierstrass.Window5
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
+public import VerifiedGarbage.Proof.Weierstrass.Jac
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-! Invariants retained by the public five-bit Jacobian loop. -/
 

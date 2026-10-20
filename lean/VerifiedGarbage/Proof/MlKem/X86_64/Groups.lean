@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
 public import VerifiedGarbage.Proof.MlKem.Bits
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-KEM on x86-64: segments of groups of values and their bytes

@@ -1,7 +1,7 @@
 module
+public import VerifiedGarbage.Impl.Bignum.X86_64
+public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.Words
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic on x86-64: loops over the words

@@ -1,7 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KcPair
-public import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Bignum.X86.PublicLoadTiming
+import VerifiedGarbage.Proof.Rsa.X86.KcLoad
+import VerifiedGarbage.Proof.Dsa.X86.TimingBlocks
+import VerifiedGarbage.Proof.Rsa.X86.KcLoads
 
 /-! # CRT input imports depend only on the public call geometry -/
 

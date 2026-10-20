@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
-public import VerifiedGarbage.Proof.Modes.AArch64.Core
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
-public import VerifiedGarbage.Proof.Sm4.CtrCipher
 public import VerifiedGarbage.Spec.Sm4.Cbc
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedBody
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Sm4.CtrCipher
+import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # SM4's core for the modes on AArch64

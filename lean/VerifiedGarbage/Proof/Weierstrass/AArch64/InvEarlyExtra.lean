@@ -1,21 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
-meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Mont.AArch64.Words
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+public import Mathlib.Tactic.ToDual
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
+meta import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
+meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
+meta import VerifiedGarbage.Proof.Mont.AArch64.Words
+meta import VerifiedGarbage.Proof.Weierstrass.Unch
+meta import Mathlib.Tactic.ToDual
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-import VerifiedGarbage.Spec.Ecdsa.Generic
-meta import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 

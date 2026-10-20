@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstMemory
-public import Mathlib.Data.Fintype.Fin
-public import Mathlib.Tactic.FinCases
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoad
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Representation
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.Offset
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.Push
 
 /-! ## From `PairedFirstSource.lean` -/
 

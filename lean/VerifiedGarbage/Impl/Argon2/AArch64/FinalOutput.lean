@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
-import VerifiedGarbage.Impl.Argon2.AArch64.Compress
 
 /-! Final H′: matrix block zero is the input, using the derivation's hash backend. -/
 

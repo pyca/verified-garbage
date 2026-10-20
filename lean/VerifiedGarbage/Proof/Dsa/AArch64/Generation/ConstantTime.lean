@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Spec.Dsa.Generate
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryInnerCT
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryInnerCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 
 /-! Complete generation timing depends only on the contract's public inputs. -/
 @[expose] public section

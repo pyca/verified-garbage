@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
-public import Mathlib.Data.Int.GCD
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.PdExp
+public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.PcMain
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Bignum.Math
+import Mathlib.Data.Int.GCD
+public import Aesop.BuiltinRules
+public import Mathlib.Tactic.ToDual
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # `vg_rsa_public_precomputed` on AArch64: the computation

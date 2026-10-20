@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.MlKem.AArch64.Lay
 
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.Offsets
-public import VerifiedGarbage.Proof.MlKem.AArch64.Noise.All
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
 
 /-! # Coverage of the existing scratch allocation -/
 @[expose] public section

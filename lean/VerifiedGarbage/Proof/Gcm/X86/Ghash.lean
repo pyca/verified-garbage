@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Aes.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 public import VerifiedGarbage.Spec.Gcm.Contract
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # GHASH on x86 (32-bit): the whole function

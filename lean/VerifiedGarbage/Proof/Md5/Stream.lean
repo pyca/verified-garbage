@@ -1,8 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Md5
-public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.AddrArith
+import Std.Data.DTreeMap.Internal.Balancing
+import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
 # Streaming MD5: facts about the specification

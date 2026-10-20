@@ -1,12 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFrameCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CandidateFrameCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CheckPrime
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.WorkspaceBase
-import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Workspace
+meta import VerifiedGarbage.Proof.RsaOaep.X86_64.Basic
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.OmegaLit
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # Initialize candidate-reduction scratch while retaining source bytes and frame arguments -/
 

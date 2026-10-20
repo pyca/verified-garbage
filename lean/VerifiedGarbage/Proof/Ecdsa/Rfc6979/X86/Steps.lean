@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Msg
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
-import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Reduce
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the steps on `K` and `V`

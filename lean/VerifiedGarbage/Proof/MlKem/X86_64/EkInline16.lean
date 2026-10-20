@@ -1,13 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkScalar
-public import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
+import VerifiedGarbage.Proof.Framework.X86_64.InlineCalls
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4_16
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 

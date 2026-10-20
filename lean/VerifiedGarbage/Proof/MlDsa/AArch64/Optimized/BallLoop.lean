@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunk
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 
 @[expose] public section
 

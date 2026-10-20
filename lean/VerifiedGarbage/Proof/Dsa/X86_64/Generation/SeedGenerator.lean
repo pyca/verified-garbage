@@ -1,10 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGeneratorFrame
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeGenerator
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGeneratorFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.NativeGenerator
 public import VerifiedGarbage.Proof.Dsa.Generation.PDomain
-public import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
+public import VerifiedGarbage.Impl.Dsa.X86_64.Generation.GeneratorSearch
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.GeneratorSearchMemory
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Context
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Dsa.Generation.GeneratorDomain
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextGenerator
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.ContextSlice
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # Complete generator search on an accepted native p candidate -/
 

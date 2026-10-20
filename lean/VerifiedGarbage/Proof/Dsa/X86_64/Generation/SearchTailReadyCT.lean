@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchTailCT
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchLoop
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchAdvance
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.SearchStatus
 
 /-! # Controller-tail framing and the exact public continuation decision -/
 

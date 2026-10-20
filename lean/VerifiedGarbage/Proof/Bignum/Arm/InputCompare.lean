@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
-public import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
+import VerifiedGarbage.Proof.Bignum.Arm.InputCompareArgs
+import VerifiedGarbage.Proof.Bignum.Arm.SubCompare
 public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Impl.Bignum.Arm.InputCompare
+import VerifiedGarbage.Proof.Bignum.Arm.SetSmallFn
+import VerifiedGarbage.Proof.Bignum.Arm.RestoreBase
+import VerifiedGarbage.Proof.Bignum.Arm.HeaderBridge
+import VerifiedGarbage.Proof.Framework.Block
 
 /-! # The imported input is compared to the modulus without exposing its value -/
 

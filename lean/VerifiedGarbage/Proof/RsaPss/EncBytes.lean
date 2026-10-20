@@ -1,9 +1,14 @@
 module
+public import VerifiedGarbage.Proof.Mgf1.Basic
+public import VerifiedGarbage.Spec.RsaPss
 
-public import VerifiedGarbage.Proof.RsaPss.Encoding
+import VerifiedGarbage.Proof.RsaPss.Encoding
 import VerifiedGarbage.Proof.RsaPss.Params
 import VerifiedGarbage.Proof.RsaPss.CtPad
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # EMSA-PSS: the encoding, a byte at a time

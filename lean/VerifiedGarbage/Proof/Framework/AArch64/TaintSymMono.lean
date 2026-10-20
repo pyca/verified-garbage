@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-!
 # The AArch64 taint analyses with statics are monotone

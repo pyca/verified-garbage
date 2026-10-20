@@ -1,17 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -19,6 +17,48 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.RegSetOrder
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
+import VerifiedGarbage.Proof.MlKem.X86_64.VPack
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+meta import VerifiedGarbage.Proof.Framework.RegSetOrder
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import VerifiedGarbage.Proof.MlKem.Compress
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Loop
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Run
+meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Tab
+meta import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc

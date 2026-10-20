@@ -1,49 +1,47 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
-import Mathlib.Tactic.IntervalCases
-meta import Mathlib.Tactic.IntervalCases
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
-meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
-meta import VerifiedGarbage.Proof.Framework.Bswap
-meta import VerifiedGarbage.Proof.Framework.Range
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
-meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+import Mathlib.Tactic.NormNum.OfScientific
+import Mathlib.Tactic.NormNum.DivMod
+import Mathlib.Tactic.NormNum.Abs
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.NormNum.Pow
+public import Mathlib.Tactic.ToAdditive
+public import Aesop.BuiltinRules
+public meta import Aesop.BuiltinRules
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorBackend
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Bulk
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Resident
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Resident
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Resident.Lit
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import Mathlib.Tactic.NormNum.OfScientific
+meta import Mathlib.Tactic.NormNum.DivMod
+meta import Mathlib.Tactic.NormNum.Abs
+meta import Mathlib.Data.Rat.Cast.Order
+meta import Mathlib.Data.Finset.Attr
+meta import Mathlib.Tactic.NormNum.Pow
+meta import Mathlib.Tactic.ToAdditive
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import VerifiedGarbage.TCB.Axioms
 
 /-!
 # The scalar Keccak backend with its resident absorb

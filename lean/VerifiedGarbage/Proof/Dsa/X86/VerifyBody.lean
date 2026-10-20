@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.X86.Execution
+public import VerifiedGarbage.Proof.Dsa.X86.Moduli
+public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
+public import VerifiedGarbage.Proof.Dsa.X86.Checks
 
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyCompute
-public import VerifiedGarbage.Proof.Dsa.X86.Result
+import VerifiedGarbage.Proof.Dsa.X86.VerifyCompute
+import VerifiedGarbage.Proof.Dsa.X86.Result
 
 /-! # Functional correctness of the post-shape verification body -/
 

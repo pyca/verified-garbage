@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup

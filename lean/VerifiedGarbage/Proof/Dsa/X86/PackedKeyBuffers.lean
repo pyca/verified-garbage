@@ -1,7 +1,10 @@
 module
+public import VerifiedGarbage.Proof.Dsa.X86.CallerBuffer
+public import VerifiedGarbage.Spec.Dsa.SignVerify
 
-public import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
-public import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
+import VerifiedGarbage.Proof.Dsa.PackedBytes
+import VerifiedGarbage.Proof.Framework.X86.Exec
 
 /-! # Installed packed-key pointers identify the specification's components -/
 

@@ -1,12 +1,33 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Correct
-public import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
 public import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
-meta import VerifiedGarbage.Proof.Ffdh.X86_64.FrontCT
-public meta import VerifiedGarbage.Impl.Ffdh.X86_64.Exchange
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Body
+public import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Bignum.Octets
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.ChecksCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.PowCT
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Arithmetic
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Body
+meta import VerifiedGarbage.Proof.Ffdh.X86_64.SetupCT
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Bignum.Octets
+meta import Mathlib.Tactic.TermCongr
+public import Mathlib.Tactic.TermCongr
+import Mathlib.Data.Int.ModEq
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+meta import Mathlib.Data.Int.ModEq
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Bignum.Math
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-! # FFDH exchange on x86-64: public stages for the timing proof -/
 

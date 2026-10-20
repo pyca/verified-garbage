@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Contract
-public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Impl.AesGcm.AArch64.SealGather
-public import VerifiedGarbage.Spec.Gcm.Contract
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Impl.AesGcm.AArch64
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function called

@@ -1,6 +1,9 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # The two local encodings and the outgoing arguments are separate -/
 

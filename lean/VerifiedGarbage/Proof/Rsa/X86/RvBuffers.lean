@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Proof.Rsa.X86.RvABI
 
-public import VerifiedGarbage.Proof.Rsa.X86.RvResources
+import VerifiedGarbage.Proof.Rsa.X86.RvResources
 
 /-! # Public buffer bounds and separation for recovery inputs and outputs -/
 

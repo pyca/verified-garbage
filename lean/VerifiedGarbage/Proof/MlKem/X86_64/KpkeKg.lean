@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.KpkeEnc
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
-import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.FragEM
+import VerifiedGarbage.Proof.MlKem.PolyW
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem*_kpke_keygen`

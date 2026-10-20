@@ -2,9 +2,16 @@ module
 
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X25519.AArch64.Lit
-public import VerifiedGarbage.Proof.X25519.AArch64.Main
-public import VerifiedGarbage.Spec.X25519.Contract
+import VerifiedGarbage.Proof.X25519.AArch64.Main
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.X25519.AArch64.Ladder
+public import VerifiedGarbage.Proof.X25519.AArch64.Setup
+public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.AArch64.Invert
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 /-!
 # X25519 on AArch64: the whole function

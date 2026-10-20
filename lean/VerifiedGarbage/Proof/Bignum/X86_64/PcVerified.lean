@@ -1,9 +1,8 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
+public import VerifiedGarbage.Proof.Framework.Contract
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: verified against the shared contract

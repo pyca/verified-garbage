@@ -1,7 +1,13 @@
 module
+public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
+public import VerifiedGarbage.Spec.Ed25519.Contract
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-public import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Framework.GetElem
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.TCB.Arm.Isa
+import VerifiedGarbage.Impl.Ed25519.Arm.Word
 
 /-! Compact 16-bit limbs use the scalar specification's exact byte encoding. -/
 

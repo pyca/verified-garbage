@@ -1,8 +1,16 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryFrame
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.Hashes
+public import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryAllocated
+public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySave
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryBody
-public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySavedFrame
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryBody
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntrySavedFrame
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.Generation.EntryInitial
+import VerifiedGarbage.Proof.Bignum.Octets
 
 /-! # Byte-level results at the public parameter-generation boundary -/
 

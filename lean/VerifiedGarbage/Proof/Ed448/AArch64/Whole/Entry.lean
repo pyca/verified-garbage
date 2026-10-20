@@ -1,11 +1,14 @@
 module
+public import VerifiedGarbage.Impl.Ed448.AArch64.Whole
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
 
-public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 import VerifiedGarbage.Proof.X25519.Bytes
-import VerifiedGarbage.Spec.Ed448.Contract
-import VerifiedGarbage.Spec.Sha3
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448's complete operations on AArch64: words kept in the locals

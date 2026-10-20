@@ -1,6 +1,10 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverContext
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.RecoverStackWord
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Passing a pointer into the wrapper's local frame as a cdecl argument -/
 

@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # Inlining verified code (x86-64)

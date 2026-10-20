@@ -1,6 +1,11 @@
 module
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivContext
+public import VerifiedGarbage.Proof.Rsa.Arm.PrivSlots
 
-public import VerifiedGarbage.Proof.Rsa.Arm.PrivSaveRegs
+import VerifiedGarbage.Proof.Rsa.Arm.PrivStackWord
+import VerifiedGarbage.Proof.Bignum.Arm.Stack
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Retain the exponent and input arguments before the CRT call -/
 

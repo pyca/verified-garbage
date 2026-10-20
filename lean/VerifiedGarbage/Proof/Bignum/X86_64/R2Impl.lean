@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aCT
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Computations of `R² mod m` on x86-64

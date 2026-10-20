@@ -1,6 +1,15 @@
 module
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyContractGeometry
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyFnInput
+public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
 
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyABI
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyABI
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyEntryReady
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyRegions
+import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Spec.Weierstrass
 
 /-! # Decode the shared verifier precondition into its frame and input geometry -/
 

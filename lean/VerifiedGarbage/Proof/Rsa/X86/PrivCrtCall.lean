@@ -2,6 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCrtPre
 public import VerifiedGarbage.Proof.Rsa.X86.PrivCall
+import VerifiedGarbage.Proof.Rsa.BytesFrame
+import VerifiedGarbage.Proof.Rsa.X86.PrivRegions
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Sig
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-! # Calling the verified CRT writes its result into the private stack candidate -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeSetup
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Preserve the prepared modulus across witness selection and shared rounds. -/

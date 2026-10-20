@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
-import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-! Short register operations used by the allocation and loop drivers. -/
 

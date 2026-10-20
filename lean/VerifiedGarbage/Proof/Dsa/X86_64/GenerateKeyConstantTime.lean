@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyGenerateCT
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyGenerateCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignFinishAgreement
-public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignConstantTime
+public import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyPublic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBlockCT
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeyBody
+import VerifiedGarbage.Proof.Dsa.X86_64.GenerateKeySampled
+import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignSingleCT
+import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! # Key generation's leak: the domain, its status, its draws used and its trace -/
 

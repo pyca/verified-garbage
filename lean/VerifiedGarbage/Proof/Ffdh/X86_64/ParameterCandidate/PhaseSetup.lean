@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.PhaseData
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Phase
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerStages
 
 /-! # FFDH parameter generation on x86-64: enter either modulus phase -/
 

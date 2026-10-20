@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCandidatePost
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
-public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
+public import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Safety
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchRestore
+import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.Depth
 import VerifiedGarbage.Proof.Ffdh.X86_64.ParameterCandidate.AbiCorrect
-import VerifiedGarbage.Proof.Bignum.X86_64.R2Impl
-import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchCallLayout
+import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.Inline
 
 /-! # Complete internal candidate invocation, including its nested stack use -/
 

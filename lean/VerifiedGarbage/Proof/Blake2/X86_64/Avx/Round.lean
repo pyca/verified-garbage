@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Blake2.Cols
 public import VerifiedGarbage.Impl.Blake2.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Mem
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # BLAKE2s on x86-64 with AVX: a round

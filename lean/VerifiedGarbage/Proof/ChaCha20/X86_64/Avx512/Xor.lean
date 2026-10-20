@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Finish
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Tail
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512

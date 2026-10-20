@@ -1,8 +1,13 @@
 module
+public import VerifiedGarbage.Proof.X448.Arm.Field
 
 import VerifiedGarbage.Proof.X448.Arm.MulLoop
-public import VerifiedGarbage.Proof.X448.Arm.Reduce
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Arm.Reduce
+import VerifiedGarbage.Proof.X448.Arm.Init
+import VerifiedGarbage.Proof.X448.Arm.Normalize
+import VerifiedGarbage.Proof.X448.Arm.Carry
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # X448 on ARMv7: field multiplication

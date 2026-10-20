@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombAdd
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.PlainSimp
 
 /-!
 # The `zmm` comb: the `ymm` blocks of an entry, alone

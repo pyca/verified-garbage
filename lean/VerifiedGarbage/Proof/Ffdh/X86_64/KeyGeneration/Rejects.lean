@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Impl.Ffdh.X86_64.KeyGeneration.Search
+public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Data
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Exits
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Live
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Ffdh.X86_64.KeyGeneration.Start
 
 /-! # The key-generation controller's rejections: one fewer scalar or key -/
 

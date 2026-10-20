@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintBase
 public import VerifiedGarbage.Impl.MlDsa.Arm.Pack.Hint
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import VerifiedGarbage.Proof.MlKem.Arm.Common
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, correct

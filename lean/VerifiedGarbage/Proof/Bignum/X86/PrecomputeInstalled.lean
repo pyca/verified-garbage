@@ -1,7 +1,12 @@
 module
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeABI
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeInputs
+public import VerifiedGarbage.Spec.Weierstrass.Point
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputeFn
+public import VerifiedGarbage.Proof.Framework.X86.Spill
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntry
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeResources
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputeEntry
 
 /-! # Install the precomputation workspace from the shared contract -/
 

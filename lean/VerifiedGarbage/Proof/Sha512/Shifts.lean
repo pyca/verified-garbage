@@ -1,6 +1,7 @@
 module
+public import VerifiedGarbage.Spec.Sha512
 
-public import VerifiedGarbage.Proof.Sha512.Spec
+import VerifiedGarbage.Proof.Sha512.Spec
 
 /-!
 # SHA-512: `Σ`, `σ` and `Maj` as code without rotations computes them

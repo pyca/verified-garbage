@@ -1,23 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
-public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
-meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 public import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86.Inline
-meta import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+import VerifiedGarbage.Proof.Framework.NativeTaintCore
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
-meta import VerifiedGarbage.Spec.Rc2
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Ed25519.X86.CommonMemory
+meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
 

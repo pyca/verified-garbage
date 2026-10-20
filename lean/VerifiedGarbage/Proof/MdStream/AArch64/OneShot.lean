@@ -3,8 +3,10 @@ module
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.Block
 
 /-!
 # One-shot Merkle–Damgård digests on AArch64

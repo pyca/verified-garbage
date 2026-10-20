@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
-public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Impl.Weierstrass.AArch64
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFn384
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # Calls of the Montgomery products, on AArch64
