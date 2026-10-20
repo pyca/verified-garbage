@@ -17,13 +17,9 @@ import VerifiedGarbage.Proof.Blowfish.Table
 import VerifiedGarbage.Proof.Blowfish.X86.KeyEnc
 import VerifiedGarbage.Proof.Blowfish.X86.KeyP
 import VerifiedGarbage.Proof.Blowfish.X86.Run
-import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.MlKem.X86.Leaf
 import VerifiedGarbage.Proof.Rc4.Scan32
 import VerifiedGarbage.Proof.Rc4.Table
 meta import VerifiedGarbage.Proof.Blowfish.Blocks

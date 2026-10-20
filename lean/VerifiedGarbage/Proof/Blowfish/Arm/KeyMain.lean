@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Blowfish.Arm.Ecb
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # Blowfish on ARMv7: key expansion
