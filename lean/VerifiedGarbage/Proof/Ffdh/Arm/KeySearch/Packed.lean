@@ -21,6 +21,27 @@ theorem packedWord (m : Mem) (base : BitVec 32) (j n : Nat) (fits : n < 2 ^ 32)
   rw [addr, hi, show m.readW (off (State.addr base) (8 * j)) 32 = BitVec.ofNat 32 n from lo, zeroHigh]
   simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt fits]
 
+theorem packed_low (m : Mem) (base : BitVec 32) (j n : Nat) (fits : n < 2 ^ 32)
+    (value : m.readW (off (State.addr base) (8 * j)) 64 = BitVec.ofNat 64 n) :
+    lowWord m base j = BitVec.ofNat 32 n := by
+  unfold lowWord
+  rw [← VG.Proof.Rc2.Word32.readW64_lo, value]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_zero,
+    Nat.mod_eq_of_lt (Nat.lt_trans fits (by decide : 2 ^ 32 < 2 ^ 64)), Nat.mod_eq_of_lt fits]
+
+theorem packed_high (m : Mem) (base : BitVec 32) (j n : Nat) (fits : n < 2 ^ 32)
+    (value : m.readW (off (State.addr base) (8 * j)) 64 = BitVec.ofNat 64 n) :
+    m.readW (off (State.addr base) (8 * j + 4)) 32 = 0 := by
+  have address : off (State.addr base) (8 * j + 4) = off (State.addr base) (8 * j) + BitVec.ofNat 64 4 := by
+    simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+  rw [address, ← VG.Proof.Rc2.Word32.readW64_hi, value]
+  apply BitVec.eq_of_toNat_eq
+  change ((BitVec.ofNat 64 n).extractLsb' 32 32).toNat = 0
+  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt (Nat.lt_trans fits (by decide : 2 ^ 32 < 2 ^ 64)),
+    Nat.div_eq_of_lt fits, Nat.zero_mod]
+
 theorem highWord_store (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}
     (hi : i < 16) (hj : j < 16) :
     (m.writeW (off (State.addr base) (8 * i)) v).readW (off (State.addr base) (8 * j + 4)) 32 =
