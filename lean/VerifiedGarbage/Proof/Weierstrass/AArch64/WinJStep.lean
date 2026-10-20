@@ -104,16 +104,50 @@ theorem WinSt.toR {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} {P : Point
 /-- The slots the doublings keep in the environment: `R` and the constants. -/
 def dblVR (K : WinCfg) : List Nat := [K.R.x, K.R.y, K.R.z, K.S.a, K.S.b3, K.zero]
 
+/-- What a window's doubling from `p` into `o` must do, the slots `V`
+holding their values: change only the registers `combClob` and the loop's
+slots, and leave `o` holding `2p` by the numbered doubling. -/
+def DblSpec (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (prog : Prog isa) (p o : Pt)
+    (V : List Nat) : Prop :=
+  ∀ (E : Nat → Fe C) (s : State), Inv K.M base size C.p (· ∈ winSlots K) V E s →
+    WP isa prog s fun s' => KeepRegs (clob K.M.n ++ winSaved K.M.n) s s' ∧ Unch base (loopW K) s.mem s'.mem ∧
+      ∃ E' : Nat → Fe C, Inv K.M base size C.p (· ∈ winSlots K) ([o.x, o.y, o.z] ++ V) E' s' ∧
+      (E' o.x, E' o.y, E' o.z) = (runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 6,
+        runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 7,
+        runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 8)
+
+/-- The doublings a window is given (`WinCfg.dblRD`, `dblDR`) do what the
+field programs do. -/
+def DblsOk (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (dd : Option (Prog isa × Prog isa)) : Prop :=
+  ∀ d, dd = some d → DblSpec K C base size d.1 K.R K.D (dblVR K) ∧
+    DblSpec K C base size d.2 K.D K.R ([K.D.x, K.D.y, K.D.z] ++ dblVR K)
+
+theorem DblsOk.none {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} : DblsOk K C base size none :=
+  fun _ h => by cases h
+
+/-- The field program's doubling from `p` into `o`, on the window's slots. -/
+theorem dblN_spec {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
+    (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt} (hAp : RcbApart K.S p p o)
+    (hw : (∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winSlots K) ∧ (∀ x ∈ rcbW K.S o, x ∈ winOther K) ∧
+      ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winRo K ++ winOther K) {V : List Nat}
+    (hV : ∀ x ∈ rcbR K.S p p, x ∈ V) :
+    DblSpec K C base size (fprogB K.M (WinCfg.double K p o)) p o V := by
+  intro E s hI
+  simp only [WinCfg.double, dblJChoice_eq]
+  exact WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) hAp hw.1 hw.2.1 hw.2.2 hI hV)
+    fun s' ⟨k, U, E', I, _, v⟩ => ⟨k.mono fun _ h => List.mem_append_left _ h, U, E', I, v⟩
+
 /-- Two doublings, `R` to `D` and back, and one less to count. -/
 theorem dblPair_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {Rp : Fe C → Fe C → Fe C → Point C → Prop} {s₀ s : State}
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd)
     (hS : WinStR K C base size Rp P s₀ s) {j c e : Nat}
     (hj : j < 2 ^ 32) (hc : 1 ≤ c) (hc2 : c ≤ 2)
     (hx : s.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * c)) {E : Nat → Fe C}
     (hI : Inv K.M base size C.p (· ∈ winSlots K) (dblVR K) E s)
     (hJ : InvJ C (E K.R.x) (E K.R.y) (E K.R.z) (mul e P)) :
-    WP isa (WinCfg.jacPairOn K K.R K.D) s fun s' =>
+    WP isa (WinCfg.jacPair K dd) s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * (c - 1)) ∧
       s'.gpr .x2 = BitVec.ofNat 64 (c - 1) ∧ ∃ E' : Nat → Fe C,
       Inv K.M base size C.p (· ∈ winSlots K) (dblVR K) E' s' ∧
@@ -126,24 +160,34 @@ theorem dblPair_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   have w2 := winJ_sl oD (sl _ oR) (sl _ oR)
   have w3 := winJ_sl oR (sl _ oD) (sl _ oD)
   have hQ := fun (a : Nat) => hC.onCurve_mul hP a
-  simp only [WinCfg.jacPairOn, WinCfg.double, dblJChoice_eq]
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) aRD w2.1 w2.2.1 w2.2.2 hI
-    (by intro x hx; simp only [rcbR, dblVR, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
-        rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
-    fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
-  have S₂ := hS.next hL I₂.scr (k₂.mono clob_combClob) U₂
+  have hRD : DblSpec K C base size (WinCfg.dblRD K dd) K.R K.D (dblVR K) := by
+    cases dd with
+    | some d => exact (hD d rfl).1
+    | none =>
+      exact dblN_spec hL hA hp aRD w2
+        (by intro x hx; simp only [rcbR, dblVR, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+            rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true])
+  have hDR : DblSpec K C base size (WinCfg.dblDR K dd) K.D K.R ([K.D.x, K.D.y, K.D.z] ++ dblVR K) := by
+    cases dd with
+    | some d => exact (hD d rfl).2
+    | none =>
+      exact dblN_spec hL hA hp aDR w3
+        (by intro x hx; simp only [rcbR, dblVR, List.cons_append, List.nil_append, List.mem_cons,
+              List.not_mem_nil, or_false] at hx ⊢
+            rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true])
+  rw [WinCfg.jacPair]
+  refine WP.seq (WP.mono (hRD E s hI) fun s₂ ⟨k₂, U₂, E₂, I₂, v₂⟩ => ?_)
+  have S₂ := hS.next hL I₂.scr (k₂.mono fun _ h => winSaved_combClob h) U₂
   have J₂ := InvJ.dbl' hC hM3 (hQ e) hJ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP] at J₂
-  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) aDR w3.1 w3.2.1 w3.2.2 I₂
-    (by intro x hx; simp only [rcbR, dblVR, List.cons_append, List.nil_append, List.mem_cons,
-          List.not_mem_nil, or_false] at hx ⊢
-        rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
-    fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
-  have S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
+  refine WP.seq (WP.mono (hDR E₂ s₂ I₂) fun s₃ ⟨k₃, U₃, E₃, I₃, v₃⟩ => ?_)
+  have S₃ := S₂.next hL I₃.scr (k₃.mono fun _ h => winSaved_combClob h) U₃
   have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP, show 2 * (2 * e) = 4 * e by omega_using []] at J₃
   have x₃ : s₃.gpr .x19 = BitVec.ofNat 64 (j + 2 ^ 32 * ((c - 1) + 1)) := by
-    rw [k₃.gpr _ (x19_not_clob _), k₂.gpr _ (x19_not_clob _), hx, Nat.sub_add_cancel hc]
+    have n19 : Reg.x19 ∉ clob K.M.n ++ winSaved K.M.n := fun h =>
+      (List.mem_append.mp h).elim (x19_not_clob _) (not_mem_winSaved (by decide))
+    rw [k₃.gpr _ n19, k₂.gpr _ n19, hx, Nat.sub_add_cancel hc]
   refine WP.mono (dblCnt_ok s₃ hj (by omega_using [hc2, hc]) x₃) fun s₄ ⟨x₄, y₄, k₄⟩ => ?_
   have hs₄ := S₃.scr.of_keeps k₄ (by decide)
   have cc : ∀ r ∈ [Reg.x2, .x19], r ∈ combClob K.M.n := by
@@ -162,12 +206,13 @@ for `[e]P` (or with `Z = 0`) to a triple standing for `[16 e]P`. -/
 theorem quadJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {Rp : Fe C → Fe C → Fe C → Point C → Prop} {s₀ s : State}
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd)
     (hF : WinFixed K C base s₀ P k) (hS : WinStR K C base size Rp P s₀ s) {j : Nat} (hj : j < 2 ^ 32)
     (hx : s.gpr .x19 = BitVec.ofNat 64 j) {e : Nat}
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
-    WP isa (WinCfg.quadJ K) s fun s' =>
+    WP isa (WinCfg.quadJ K dd) s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .x19 = s.gpr .x19 ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       InvJ C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -202,7 +247,7 @@ theorem quadJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     (fun c t ⟨hc, hc2, St, xt, Et, It, Jt⟩ => ?_) 2 s₂
     ⟨by decide, Nat.le_refl _, S₂, x₂, tmv C K.M.n base s, (I₀.of_mem hs₂ k₂.mem), by simpa using hR⟩)
     fun s₅ ⟨S₅, x₅, E₅, I₅, J₅⟩ => ?_
-  · refine WP.mono (dblPair_ok hL hA hp hC hM3 hP St hj hc hc2 xt It Jt)
+  · refine WP.mono (dblPair_ok hL hA hp hC hM3 hP hD St hj hc hc2 xt It Jt)
       fun t' ⟨St', xt', yt', E', It', Jt'⟩ => ?_
     have ev : isa.eval (.nonzero .x .x2) t' = some (decide (c - 1 ≠ 0)) := by
       show some (t'.read .x .x2 != 0) = _
@@ -555,8 +600,9 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} (hj : 2 ≤ j) (hjn : j ≤ K.J)
-    (hb : 16 * winE k K.J j + 8 < C.n) {s : State} (hI : WinInvJ K C base size k P s₀ s j) :
-    WP isa (WinCfg.stepJ K) s fun s' =>
+    (hb : 16 * winE k K.J j + 8 < C.n) {s : State} (hI : WinInvJ K C base size k P s₀ s j)
+    {dd : Option (Prog isa × Prog isa)} (hD : DblsOk K C base size dd) :
+    WP isa (WinCfg.stepJ K dd) s fun s' =>
       WinInvJ K C base size k P s₀ s' (j - 1) ∧
         s'.gpr .x4 = BitVec.ofNat 64 (j - 1) - BitVec.ofNat 64 1 := by
   have hJ := hL.J
@@ -573,7 +619,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     have e : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
       show toM _ _ _ = toM _ _ _; rw [k₁.mem]
     rw [e, e, e]; exact hI.rep
-  refine WP.seq (WP.mono (quadJ_ok hL hA hp hC hM3 hP hF hS₁ (j := j - 1) (by omega_using [hjn, hJ]) b₁ lt₁ rep₁)
+  refine WP.seq (WP.mono (quadJ_ok hL hA hp hC hM3 hP hD hF hS₁ (j := j - 1) (by omega_using [hjn, hJ]) b₁ lt₁ rep₁)
     fun s₅ ⟨S₅, x₅, l₅, r₅⟩ => ?_)
   have hx₅ : s₅.gpr .x19 = BitVec.ofNat 64 (j - 1) := by rw [x₅, b₁]
   obtain ⟨-, -, -, hz₅⟩ := S₅.ro_tmv hL hF
