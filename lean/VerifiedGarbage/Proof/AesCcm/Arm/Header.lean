@@ -13,11 +13,9 @@ import VerifiedGarbage.Proof.AesCcm.Bytes
 import VerifiedGarbage.Proof.AesCcm.BytesAt
 import Lean.Environment
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Framework.Arm.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesGcm.Arm.Blocks
 import VerifiedGarbage.Proof.AesGcm.Arm.Run
 
 /-!
