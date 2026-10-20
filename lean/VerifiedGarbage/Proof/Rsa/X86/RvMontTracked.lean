@@ -23,7 +23,7 @@ variable {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
 theorem KS.montReady (h : KS g s0 A live AW liveW V ls s)
     (hm : mBase ∈ live) (hi : sInv ∈ ls) (value : A mBase = m)
     (bound : m < 2 ^ (64 * g.n)) (inverse : (m * V sInv + 1) % 2 ^ 32 = 0) : MR g m s := by
-  refine ⟨h.ws, by have := h.lower; omega, (h.arrs mBase hm).trans value, bound, ?_⟩
+  refine ⟨by have := h.lower; omega, (h.arrs mBase hm).trans value, bound, ?_⟩
   change (m * slot s.mem g.B sInv + 1) % 2 ^ 32 = 0
   rw [h.sl sInv hi]
   exact inverse
@@ -32,7 +32,7 @@ theorem KS.trackInverse (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
     (fresh : sInv ∉ ls) :
     ∃ I, KS g s0 A live AW liveW (upd V sInv I) (sInv :: ls) s ∧
       (m * I + 1) % 2 ^ 32 = 0 := by
-  refine ⟨slot s.mem g.B sInv, ⟨h.ws, h.lower, h.upper, h.frame, h.rest,
+  refine ⟨slot s.mem g.B sInv, ⟨h.rt, h.lower, h.upper, h.frame, h.sp, h.room, h.top, h.wsLen, h.z8, h.rest,
     h.arrs, h.arrsW, ?_, h.live_lt, h.liveW_lt, ?_⟩, mr.inverse⟩
   · intro d hd
     rcases List.mem_cons.mp hd with rfl | hd

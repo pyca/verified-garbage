@@ -13,6 +13,8 @@ namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
+open VG.Impl.Rsa.X86.RecoverRt (nar)
+open VG.Impl.Rsa.X86.KeyRt (sub3)
 open VG.Proof.Rsa.X86.Keys
 
 theorem KS.sub_w {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
@@ -20,7 +22,7 @@ theorem KS.sub_w {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
     (h : KS g s0 A live AW liveW V ls s)
     (ho : o < nArr) (ha : a ∈ live) (hb : b ∈ live) (hoa : o ≠ a) (hob : o ≠ b)
     (le : A b ≤ A a) (hlW : ∀ j ∈ liveW, o / 2 ≠ j) :
-    WP isa (sub3 g.w o a b) s fun t =>
+    WP isa (sub3 nar o a b) s fun t =>
       KS g s0 (upd A o (A a - A b)) (o :: live) AW liveW V ls t ∧ Keeps opRegs s t := by
   refine WP.mono (h.sub3_w ho ha hb hoa hob hlW) fun t ⟨X, ht, r, value, borrow⟩ => ?_
   have bound : X < 2 ^ (32 * g.w) := by
