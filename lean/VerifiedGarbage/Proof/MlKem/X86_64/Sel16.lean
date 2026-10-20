@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop16
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
 import VerifiedGarbage.Proof.MlKem.X86_64.DcTop16
 
@@ -46,19 +48,6 @@ theorem encapsHSel_verified {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (W16
       (kemEncapsH16_ct hK v W16 hs) hk
   | none => exact Verified.of_correct (kemEncapsH_correct v W C hctl) (kemEncapsH_ct v W C) hk
 
-theorem decapsSel_verified {K : Kem16} (hK : KpkeOk K.L) (v : Sample4Impl) (W16 : Decaps16.Dc16Wf K)
-    (W : Decaps.DcWf K.L) {wc wd : List Nat} (C : KemCalls K.L wc wd) {k : Contract isa}
-    (hk : (decapsK K.L).Implies k)
-    (hctl16 : ∀ n c, S16Ok c → ctlOk (kemDecaps16 K v.callee (n, c)) = true)
-    (hctl : ctlOk (kemDecaps K.L v.callee) = true) :
-    Verified X86_64.target (kemDecapsSel K v.callee) k := by
-  unfold kemDecapsSel
-  match hs : v.callee.s16 with
-  | some (n, c) =>
-    exact Verified.of_correct (kemDecaps16_correct hK v W16 hs (hctl16 n c (v.s16 n c hs)))
-      (kemDecaps16_ct hK v W16 hs) hk
-  | none => exact Verified.of_correct (kemDecaps_correct v W C hctl) (kemDecaps_ct v W C) hk
-
 /-- No instruction of the top-level function `kemKeyGenSel K c` writes the
 stack pointer, if neither of the functions it may run does. -/
 theorem keyGenSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
@@ -73,14 +62,6 @@ theorem encapsHSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
     (h16 : ∀ n c, S16Ok c → (kemEncapsH16 K v.callee (n, c)).all p = true)
     (h : (kemEncapsH K.L v.callee).all p = true) : (kemEncapsHSel K v.callee).all p = true := by
   unfold kemEncapsHSel
-  match hs : v.callee.s16 with
-  | some (n, c) => exact h16 n c (v.s16 n c hs)
-  | none => exact h
-
-theorem decapsSel_sp {K : Kem16} (v : Sample4Impl) {p : Instr → Bool}
-    (h16 : ∀ n c, S16Ok c → (kemDecaps16 K v.callee (n, c)).all p = true)
-    (h : (kemDecaps K.L v.callee).all p = true) : (kemDecapsSel K v.callee).all p = true := by
-  unfold kemDecapsSel
   match hs : v.callee.s16 with
   | some (n, c) => exact h16 n c (v.s16 n c hs)
   | none => exact h

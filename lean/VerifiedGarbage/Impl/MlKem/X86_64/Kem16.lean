@@ -94,13 +94,6 @@ def kemEncapsH16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :
   .seq (.block pro) (.seq hCopy (.seq hashes (.seq (Top16.encrypt K c p (.r14, 0) (.r13, 0))
     (.seq (copy (.r12, 0) (sc oG) 32) (.block topEpi)))))
 
-open Decaps in
-/-- The decapsulation of the parameter set of `K`, with 16-bit polynomials,
-with the samplers `p` and the rest of the implementation `c`. -/
-def kemDecaps16 (K : Kem16) (c : Callee4) (p : String × Prog isa) : Prog isa :=
-  .seq (.block pro) (.seq (K.L.kpkeDecAt (sc oM) (.rbp, 0) (.r14, 0) (sc K.oZ)) (.seq (hashes K.L)
-    (.seq (Top16.encrypt K c p (.rbp, 384 * K.L.k) (sc oCT16)) (.seq (selectAt oCT16 K.L.ctLen) (.block topEpi)))))
-
 /-! ## The top-level functions of each implementation
 
 An implementation of `vg_mlkem_sample_ntt4` with a 16-bit one (`Callee4.s16`,
@@ -117,10 +110,6 @@ def kemEncapsHSel (K : Kem16) (c : Callee4) : Prog isa :=
   | some p => kemEncapsH16 K c p
   | none => kemEncapsH K.L c
 
-def kemDecapsSel (K : Kem16) (c : Callee4) : Prog isa :=
-  match c.s16 with
-  | some p => kemDecaps16 K c p
-  | none => kemDecaps K.L c
 
 /-- ML-KEM-768's layout: `Â` 4608 bytes from 4096, the others (at most
 3584 bytes) from 8704, and the K-PKE functions' working space (20480 bytes)
@@ -137,7 +126,5 @@ def kem768w : Kem16 where
 abbrev keyGen (c : Callee4) : Prog isa := kemKeyGenSel kem768w c
 /-- `vg_mlkem768_encaps_h`. -/
 abbrev encapsH (c : Callee4) : Prog isa := kemEncapsHSel kem768w c
-/-- `vg_mlkem768_decaps`. -/
-abbrev decaps (c : Callee4) : Prog isa := kemDecapsSel kem768w c
 
 end VG.Impl.MlKem.X86_64

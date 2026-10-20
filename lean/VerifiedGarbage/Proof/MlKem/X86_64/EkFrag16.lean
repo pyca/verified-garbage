@@ -112,10 +112,10 @@ theorem FI16.keep (W : EcWfB K.L) {σ : State} (hp : (encK K.L).pre σ) {i : Nat
 
 
 theorem padTail16_ok (K : Kem16) {rbs wbs : List (Reg × Nat)} {s : State} (Lx : Lay rbs wbs s) {len : Nat}
-    (hlen : len < 406) (h8 : len % 8 = 0) (hin : inB wbs (sc (oHB K)) 408 = true) :
-    WP isa (.block (padTail K len)) s fun s' => PPost s s' [(sc (oHB K + len), 408 - len)] ∧
+    (hlen : len < 406) (h8 : len % 8 = 0) (hin : inB wbs (sc (oHB K)) 408 = true) {d : Nat} (hd : d < 256) :
+    WP isa (.block (padTail K len d)) s fun s' => PPost s s' [(sc (oHB K + len), 408 - len)] ∧
       bytesAt s'.mem (pa s (sc (oHB K + len))) (408 - len) =
-        BitVec.ofNat 8 6 :: (List.replicate (406 - len) 0 ++ [BitVec.ofNat 8 0x80]) := by
+        BitVec.ofNat 8 d :: (List.replicate (406 - len) 0 ++ [BitVec.ofNat 8 0x80]) := by
   have hc := Lx.cW hin
   have hw : ∀ d n, d + n ≤ 408 → InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 (oHB K + d)) n :=
     fun d n h => by
@@ -130,7 +130,7 @@ theorem padTail16_ok (K : Kem16) {rbs wbs : List (Reg × Nat)} {s : State} (Lx :
     rw [k1.2.2, e1, off_add, Nat.add_assoc]; exact hw (len + 8 * j) 8 (by omega)) fun s₂ ⟨k2, f2, z2⟩ => ?_
   have e2 : s₂.gpr .rbx = s.gpr .rbx := by rw [k2.1 .rbx (by simp), e1]
   rw [WP.block_append_iff]
-  refine WP.mono (setB_ok (sc (oHB K + len)) 6 (show Reg.rbx ≠ .rax by decide) (by decide) s₂ (by
+  refine WP.mono (setB_ok (sc (oHB K + len)) d (show Reg.rbx ≠ .rax by decide) hd s₂ (by
     show InRegions s₂.wr (s₂.gpr .rbx + BitVec.ofNat 64 (oHB K + len)) 1
     rw [k2.2.2, k1.2.2, e2, ← Nat.add_zero len]; exact hw _ 1 (by omega))) fun s₃ ⟨m3, k3⟩ => ?_
   have e3 : s₃.gpr .rbx = s.gpr .rbx := by rw [k3.1 .rbx (by decide), e2]
@@ -160,7 +160,7 @@ theorem padTail16_ok (K : Kem16) {rbs wbs : List (Reg × Nat)} {s : State} (Lx :
       simp only [bytesAt, List.getElem_map, List.getElem_range, List.getElem_replicate]
       exact z2 i h₁
     have w6 := bytesAt_writeW8 s₂.mem (pa s (sc (oHB K + len))) (i := 0) (len := 408 - len) (by omega)
-      (by omega) (BitVec.ofNat 8 6)
+      (by omega) (BitVec.ofNat 8 d)
     rw [BitVec.add_zero] at w6
     rw [m4, bytesAt_writeW8 _ _ (by omega) (by omega), m3, w6, z, show 408 - len = 406 - len + 2 by omega,
       show 407 - len = 406 - len + 1 by omega, padList]
@@ -191,7 +191,7 @@ theorem hblk16_ok (F : Ek16FWf K) {σ : State} (hp : (encK K.L).pre σ) {i : Nat
     have h8 : (K.L.ekLen - 408 * i) % 8 = 0 := by have := F.ek8.1; omega
     refine WP.seq (WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hcp) fun s₁ ⟨hP₁, hb₁⟩ => ?_)
     have L₁ := L₀.post hP₁.b (ecB_bases K.L)
-    refine WP.mono (padTail16_ok K L₁ hlen.2 h8 hin) fun s₂ ⟨hP₂, hb₂⟩ => ?_
+    refine WP.mono (padTail16_ok K L₁ hlen.2 h8 hin (d := 6) (by decide)) fun s₂ ⟨hP₂, hb₂⟩ => ?_
     have e : pa s (sc (oHB K + (K.L.ekLen - 408 * i))) = pa s (sc (oHB K)) + BitVec.ofNat 64 (K.L.ekLen - 408 * i) :=
       (off_add _ _ _).symm
     have hP : PPost s s₂ [(sc (oHB K), 408)] := by

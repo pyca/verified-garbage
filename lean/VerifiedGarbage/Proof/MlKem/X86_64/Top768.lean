@@ -19,6 +19,17 @@ meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjFrag16
+import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
+public import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFrag16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFused16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DjSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeOk
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeOk
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -55,6 +66,19 @@ theorem ekWf768 : Ek.EkWf kem768 := by kem_wf ecWf768
 
 theorem ek16FWf768 : EkF16.Ek16FWf kem768w := by kem_wf ec16Wf768.toEcWfB
 theorem ek16HWf768 : EkF16.Ek16HWf kem768w := by kem_wf ek16FWf768
+theorem djFWf768 : DjF16.DjFWf kem768w := by kem_wf dc16Wf768
+theorem djHWf768 : DjF16.DjHWf kem768w := by kem_wf djFWf768
+
+/-- The taint checks of the pieces of the decapsulation hashing `z ‖ c` in the fragments. -/
+theorem djtWf768 : DjF16.DjTWf kem768w where
+  rbpIn := by decide
+  zT := ⟨_, by taint_decide⟩
+  jT := by
+    intro i hi
+    have : i = 0 ∨ i = 1 ∨ i = 2 := by rw [show Encaps.nb kem768w.L = 3 by decide] at hi; omega
+    rcases this with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  kT := ⟨_, by taint_decide⟩
+  ij := by decide +kernel
 
 /-- The taint checks of the fused encapsulation's pieces, with 16-bit polynomials. -/
 theorem ekt16Wf768 : EkF16.EkT16Wf kem768w where
@@ -168,7 +192,7 @@ theorem decapsImp768 : (decapsK kem768).Implies (Spec.MlKem.decapsContract X86_6
 
 theorem decaps_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.decaps v.callee) (Spec.MlKem.decapsContract X86_64.abi 32) :=
-  decapsSel_verified kpke768 v dc16Wf768 dcWf768 calls768 decapsImp768
-    (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
+  decapsSel_verified kpke768 v djHWf768 djtWf768 dcWf768 calls768 decapsImp768
+    (fun _ c b S B => by ek16_ctl v c b S B kpke768) (by s4_ctl v)
 
 end VG.Proof.MlKem.X86_64
