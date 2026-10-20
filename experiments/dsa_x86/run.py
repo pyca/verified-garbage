@@ -70,11 +70,12 @@ if env.get('PROTOTYPE_PARAMETERS')=='1':
         fixed[mode]={bits:statistics.median(v) for bits,v in times.items()}
     winner=min((v for v in variants if v!='baseline'),key=lambda v:sum(math.log(ns/fixed['baseline'][bits]) for bits,ns in fixed[v].items()))
     print('PARAMETER_WINNER',winner,flush=True)
-    for mode in ['baseline',winner]:
+    parameter_modes=['baseline']+([v for v in variants if v!='baseline'] if env.get('PROTOTYPE_PARAMETER_ALL')=='1' else [winner])
+    for mode in parameter_modes:
         filt='^dsa_generate_parameters/openssl/' if mode=='baseline' else '^dsa_generate_parameters/verified-garbage/'
         run([str(out/mode),'--bench',filt,'--warm-up-time','0.1','--measurement-time','0.3','--sample-size','10','--noplot'],mode+'-random-parameters.log',{'VG_BENCHES':'dsa_parameters','CRITERION_HOME':str(out/'parameters'/mode)})
     lines=['','Complete random parameter generation (10 samples; search variance applies):','| Variant | Workload | median ms |','|---|---|---:|']
-    for mode in ['baseline',winner]:
+    for mode in parameter_modes:
         for p in sorted((out/'parameters'/mode).rglob('new/estimates.json')):
             key='/'.join(p.relative_to(out/'parameters'/mode).parts[:-2])
             ns=json.loads(p.read_text())['median']['point_estimate']

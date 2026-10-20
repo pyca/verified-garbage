@@ -6,6 +6,10 @@ on:
         description: Space-separated experiment variants
         default: baseline dwpr4 dwpr0 dwprt4 dwprst4 dwprsct4
         type: string
+      parameter_all:
+        description: Time all candidates for random parameter generation
+        default: false
+        type: boolean
       parameters:
         description: Compare complete random parameter generation
         default: true
@@ -36,6 +40,7 @@ jobs:
       - run: python3 experiments/dsa_x86/run.py
         env:
           PROTOTYPE_VARIANTS: ${{ inputs.variants }}
+          PROTOTYPE_PARAMETER_ALL: ${{ inputs.parameter_all && '1' || '0' }}
           PROTOTYPE_PARAMETERS: ${{ inputs.parameters && '1' || '0' }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()

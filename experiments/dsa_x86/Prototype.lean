@@ -272,6 +272,27 @@ def functions (dedup win pub : Bool) : List (String × Prog isa) := Id.run do
           "vg_dsa_check_parameters" check))]
   return fs
 
+/-- Reuse RSA's existing runtime-width multiplication helper. Its scratch
+range fits in the unused modulus padding plus slots one and two for n>=3. -/
+def sharedMul (n o a b : Nat) : Prog isa :=
+  let borrow := if n < 5 then 16 else 0
+  let start := slot n 1-borrow
+  .frame (.alloc (36+borrow)) (seq [
+    .block ((List.range (borrow/4)).flatMap fun j =>
+      [.mov .eax (.mem (sc (start+4*j))), .store (at_ .esp (36+4*j)) .eax]),
+    .block ([.store (at_ .esp 0) .edi] ++
+      ([contextBytes n / 8, n, slot n 0, 0, start, o, a, b].zipIdx.flatMap fun (v,i) =>
+        [.mov .eax (imm v), .store (at_ .esp (4*(i+1))) .eax])),
+    .call "vg_rsa_mont_mul_at" (.block []),
+    .block ((List.range (borrow/4)).flatMap fun j =>
+      [.mov .eax (.mem (at_ .esp (36+4*j))), .store (sc (start+4*j)) .eax])]) (.free (36+borrow))
+
+def sharedRules : List (Prog isa × Prog isa) :=
+  [3,4,16,32,48].flatMap fun n =>
+    [(4,4,4),(6,4,3),(5,5,4),(7,7,5),(6,6,6),(6,6,7),(6,6,3),(5,5,5),(7,6,5)].map fun (o,a,b) =>
+      (mul (contextMod n) 0 (slot n 2) (slot n o) (slot n a) (slot n b),
+        sharedMul n (slot n o) (slot n a) (slot n b))
+
 def abiWrapper (n e : Nat) : Prog isa :=
   let saved := [(Reg.ebx, 0), (.esi, 4), (.ebp, 8), (.edi, 12)]
   let sentinels := [(Reg.ebx, 305419896), (.esi, 591751049), (.ebp, 878082202), (.edi, 1164413355)]
@@ -299,6 +320,7 @@ def main (args : List String) : IO Unit := do
     let p := if mode.contains 't' then Prototype.replace
       ([3,4,16,32,48].map fun n =>
         (selectWindow n (contextBytes n) (slot n 7), Prototype.wordSelect n (contextBytes n) (slot n 7))) p else p
+    let p := if mode.contains 'h' then Prototype.replace Prototype.sharedRules p else p
     let p := if mode.contains 'r' then Prototype.rows ((args[1]?).getD "4" |>.toNat!) p else p
     let lines := VG.X86.printer.function p
     let calls := lines.filterMap fun l => match l with | .call n => some n | _ => none

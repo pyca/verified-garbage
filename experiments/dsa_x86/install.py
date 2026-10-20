@@ -9,6 +9,7 @@ path=root/'src/asm/x86/dsa.rs';s=path.read_text()
 pattern=re.compile(r'(#\[unsafe\(naked\)\]\npub\(crate\) unsafe extern "C" fn (\w+)\([^\n]+\) [^{]*\{).*?\n\}',re.S)
 functions={m[2]:m for m in pattern.finditer(s)}
 bindings=dict(re.findall(r'(\w+) = sym ([^,]+),',s))
+bindings['vg_rsa_mont_mul_at']='super::rsa_mont::vg_rsa_mont_mul_at'
 replacements={};extra=[]
 manifest=json.loads(gzip.decompress(Path(a.manifest).read_bytes()) if a.manifest.endswith('.gz') else Path(a.manifest).read_bytes())
 manifest+=json.loads(gzip.decompress((root/'experiments/dsa_x86/manifests/abi.json.gz').read_bytes()))

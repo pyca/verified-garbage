@@ -19,6 +19,7 @@ fn prototype_power_carries() {
                     modulus[n - 1] >>= top_shift;
                     modulus[0] -= 58; // 2^(64*n) - 59, odd.
                     ws[slot(0)..slot(0) + n].copy_from_slice(&modulus);
+                    ws[slot(0) + n..slot(1)].fill(0x0123456789abcdef);
                     let mut base = modulus.clone();
                     base[0] -= magnitude;
                     ws[slot(5)..slot(5) + n].copy_from_slice(&base);
@@ -28,6 +29,12 @@ fn prototype_power_carries() {
                         unsafe { power(ws.as_mut_ptr(), ws.len()) },
                         0,
                         "callee-saved registers"
+                    );
+                    assert!(
+                        ws[slot(0) + n..slot(1)]
+                            .iter()
+                            .all(|&x| x == 0x0123456789abcdef),
+                        "modulus padding frame"
                     );
                     let value = if magnitude == 1 { 1 } else { 1u64 << exponent };
                     let mut expected = alloc::vec![0u64; n];

@@ -63,3 +63,12 @@ Final stacking experiment: `z` uses a 6-bit fixed window only for the long publi
 explicitly and allocates 64 table entries. Private powers retain four-bit masked
 selection. The final comparison times the selected prototype beside OpenSSL;
 the earlier sweeps also measured the verified baseline's random searches.
+
+Compact alternative: `h` replaces Montgomery products with calls to the existing
+`vg_rsa_mont_mul_at`, sharing RSA's already-verified runtime-width helper. The
+`dwptfzh` variant uses it for squares too, so it has no separate square kernel or
+expanded multiplication rows. Large widths use slots one/two as scratch. Small
+widths temporarily borrow 16 unused modulus-padding bytes and restore them;
+the algebraic tests assert that padding's frame property explicitly. Compare
+its native speed and symbol sizes against `dwprsctfvz4` before selecting a
+production design. No new RSA implementation is introduced by this variant.
