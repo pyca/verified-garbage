@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesCcm.Mac
 import VerifiedGarbage.Proof.AesSiv.AArch64.Call
 import VerifiedGarbage.Proof.AesSiv.AArch64.Finish
