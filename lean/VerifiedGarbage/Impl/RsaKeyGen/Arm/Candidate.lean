@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Key
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
 
 /-!
 # A candidate for a prime of an RSA key on ARMv7
@@ -252,7 +253,7 @@ def table : List (Prog isa) :=
     .ite .eq (.block []) (.block (ptr .r12 aTab ++ tabWrite 256 256))]
 
 /-- `r4 := r4 (2 − s r4)` for `s` in `r3`. -/
-def newton : List Instr := [.mul .r5 .r3 .r4, .mov .r6 (.imm 2), .dp .sub .r5 .r6 (.reg .r5), .mul .r4 .r4 .r5]
+def newton : List Instr := TrialDivision16.newton
 
 /-- For the prime `s` in `r3`: `−s⁻¹ mod 2^16` into `r4`, `acc := 0` (`r2`),
 `c`'s first word into `r0` and its count of words `2 w` into `r1`. -/
@@ -263,9 +264,7 @@ def entryS : List Instr :=
 
 /-- `acc := (acc + h) 2^(−16) mod s` (below `2 s`), for `h` in `r5`: with
 `x = acc + h` and `q = x (−s⁻¹) mod 2^16`, `(x + q s) / 2^16`. -/
-def redc : List Instr :=
-  [.dp .add .r5 .r5 (.reg .r2), .mul .r6 .r5 .r4, .mov .r6 (.shifted .r6 .lsl 16), .mov .r6 (.shifted .r6 .lsr 16),
-    .mul .r6 .r6 .r3, .dp .add .r6 .r6 (.reg .r5), .mov .r2 (.shifted .r6 .lsr 16)]
+def redc : List Instr := TrialDivision16.redc
 
 /-- A word of `c`: its low half, then its high half; the next word, and the
 count. -/

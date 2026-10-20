@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.Arm.Candidate
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Proof.Rsa.RecoverExp
 public import VerifiedGarbage.Proof.RsaKeyGen.Trial16
+import VerifiedGarbage.Proof.Bignum.Arm.TrialDivision16
 
 import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import VerifiedGarbage.Proof.RsaKeyGen.Arm.Cand.Instr
@@ -53,13 +54,7 @@ theorem newton_ok {u : State} {rest : List Instr} {Q : State → Prop}
     (k : ∀ u', Rest [.r4, .r5, .r6] u u' → u'.mem = u.mem →
       u'.gpr .r4 = nstep (u.gpr .r3) (u.gpr .r4) → WP isa (.block rest) u' Q) :
     WP isa (.block (newton ++ rest)) u Q := by
-  simp only [newton, List.cons_append, List.nil_append]
-  refine wp_mul fun u1 v1 => wp_mov (op2_imm (by decide)) fun u2 v2 => wp_dp (op2_reg _ _) fun u3 v3 =>
-    wp_mul fun u4 v4 => k u4 ((v1.rest (by simp)).trans ((v2.rest (by simp)).trans ((v3.rest (by simp)).trans
-      (v4.rest (by simp))))) (by rw [v4.mem, v3.mem, v2.mem, v1.mem]) ?_
-  rw [v4.gpr, v3.gpr, v3.other _ (by decide), dpVal, v2.gpr, v2.other _ (by decide), v2.other _ (by decide),
-    v1.gpr, v1.other _ (by decide)]
-  rfl
+  exact VG.Proof.Bignum.Arm.TrialDivision16.newton_ok k
 
 /-- For the prime `s` in `r3`: `r4 := −s⁻¹ mod 2^16`, `r0 :=` the address of
 `c`, `r1 := W − 2`, `r2 := 0`. -/
@@ -111,41 +106,7 @@ theorem redc_ok {u : State} {h acc s sv : Nat} (r5 : (u.gpr .r5).toNat = h) (hh 
       (∀ a', a' < 2 * s → a' * 2 ^ 16 % s = (h + acc) % s → u'.gpr .r2 = BitVec.ofNat 32 a' →
         WP isa (.block rest) u' Q)) :
     WP isa (.block (redc ++ rest)) u Q := by
-  simp only [redc, List.cons_append, List.nil_append]
-  refine wp_dp (op2_reg _ _) fun u1 v1 => wp_mul fun u2 v2 => wp_mov (op2_lsl (by decide)) fun u3 v3 =>
-    wp_mov (op2_lsr (by decide)) fun u4 v4 => wp_mul fun u5 v5 => wp_dp (op2_reg _ _) fun u6 v6 =>
-      wp_mov (op2_lsr (by decide)) fun u7 v7 => ?_
-  have k7 : Rest [.r2, .r5, .r6] u u7 := (v1.rest (by simp)).trans ((v2.rest (by simp)).trans
-    ((v3.rest (by simp)).trans ((v4.rest (by simp)).trans ((v5.rest (by simp)).trans ((v6.rest (by simp)).trans
-      (v7.rest (by simp)))))))
-  have m7 : u7.mem = u.mem := by rw [v7.mem, v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]
-  have ha : acc < 2 ^ 32 := by omega
-  -- `X = h + acc`, `q = X sv mod 2^16`.
-  have x1 : (u1.gpr .r5).toNat = h + acc := by
-    rw [v1.gpr, dpVal, BitVec.toNat_add, r5, r2, ofNat_toNat_lt ha]; omega
-  have sv16 : sv < 2 ^ 16 ∨ True := .inr trivial
-  have q4 : (u4.gpr .r6).toNat = (h + acc) * sv % 2 ^ 16 := by
-    rw [v4.gpr, v3.gpr, lo16, v2.gpr, BitVec.toNat_mul, x1, v1.other _ (by decide), r4,
-      Nat.mod_mod_of_dvd _ (by decide)]
-  have hq := Nat.mod_lt ((h + acc) * sv) (Nat.two_pow_pos 16)
-  have s5 : (u5.gpr .r6).toNat = (h + acc) * sv % 2 ^ 16 * s := by
-    rw [v5.gpr, BitVec.toNat_mul, q4, v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide),
-      v1.other _ (by decide), r3, ofNat_toNat_lt (by omega)]
-    apply Nat.mod_eq_of_lt
-    have : (h + acc) * sv % 2 ^ 16 * s < 2 ^ 16 * 8162 := Nat.mul_lt_mul'' hq hs.2
-    omega
-  have x5 : (u5.gpr .r5).toNat = h + acc := by
-    rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide), x1]
-  have s6 : (u6.gpr .r6).toNat = h + acc + (h + acc) * sv % 2 ^ 16 * s := by
-    rw [v6.gpr, dpVal, BitVec.toNat_add, s5, x5]
-    have : (h + acc) * sv % 2 ^ 16 * s < 2 ^ 16 * 8162 := Nat.mul_lt_mul'' hq hs.2
-    omega
-  obtain ⟨_, hlt, hcong⟩ := redc16_math (X := h + acc) (s := s) (sv := sv) hinv (by
-    have : 3 * 2 ^ 16 ≤ s * 2 ^ 16 := Nat.mul_le_mul_right _ hs.1
-    omega)
-  refine k u7 k7 m7 _ hlt hcong ?_
-  apply BitVec.eq_of_toNat_eq
-  rw [v7.gpr, hi16, s6, ofNat_toNat_lt (by omega)]
+  exact VG.Proof.Bignum.Arm.TrialDivision16.redc_ok r5 hh r2 hacc r4 r3 hs hinv k
 
 /-! ## A word of `c` -/
 
