@@ -361,15 +361,52 @@ theorem cmp241_ok (s : State) :
   xrun [show BitVec.signExtend 64 (241 : BitVec 32) = 241 by decide, show (241 : BitVec 64).toNat = 241 from rfl]
   exact fun _ _ => rfl
 
+omit hp in
+theorem cmp256_ok (s : State) :
+    WP isa (.block [.alu .cmp .rdi (.imm 256)]) s fun s' =>
+      s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) ∧ s'.mem = s.mem ∧ s'.gpr = s.gpr ∧
+        s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ x l, s'.lane x l = s.lane x l := by
+  xrun [show BitVec.signExtend 64 (256 : BitVec 32) = 256 by decide, show (256 : BitVec 64).toNat = 256 from rfl]
+  exact fun _ _ => rfl
+
+omit hp in
+/-- With 256 coefficients, eight more iterations store nothing: moving past
+their 24 bytes is all of them. -/
+theorem skip_ok {s₀ : State} {K b t : Nat} {s : State} (h : LAtW w16 σ s₀ K b t s)
+    (hf : (Lt σ K (b + t)).length = 256) :
+    WP isa (.block [.alu .add .rsi (.imm 24)]) s fun s' =>
+      LAtW w16 σ s₀ K b (t + 8) s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+  have e : Lt σ K (b + (t + 8)) = Lt σ K (b + t) :=
+    Proof.MlKem.sampleAfter_full (by rw [n_eq]; exact hf) _ (by omega)
+  refine WP.mono_syms (WP.keep [.rsi] (Q := fun s' => s'.mem = s.mem ∧
+      s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 24)
+    (by xrun [show BitVec.signExtend 64 (24 : BitVec 32) = BitVec.ofNat 64 24 by decide]) (by decide))
+    fun s' ⟨⟨hm, hsi⟩, k⟩ sy => ?_
+  exact ⟨⟨h.lb.keep hm k sy, by rw [hsi, h.rsi, Offset.add_add, show 3 * (t + 8) = 3 * t + 24 by omega],
+    by rw [k.gpr (by decide), e]; exact h.rdi, by rw [k.gpr (by decide)]; exact h.rbp,
+    by rw [hm, e]; exact h.stored⟩, k.gpr (by decide)⟩
+
+/-- Eight iterations with `snBody` while there are fewer than 256 coefficients. -/
+theorem scaG_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) (hbt : b + t + 8 ≤ 280) {s : State}
+    (h : LAtW w16 σ s₀ K b t s) :
+    WP isa (scaG w16) s fun s' => LAtW w16 σ s₀ K b (t + 8) s' ∧ s'.gpr .r10 = s.gpr .r10 := by
+  refine WP.seq (WP.mono_syms (cmp256_ok s) fun s₁ ⟨hcf, hm, hg, hrd, hwr, _⟩ sy => ?_)
+  have l₁ : LAtW w16 σ s₀ K b t s₁ := h.same hg hm hrd hwr sy
+  have hlen : (Lt σ K (b + t)).length ≤ 256 := sampleAfter_length_le (a := []) (by simp) _ (b + t)
+  rw [h.rdi, ofNat64_toNat (by bdd_omega)] at hcf
+  refine WP.ite _ hcf (fun _ => WP.mono (sca_ok hp hK ht hbt l₁) fun s' ⟨l', h10⟩ => ⟨l', by rw [h10, hg]⟩)
+    fun hb => WP.mono (skip_ok l₁ (by have := of_decide_eq_false hb; omega)) fun s' ⟨l', h10⟩ =>
+      ⟨l', by rw [h10, hg]⟩
+
 /-- Eight iterations of the loop. -/
 theorem vgrp_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) (hbt : b + t + 8 ≤ 280) {s : State}
     (h : LVW w16 σ s₀ K b t s) :
     WP isa (vgrp w16) s fun s' => LVW w16 σ s₀ K b (t + 8) s' ∧ s'.gpr .r10 = s.gpr .r10 := by
   cases w16 with
   | false =>
-    exact WP.mono (sca_ok hp hK ht hbt h.lat) fun s' ⟨l', h10⟩ => ⟨⟨l', fun hw => absurd hw (by decide)⟩, h10⟩
+    exact WP.mono (scaG_ok hp hK ht hbt h.lat) fun s' ⟨l', h10⟩ => ⟨⟨l', fun hw => absurd hw (by decide)⟩, h10⟩
   | true =>
-    show WP isa (.seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (sca8 true)))
+    show WP isa (.seq (.block [.alu .cmp .rdi (.imm 241)]) (.ite .b (.seq (.block vcand) (.block vput)) (scaG true)))
       s _
     refine WP.seq (WP.mono_syms (cmp241_ok s) fun s₁ ⟨hcf, hm, hg, hrd, hwr, hl⟩ sy => ?_)
     have l₁ : LAtW true σ s₀ K b t s₁ := h.lat.same hg hm hrd hwr sy
@@ -380,7 +417,7 @@ theorem vgrp_ok {s₀ : State} {K b t : Nat} (hK : K < 4) (ht : t + 8 ≤ 168) (
       exact WP.mono (vec_ok hp rfl hK ht hbt l₁ ((h.vc rfl hb').same hl) hb') fun s' ⟨l', c', h10⟩ =>
         ⟨⟨l', fun _ _ => c'⟩, by rw [h10, hg]⟩
     · have hb' : ¬ (Lt σ K (b + t)).length < 241 := of_decide_eq_false hb
-      exact WP.mono (sca_ok hp hK ht hbt l₁) fun s' ⟨l', h10⟩ =>
+      exact WP.mono (scaG_ok hp hK ht hbt l₁) fun s' ⟨l', h10⟩ =>
         ⟨⟨l', fun _ h' => absurd (Nat.lt_of_le_of_lt (Lt_mono σ K (b + t) 8) (by rwa [Nat.add_assoc])) hb'⟩,
           by rw [h10, hg]⟩
 
