@@ -26,3 +26,18 @@ Stack arenas require new stack bounds if an experiment is promoted.
 Generate manifests from the checked tree's Lean environment:
 `lake env lean --run /path/to/Prototype.lean MODE [CHUNK]`, then gzip the JSON.
 No hand-written assembly or trusted-model changes are used.
+
+Second sweep: `t` changes the private table scan to compute masks once and
+accumulate each output word in a register; `s` uses triangular squaring with
+full-product Montgomery reduction; `c` keeps the triangular outer loop compact.
+The expanded square initially failed a signature vector because the existing
+CIOS carry tail is insufficient for a full raw product. Both square layouts now
+propagate carries through every remaining high word with public loop bounds.
+Carry-heavy algebraic power identities supplement the existing CAVP tests.
+`dwprt4`, `dwprst4`, and `dwprsct4` use four-word multiplication chunks.
+
+The second sweep records native DSA symbol sizes and selects a parameter-search
+candidate using the geometric mean of its fixed-search ratios to baseline. It
+then measures complete random parameter generation for baseline, that candidate,
+and OpenSSL. Random-search medians remain noisy; fixed tapes isolate arithmetic
+changes but cannot replace the real API comparison.

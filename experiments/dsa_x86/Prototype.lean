@@ -110,6 +110,84 @@ partial def rows (chunk : Nat) (p : Prog isa) : Prog isa :=
     | .frame a b c => .frame a (rows chunk b) c
     | x => x
 
+/-- A triangular raw product, doubled, plus the diagonal, followed by the
+existing Montgomery reduction rows. This is an unproven square experiment. -/
+def fastSquare (compact : Bool) (n o a : Nat) : Prog isa :=
+  let N := 2*n
+  let acc := slot n 2
+  let cross := (List.range (N-1)).map fun i => seq [
+    .block [.mov .esi (.mem (sc (a+4*i))), .mov .ebx (imm 0),
+      .mov .ecx (.reg .edi), .alu .add .ecx (imm (4*(i+1))),
+      .mov .ebp (.reg .edi), .alu .add .ebp (imm (4*(2*i+1)))],
+    .loop (.block [.mov .eax (.mem (at_ .ecx a)), .mul .esi,
+      .alu .add .eax (.mem (at_ .ebp acc)), .alu .adc .edx (imm 0),
+      .alu .add .eax (.reg .ebx), .alu .adc .edx (imm 0),
+      .store (at_ .ebp acc) .eax, .mov .ebx (.reg .edx),
+      .alu .add .ecx (imm 4), .alu .add .ebp (imm 4),
+      .mov .eax (.reg .edi), .alu .add .eax (imm (4*N)), .alu .cmp .ecx (.reg .eax)]) .ne,
+    .block [.store (sc (acc+4*(i+N))) .ebx]]
+  let compactCross := .frame (.alloc 4) (seq [
+    .block [.mov .eax (imm 0), .store (at_ .esp 0) .eax],
+    .loop (seq [
+      .block [.mov .eax (.mem (at_ .esp 0)), .mov .ecx (.reg .edi), .alu .add .ecx (.reg .eax),
+        .mov .esi (.mem (at_ .ecx a)), .alu .add .ecx (imm 4), .mov .ebp (.reg .ecx),
+        .alu .add .ebp (.reg .eax), .mov .ebx (imm 0)],
+      .loop (.block [.mov .eax (.mem (at_ .ecx a)), .mul .esi,
+        .alu .add .eax (.mem (at_ .ebp acc)), .alu .adc .edx (imm 0),
+        .alu .add .eax (.reg .ebx), .alu .adc .edx (imm 0),
+        .store (at_ .ebp acc) .eax, .mov .ebx (.reg .edx),
+        .alu .add .ecx (imm 4), .alu .add .ebp (imm 4),
+        .mov .eax (.reg .edi), .alu .add .eax (imm (4*N)), .alu .cmp .ecx (.reg .eax)]) .ne,
+      .block [.store (at_ .ebp acc) .ebx, .mov .eax (.mem (at_ .esp 0)), .alu .add .eax (imm 4),
+        .store (at_ .esp 0) .eax, .alu .cmp .eax (imm (4*(N-1)))]]) .ne]) (.free 4)
+  let diagonal := seq [
+    .block [.mov .ecx (.reg .edi), .mov .ebp (.reg .edi), .mov .ebx (imm 0)],
+    .loop (.block [.mov .eax (.mem (at_ .ecx a)), .mov .edx (.reg .eax), .mul .edx,
+      .alu .add .eax (.reg .ebx), .alu .adc .edx (imm 0),
+      .alu .add .eax (.mem (at_ .ebp acc)), .alu .adc .edx (.mem (at_ .ebp (acc+4))),
+      .alu .sbb .ebx (.reg .ebx), .alu .and .ebx (imm 1),
+      .store (at_ .ebp acc) .eax, .store (at_ .ebp (acc+4)) .edx,
+      .alu .add .ecx (imm 4), .alu .add .ebp (imm 8),
+      .mov .eax (.reg .edi), .alu .add .eax (imm (4*N)), .alu .cmp .ecx (.reg .eax)]) .ne]
+  -- A full raw product needs carry propagation through every remaining high
+  -- word; the CIOS row's two-word tail assumes those farther words are zero.
+  let fullRow := seq [
+    .block [.mov .ebx (imm 0), .mov .ecx (.reg .edi)],
+    .loop (.block (mulStepW N acc (slot n 0) (slot n 1))) .ne,
+    .block [.mov .eax (.mem (at_ .ebp acc)), .alu .add .eax (.reg .ebx),
+      .store (at_ .ebp acc) .eax, .alu .sbb .ebx (.reg .ebx),
+      .mov .ecx (.reg .ebp), .alu .add .ecx (imm 4), .alu .sub .ebp (imm (4*N))],
+    .loop (.block [.mov .eax (.mem (at_ .ecx acc)), .alu .add .ebx (.reg .ebx),
+      .alu .adc .eax (imm 0), .store (at_ .ecx acc) .eax, .alu .sbb .ebx (.reg .ebx),
+      .alu .add .ecx (imm 4), .mov .eax (.reg .edi), .alu .add .eax (imm (4*(2*N+1))),
+      .alu .cmp .ecx (.reg .eax)]) .ne]
+  let red := seq [
+    .block [.mov .ebp (.reg .edi)],
+    .loop (seq [.block (redDigit acc 0 (slot n 1)),
+      fullRow,
+      .block [.alu .add .ebp (imm 4), .mov .edx (.reg .edi),
+        .alu .add .edx (imm (4*N)), .alu .cmp .ebp (.reg .edx)]]) .ne,
+    csubW (contextMod n) (acc+4*N) o]
+  .frame (.push [.esi]) (seq ([zerosW acc (2*N+1)] ++ (if compact then [compactCross] else cross) ++
+    [chainW .adc (2*N) acc acc acc, diagonal, red])) (.pop .esi 1)
+
+/-- Fixed-address masked table scan, accumulating each output word in a
+register. Masks are computed once per window, without secret indexing. -/
+def wordSelect (n tab dst : Nat) : Prog isa :=
+  .frame (.alloc 64) (seq [
+    .block ((List.range 16).flatMap fun j => windowMask j ++ [.store (at_ .esp (4*j)) .ecx]),
+    .block [.mov .ebp (.reg .edi)],
+    .loop (.block ([.mov .ebx (imm 0)] ++ (List.range 16).flatMap (fun j => [
+      .mov .eax (.mem (at_ .ebp (entry n tab j))), .alu .and .eax (.mem (at_ .esp (4*j))),
+      .alu .or .ebx (.reg .eax)]) ++ [
+      .store (at_ .ebp dst) .ebx, .alu .add .ebp (imm 4),
+      .mov .eax (.reg .edi), .alu .add .eax (imm (8*n)), .alu .cmp .ebp (.reg .eax)])) .ne]) (.free 64)
+
+def squareRules (compact : Bool) : List (Prog isa × Prog isa) :=
+  [3,4,16,32,48].flatMap fun n => [4,5,6].map fun i =>
+    (mul (contextMod n) 0 (slot n 2) (slot n i) (slot n i) (slot n i),
+      fastSquare compact n (slot n i) (slot n i))
+
 def functions (dedup win pub : Bool) : List (String × Prog isa) := Id.run do
   let mut fs := []
   let check := VG.Impl.Dsa.X86.Generate.checkParameters
@@ -141,6 +219,10 @@ def main (args : List String) : IO Unit := do
   let mode := args.head!
   let fs := Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
   let json := fs.map fun (name, p) =>
+    let p := if mode != "baseline" && mode.contains 's' then Prototype.replace (Prototype.squareRules (mode.contains 'c')) p else p
+    let p := if mode.contains 't' then Prototype.replace
+      ([3,4,16,32,48].map fun n =>
+        (selectWindow n (contextBytes n) (slot n 7), Prototype.wordSelect n (contextBytes n) (slot n 7))) p else p
     let p := if mode.contains 'r' then Prototype.rows ((args[1]?).getD "4" |>.toNat!) p else p
     let lines := VG.X86.printer.function p
     let calls := lines.filterMap fun l => match l with | .call n => some n | _ => none

@@ -32,3 +32,6 @@ t=('extern crate std;\n'+test.read_text()).replace('struct Vector {', '#[derive(
 t=t.replace('for v in prime_vectors() {', 'for v in prime_vectors().into_iter().cycle().take(9) {\n        let started = std::time::Instant::now();')
 t=t.replace('assert_eq!(tape, 3);', 'std::eprintln!("FIXED_PARAM {} {}", v.bits, started.elapsed().as_nanos());\n        assert_eq!(tape, 3);')
 test.write_text(t)
+
+with (root/'src/dsa/tests.rs').open('a') as f:
+    f.write('\n'+(root/'experiments/dsa_x86/power_tests.rs').read_text())
