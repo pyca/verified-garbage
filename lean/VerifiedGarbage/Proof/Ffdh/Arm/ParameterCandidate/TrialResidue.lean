@@ -1,6 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
+public import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialValue
+public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.ParameterCandidate.TrialSmall
 import VerifiedGarbage.Proof.RsaKeyGen.Table
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
