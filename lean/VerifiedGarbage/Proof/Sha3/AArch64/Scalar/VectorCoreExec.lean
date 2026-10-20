@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import Mathlib.Tactic.IntervalCases
 public import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 public import Mathlib.Tactic.ToDual
