@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Compare
@@ -17,15 +18,17 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Policy
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
-abbrev KeyClassified (p : KeyPublic) (original : State) (used keys scalars : Nat) (s : State) : Prop :=
+abbrev KeyClassified (p : KeyPublic sampling) (original : State) (used keys scalars : Nat) (s : State) : Prop :=
   if currentStatus p original used = 1 then KeyDone p original (acceptedResult p original used) s
   else if currentStatus p original used = 2 then
     KeyLive p original (used + p.len) keys (scalars - 1) s ∧ lowWord s.mem p.control 14 = 4
   else KeyLive p original (used + p.len) (keys - 1) 128 s ∧ lowWord s.mem p.control 14 = 4
 
-theorem classify_head {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem classify_head {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (post : AttemptPost p original used s) :
     WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.advance ++ ([.cmp .r9 (.imm 1)] : List Instr))) s fun t =>
@@ -40,11 +43,11 @@ theorem classify_head {p : KeyPublic} {original s : State} {used keys scalars : 
   rw [WP.block_append_iff]
   refine WP.mono (h.advance room) ?_
   rintro u ⟨live, status, frame⟩
-  refine WP.mono (compareStatus_ok u bound (by decide : 1 < 4) (status.trans native)) ?_
-  rintro t ⟨⟨flag, mem⟩, rest⟩
-  exact ⟨live.keep rest mem, flag, (rest.gpr .r9 (by simp)).trans (status.trans native), by rw [mem]; exact frame⟩
+  refine WP.mono_syms (compareStatus_ok u bound (by decide : 1 < 4) (status.trans native)) ?_
+  rintro t ⟨⟨flag, mem⟩, rest⟩ syms
+  exact ⟨live.keep rest mem syms, flag, (rest.gpr .r9 (by simp)).trans (status.trans native), by rw [mem]; exact frame⟩
 
-theorem classify {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem classify {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (keysPositive : 0 < keys) (scalarsPositive : 0 < scalars) (post : AttemptPost p original used s) :
     WP isa VG.Impl.Ffdh.Arm.KeySearch.classify s (KeyClassified p original used keys scalars) := by
@@ -77,9 +80,9 @@ theorem classify {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     refine WP.ite false (by change some u.z = some false; rw [flag]) (by intro bad; cases bad) ?_
     intro _
     rw [WP.seq_iff]
-    refine WP.mono (compareStatus_ok u (by rw [h2]; decide) (by decide : 2 < 4) status) ?_
-    rintro t ⟨⟨test, mem⟩, rest⟩
-    have kept := live.keep rest mem
+    refine WP.mono_syms (compareStatus_ok u (by rw [h2]; decide) (by decide : 2 < 4) status) ?_
+    rintro t ⟨⟨test, mem⟩, rest⟩ syms
+    have kept := live.keep rest mem syms
     simp only [h2, decide_true] at test
     refine WP.ite true (by change some t.z = some true; rw [test]) ?_ (by intro bad; cases bad)
     intro _
@@ -93,17 +96,17 @@ theorem classify {p : KeyPublic} {original s : State} {used keys scalars : Nat}
     refine WP.ite false (by change some u.z = some false; rw [flag]) (by intro bad; cases bad) ?_
     intro _
     rw [WP.seq_iff]
-    refine WP.mono (compareStatus_ok u (by rw [h3]; decide) (by decide : 2 < 4) status) ?_
-    rintro t ⟨⟨test, mem⟩, rest⟩
-    have kept := live.keep rest mem
+    refine WP.mono_syms (compareStatus_ok u (by rw [h3]; decide) (by decide : 2 < 4) status) ?_
+    rintro t ⟨⟨test, mem⟩, rest⟩ syms
+    have kept := live.keep rest mem syms
     have statusT := (rest.gpr .r9 (by simp)).trans status
     simp only [h3, show (3 : Nat) ≠ 2 by decide, decide_false] at test
     refine WP.ite false (by change some t.z = some false; rw [test]) (by intro bad; cases bad) ?_
     intro _
     rw [WP.seq_iff]
-    refine WP.mono (compareStatus_ok t (by rw [h3]; decide) (by decide : 3 < 4) statusT) ?_
-    rintro q ⟨⟨test3, mem3⟩, rest3⟩
-    have kept3 := kept.keep rest3 mem3
+    refine WP.mono_syms (compareStatus_ok t (by rw [h3]; decide) (by decide : 3 < 4) statusT) ?_
+    rintro q ⟨⟨test3, mem3⟩, rest3⟩ syms3
+    have kept3 := kept.keep rest3 mem3 syms3
     simp only [h3, decide_true] at test3
     refine WP.ite true (by change some q.z = some true; rw [test3]) ?_ (by intro bad; cases bad)
     intro _

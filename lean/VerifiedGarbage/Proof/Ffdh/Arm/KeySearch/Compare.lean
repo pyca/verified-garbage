@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm
 open VG.Proof.X25519.Arm (Rest)
 

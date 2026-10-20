@@ -11,10 +11,12 @@ finishing the native argument snapshot with a zero consumed-byte count. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-theorem entryHead_ok (s : State) {p : KeyPublic} (h : EntryArguments p s)
+theorem entryHead_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p s)
     (space : Workspace s p.control 128) (x : s.gpr .r0 = p.xp) (y : s.gpr .r2 = p.yp) :
     WP isa (.block [.ldrSp .r4 56, VG.Impl.Ffdh.Arm.KeySearch.stf .r0 5,
       VG.Impl.Ffdh.Arm.KeySearch.stf .r2 6]) s fun t =>
@@ -37,7 +39,7 @@ theorem entryHead_ok (s : State) {p : KeyPublic} (h : EntryArguments p s)
   ffrun [addr56, arg.readable, arg.word, incomingValue, addr40, addr48,
     space.write (off := 40) (by decide), space.write (off := 48) (by decide), x, y]
 
-theorem entryZero_ok (s : State) {p : KeyPublic} (h : EntryContext p s) :
+theorem entryZero_ok (s : State) {p : KeyPublic sampling} (h : EntryContext p s) :
     WP isa (.block [.mov .r3 (.imm 0), VG.Impl.Ffdh.Arm.KeySearch.stf .r3 11]) s fun t =>
       t.mem = s.mem.writeW (off (State.addr p.control) 88) (0#32) ∧ Rest [.r3] s t := by
   refine withRest [.r3] ?_ (by

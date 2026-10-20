@@ -14,11 +14,13 @@ callee-saved register set before its final frame pop. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 
 def finishRestoreSlots : List (Reg × Nat) := [(.r9, 4), (.r10, 8), (.r11, 12), (.lr, 20)]
 
-theorem finish_ok {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeySearchResult}
+theorem finish_ok {p : KeyPublic sampling} {original s : State} {result : Spec.Ffdh.KeySearchResult}
     (h : KeyDone p original result s) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.finish) s fun t =>
       abiPreserved original (popped .r4 24 t) ∧ ResultPost p result (popped .r4 24 t) := by
@@ -73,7 +75,7 @@ theorem finish_ok {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeySe
     · rw [popped_gpr (by decide : Reg.r11 ≠ .r4)]; exact restored (.r11, 12) (by simp [finishRestoreSlots])
     · rw [popped_gpr (by decide : Reg.lr ≠ .r4)]; exact restored (.lr, 20) (by simp [finishRestoreSlots])
   · rw [popped_sp, restT.sp, rest.sp, h.sp, BitVec.sub_add_cancel]
-    rw [← h.input.2]
+    rw [← h.input.2.1]
     rfl
   · rw [popped_gpr (by decide : Reg.r0 ≠ .r4)]
     exact (restT.gpr .r0 (by simp [finishRestoreSlots])).trans status

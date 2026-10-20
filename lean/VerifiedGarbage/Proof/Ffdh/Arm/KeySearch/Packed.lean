@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm VG.Proof.Mont
 
 theorem packedWord (m : Mem) (base : BitVec 32) (j n : Nat) (fits : n < 2 ^ 32)

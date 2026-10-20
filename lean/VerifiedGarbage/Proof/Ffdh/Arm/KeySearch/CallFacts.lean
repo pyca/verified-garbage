@@ -9,11 +9,13 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 
-abbrev rCallArgs (p : KeyPublic) : Region := ⟨State.addr (callSp p), 28⟩
+abbrev rCallArgs (p : KeyPublic sampling) : Region := ⟨State.addr (callSp p), 28⟩
 
-structure CallFacts (p : KeyPublic) (used : Nat) : Prop where
+structure CallFacts (p : KeyPublic sampling) (used : Nat) : Prop where
   stackFits : 176 ≤ (callSp p).toNat
   argsFit : (callSp p).toNat + 28 ≤ 2 ^ 32
   xy : (rX p).Disjoint (rY p)
@@ -42,7 +44,7 @@ structure CallFacts (p : KeyPublic) (used : Nat) : Prop where
   domainLenFits : p.dlen < 2 ^ 32
   capacityFits : p.capacity < 2 ^ 32
 
-theorem KeyInput.callFacts {p : KeyPublic} {original : State} {used : Nat}
+theorem KeyInput.callFacts {p : KeyPublic sampling} {original : State} {used : Nat}
     (h : KeyInput p original) (room : used + p.len ≤ p.randLen) : CallFacts p used := by
   have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
   have callNat : (callSp p).toNat = p.sp.toNat - 56 :=

@@ -18,6 +18,7 @@ addresses while handling arbitrary secret register values. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm VG.Proof.Bignum.Arm
 
 def ControlAddress (s t : State) : Prop := s.gpr .r4 = t.gpr .r4 ∧ s.sp = t.sp

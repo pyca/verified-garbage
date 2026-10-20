@@ -22,6 +22,8 @@
 mod arithmetic;
 mod domain;
 mod generation;
+#[cfg(test)]
+mod vetted_tests;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
@@ -124,8 +126,10 @@ impl Parameters {
         arithmetic::bits(&self.p)
     }
 
-    /// Generate a private key with a uniform scalar in 1..q or 1..p-1
-    /// when q is absent. Reject degenerate public keys and retry.
+    /// Generate a private key, rejecting degenerate public values and retrying.
+    /// On ARM, exact RFC 3526/7919 safe-prime groups with generator 2 use
+    /// the RFC 7919 shorter-exponent bounds. Other domains and architectures
+    /// sample uniformly in 1..q, or 1..p-1 when q is absent.
     pub fn generate_private_key(&self) -> Result<PrivateKey, Error> {
         self.generate_with(getrandom::fill)
     }

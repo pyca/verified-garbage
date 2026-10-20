@@ -13,12 +13,14 @@ frame and remain separate from the controller workspace. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
-theorem KeyInput.pushed_arguments {p : KeyPublic} {s : State} (h : KeyInput p s) :
+theorem KeyInput.pushed_arguments {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     EntryArguments p (searchPushed s) := by
-  have fit : 232 ≤ s.sp.toNat := by have := h.bounds.stackFits; rw [← h.2] at this; exact this
-  have argsFit : s.sp.toNat + 36 ≤ 2 ^ 32 := by have := h.bounds.argsFit; rw [← h.2] at this; exact this
+  have fit : 232 ≤ s.sp.toNat := by have := h.bounds.stackFits; rw [← h.2.1] at this; exact this
+  have argsFit : s.sp.toNat + 36 ≤ 2 ^ 32 := by have := h.bounds.argsFit; rw [← h.2.1] at this; exact this
   have native (i : Nat) (hi : i < 9) : stackArgAddr s i = off (State.addr s.sp) (4 * i) :=
     VG.Arm.addr_add (by omega)
   have start : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
@@ -28,14 +30,14 @@ theorem KeyInput.pushed_arguments {p : KeyPublic} {s : State} (h : KeyInput p s)
     · rw [inArgs, start]; exact Region.contains_self _ _
   have pushedFrame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by omega : 24 ≤ s.sp.toNat)
-  have rootSp : p.sp = s.sp := by rw [← h.2]; rfl
+  have rootSp : p.sp = s.sp := by rw [← h.2.1]; rfl
   have savedSub : (FrameStack.belowA s.sp 24).Sub (FrameStack.belowA p.sp stackUse) := by
     rw [rootSp]
     exact FrameStack.belowA_sub (by decide : 24 ≤ stackUse) fit
   have argsSaved : (inArgs s).Disjoint (FrameStack.belowA s.sp 24) :=
     ((h.stack_separate (r := inArgs s) (List.mem_append_right s.wr (by rw [h.layout.rd]; simp [reads]))).sub_left savedSub).symm
   have argsControl : (inArgs s).Disjoint ⟨State.addr p.control, 128⟩ := by
-    rw [← h.2]
+    rw [← h.2.1]
     exact (h.layout.separate (inControl s) (by simp [writes]) (inArgs s) (by simp [reads])).symm
   have offsetAddress (i : Nat) (hi : i < 9) :
       off (State.addr (searchPushed s).sp) (24 + 4 * i) = stackArgAddr s i := by

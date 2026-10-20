@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Fields
@@ -12,13 +13,15 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 
-/-! Native 32-bit writes encode the shared four-u64 search policy exactly. -/
+/-! Native 32-bit writes encode the shared four-u64 search sampling exactly. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
-theorem KeyLive.policy {p : KeyPublic} {original s : State} {used keys scalars request : Nat}
+theorem KeyLive.policy {p : KeyPublic sampling} {original s : State} {used keys scalars request : Nat}
     (h : KeyLive p original used keys scalars s) (fits : request < 2 ^ 32)
     (low : lowWord s.mem p.control 3 = BitVec.ofNat 32 request)
     (high : s.mem.readW (off (State.addr p.control) 28) 32 = 0) :
@@ -37,7 +40,7 @@ theorem KeyLive.policy {p : KeyPublic} {original s : State} {used keys scalars r
     s.mem.readW (off (State.addr p.control) 24) 64] = _
   rw [w0, w1, w2, w3]
 
-theorem KeyLive.terminal_fields {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.terminal_fields {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (status : BitVec 32) :
     Slots (terminalMem s.mem p.control status) p.control (p.headers used 0 0) := by
   apply (slots_fields _ _ _ _ _ _).mpr
@@ -47,17 +50,17 @@ theorem KeyLive.terminal_fields {p : KeyPublic} {original s : State} {used keys 
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp [KeyPublic.field]
 
-theorem KeyLive.terminal {p : KeyPublic} {original s : State} {used keys scalars status : Nat}
+theorem KeyLive.terminal {p : KeyPublic sampling} {original s : State} {used keys scalars status : Nat}
     (h : KeyLive p original used keys scalars s) (bound : status = 1 ∨ status = 3) :
     WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.terminal status)) s fun t =>
       KeyLive p original used 0 0 t ∧ lowWord t.mem p.control 14 = BitVec.ofNat 32 status ∧
         lowWord t.mem p.control 3 = 0 ∧ t.mem.readW (off (State.addr p.control) 28) 32 = 0 ∧
         Frame [rControl p] s.mem t.mem := by
-  refine WP.mono (terminal_ok s h.controller bound) ?_
-  rintro t ⟨mem, rest⟩
+  refine WP.mono_syms (terminal_ok s h.controller bound) ?_
+  rintro t ⟨mem, rest⟩ syms
   have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
     rw [mem]; exact terminalMem_frame _ _ _
-  refine ⟨h.after_control rest (by decide) frame h.used_le (by decide) (by decide) ?_ ?_, ?_, ?_, ?_, frame⟩
+  refine ⟨h.after_control rest syms (by decide) frame h.used_le (by decide) (by decide) ?_ ?_, ?_, ?_, ?_, frame⟩
   · rw [mem]; exact h.terminal_fields _
   · intro j hj
     rw [mem, terminalMem_high _ _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]
@@ -70,7 +73,7 @@ theorem KeyLive.terminal {p : KeyPublic} {original s : State} {used keys scalars
     rw [mem, terminalMem_high _ _ _ 3 (by decide)]
     rfl
 
-theorem KeyLive.request_fields {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.request_fields {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
     Slots (requestMem s.mem p.control) p.control (p.headers used keys scalars) := by
   apply (slots_fields _ _ _ _ _ _).mpr
@@ -80,7 +83,7 @@ theorem KeyLive.request_fields {p : KeyPublic} {original s : State} {used keys s
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp
 
-theorem KeyLive.request_block {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.request_block {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r10 2, .mov .r11 (.imm 0),
       VG.Impl.Ffdh.Arm.KeySearch.stf .r10 3, .str .r11 .r4 28,
@@ -88,11 +91,11 @@ theorem KeyLive.request_block {p : KeyPublic} {original s : State} {used keys sc
       KeyLive p original used keys scalars t ∧ lowWord t.mem p.control 14 = 0 ∧
         lowWord t.mem p.control 3 = BitVec.ofNat 32 p.len ∧
         t.mem.readW (off (State.addr p.control) 28) 32 = 0 := by
-  refine WP.mono (requestBlock_ok s h.controller) ?_
-  rintro t ⟨mem, rest⟩
+  refine WP.mono_syms (requestBlock_ok s h.controller) ?_
+  rintro t ⟨mem, rest⟩ syms
   have frame : Frame [⟨State.addr p.control, 128⟩] s.mem t.mem := by
     rw [mem]; exact requestMem_frame _ _
-  refine ⟨h.after_control rest (by decide) frame h.used_le h.keys_le h.scalars_le ?_ ?_, ?_, ?_, ?_⟩
+  refine ⟨h.after_control rest syms (by decide) frame h.used_le h.keys_le h.scalars_le ?_ ?_, ?_, ?_, ?_⟩
   · rw [mem]; exact h.request_fields
   · intro j hj
     rw [mem, requestMem_high _ _ j (by omega), ite_eq_right (by omega : j ≠ 3)]

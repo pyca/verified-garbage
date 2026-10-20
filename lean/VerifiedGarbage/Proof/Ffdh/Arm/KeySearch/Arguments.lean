@@ -10,10 +10,12 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentBlocks
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-def callMem (p : KeyPublic) (used : Nat) (m : Mem) (sp : BitVec 32) : Mem :=
+def callMem (p : KeyPublic sampling) (used : Nat) (m : Mem) (sp : BitVec 32) : Mem :=
   ((((((m.writeW (off (State.addr sp) 0) p.dp).writeW
     (off (State.addr sp) 4) (BitVec.ofNat 32 p.dlen)).writeW
     (off (State.addr sp) 8) (BitVec.ofNat 32 p.len)).writeW
@@ -22,7 +24,7 @@ def callMem (p : KeyPublic) (used : Nat) (m : Mem) (sp : BitVec 32) : Mem :=
     (off (State.addr sp) 20) p.scratch).writeW
     (off (State.addr sp) 24) (BitVec.ofNat 32 p.capacity)
 
-theorem arguments_ok (s : State) {p : KeyPublic} {used keys scalars : Nat}
+theorem arguments_ok (s : State) {p : KeyPublic sampling} {used keys scalars : Nat}
     (h : Controller p.control s) (stack : Workspace s s.sp 32)
     (separate : (⟨State.addr p.control, 128⟩ : Region).Disjoint ⟨State.addr s.sp, 32⟩)
     (headers : Slots s.mem p.control (p.headers used keys scalars)) :
@@ -73,7 +75,7 @@ theorem arguments_ok (s : State) {p : KeyPublic} {used keys scalars : Nat}
   rw [m7, m6, m5, m4, m3, m2, m1, mem, sp6, sp5, sp4, sp3, sp2, sp1, rest.sp]
   rfl
 
-theorem callMem_frame (p : KeyPublic) (used : Nat) (m : Mem) (sp : BitVec 32) :
+theorem callMem_frame (p : KeyPublic sampling) (used : Nat) (m : Mem) (sp : BitVec 32) :
     Frame [⟨State.addr sp, 32⟩] m (callMem p used m sp) := by
   unfold callMem
   exact (((((((Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ (by decide : 0 + 4 ≤ 32) (by decide))).writeW

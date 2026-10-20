@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
@@ -14,9 +15,11 @@ status controls the native loop's continuation flag. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Spec.Ffdh
 
-theorem KeyDone.congr {p : KeyPublic} {original s : State} {result expected : KeySearchResult}
+theorem KeyDone.congr {p : KeyPublic sampling} {original s : State} {result expected : KeySearchResult}
     (h : KeyDone p original result s) (outcome : result.outcome = expected.outcome)
     (used : result.used = expected.used) : KeyDone p original expected s := by
   have status : result.status = expected.status := by unfold KeySearchResult.status; rw [outcome]
@@ -29,22 +32,22 @@ theorem KeyDone.congr {p : KeyPublic} {original s : State} {result expected : Ke
     rw [← outcome]
     exact output
 
-theorem KeyLive.rand_length {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.rand_length {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (_h : KeyLive p original used keys scalars s) : (keyRand p original).length = p.randLen :=
   by simp only [keyRand, Spec.Rsa.bytesAt, List.length_map, List.length_range]
 
-theorem KeyLive.loop_guard {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.loop_guard {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (status : lowWord s.mem p.control 14 = 4) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 14, .cmp .r9 (.imm 4)]) s fun t =>
       isa.eval .eq t = some true ∧ KeyLive p original used keys scalars t := by
-  refine WP.mono (statusGuard_ok s (status := 4) h.controller (by decide) status) ?_
-  rintro t ⟨⟨flag, mem⟩, rest⟩
-  refine ⟨?_, h.keep rest mem⟩
+  refine WP.mono_syms (statusGuard_ok s (status := 4) h.controller (by decide) status) ?_
+  rintro t ⟨⟨flag, mem⟩, rest⟩ syms
+  refine ⟨?_, h.keep rest mem syms⟩
   change some t.z = some true
   rw [flag]
   rfl
 
-theorem KeyDone.loop_guard {p : KeyPublic} {original s : State} {result : KeySearchResult}
+theorem KeyDone.loop_guard {p : KeyPublic sampling} {original s : State} {result : KeySearchResult}
     (h : KeyDone p original result s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 14, .cmp .r9 (.imm 4)]) s fun t =>
       isa.eval .eq t = some false ∧ KeyDone p original result t := by
@@ -57,8 +60,8 @@ theorem KeyDone.loop_guard {p : KeyPublic} {original s : State} {result : KeySea
   rw [flag, show decide (result.status = 4) = false from decide_eq_false different]
 
 /-- A verified implementation of the chosen backend's nested attempt call. -/
-def AttemptRunOk (backend : VG.Proof.Ffdh.Arm.KeyBackend) : Prop :=
-  ∀ (p : KeyPublic) (original s : State) (used keys scalars : Nat),
+def AttemptRunOk (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : Prop :=
+  ∀ (p : KeyPublic sampling) (original s : State) (used keys scalars : Nat),
     KeyLive p original used keys scalars s → used + p.len ≤ p.randLen →
       WP isa (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) s fun t =>
         KeyLive p original used keys scalars t ∧ AttemptPost p original used t

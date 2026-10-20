@@ -1,7 +1,8 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
 //! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search`). Rust lays out the domain, pads the values to the modulus' width,
+//! (`vg_ffdh_generate_key_search`, or its vetted-group entry point on ARM).
+//! Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
@@ -146,7 +147,8 @@ impl Domain {
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request
-    /// (`vg_ffdh_generate_key_search`).
+    /// ARM uses `vg_ffdh_generate_key_search_vetted` for generator 2;
+    /// other generators and architectures use the full-width search.
     pub(super) fn key_search(
         &self,
         state: &mut [u64; 16],
@@ -156,12 +158,27 @@ impl Domain {
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
+        #[cfg(target_arch = "arm")]
+        let f = {
+            // The public generator occupies one padded domain component.
+            // Exact prime and subgroup recognition remains in verified code.
+            let generator = &self.bytes[self.p_len..2 * self.p_len];
+            let vetted = generator[..self.p_len - 1].iter().all(|&byte| byte == 0)
+                && generator[self.p_len - 1] == 2;
+            match (Backend::ffdh(detected()), vetted) {
+                (Backend::Baseline, false) => vg_ffdh_generate_key_search,
+                (Backend::Baseline, true) => crate::arch::ffdh::vg_ffdh_generate_key_search_vetted,
+                (Backend::Umaal, false) => crate::arch::ffdh::vg_ffdh_generate_key_search_umaal,
+                (Backend::Umaal, true) => {
+                    crate::arch::ffdh::vg_ffdh_generate_key_search_vetted_umaal
+                }
+            }
+        };
+        #[cfg(not(target_arch = "arm"))]
         let f = match Backend::ffdh(detected()) {
             Backend::Baseline => vg_ffdh_generate_key_search,
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_ffdh_generate_key_search_adx,
-            #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_umaal,
         };
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only

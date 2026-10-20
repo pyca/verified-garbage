@@ -14,6 +14,7 @@ public descriptors and stack pointers. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm
 
 /-- Both runs satisfy `Φ a`, for the same `a`, with the same stack pointer. -/

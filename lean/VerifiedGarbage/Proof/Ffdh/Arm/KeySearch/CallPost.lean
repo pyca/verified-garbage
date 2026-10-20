@@ -14,9 +14,11 @@ attempt status and key pair, independent of its temporary call frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 
-theorem KeyLive.call_inputs {p : KeyPublic} {original s u : State} {used keys scalars : Nat}
+theorem KeyLive.call_inputs {p : KeyPublic sampling} {original s u : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (mem : u.mem = callMem p used s.mem (callSp p)) :
     Spec.Rsa.bytesAt u.mem (State.addr p.dp) p.dlen = p.dom ∧
@@ -30,11 +32,11 @@ theorem KeyLive.call_inputs {p : KeyPublic} {original s u : State} {used keys sc
   rw [h.input.tape_addr room, ← slice, h.input.call_random_frame frame, h.random]
   rfl
 
-theorem call_post {p : KeyPublic} {original s u t : State} {used keys scalars : Nat}
+theorem call_post {p : KeyPublic sampling} {original s u t : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) (room : used + p.len ≤ p.randLen)
     (args : ArgumentContext p used keys scalars u) (sp : u.sp = callSp p)
     (mem : u.mem = callMem p used s.mem (callSp p))
-    (post : (generateKeyContract abi 176).post (callState p used u)
+    (post : (GenerationPolicy.attemptContract sampling abi 176).post (callState p used u)
       (t.withRegions (callRd p used) (callWr p))) : AttemptPost p original used t := by
   have facts := h.input.callFacts room
   have a0 := call_stackArg (j := 0) facts sp mem (by decide)
@@ -46,7 +48,7 @@ theorem call_post {p : KeyPublic} {original s u t : State} {used keys scalars : 
   have nativeLen : (BitVec.ofNat 32 p.len).toNat = p.len := Nat.mod_eq_of_lt facts.lenFits
   have domainLen : (BitVec.ofNat 32 p.dlen).toNat = p.dlen := Nat.mod_eq_of_lt facts.domainLenFits
   have bytes := h.call_inputs room mem
-  sig_post [generateKeyContract, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
+  sig_post [GenerationPolicy.attemptContract, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at post
   rw [BitVec.setWidth_append_eq_right] at post
   simp only [args.x, args.y, a0, a1, a2, a3, a4, nativeLen, domainLen] at post
   simp only [State.addr] at bytes

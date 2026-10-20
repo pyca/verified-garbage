@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
@@ -18,6 +18,8 @@ argument frame, within the search's 24-byte AAPCS frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Spec.Ffdh VG.Proof.Mont
 
 abbrev stackUse : Nat := 232
@@ -32,9 +34,10 @@ def inControl (s : State) : Region := ⟨State.addr (stackArg s 8), 128⟩
 def inArgs (s : State) : Region := ⟨stackArgAddr s 0, 36⟩
 
 def writes (s : State) : List Region := [inX s, inY s, inUsed s, inScratch s, inControl s]
-def reads (s : State) : List Region := [inDomain s, inRand s, inArgs s]
+def reads (sampling : VG.Proof.Ffdh.GenerationPolicy) (s : State) : List Region :=
+  [inDomain s, inRand s, inArgs s] ++ constRegs (KeyConstants.consts sampling) s
 
-structure KeyPublic where
+structure KeyPublic (sampling : VG.Proof.Ffdh.GenerationPolicy := .full) where
   xp : BitVec 32
   yp : BitVec 32
   up : BitVec 32
@@ -50,8 +53,9 @@ structure KeyPublic where
   keys : Nat
   scalars : Nat
   dom : List Byte
+  tablePtr : BitVec 32
 
-def keyOfState (s : State) : KeyPublic where
+def keyOfState (sampling : VG.Proof.Ffdh.GenerationPolicy) (s : State) : KeyPublic sampling where
   xp := s.gpr .r0
   yp := s.gpr .r2
   up := stackArg s 0
@@ -67,12 +71,15 @@ def keyOfState (s : State) : KeyPublic where
   keys := (s.mem.readW (State.addr (stackArg s 8)) 64).toNat
   scalars := (s.mem.readW (off (State.addr (stackArg s 8)) 8) 64).toNat
   dom := Spec.Rsa.bytesAt s.mem (State.addr (stackArg s 1)) (stackArg s 2).toNat
+  tablePtr := KeyConstants.tablePtr sampling s
 
-def KeyInput (p : KeyPublic) (s : State) : Prop := (keySearchContract abi stackUse).pre s ∧ keyOfState s = p
+def KeyInput (p : KeyPublic sampling) (s : State) : Prop :=
+  (GenerationPolicy.searchContract sampling abi stackUse).pre (stripConsts (KeyConstants.consts sampling) s) ∧
+    keyOfState sampling s = p ∧ ConstsOk (KeyConstants.consts sampling) stackUse s
 
-abbrev KeyPublic.a (p : KeyPublic) : Parameters := domainOf p.len p.dom
+abbrev KeyPublic.a (p : KeyPublic sampling) : Parameters := domainOf p.len p.dom
 
-def KeyPublic.headers (p : KeyPublic) (used keys scalars : Nat) : List (Nat × BitVec 32) :=
+def KeyPublic.headers (p : KeyPublic sampling) (used keys scalars : Nat) : List (Nat × BitVec 32) :=
   [(0, BitVec.ofNat 32 keys), (1, BitVec.ofNat 32 scalars), (2, BitVec.ofNat 32 p.len),
     (5, p.xp), (6, p.yp), (7, p.dp), (8, BitVec.ofNat 32 p.dlen),
     (9, p.rp + BitVec.ofNat 32 used), (10, BitVec.ofNat 32 (p.randLen - used)),
@@ -83,14 +90,14 @@ def Slots (m : Mem) (base : BitVec 32) (values : List (Nat × BitVec 32)) : Prop
 
 def savedSlots : List (Reg × Nat) := [(.r4, 0), (.r9, 4), (.r10, 8), (.r11, 12), (.r12, 16), (.lr, 20)]
 
-def KeyOutput (p : KeyPublic) (result : KeySearchResult) (m : Mem) : Prop :=
+def KeyOutput (p : KeyPublic sampling) (result : KeySearchResult) (m : Mem) : Prop :=
   match result.outcome with
   | .accepted x y => Spec.Rsa.bytesAt m (State.addr p.xp) p.len = Spec.Rsa.i2osp x p.len ∧
       Spec.Rsa.bytesAt m (State.addr p.yp) p.len = Spec.Rsa.i2osp y p.len
   | _ => Spec.Rsa.bytesAt m (State.addr p.xp) p.len = List.replicate p.len 0 ∧
       Spec.Rsa.bytesAt m (State.addr p.yp) p.len = List.replicate p.len 0
 
-structure KeyLive (p : KeyPublic) (original : State) (used keys scalars : Nat) (s : State) : Prop where
+structure KeyLive (p : KeyPublic sampling) (original : State) (used keys scalars : Nat) (s : State) : Prop where
   input : KeyInput p original
   used_le : used ≤ p.randLen
   keys_le : keys ≤ 128
@@ -105,8 +112,10 @@ structure KeyLive (p : KeyPublic) (original : State) (used keys scalars : Nat) (
   domain : Spec.Rsa.bytesAt s.mem (State.addr p.dp) p.dlen = p.dom
   headers : Slots s.mem p.control (p.headers used keys scalars)
   high : ∀ j < 3, s.mem.readW (off (State.addr p.control) (8 * j + 4)) 32 = 0
+  tablePtr : KeyConstants.tablePtr sampling s = p.tablePtr
+  held : KeyConstants.held sampling p.tablePtr s.mem
 
-structure KeyDone (p : KeyPublic) (original : State) (result : KeySearchResult) (s : State) : Prop where
+structure KeyDone (p : KeyPublic sampling) (original : State) (result : KeySearchResult) (s : State) : Prop where
   input : KeyInput p original
   used_le : result.used ≤ p.randLen
   rd : s.rd = original.rd

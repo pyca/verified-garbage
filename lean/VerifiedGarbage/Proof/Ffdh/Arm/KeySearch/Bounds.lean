@@ -10,9 +10,11 @@ key-search signature. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Spec.Ffdh
 
-structure KeyBounds (p : KeyPublic) : Prop where
+structure KeyBounds (p : KeyPublic sampling) : Prop where
   minLength : 64 ≤ p.len
   maxLength : p.len ≤ 1024
   domainLength : domainLenValid p.len p.dlen
@@ -33,10 +35,11 @@ structure KeyBounds (p : KeyPublic) : Prop where
   usedFit : p.up.toNat + 8 ≤ 2 ^ 32
   scratchFit : p.scratch.toNat + 8 * p.capacity ≤ 2 ^ 32
 
-theorem KeyInput.bounds {p : KeyPublic} {s : State} (h : KeyInput p s) : KeyBounds p := by
+theorem KeyInput.bounds {p : KeyPublic sampling} {s : State} (h : KeyInput p s) : KeyBounds p := by
   have pre := h.1
-  cases h.2
-  sig_pre [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  cases h.2.1
+  sig_pre [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  simp only [KeyConstants.stackArg_stripConsts, KeyConstants.stackArgAddr_stripConsts] at pre
   obtain ⟨stackFit, argsFit, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, xFit, yFit, usedFit, domainFit, randomFit, scratchFit, controlFit, lengths, domainLength, xLen, yLen, scratchSpace, domainValid, keys, scalars, _⟩ := pre
   rw [xLen] at xFit
   rw [yLen] at yFit
