@@ -31,7 +31,7 @@ theorem KeyLive.keep {p : KeyPublic} {original s t : State} {used keys scalars :
 theorem KeyDone.keep {p : KeyPublic} {original s t : State} {result : Spec.Ffdh.KeySearchResult}
     (h : KeyDone p original result s) {rs : List Reg} (rest : Rest rs s t) (mem : t.mem = s.mem)
     (kept : ∀ r ∈ keptRegisters, r ∉ rs := by decide) : KeyDone p original result t := by
-  refine ⟨h.input, rest.rd.trans h.rd, rest.wr.trans h.wr, rest.sp.trans h.sp,
+  refine ⟨h.input, h.used_le, rest.rd.trans h.rd, rest.wr.trans h.wr, rest.sp.trans h.sp,
     (rest.gpr .r4 (kept .r4 (by decide))).trans h.pointer,
     fun r hr => (rest.gpr r (kept r (List.mem_cons_of_mem _ hr))).trans (h.kept r hr),
     ?_, ?_, ?_, ?_, ?_, ?_⟩

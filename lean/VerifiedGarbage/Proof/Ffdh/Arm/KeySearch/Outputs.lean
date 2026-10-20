@@ -78,7 +78,7 @@ theorem KeyLive.done {p : KeyPublic} {original s : State} {used keys scalars : N
       [BitVec.ofNat 64 result.retries.keys, BitVec.ofNat 64 result.retries.scalars,
         BitVec.ofNat 64 p.len, BitVec.ofNat 64 (if result.status = 0 then p.len else 0)])
     (output : KeyOutput p result s.mem) : KeyDone p original result s :=
-  ⟨h.input, h.rd, h.wr, h.sp, h.pointer, h.kept, h.saved,
+  ⟨h.input, by rw [count]; exact h.used_le, h.rd, h.wr, h.sp, h.pointer, h.kept, h.saved,
     h.header (by simp [KeyPublic.headers]), by rw [count]; exact h.header (by simp [KeyPublic.headers]),
     status, policy, output⟩
 

@@ -103,6 +103,7 @@ structure KeyLive (p : KeyPublic) (original : State) (used keys scalars : Nat) (
 
 structure KeyDone (p : KeyPublic) (original : State) (result : KeySearchResult) (s : State) : Prop where
   input : KeyInput p original
+  used_le : result.used ≤ p.randLen
   rd : s.rd = original.rd
   wr : s.wr = ⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩ :: original.wr
   sp : s.sp = p.sp - BitVec.ofNat 32 24

@@ -16,7 +16,7 @@ theorem KeyDone.congr {p : KeyPublic} {original s : State} {result expected : Ke
     (used : result.used = expected.used) : KeyDone p original expected s := by
   have status : result.status = expected.status := by unfold KeySearchResult.status; rw [outcome]
   have retries : result.retries = expected.retries := by unfold KeySearchResult.retries; rw [outcome]
-  refine ⟨h.input, h.rd, h.wr, h.sp, h.pointer, h.kept, h.saved, h.usedPtr,
+  refine ⟨h.input, by rw [← used]; exact h.used_le, h.rd, h.wr, h.sp, h.pointer, h.kept, h.saved, h.usedPtr,
     by rw [← used]; exact h.used, by rw [← status]; exact h.status, ?_, ?_⟩
   · rw [h.policy, status, retries]
   · have output := h.output
