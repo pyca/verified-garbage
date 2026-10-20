@@ -19,8 +19,8 @@ def copyBetween (count src dst : Nat) : Prog isa :=
 
 /-- Copy the original context to a private stack arena, retaining the original
 context for the caller; only the ordinary result is copied back. -/
-def stackPower (n _e : Nat) (power : Prog isa) : Prog isa :=
-  let bytes := contextBytes n + 128 * n
+def stackPower (n _e : Nat) (power : Prog isa) (entries : Nat := 16) : Prog isa :=
+  let bytes := contextBytes n + 8 * entries * n
   .frame (.push [.edi])
     (.frame (.alloc bytes) (seq [
       .block [.mov .esi (.reg .edi), .mov .ebp (.reg .esp)],
@@ -68,6 +68,36 @@ def window (n e : Nat) (pub : Bool) : Prog isa :=
   let tab := contextBytes n
   let p := windowExponentiate n e tab
   stackPower n e (if pub then replace [(selectWindow n tab (slot n 7), publicSelect n tab (slot n 7))] p else p)
+
+/-- Wider fixed windows for long public prime-search exponents only. -/
+def wideWindow (n e bits : Nat) : Prog isa :=
+  let tab := contextBytes n
+  let count := 2^bits
+  let product := mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 7)
+  let step := seq [
+    mul (contextMod n) 0 (slot n 2) (slot n 7) (slot n 7) (slot n 5),
+    copyOut (2*n) (slot n 7),
+    .block [.mov .edx (.reg .edi), .alu .add .edx (imm (entry n tab count)),
+      .alu .cmp .esi (.reg .edx)]]
+  let table := seq [copyWords n (slot n 6) (entry n tab 0),
+    copyWords n (slot n 5) (entry n tab 1), copyWords n (slot n 5) (slot n 7),
+    .block [.mov .esi (.reg .edi), .alu .add .esi (imm (entry n tab 2))], .loop step .ne]
+  let body := fun k => seq [
+    seq (List.replicate k (square n)),
+    .block [.mov .eax (.mem (sc (slot n 8+4*(e-1)))), .shift .shr .eax (32-k),
+      .store (sc windowOffset) .eax],
+    .seq (.block [.mov .ecx (imm 0)]) (wordLoop e ([
+      .mov .eax (.mem (at_ .ebp (slot n 8))), .mov .ebx (.reg .eax), .shift .shr .ebx (32-k)] ++
+      List.replicate k (.alu .add .eax (.reg .eax)) ++ [
+      .alu .add .eax (.reg .ecx), .store (at_ .ebp (slot n 8)) .eax, .mov .ecx (.reg .ebx)])),
+    publicSelect n tab (slot n 7), product]
+  stackPower n e (seq [
+    mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 4) (slot n 3),
+    mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 4), table,
+    (if 32*e % bits == 0 then .block [] else body (32*e % bits)),
+    .block [.mov .esi (imm (32*e/bits))],
+    .loop (.seq (body bits) (.block [.alu .sub .esi (imm 1), .alu .cmp .esi (imm 0)])) .ne,
+    mul (contextMod n) 0 (slot n 2) (slot n 6) (slot n 6) (slot n 3)]) count
 
 def widths := [(16,5),(3,5),(32,5),(32,7),(4,7),(32,8),(4,8),(48,8)]
 def domains := [(128,20),(256,28),(256,32),(384,32),(256,20)]
@@ -262,6 +292,8 @@ def main (args : List String) : IO Unit := do
   let fs := if mode == "abi" then Prototype.widths.map (fun (n,e) =>
     ("proto_dsa_abi_pow_" ++ toString n ++ "_" ++ toString e, Prototype.abiWrapper n e)) else Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
   let json := fs.map fun (name, p) =>
+    let p := if mode.contains 'z' then Prototype.replace
+      ([(16,32),(32,64),(48,96)].map fun (n,e) => (Prototype.window n e true, Prototype.wideWindow n e 6)) p else p
     let p := if mode.contains 'f' then Prototype.replace ([3,4,16,32,48].map fun n => (contextSeed n, Prototype.fastSeed n)) p else p
     let p := if mode != "baseline" && mode.contains 's' then Prototype.replace (Prototype.squareRules (mode.contains 'c') (mode.contains 'v')) p else p
     let p := if mode.contains 't' then Prototype.replace

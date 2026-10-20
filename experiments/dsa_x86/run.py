@@ -71,7 +71,7 @@ if env.get('PROTOTYPE_PARAMETERS')=='1':
     winner=min((v for v in variants if v!='baseline'),key=lambda v:sum(math.log(ns/fixed['baseline'][bits]) for bits,ns in fixed[v].items()))
     print('PARAMETER_WINNER',winner,flush=True)
     for mode in ['baseline',winner]:
-        filt='^dsa_generate_parameters' if mode=='baseline' else '^dsa_generate_parameters/verified-garbage/'
+        filt='^dsa_generate_parameters/openssl/' if mode=='baseline' else '^dsa_generate_parameters/verified-garbage/'
         run([str(out/mode),'--bench',filt,'--warm-up-time','0.1','--measurement-time','0.3','--sample-size','10','--noplot'],mode+'-random-parameters.log',{'VG_BENCHES':'dsa_parameters','CRITERION_HOME':str(out/'parameters'/mode)})
     lines=['','Complete random parameter generation (10 samples; search variance applies):','| Variant | Workload | median ms |','|---|---|---:|']
     for mode in ['baseline',winner]:

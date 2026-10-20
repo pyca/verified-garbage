@@ -57,3 +57,9 @@ wrapper reproduced the register corruption. The carry now uses offset 24,
 beyond all four saved-register words. Every power identity checks all four
 callee-saved registers as well as the arithmetic result. The affected native
 run (39514353796) was cancelled and its results must not be used.
+
+Final stacking experiment: `z` uses a 6-bit fixed window only for the long public
+1024/2048/3072-bit parameter-search exponents. It handles a partial leading window
+explicitly and allocates 64 table entries. Private powers retain four-bit masked
+selection. The final comparison times the selected prototype beside OpenSSL;
+the earlier sweeps also measured the verified baseline's random searches.
