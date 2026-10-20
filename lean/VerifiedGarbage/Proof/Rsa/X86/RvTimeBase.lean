@@ -238,4 +238,27 @@ theorem mmul_relCT {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha 
   rintro u v ⟨-, ⟨_, _, _, _, _, _, _, hu⟩, ⟨_, _, _, _, _, _, _, hv⟩⟩
   exact ks_agree pg hu hv
 
+theorem KS.stage {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live liveW ls : List Nat}
+    (h : KS g s0 A live AW liveW V ls s) : MulPost g s := ⟨_, _, _, _, _, _, _, h⟩
+
+/-- A piece checked by `τA`, between stages, with each run's correctness. -/
+theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
+    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    {P Q P' Q' : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t)
+    (left : ∀ s, P s → WP isa c s P') (right : ∀ t, Q t → WP isa c t Q') :
+    RelCT isa (fun s t => P s ∧ Q t) c (fun s t => P' s ∧ Q' t) :=
+  stage_relCT (fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
+    obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs
+    obtain ⟨_, _, _, _, _, _, _, j⟩ := hQ t ht
+    exact ⟨pub_trace pg hc h j es et, trivial⟩) left right
+
+/-- A piece checked by `τA` from two stages. -/
+theorem pub_relCT' {g : Geo} (pg : PubG g) {c : Prog isa}
+    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    {P Q : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t) :
+    RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True) := fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
+  obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs
+  obtain ⟨_, _, _, _, _, _, _, j⟩ := hQ t ht
+  exact ⟨pub_trace pg hc h j es et, trivial⟩
+
 end VG.Proof.Rsa.X86.Recover

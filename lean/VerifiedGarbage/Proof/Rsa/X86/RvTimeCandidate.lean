@@ -28,8 +28,6 @@ open VG.Proof.Rsa.X86.Keys
 section
 variable {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live ls : List Nat} {m : Nat}
 
-theorem KS.stage {liveW : List Nat} (h : KS g s0 A live AW liveW V ls s) : MulPost g s := ⟨_, _, _, _, _, _, _, h⟩
-
 /-- What `KS.mulY` needs: the Montgomery product's precondition. -/
 theorem KS.mulYPre {b y z : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s)
     (hY : mY ∈ live) (hb : b ∈ live) (hB : mBase ∈ live) (hI : sInv ∈ ls) (value : A mBase = m)
@@ -41,17 +39,6 @@ theorem KS.mulYPre {b y z : Nat} (h : KS g s0 A live AW [wRc, wR] V ls s)
     by rw [hy]; exact Nat.mod_lt _ positive, by rw [hz]; exact Nat.mod_lt _ positive, hl, by decide⟩
 
 end
-
-/-- A piece checked by `τA`, between stages, with each run's correctness. -/
-theorem pub_relCT {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
-    {P Q P' Q' : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t)
-    (left : ∀ s, P s → WP isa c s P') (right : ∀ t, Q t → WP isa c t Q') :
-    RelCT isa (fun s t => P s ∧ Q t) c (fun s t => P' s ∧ Q' t) :=
-  stage_relCT (fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
-    obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs
-    obtain ⟨_, _, _, _, _, _, _, j⟩ := hQ t ht
-    exact ⟨pub_trace pg hc h j es et, trivial⟩) left right
 
 /-- A Montgomery product between stages, with each run's correctness. -/
 theorem mmul_stage {g : Geo} (pg : PubG g) {o a b : Nat} (ho : MontIndex o) (ha : MontIndex a)
@@ -348,15 +335,6 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
     (by rw [upd_ne _ _ (by decide), upd_self]) (by rw [upd_self]; exact entryB)) f6
   have q7 := pub_trace pg cntNextCheck h6 j6 e7 f7
   rw [q1, q2, q3, q4, q5, q6, q7]
-
-/-- A piece checked by `τA` from two stages. -/
-theorem pub_relCT' {g : Geo} (pg : PubG g) {c : Prog isa}
-    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
-    {P Q : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t) :
-    RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True) := fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
-  obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs
-  obtain ⟨_, _, _, _, _, _, _, j⟩ := hQ t ht
-  exact ⟨pub_trace pg hc h j es et, trivial⟩
 
 theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen) (pg : PubG g) :
     RelCT isa (fun s t => C.Start s ∧ D.Start t) VG.Impl.Rsa.X86.RecoverRt.candExp
