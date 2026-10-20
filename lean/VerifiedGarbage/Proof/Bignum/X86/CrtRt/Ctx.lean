@@ -52,6 +52,32 @@ theorem CtxOk.keepF (C : CtxOk base bytes len args c M s) {regs : List Reg} (K :
       (fun p hp => .inl (by have := h0 p hp; simp only [invOff, numBase] at *; omega)) hfit, w32_val32_one]
     exact C.inv
 
+/-- The same for ranges that may also lie in the header past its first word. -/
+theorem CtxOk.keepF2 (C : CtxOk base bytes len args c M s) {regs : List Reg} (K : Keeps regs s t)
+    (di : .edi ∉ regs) (sp : .esp ∉ regs) {ws : List (Nat × Nat)}
+    (F : Frame (frameR base (s.gpr .esp) ws) s.mem t.mem) (hfit : ∀ p ∈ ws, p.1 + p.2 ≤ bytes)
+    (h0 : ∀ p ∈ ws, numBase + bc len c ≤ p.1 ∨ (4 ≤ p.1 ∧ p.1 + p.2 ≤ numBase)) :
+    CtxOk base bytes len args c M t := by
+  have h := C.inp
+  have nw := h.crt.scratch.nowrap
+  have f0 := h.slot_fit c (j := 0) (by decide)
+  have bw := bc_eq_cwc len c
+  have z0 : lo len (.slot c 0) = numBase := sl_zero len c
+  have est : st len c = 2 * bc len c + 32 := rfl
+  have nb : numBase = 3336 := rfl
+  have io : invOff = 0 := rfl
+  refine ⟨h.keepF K di sp F hfit, ?_, C.gt, C.odd, ?_⟩
+  · have hm := C.mod
+    simp only [sv, z0] at hm ⊢
+    rw [frameR_val32 F h.crt.room nw (by omega) (fun p hp => by
+      rcases h0 p hp with e | e
+      · exact .inl (by omega)
+      · exact .inr (by omega)) hfit]
+    exact hm
+  · rw [← w32_val32_one, frameR_val32 F h.crt.room nw (by omega)
+      (fun p hp => .inl (by rcases h0 p hp with e | e <;> omega)) hfit, w32_val32_one]
+    exact C.inv
+
 /-- The ranges of a multiplication into slot `o`. -/
 abbrev mulR (len : Nat) (c : Ctx) (o : Nat) : List (Nat × Nat) :=
   [(lo len (.slot c o), bc len c), (lo len (.slot c 1), 3 * bc len c + 56)]

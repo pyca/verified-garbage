@@ -74,7 +74,7 @@ theorem entryPtr_ok {is : List Instr} {Q : State → Prop} {c : Ctx} {j : Nat} {
 /-- A selection under the mask `ecx` through `ebp` (source) and `ebx` (destination), `edi` counting
 the bytes, then `edi` reloaded: from `s₀`, whose inputs hold, by register changes. -/
 theorem selectTail_ok {s₀ : State} (h : In base bytes len args s₀)
-    (K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi, .esi] s₀ s) (m₀ : s.mem = s₀.mem)
+    (K₀ : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s₀ s) (m₀ : s.mem = s₀.mem)
     {x d N : Nat} {k : Bool} (hN : 0 < N) (hx : x + 4 * N ≤ bytes) (hd : d + 4 * N ≤ bytes)
     (hxd : d + 4 * N ≤ x ∨ x + 4 * N ≤ d) (pe : PtrAt s base .ebp x) (pb : PtrAt s base .ebx d)
     (ce : (s.gpr .edi).toNat = 4 * N) (hk : s.gpr .ecx = cmask k) :
@@ -82,17 +82,17 @@ theorem selectTail_ok {s₀ : State} (h : In base bytes len args s₀)
       Outside base d (4 * N) s.mem u.mem ∧
       val32 u.mem base d N = (if k then val32 s.mem base x N else val32 s.mem base d N) ∧
       PtrAt u base .ebx (d + 4 * N) ∧
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s₀ u := by
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s₀ u := by
   have ws : Ws s base bytes := h.ws.of_keeps K₀
   have hn := h.crt.scratch.nowrap
   refine WP.seq (WP.mono (selectLoop_ok ws (x := x) (d := d) (N := N) k hN hx hd hxd pe pb ce hk)
     fun t ⟨O, V, pbt, Kt⟩ => ?_)
-  have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi, .esi] s₀ t := K₀.trans (Kt.mono (by decide))
+  have Kall : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .edi] s₀ t := K₀.trans (Kt.mono (by decide))
   have Oall : Outside base 0 bytes s₀.mem t.mem := by rw [← m₀]; exact O.mono (Nat.zero_le _) (by omega)
   refine wp_movS ((h.crt.stack 16 (by decide)).keep Kall (by decide) Oall).readSrc fun t₁ u₁ _ => WP.block_nil ?_
   have ed : t₁.gpr .edi = s₀.gpr .edi := by rw [u₁.gpr]; exact h.edi_eq
   refine ⟨by rw [u₁.mem]; exact O, by rw [u₁.mem]; exact V, by rw [PtrAt, u₁.other _ (by decide)]; exact pbt,
-    PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp, .esi]) ?_ ed⟩
+    PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp]) ?_ ed⟩
   exact (Kall.trans (u₁.keeps.mono (by decide))).mono (by decide)
 
 end

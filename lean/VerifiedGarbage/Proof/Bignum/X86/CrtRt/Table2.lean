@@ -60,7 +60,7 @@ theorem copyEntry_ok (h : In base bytes len args s) {x j : Nat} (hx : x ≤ 8) (
     {Q : State → Prop}
     (k : ∀ u, Outside base (te len c j) (bc len c) s.mem u.mem →
       val32 u.mem base (te len c j) (cwc len c) = sv s.mem base len c x →
-      Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u → WP isa P u Q) :
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s u → WP isa P u Q) :
     WP isa (.seq (.block ([.mov .ecx (.imm (BitVec.allOnes 32))] ++ ptrTo (.slot c x) .ebp .edx ++
       entryPtr c .ebx j .edx ++ cntTo (one c) .edi)) (.seq (.seq selectLoop (.block restoreEdi)) P)) s Q := by
   have f8 := h.slot_fit c (j := 8) (by decide)
@@ -347,7 +347,7 @@ theorem buildTable_ok {b : Nat} (C : CtxOk base bytes len args c M s)
     rw [m₄]; exact frameR_of_outside O₃ (by omega) (by simp)
   have F : Frame (frameR base (s.gpr .esp) (tabR len c)) s.mem w.mem := F₁.trans (F₂.trans F₃)
   have K : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w :=
-    ((K₁.trans K₂).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))
+    (((K₁.trans K₂).trans K₃).mono (by decide)).trans (K₄.mono (by decide))
   have S5 : sv u₂.mem base len c 5 = sv s.mem base len c 5 := tabR_slot5 h (F₁.trans F₂) h.crt.room
   have I₂ : TabInv base bytes len args c M b s 2 w := by
     refine ⟨C.keepF K (by decide) (by decide) F fit (tabR_past h c), K, F, fun j hj => ?_, ?_, p₄⟩
