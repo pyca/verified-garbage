@@ -15,7 +15,7 @@ open VG VG.X86 VG.Impl.Bignum.X86.PublicContext
 open VG.Proof.Mont.X86.Dynamic
 
 theorem setup_check (n : Nat) :
-    VG.Taint.check taint (workspaceTaint false) (setup n) contextSetupHint = some counterEndTaint :=
+    VG.Taint.check taint (workspaceTaint false) (setup n) contextSeedHint = some counterEndTaint :=
   exponent_check_seq taint (setupInverse_taint false (slot n 0) inverseOffset) (by rfl)
     (exponent_check_seq taint (one_check false n (slot n 4)) (by rfl)
       (powerTwo_check (modulus n) (slot n 2) (slot n 5) (128 * n)))

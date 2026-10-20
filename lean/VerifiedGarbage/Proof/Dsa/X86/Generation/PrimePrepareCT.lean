@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Dsa.X86.Generation.FactorCTState
 public import VerifiedGarbage.Proof.Dsa.X86.RandomTwo
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PrepareExponentCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.RoundArithmeticCT
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
 
 /-! # A candidate's shared Montgomery context and odd exponent are prepared once -/
 @[expose] public section

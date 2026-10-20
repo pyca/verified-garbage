@@ -1,29 +1,106 @@
 module
-public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-public import VerifiedGarbage.Proof.Mont.X86.PowerStep
 
-import VerifiedGarbage.Proof.Mont.X86.PowerTwo
-import VerifiedGarbage.Proof.Mont.X86.Inverse
+public import VerifiedGarbage.Proof.Mont.X86.ContextSeed
+import VerifiedGarbage.Proof.Mont.X86.ContextMul
+import VerifiedGarbage.Proof.Mont.X86.ContextMath
+import VerifiedGarbage.Proof.Mont.X86.DynamicFrame
 import VerifiedGarbage.Proof.Mont.X86.PowerInit
-import VerifiedGarbage.Proof.Mont.X86.ContextLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Bignum.Math
+import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.X86.Wp
 
-/-! # Constructing the runtime Montgomery context -/
+/-! # Montgomery setup with a short loop of squares -/
 
 @[expose] public section
 namespace VG.Proof.Mont.X86.Dynamic
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Proof.Mont
 open VG.Proof.Mont.X86
 
-theorem modulus_low {n m : Nat} {base : Addr} {mem : Mem} (hn : 0 < n)
-    (hv : wordsVal mem base (slot n 0) n = m) : m % 2 ^ 32 = w32 mem base (slot n 0) := by
-  obtain ⟨k, hk⟩ : ∃ k, 2 * n = k + 1 := ⟨2 * n - 1, by omega⟩
-  rw [wordsVal_eq_val32, hk, val32] at hv
-  have hl : w32 mem base (slot n 0) < 2 ^ 32 := (mem.readW (off base (slot n 0)) 32).isLt
-  omega
+/-- Squaring in Montgomery form doubles the exponent above the radix. -/
+theorem setup_square_power {v n k m : Nat} (hc : Nat.Coprime (2 ^ (64 * n)) m)
+    (hv : v < m)
+    (h : v * 2 ^ (64 * n) % m =
+      (2 ^ (64 * n + k) % m) * (2 ^ (64 * n + k) % m) % m) :
+    v = 2 ^ (64 * n + 2 * k) % m := by
+  have eqpow : 2 ^ (64 * n + k) * 2 ^ (64 * n + k) =
+      2 ^ (64 * n + 2 * k) * 2 ^ (64 * n) := by
+    simp only [← Nat.pow_add]
+    congr 1
+    omega
+  have he : v % m = 2 ^ (64 * n + 2 * k) % m :=
+    VG.Proof.Bignum.mont_cancel hc (by rw [h, ← Nat.mul_mod, eqpow])
+  rwa [Nat.mod_eq_of_lt hv] at he
 
-def setupRanges (n : Nat) : List (Nat × Nat) :=
-  [(0, 4), (slot n 3, 8 * n), (slot n 4, 8 * n), (slot n 1, 8 * n), (slot n 2, 16 * n + 4)]
+/-- The setup loop preserves the context and one, and doubles the exponent
+above R at each iteration. Its writes are the original setup's ranges. -/
+structure SetupInv (n m size a i : Nat) (base : Addr) (s t : State) : Prop where
+  context : Context n m base size t
+  counter : t.gpr .esi = BitVec.ofNat 32 (6 - i)
+  one : wordsVal t.mem base (slot n 3) n = wordsVal s.mem base (slot n 3) n
+  value : wordsVal t.mem base (slot n 4) n = 2 ^ (64 * n + 2 ^ i * a) % m
+  mem : Outs base (setupRanges n) s.mem t.mem
+  keeps : Keeps powerClob s t
+
+theorem setupSquareStep_ok {n size m a i : Nat} {base : Addr} {s t : State}
+    (I : SetupInv n m size a i base s t) (hi : i < 6) :
+    WP isa (setupSquareStep n) t fun u =>
+      SetupInv n m size a (i + 1) base s u ∧ u.zf = some (decide (i + 1 = 6)) := by
+  unfold setupSquareStep
+  refine WP.seq (WP.mono (context_mul_ok I.context (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) ?_) fun u ⟨Cu, K, lt, Mu⟩ => ?_)
+  · rw [I.value]
+    exact Nat.mod_lt _ (by have := I.context.gt_one; omega)
+  · have Vu : wordsVal u.mem base (slot n 4) n = 2 ^ (64 * n + 2 ^ (i + 1) * a) % m := by
+      have V := setup_square_power I.context.coprime lt (by simpa only [I.value] using Mu)
+      simpa only [Nat.pow_succ, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using V
+    have one := context_slot_val I.context (i := 3) (by decide) (by decide) (by decide) (by decide) K
+    have out : Outs base (setupRanges n) t.mem u.mem := K.mem.mono (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp [setupRanges, contextMod, accLen, words] <;> omega)
+    have count : u.gpr .esi = BitVec.ofNat 32 (6 - i) := (K.gpr .esi (by decide)).trans I.counter
+    refine wp_subS rfl fun v uv _ => ?_
+    refine wp_cmpS rfl fun w fw zw => WP.block_nil ?_
+    have mem : w.mem = u.mem := fw.mem.trans uv.mem
+    have keep : Keeps powerClob u w := uv.keeps.mono (by decide) |>.trans (fw.keeps powerClob)
+    have Cw : Context n m base size w :=
+      ⟨Cu.scr.of_keeps keep (by decide), Cu.size_le, mem ▸ Cu.modulus, Cu.gt_one, mem ▸ Cu.inverse⟩
+    refine ⟨⟨Cw, ?_, mem ▸ one.trans I.one, mem ▸ Vu, mem ▸ I.mem.trans out,
+      I.keeps.trans (((VG.Proof.Mont.X86.Dynamic.OpKeep.keeps K).mono (by decide)).trans keep)⟩, ?_⟩
+    · rw [fw.gpr, uv.gpr, count, counter_sub (by omega) (by omega)]
+      congr 1
+    · rw [zw, uv.gpr, count, counter_sub (by omega) (by omega), counter_zero (by omega) (by omega)]
+      simp only [show (6 - i = 1) ↔ i + 1 = 6 by omega]
+
+theorem setupSquares_ok {n size m a : Nat} {base : Addr} {s : State}
+    (C : Context n m base size s)
+    (V : wordsVal s.mem base (slot n 4) n = 2 ^ (64 * n + a) % m) :
+    WP isa (setupSquares n) s fun t =>
+      Context n m base size t ∧
+      wordsVal t.mem base (slot n 3) n = wordsVal s.mem base (slot n 3) n ∧
+      wordsVal t.mem base (slot n 4) n = 2 ^ (64 * n + 64 * a) % m ∧
+      Outs base (setupRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
+  unfold setupSquares
+  refine WP.seq (wp_movS rfl fun u su _ => WP.block_nil ?_)
+  have ku : Keeps powerClob s u := su.keeps.mono (by decide)
+  have Cu : Context n m base size u :=
+    ⟨C.scr.of_keeps ku (by decide), C.size_le, su.mem ▸ C.modulus, C.gt_one, su.mem ▸ C.inverse⟩
+  have init : SetupInv n m size a 0 base s u := by
+    refine ⟨Cu, su.gpr, su.mem ▸ rfl, ?_, su.mem ▸ Outs.refl _ _ _, ku⟩
+    simpa only [su.mem, Nat.pow_zero, Nat.one_mul] using V
+  have loop : WP isa (.loop (setupSquareStep n) .ne) u (SetupInv n m size a 6 base s) := by
+    refine WP.loop (M := isa)
+      (fun k t => ∃ i, k = 6 - i ∧ i < 6 ∧ SetupInv n m size a i base s t)
+      ?_ 6 u ⟨0, rfl, by decide, init⟩
+    rintro k t ⟨i, rfl, hi, I⟩
+    refine WP.mono (setupSquareStep_ok I hi) fun v ⟨next, zf⟩ => ?_
+    by_cases done : i + 1 = 6
+    · refine .inl ⟨?_, done ▸ next⟩
+      simp only [eval, zf, done, decide_true, Option.map_some, Bool.not_true]
+    · refine .inr ⟨?_, 6 - (i + 1), by omega, i + 1, rfl, by omega, next⟩
+      simp only [eval, zf, decide_eq_false done, Option.map_some, Bool.not_false]
+  exact WP.mono loop fun t I => ⟨I.context, I.one, I.value, I.mem, I.keeps⟩
 
 theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State}
     (hs : Scr s base size) (hn : 0 < n) (hn32 : 128 * n < 2 ^ 32)
@@ -33,71 +110,12 @@ theorem contextSetup_ok {n size m : Nat} {base : Addr} {s : State}
       Context n m base size t ∧ wordsVal t.mem base (slot n 3) n = 1 ∧
       wordsVal t.mem base (slot n 4) n = 2 ^ (128 * n) % m ∧
       Outs base (setupRanges n) s.mem t.mem ∧ Keeps powerClob s t := by
-  have nw := hs.nowrap
-  have b0 := slot_bound (n := n) (i := 0) (by decide)
-  have b1 := slot_bound (n := n) (i := 1) (by decide)
-  have b3 := slot_bound (n := n) (i := 3) (by decide)
-  have b4 := slot_bound (n := n) (i := 4) (by decide)
-  have hd0 := slot_header n 0
-  have hd1 := slot_header n 1
-  have hd2 := slot_header n 2
-  have hd3 := slot_header n 3
-  have hd4 := slot_header n 4
-  have s01 := slot_le (n := n) (i := 0) (j := 1) (by decide)
-  have s03 := slot_le (n := n) (i := 0) (j := 3) (by decide)
-  have s04 := slot_le (n := n) (i := 0) (j := 4) (by decide)
-  have s13 := slot_le (n := n) (i := 1) (j := 3) (by decide)
-  have s23 := slot_le (n := n) (i := 2) (j := 3) (by decide)
-  have s34 := slot_le (n := n) (i := 3) (j := 4) (by decide)
-  have low := modulus_low hn hv
-  have lowodd : w32 s.mem base (slot n 0) % 2 = 1 := by omega
-  unfold contextSetup
-  refine WP.seq (WP.mono (setupInverse_ok hs
-    (by unfold stride at b0; omega) (by unfold stride at b0; omega) lowodd) fun u ⟨inv, O, K⟩ => ?_)
-  have cu : Context n m base size u := by
-    refine ⟨hs.of_keeps K (by decide), hz, ⟨hn, ?_, ?_, ?_, ?_⟩, hm1, ?_⟩
-    · change slot n 0 + 8 * n ≤ size; unfold stride at b0; omega
-    · change slot n 1 + 8 * n ≤ size; unfold stride at b1; omega
-    · change slot n 0 + 8 * n ≤ slot n 1 ∨ slot n 1 + 8 * n ≤ slot n 0
-      unfold stride at s01; omega
-    · change wordsVal u.mem base (slot n 0) n = m
-      rw [wordsVal_eq_val32, O.val32 (by omega) (by unfold stride at b0; omega), ← wordsVal_eq_val32, hv]
-    · rw [Nat.add_mod, Nat.mul_mod, low] at ⊢
-      rw [Nat.add_mod, Nat.mul_mod] at inv
-      simpa only [Nat.mod_eq_of_lt (s.mem.readW (off base (slot n 0)) 32).isLt] using inv
-  refine WP.seq (WP.mono (one_ok cu.scr hn (by unfold stride at b3; omega)) fun v ⟨Ov, Vv, Kv⟩ => ?_)
-  have cv := cu.outside_keep Kv (by decide) (by decide) Ov
-    (.inl (by unfold stride at s03; omega)) (by omega)
-  refine WP.mono (powerTwo_ok cv.scr cv.modulus
-    (context_opLay hz (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
-    (by change slot n 4 + 8 * n ≤ slot n 0 ∨ slot n 0 + 8 * n ≤ slot n 4; unfold stride at s04; omega)
-    hm1 (by change 0 < 128 * n; omega) hn32) fun t ⟨Vt, _, Mt, Ot, Kt⟩ => ?_
-  have inverseT : (m * w32 t.mem base 0 + 1) % 2 ^ 32 = 0 := by
-    have vv : val32 t.mem base 0 1 = val32 v.mem base 0 1 := by
-      apply Ot.val32
-      · intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> simp only [contextMod] <;> omega
-      · decide
-    have vv' : w32 t.mem base 0 = w32 v.mem base 0 := by
-      simpa only [val32, Nat.mul_zero, Nat.add_zero] using vv
-    rw [vv']; exact cv.inverse
-  refine ⟨⟨cv.scr.of_keeps Kt (by decide), hz, Mt, hm1, inverseT⟩, ?_, Vt, ?_,
-    (((K.mono (by decide)).trans (Kv.mono (by decide))).trans Kt)⟩
-  · rw [wordsVal_eq_val32]
-    have keep : val32 t.mem base (slot n 3) (2 * n) = val32 v.mem base (slot n 3) (2 * n) := by
-      apply Ot.val32
-      · intro r hr
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> simp only [contextMod, accLen, words] <;>
-          unfold stride at s13 s23 s34 <;> omega
-      · unfold stride at b3; omega
-    rw [keep, ← wordsVal_eq_val32, Vv]
-  · have oo : Outs base (setupRanges n) s.mem u.mem := Outs.of_outside O (by simp [setupRanges])
-    have ov : Outs base (setupRanges n) u.mem v.mem := Outs.of_outside Ov (by simp [setupRanges])
-    exact (oo.trans ov).trans (Ot.mono (by
-      intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl <;> simp [setupRanges, contextMod, accLen, words] <;> omega))
+  refine WP.seq (WP.mono (contextSeed_ok hs hn (by omega) hz hv hm1 hodd) fun u ⟨Cu, Ou, Vu, Fu, Ku⟩ => ?_)
+  have V : wordsVal u.mem base (slot n 4) n = 2 ^ (64 * n + n) % m := by
+    simpa only [show 64 * n + n = 65 * n by omega] using Vu
+  refine WP.mono (setupSquares_ok Cu V) fun t ⟨Ct, Ot, Vt, Ft, Kt⟩ =>
+    ⟨Ct, Ot.trans Ou, ?_, Fu.trans Ft, Ku.trans Kt⟩
+  simpa only [show 64 * n + 64 * n = 128 * n by omega] using Vt
+
 
 end VG.Proof.Mont.X86.Dynamic

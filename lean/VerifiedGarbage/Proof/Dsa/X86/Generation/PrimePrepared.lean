@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimeInputs
 public import VerifiedGarbage.Impl.Dsa.X86.Generation.Prime
 import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimePrepare
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
 
 /-! # Prepare the candidate context and saved odd exponent exactly once -/
 @[expose] public section

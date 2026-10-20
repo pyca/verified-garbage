@@ -23,9 +23,22 @@ def contextMod (n : Nat) : Mod := { n, mo := slot n 0, tmp := slot n 1, minv := 
 /-- Slots: modulus, subtraction temporary, accumulator, one, R², base,
 result, conditional product, mutable exponent. The header stores the inverse
 and selection mask. All offsets depend only on public widths. -/
-def contextSetup (n : Nat) : Prog isa :=
+def contextSeed (n : Nat) : Prog isa :=
   .seq (.block (setupInverse (slot n 0) 0)) (.seq (one n (slot n 3))
-    (powerTwo (contextMod n) (slot n 2) (slot n 4) (128 * n)))
+    (powerTwo (contextMod n) (slot n 2) (slot n 4) (65 * n)))
+
+/-- Square the setup residue and decrement its public iteration count. -/
+def setupSquareStep (n : Nat) : Prog isa :=
+  .seq (mul (contextMod n) 0 (slot n 2) (slot n 4) (slot n 4) (slot n 4))
+    (.block [.alu .sub .esi (.imm 1), .alu .cmp .esi (.imm 0)])
+
+/-- Six Montgomery squares turn `2^(65*n)` into `R²`: each doubles the
+exponent above the radix `2^(64*n)`. The loop shares one multiplication body. -/
+def setupSquares (n : Nat) : Prog isa :=
+  .seq (.block [.mov .esi (.imm 6)]) (.loop (setupSquareStep n) .ne)
+
+/-- Initialize the inverse, one, and R² without 128*n modular doublings. -/
+def contextSetup (n : Nat) : Prog isa := .seq (contextSeed n) (setupSquares n)
 
 def exponentProduct (n : Nat) : Prog isa :=
   .seq (.block (exponentMask (slot n 8) 4))

@@ -30,13 +30,41 @@ theorem powerTwo_check (M : VG.Impl.Mont.Mod) (acc out bits : Nat) :
   rw [body]
   rfl
 
-def contextSetupHint : VG.Taint.Hint VG.X86.Taint.T :=
+def contextSeedHint : VG.Taint.Hint VG.X86.Taint.T :=
   .seq (workspaceTaint false) (.block []) (.seq (workspaceTaint false) (oneHint false) powerHint)
+
+theorem contextSeed_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint false) (contextSeed n) contextSeedHint = some counterEndTaint :=
+  exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl)
+    (exponent_check_seq taint (one_check false n (slot n 3)) (by rfl)
+      (powerTwo_check (contextMod n) (slot n 2) (slot n 4) (65 * n)))
+
+
+def setupSquareHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (mulHint true) (.block [])
+
+def setupSquaresHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) setupSquareHint)
+
+theorem setupSquares_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint false) (setupSquares n) setupSquaresHint = some counterEndTaint := by
+  have step : VG.Taint.check taint (workspaceTaint true) (setupSquareStep n) setupSquareHint =
+      some counterEndTaint :=
+    exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) (by rfl)
+  unfold setupSquares setupSquaresHint
+  refine exponent_check_seq taint (u := workspaceTaint true) (by rfl) (by rfl) ?_
+  change (if taint.le (workspaceTaint true) (workspaceTaint true) then
+    (VG.Taint.check taint (workspaceTaint true) (setupSquareStep n) setupSquareHint).bind
+      (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
+    else none) = _
+  rw [step]
+  rfl
+
+def contextSetupHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint false) contextSeedHint setupSquaresHint
 
 theorem contextSetup_check (n : Nat) :
     VG.Taint.check taint (workspaceTaint false) (contextSetup n) contextSetupHint = some counterEndTaint :=
-  exponent_check_seq taint (setupInverse_taint false (slot n 0) 0) (by rfl)
-    (exponent_check_seq taint (one_check false n (slot n 3)) (by rfl)
-      (powerTwo_check (contextMod n) (slot n 2) (slot n 4) (128 * n)))
+  exponent_check_seq taint (contextSeed_check n) (by rfl) (setupSquares_check n)
 
 end VG.Proof.Mont.X86.Dynamic

@@ -1,7 +1,8 @@
 module
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PrimeReady
 public import VerifiedGarbage.Proof.Dsa.X86.Generation.PrepareExponent
-public import VerifiedGarbage.Proof.Mont.X86.ContextInit
+public import VerifiedGarbage.Proof.Mont.X86.ContextSeed
+import VerifiedGarbage.Proof.Mont.X86.ContextInit
 
 /-! # Candidate resources before Montgomery preparation -/
 @[expose] public section
