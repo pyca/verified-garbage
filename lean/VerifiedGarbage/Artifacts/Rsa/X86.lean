@@ -34,9 +34,11 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.KeyCheck.code_sp false
     stack := 20 },
   Spec.Rsa.crtValuesApi.artifact X86.target {
-    code := Impl.Rsa.X86.CrtValues.code
+    notes := ["The modulus's length gives the numbers' width at run time: every operation computes \
+      its arrays' addresses from it. The length is public; only the modulus's check selects a branch. Callee-saved \
+      registers reside in scratch."]
+    code := Impl.Rsa.X86.CrtValuesRt.code
     verified := Proof.Rsa.X86.CrtValues.verified
-    spSafe := Proof.Rsa.X86.CrtValues.code_sp
     stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
     notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
