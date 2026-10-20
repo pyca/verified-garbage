@@ -19,6 +19,20 @@ def setAt {α : Type} (values : Nat → α) (index : Nat) (value : α) : Nat →
 theorem setAt_other {α : Type} (values : Nat → α) {index i : Nat} (value : α) (other : i ≠ index) :
     setAt values index value i = values i := by simp only [setAt, other, ↓reduceIte]
 
+theorem setAt_same {α : Type} (values : Nat → α) (index : Nat) :
+    setAt values index (values index) = values := by
+  funext j
+  by_cases same : j = index
+  · subst j; exact setAt_self values index (values index)
+  · exact setAt_other values (values index) same
+
+theorem setAt_twice {α : Type} (values : Nat → α) (index : Nat) (first last : α) :
+    setAt (setAt values index first) index last = setAt values index last := by
+  funext j
+  by_cases same : j = index
+  · subst j; rw [setAt_self, setAt_self]
+  · rw [setAt_other _ _ same, setAt_other _ _ same, setAt_other _ _ same]
+
 /-- Only the explicitly listed arrays and scratch words have known values.
 Modulus metadata and caller stack invariants are tracked separately. -/
 structure Data (g : Geometry) (arrays : Nat → Nat) (knownArrays : List Nat)

@@ -18,7 +18,7 @@ theorem Data.scan {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List Nat}
     (tableKnown : ∀ j < 16, aTable + j ∈ Js)
     (digitKnown : sValue ∈ Ds) (maskUnknown : sEq1 ∉ Ds) :
     WP isa scan s fun t =>
-      Data g (setAt A aX (A (aTable + (V sValue >>> 28).toNat))) Js V Ds t ∧
+      Data g (setAt A aX (A (aTable + (V sValue >>> 28).toNat))) (aX :: Js) V Ds t ∧
       Outs g.W (scanWrites g) s.mem t.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have value := (D.slotValues sValue digitKnown).2
   have digit := digit_lt (V sValue)
@@ -27,11 +27,15 @@ theorem Data.scan {g : Geometry} (v : g.Valid) {A : Nat → Nat} {Js : List Nat}
   rw [value, power.2] at Value
   refine ⟨⟨C, ?_, ?_⟩, O, K⟩
   · intro j known
-    obtain ⟨index, read⟩ := D.arrayValues j known
     by_cases same : j = aX
     · subst j
-      exact ⟨index, by rw [setAt_self]; exact Value⟩
-    · refine ⟨index, ?_⟩
+      exact ⟨by decide, by rw [setAt_self]; exact Value⟩
+    · have old : j ∈ Js := by
+        rcases List.mem_cons.mp known with bad | old
+        · exact False.elim (same bad)
+        · exact old
+      obtain ⟨index, read⟩ := D.arrayValues j old
+      refine ⟨index, ?_⟩
       have sep := g.readApart same
       have header := v.arrayHeader j
       rw [O.val32 (by

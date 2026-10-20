@@ -17,4 +17,11 @@ structure Stage (g : Geometry) (capacity c : Nat) (p : BitVec 32)
   caller : Caller g capacity p s
   noScratch : ∀ j ∈ Js, j ≠ 2 ∧ j ≠ 3
 
+theorem Stage.mono {g : Geometry} {capacity c : Nat} {p : BitVec 32}
+    {A A' : Nat → Nat} {Js Js' : List Nat} {V V' : Nat → BitVec 32} {Ds Ds' : List Nat} {s : State}
+    (S : Stage g capacity c p A Js V Ds s)
+    (arrays : ∀ j ∈ Js', j ∈ Js ∧ A j = A' j)
+    (slots : ∀ d ∈ Ds', d ∈ Ds ∧ V d = V' d) : Stage g capacity c p A' Js' V' Ds' s :=
+  ⟨S.data.mono arrays slots, S.modulus, S.caller, fun j mem => S.noScratch j (arrays j mem).1⟩
+
 end VG.Proof.MillerRabin.X86
