@@ -7,9 +7,8 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Env
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
+public import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.AesCcm.AArch64.Absorb
 import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
 import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
 import VerifiedGarbage.Proof.AesCcm.BytesAt
@@ -22,34 +21,20 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Gcm.Bits
 import VerifiedGarbage.Proof.Gcm.Compose
 import VerifiedGarbage.Spec.Ccm.Contract
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Callee
-public import VerifiedGarbage.Proof.AesCcm.AArch64.Entry
-public import VerifiedGarbage.Proof.AesCcm.BytesAt
-public import VerifiedGarbage.Proof.AesCcm.Ctr
-public import VerifiedGarbage.Proof.AesCcm.Words
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-public import VerifiedGarbage.Proof.Cmac.Block
-public import VerifiedGarbage.Proof.Cmac.Spec
-public import VerifiedGarbage.Proof.CmacAes.AArch64.UpdateCorrect
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Gcm.Be64
-public import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Proof.Gcm.Compose
-public import VerifiedGarbage.Spec.Ccm.Contract
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Spec.Ccm
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import Init.Data.BitVec.Basic
+public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.TCB.Mem
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # AES-CCM on AArch64: the first block of the associated data

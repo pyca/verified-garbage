@@ -12,12 +12,7 @@ meta import VerifiedGarbage.Spec.Ccm
 meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Proof.Aes.X86.ExpandKey
-import VerifiedGarbage.Proof.AesGcm.X86.CT
-import VerifiedGarbage.Proof.AesGcm.X86.Callee
 import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-import VerifiedGarbage.Proof.AesGcm.X86.Common
-import VerifiedGarbage.Proof.AesGcm.X86.Env
 import VerifiedGarbage.Proof.Cmac.Block
 meta import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 meta import VerifiedGarbage.Proof.AesGcm.X86.CT

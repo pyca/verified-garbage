@@ -11,8 +11,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
-import VerifiedGarbage.Proof.AesGcm.Arm.Env
 import VerifiedGarbage.Proof.AesGcm.Arm.Tag
 import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 import VerifiedGarbage.Proof.AesGcm.Arm.Flush

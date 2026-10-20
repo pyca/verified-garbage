@@ -16,8 +16,6 @@ meta import VerifiedGarbage.Proof.AesCcm.X86.Mask
 meta import VerifiedGarbage.Proof.AesCcm.X86.Mac
 meta import VerifiedGarbage.Proof.AesCcm.X86.Run
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.AesGcm.X86.CT
-import VerifiedGarbage.Proof.AesGcm.X86.Common
 import VerifiedGarbage.Proof.AesGcm.X86.Loops
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.AesGcm.X86.CT
