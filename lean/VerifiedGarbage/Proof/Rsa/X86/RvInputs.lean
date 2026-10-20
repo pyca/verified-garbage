@@ -18,8 +18,7 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
-structure CallGeometry extends Geo where
-  args : Nat → BitVec 32
+structure CallGeometry extends Geo
 
 def CallGeometry.buffer (g : CallGeometry) (i : Nat) : Region :=
   ⟨byteAddr (g.args i), (g.args (i + 1)).toNat⟩
@@ -60,13 +59,14 @@ structure Inputs (g : CallGeometry) (s : State) : Prop where
   outputWrite : ∀ j : Fin 2, InRegions s.wr (g.buffer (2 * j.val)).base (g.buffer (2 * j.val)).len
   outputScratch : ∀ j : Fin 2, (g.buffer (2 * j.val)).Disjoint ⟨g.B, g.Z⟩
   outputSeparate : ∀ i j : Fin 2, i ≠ j → (g.buffer (2 * i.val)).Disjoint (g.buffer (2 * j.val))
+  wrEq : s.wr = g.wr
 
 theorem Inputs.after {g : CallGeometry} {s t : State} {regs : List Reg} (h : Inputs g s)
     (rest : Keeps regs s t) (di : .edi ∉ regs) (sp : .esp ∉ regs) (frame : Frame g.writes s.mem t.mem) :
     Inputs g t := by
   refine ⟨h.ws.rest rest di sp, h.lower, h.upper, by rw [rest.1 _ sp]; exact h.esp, h.room, h.top, ?_, ?_, h.inputPositive, h.inputBound,
     h.inputFit, ?_, h.inputApart, h.outputPositive, h.outputBound, h.outputFit, ?_, h.outputScratch,
-    h.outputSeparate⟩
+    h.outputSeparate, by rw [rest.2.2]; exact h.wrEq⟩
   · exact fun i hi => (h.arguments i hi).frame rest sp frame (h.stackApart i hi)
   · intro i hi r hr
     rw [show stackAddress t i = stackAddress s i by simp only [stackAddress, rest.1 _ sp]]

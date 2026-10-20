@@ -33,6 +33,8 @@ structure Geo where
   Z : Nat
   n : Nat
   sp : BitVec 32
+  args : Nat → BitVec 32
+  wr : List Region
 
 abbrev Geo.w (g : Geo) : Nat := width g.n
 abbrev Geo.W (g : Geo) : Nat := wide g.n
@@ -59,6 +61,12 @@ theorem ws_wide {g : Geo} {s : State} (h : Ws s g.B g.Z g.w nArr) (hi : g.n ≤ 
   · change 0 < 2 * (2 * g.n + 2) + 2; omega
   · change 2 * (2 * g.n + 2) + 2 ≤ 1024; omega
 
+/-- What a stage's run starts from: its writable regions, and the call's arguments, apart from what the stage
+writes. -/
+def Start (g : Geo) (s0 : State) : Prop :=
+  s0.wr = g.wr ∧ ∀ i < 12, VG.Proof.Bignum.X86.CallArgument s0 g.B g.Z i (g.args i) ∧
+    ∀ r ∈ stageR g, Region.Disjoint ⟨VG.Proof.Dsa.X86.stackAddress s0 i, 4⟩ r
+
 /-- A stage tracks both array widths and the scalar header words. -/
 structure KS (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat)
     (AW : Nat → Nat) (liveW : List Nat) (V : Nat → Nat) (ls : List Nat) (s : State) : Prop where
@@ -78,6 +86,7 @@ structure KS (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat)
   live_lt : ∀ j ∈ live, j < nArr
   liveW_lt : ∀ j ∈ liveW, j < 22
   ls_ok : ∀ d ∈ ls, SlotOk d
+  start : Start g s0
 
 section
 variable {g : Geo} {s0 s t : State} {A : Nat → Nat} {live : List Nat}
@@ -116,7 +125,7 @@ theorem KS.of_rest (h : KS g s0 A live AW liveW V ls s) {rs : List Reg}
   ⟨h.rt.keep r edi esp (by rw [mem]; exact fun _ _ => rfl),
     h.lower, h.upper, mem ▸ h.frame, by rw [r.1 _ esp]; exact h.sp, h.room, h.top,
     h.wsLen.keep r esp (by rw [mem]; exact fun _ _ => rfl), h.z8, h.rest.trans (r.mono hr),
-    mem ▸ h.arrs, mem ▸ h.arrsW, mem ▸ h.sl, h.live_lt, h.liveW_lt, h.ls_ok⟩
+    mem ▸ h.arrs, mem ▸ h.arrsW, mem ▸ h.sl, h.live_lt, h.liveW_lt, h.ls_ok, h.start⟩
 
 theorem KS.mono (h : KS g s0 A live AW liveW V ls s)
     {A' : Nat → Nat} {live' : List Nat} {AW' : Nat → Nat} {liveW' : List Nat}
@@ -130,7 +139,7 @@ theorem KS.mono (h : KS g s0 A live AW liveW V ls s)
     fun d hd => (h.sl d (hls d hd).1).trans (hls d hd).2,
     fun j hj => h.live_lt j (hl j hj).1,
     fun j hj => h.liveW_lt j (hlW j hj).1,
-    fun d hd => h.ls_ok d (hls d hd).1⟩
+    fun d hd => h.ls_ok d (hls d hd).1, h.start⟩
 
 /-- A step that keeps the header's first 16 bytes keeps everything outside the stage's range. -/
 theorem keepBody_of {g : Geo} {m m' : Mem} (header : hdr ≤ g.Z) {v : Nat} {js ds : List Nat}
@@ -173,7 +182,7 @@ theorem KS.core (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat
     h.lower, h.upper, h.frame.trans (outside_stage O (by omega) (by unfold hdr at header; omega)),
     by rw [r.1 _ (by decide)]; exact h.sp, h.room, h.top,
     h.wsLen.keep r (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega)), h.z8,
-    h.rest.trans r, ha, haW, hsl, hl, hlW, hls⟩
+    h.rest.trans r, ha, haW, hsl, hl, hlW, hls, h.start⟩
 
 end
 end VG.Proof.Rsa.X86.Recover

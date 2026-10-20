@@ -18,7 +18,7 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 open VG.Proof.Bignum.X86
 
 def caller (s : State) : CallGeometry :=
-  ⟨⟨argumentPointer s 10, (arg s 11).toNat * 8, Spec.Rsa.modulusWords (arg s 5).toNat, s.gpr .esp⟩, arg s⟩
+  ⟨⟨argumentPointer s 10, (arg s 11).toNat * 8, Spec.Rsa.modulusWords (arg s 5).toNat, s.gpr .esp, arg s, s.wr⟩⟩
 
 /-- What the call writes but the stack below `esp`: the working space and the outputs. -/
 abbrev bodyRegions (s : State) : List Region :=

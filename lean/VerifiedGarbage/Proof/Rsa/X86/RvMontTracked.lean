@@ -33,7 +33,7 @@ theorem KS.trackInverse (h : KS g s0 A live AW liveW V ls s) (mr : MR g m s)
     ∃ I, KS g s0 A live AW liveW (upd V sInv I) (sInv :: ls) s ∧
       (m * I + 1) % 2 ^ 32 = 0 := by
   refine ⟨slot s.mem g.B sInv, ⟨h.rt, h.lower, h.upper, h.frame, h.sp, h.room, h.top, h.wsLen, h.z8, h.rest,
-    h.arrs, h.arrsW, ?_, h.live_lt, h.liveW_lt, ?_⟩, mr.inverse⟩
+    h.arrs, h.arrsW, ?_, h.live_lt, h.liveW_lt, ?_, h.start⟩, mr.inverse⟩
   · intro d hd
     rcases List.mem_cons.mp hd with rfl | hd
     · rw [upd_self]

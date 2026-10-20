@@ -82,7 +82,7 @@ theorem KS.frameStep (h : KS g s0 A live AW liveW V ls s) (K : Keeps opRegs s u)
       h.rt.wsArg.throughFrame R K (by decide) F' hfit' (argTop h.rt.wsArg (by decide)), h.rt.lenLe, h.rt.layLen⟩,
     h.lower, h.upper, h.frame.trans (F.sub (frameR_stage hfit)), by rw [esp]; exact h.sp, h.room, h.top,
     h.wsLen.throughFrame R K (by decide) F' hfit' (argTop h.wsLen (by decide)), h.z8, h.rest.trans K,
-    fun j hj => ?_, fun j hj => ?_, fun d hd => ?_, h.live_lt, h.liveW_lt, h.ls_ok⟩
+    fun j hj => ?_, fun j hj => ?_, fun d hd => ?_, h.live_lt, h.liveW_lt, h.ls_ok, h.start⟩
   · have fit := h.ws.arr_fit (h.live_lt j hj)
     simp only [S] at fit
     rw [← h.arrs j hj]
