@@ -58,4 +58,17 @@ theorem iteKnown_ct {P : State → Prop} {c : Cond} {yes no : Prog isa} (b : Boo
     have selected : b = false := Option.some.inj ((condition s h.1.1).symm.trans h.2)
     exact other selected s t tr1 tr2 u v h.1 e1 e2
 
+theorem iteKnownPair_ct {P₁ P₂ : State → Prop} {c : Cond} {yes no : Prog isa} (b : Bool)
+    (condition₁ : ∀ s, P₁ s → eval c s = some b) (condition₂ : ∀ s, P₂ s → eval c s = some b)
+    (taken : b = true → RelCT isa (fun s t => P₁ s ∧ P₂ t ∧ s.sp = t.sp) yes (fun _ _ => True))
+    (other : b = false → RelCT isa (fun s t => P₁ s ∧ P₂ t ∧ s.sp = t.sp) no (fun _ _ => True)) :
+    RelCT isa (fun s t => P₁ s ∧ P₂ t ∧ s.sp = t.sp) (.ite c yes no) (fun _ _ => True) := by
+  apply RelCT.ite (fun s t h => (condition₁ s h.1).trans (condition₂ t h.2.1).symm)
+  · intro s t tr1 tr2 u v h e1 e2
+    have selected : b = true := Option.some.inj ((condition₁ s h.1.1).symm.trans h.2)
+    exact taken selected s t tr1 tr2 u v h.1 e1 e2
+  · intro s t tr1 tr2 u v h e1 e2
+    have selected : b = false := Option.some.inj ((condition₁ s h.1.1).symm.trans h.2)
+    exact other selected s t tr1 tr2 u v h.1 e1 e2
+
 end VG.Proof.Ffdh.Arm

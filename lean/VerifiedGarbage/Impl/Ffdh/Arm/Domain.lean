@@ -135,9 +135,11 @@ def matchPublic : Prog isa := .seq (powerAt 56 40 44)
 def tail : Prog isa := withQ
   (.seq (subgroup 36) (ifFlag matchPublic (ret 0))) matchPublic
 
+def publicCheck : Prog isa := .seq (importAt 1 36 32)
+  (.seq (inRange 1) (ifFlag tail (ret 0)))
+
 def main : Prog isa := .seq (prepareAt 24) (.seq (importAt 1 40 44)
-  (.seq scalarRange (ifFlag
-    (.seq (importAt 1 36 32) (.seq (inRange 1) (ifFlag tail (ret 0)))) (ret 2))))
+  (.seq scalarRange (ifFlag publicCheck (ret 2))))
 
 def code : Prog isa := framed (.seq (.block entry) (head main))
 end CheckPrivate
