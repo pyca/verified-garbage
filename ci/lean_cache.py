@@ -46,9 +46,8 @@ extracts `files.tar` in the background, as `restore` does: its files are
 most of the files, each small, and `tarfile` would create them one at a
 time, as long as `leantar` takes for all the archives. The archives go to
 the toolchain's `leantar` in batches of `--batch` bytes, each unpacked while
-the next arrives. In a tar from before `files.tar`, whose other files are
-members of their own, it writes each in its place. The outputs come out
-byte for byte as they were packed; the `.trace` keeps everything Lake reads (the dependency hash,
+the next arrives. The outputs come out byte for byte as they were packed;
+the `.trace` keeps everything Lake reads (the dependency hash,
 the outputs' hashes and the build's messages, with the profile
 `ci/lean_profile.py` reads), without the record of the build's inputs that
 Lake writes only for people to read.
@@ -291,10 +290,7 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
             for member in tar:
                 rel = Path(member.name)
                 if rel.parts[:2] != LTAR.parts:
-                    # The tar from before `files.tar`, until the published
-                    # cache is replaced.
-                    tar.extract(member, lean, set_attrs=True, filter=without_owner)
-                    continue
+                    raise ValueError(f"Unexpected cache entry: {member.name}")
                 if rel == LTAR / FILES and member.isfile() and files is None:
                     with open(stage / FILES, "wb") as f:
                         shutil.copyfileobj(tar.extractfile(member), f)
@@ -328,11 +324,6 @@ def unpack(lean, jobs, tmp, batch, tool, stream):
         finally:
             shutil.rmtree(stage)
     print(f"Unpacked {count} modules", file=sys.stderr)
-
-
-def without_owner(member, path):
-    """`tar --no-same-owner` (see `extract`)."""
-    return tarfile.tar_filter(member, path).replace(uid=None, gid=None, uname=None, gname=None)
 
 
 def tmp_dir():
