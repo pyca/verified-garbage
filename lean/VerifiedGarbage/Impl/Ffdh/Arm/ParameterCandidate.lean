@@ -74,12 +74,20 @@ def shapeLast : List Instr :=
   [.ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5), .dp .sub .r4 .r4 (.imm 1),
     .ldrb .r3 .r4 0, .dp .orr .r3 .r3 (.imm 1), .strb .r3 .r4 0]
 
+def shapeMaskHead : List Instr :=
+  [.ldrSp .r6 24, .dp .sub .r6 .r6 (.imm 1), .dp .and .r6 .r6 (.imm 7),
+    .dp .add .r6 .r6 (.imm 1), .mov .r7 (.imm 0)]
+
+def shapeMasks : Prog isa := .seq (.block shapeMaskHead) (.loop (.block maskStep) .ne)
+
+def shapeCopyHead : List Instr := [.ldrSp .r0 4, .ldrSp .r1 16, .ldrSp .lr 12]
+
+def shapeCopy : Prog isa := .seq (.block shapeCopyHead) copyBytes
+
 /-- Copy the first k tape bytes, mask to bits, and set the high and low bits. -/
 def shapeP : Prog isa := seqs [
-  .block [.ldrSp .r0 4, .ldrSp .r1 16, .ldrSp .lr 12], copyBytes,
-  .block [.ldrSp .r6 24, .dp .sub .r6 .r6 (.imm 1), .dp .and .r6 .r6 (.imm 7),
-    .dp .add .r6 .r6 (.imm 1), .mov .r7 (.imm 0)],
-  .loop (.block maskStep) .ne,
+  shapeCopy,
+  shapeMasks,
   .block shapeFirst, .block shapeLast]
 
 /-- One binary remainder step, selecting the subtraction without a branch. -/
