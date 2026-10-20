@@ -122,8 +122,8 @@ def mont : Prog isa := seqs [
 /-! ## The candidates -/
 
 def candSet : Prog isa := seqs [copy nar mG aZ,
-  .block (arrPtr nar .ebx mG .edx ++ [.mov .eax (.mem (sc sCand)), .alu .add .eax (.imm 2),
-    .store (at_ .ebx 0) .eax]),
+  .block ([.mov .ecx (.mem (sc sCand)), .alu .add .ecx (.imm 2)] ++ arrPtr nar .eax mG .edx ++
+    [.store (at_ .eax 0) .ecx]),
   copy nar mY aO, copy wid wRc wR]
 
 /-- `32 W / 4 - c / 4`, the four-bit shifts that put the exponent's top window at the top of its
