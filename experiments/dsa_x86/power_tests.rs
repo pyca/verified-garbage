@@ -1,13 +1,13 @@
 // Algebraic identities at carry-heavy moduli, not external known-answer vectors.
 #[test]
 fn prototype_power_carries() {
-    type Pow = unsafe extern "C" fn(*mut u64, usize);
+    type Pow = unsafe extern "C" fn(*mut u64, usize) -> u32;
     let powers: &[(usize, Pow)] = &[
-        (3, crate::arch::dsa::vg_dsa_pow_3_5),
-        (4, crate::arch::dsa::vg_dsa_pow_4_8),
-        (16, crate::arch::dsa::vg_dsa_pow_16_5),
-        (32, crate::arch::dsa::vg_dsa_pow_32_8),
-        (48, crate::arch::dsa::vg_dsa_pow_48_8),
+        (3, crate::arch::dsa::proto_dsa_abi_pow_3_5),
+        (4, crate::arch::dsa::proto_dsa_abi_pow_4_8),
+        (16, crate::arch::dsa::proto_dsa_abi_pow_16_5),
+        (32, crate::arch::dsa::proto_dsa_abi_pow_32_8),
+        (48, crate::arch::dsa::proto_dsa_abi_pow_48_8),
     ];
     for &(n, power) in powers {
         let slot = |i| (64 + i * (16 * n + 8)) / 8;
@@ -24,7 +24,11 @@ fn prototype_power_carries() {
                     ws[slot(5)..slot(5) + n].copy_from_slice(&base);
                     ws[slot(8)] = exponent;
                     // SAFETY: distinct live allocations and the documented context layout.
-                    unsafe { power(ws.as_mut_ptr(), ws.len()) };
+                    assert_eq!(
+                        unsafe { power(ws.as_mut_ptr(), ws.len()) },
+                        0,
+                        "callee-saved registers"
+                    );
                     let value = if magnitude == 1 { 1 } else { 1u64 << exponent };
                     let mut expected = alloc::vec![0u64; n];
                     if exponent % 2 == 0 {

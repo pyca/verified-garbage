@@ -46,7 +46,14 @@ Third sweep: `f` seeds setup from the public modulus's known high bit for the
 common full-width and padded-q shapes, retaining the original setup as fallback.
 It reaches the same 2^(65*n) residue before the same six Montgomery squares.
 `v` replaces full-product reduction's high-word scans with a pending carry at
-context header offset 8. Each following row consumes that carry at its high
+context header offset 24. Each following row consumes that carry at its high
 word; the last row publishes it as the accumulator's top word. These experiments
 are stacked with both four-word and fully expanded multiplication rows.
 Power identities cover full-width, shorter-high-bit, and padded moduli.
+
+ABI regression: the first pending-carry draft used offset 8, colliding with
+Pow.save's EBX spill. Arithmetic tests passed but a new Lean-generated ABI
+wrapper reproduced the register corruption. The carry now uses offset 24,
+beyond all four saved-register words. Every power identity checks all four
+callee-saved registers as well as the arithmetic result. The affected native
+run (39514353796) was cancelled and its results must not be used.

@@ -10,11 +10,15 @@ pattern=re.compile(r'(#\[unsafe\(naked\)\]\npub\(crate\) unsafe extern "C" fn (\
 functions={m[2]:m for m in pattern.finditer(s)}
 bindings=dict(re.findall(r'(\w+) = sym ([^,]+),',s))
 replacements={};extra=[]
-for f in json.loads(gzip.decompress(Path(a.manifest).read_bytes()) if a.manifest.endswith('.gz') else Path(a.manifest).read_bytes()):
+manifest=json.loads(gzip.decompress(Path(a.manifest).read_bytes()) if a.manifest.endswith('.gz') else Path(a.manifest).read_bytes())
+manifest+=json.loads(gzip.decompress((root/'experiments/dsa_x86/manifests/abi.json.gz').read_bytes()))
+for f in manifest:
     name=f['name']; original=name
     if name=='proto_dsa_derive_prevalidated':original='vg_dsa_derive_key'
     elif name.endswith('_public'):original=name[:-7]
+    elif name.startswith('proto_dsa_abi_'):original=name.replace('proto_dsa_abi_', 'vg_dsa_')
     signature=functions[original][1].replace(original,name)
+    if name.startswith('proto_dsa_abi_'):signature=signature.replace(') {', ') -> u32 {')
     calls=[]
     for call in f['calls']:
         target=bindings.get(call,'super::dsa::'+call)

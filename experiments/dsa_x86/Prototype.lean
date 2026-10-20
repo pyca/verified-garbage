@@ -166,16 +166,16 @@ def fastSquare (compact deferred : Bool) (n o a : Nat) : Prog isa :=
     .loop (.block (mulStepW N acc (slot n 0) (slot n 1))) .ne,
     .block [.mov .eax (.mem (at_ .ebp acc)), .alu .add .eax (.reg .ebx),
       .mov .edx (imm 0), .alu .adc .edx (imm 0),
-      .alu .add .eax (.mem (sc 8)), .alu .adc .edx (imm 0),
-      .store (at_ .ebp acc) .eax, .store (sc 8) .edx,
+      .alu .add .eax (.mem (sc 24)), .alu .adc .edx (imm 0),
+      .store (at_ .ebp acc) .eax, .store (sc 24) .edx,
       .alu .sub .ebp (imm (4*N))]]
   let red := seq [
-    .block [.mov .eax (imm 0), .store (sc 8) .eax, .mov .ebp (.reg .edi)],
+    .block [.mov .eax (imm 0), .store (sc 24) .eax, .mov .ebp (.reg .edi)],
     .loop (seq [.block (redDigit acc 0 (slot n 1)),
       (if deferred then deferredRow else fullRow),
       .block [.alu .add .ebp (imm 4), .mov .edx (.reg .edi),
         .alu .add .edx (imm (4*N)), .alu .cmp .ebp (.reg .edx)]]) .ne,
-    (if deferred then .block [.mov .eax (.mem (sc 8)), .store (sc (acc+8*N)) .eax] else .block []),
+    (if deferred then .block [.mov .eax (.mem (sc 24)), .store (sc (acc+8*N)) .eax] else .block []),
     csubW (contextMod n) (acc+4*N) o]
   .frame (.push [.esi]) (seq ([zerosW acc (2*N+1)] ++ (if compact then [compactCross] else cross) ++
     [chainW .adc (2*N) acc acc acc, diagonal, red])) (.pop .esi 1)
@@ -242,11 +242,25 @@ def functions (dedup win pub : Bool) : List (String × Prog isa) := Id.run do
           "vg_dsa_check_parameters" check))]
   return fs
 
+def abiWrapper (n e : Nat) : Prog isa :=
+  let saved := [(Reg.ebx, 0), (.esi, 4), (.ebp, 8), (.edi, 12)]
+  let sentinels := [(Reg.ebx, 305419896), (.esi, 591751049), (.ebp, 878082202), (.edi, 1164413355)]
+  .frame (.alloc 16) (seq [
+    .block (saved.map (fun (r,d) => .store (at_ .esp d) r) ++ [
+      .mov .eax (.mem (at_ .esp 20)), .mov .edx (.mem (at_ .esp 24))]),
+    .frame (.push [.edx, .eax]) (seq [
+      .block (sentinels.map fun (r,v) => .mov r (imm v)),
+      .call (VG.Impl.Dsa.X86.Pow.name n e) (.block []),
+      .block ([.mov .eax (imm 0)] ++ sentinels.flatMap (fun (r,v) =>
+        [.alu .xor r (imm v), .alu .or .eax (.reg r)]))]) (.pop .edx 2),
+    .block (saved.map fun (r,d) => .mov r (.mem (at_ .esp d)))]) (.free 16)
+
 end Prototype
 
 def main (args : List String) : IO Unit := do
   let mode := args.head!
-  let fs := Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
+  let fs := if mode == "abi" then Prototype.widths.map (fun (n,e) =>
+    ("proto_dsa_abi_pow_" ++ toString n ++ "_" ++ toString e, Prototype.abiWrapper n e)) else Prototype.functions (mode.contains 'd') (mode.contains 'w') (mode.contains 'p')
   let json := fs.map fun (name, p) =>
     let p := if mode.contains 'f' then Prototype.replace ([3,4,16,32,48].map fun n => (contextSeed n, Prototype.fastSeed n)) p else p
     let p := if mode != "baseline" && mode.contains 's' then Prototype.replace (Prototype.squareRules (mode.contains 'c') (mode.contains 'v')) p else p
