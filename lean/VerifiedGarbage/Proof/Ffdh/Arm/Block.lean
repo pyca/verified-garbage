@@ -110,6 +110,10 @@ theorem logic_exec (s : State) (op : DpOp) (d n : Reg) (o : Op2) :
 theorem cmp_exec (s : State) (n : Reg) (o : Op2) :
     exec (.cmp n o) s = (o.eval s).map (fun v => subFlags s (s.gpr n) v) := rfl
 
+theorem subs_exec (s : State) (d n : Reg) (o : Op2) :
+    exec (.subs d n o) s = (o.eval s).map (fun v =>
+      (subFlags s (s.gpr n) v).setReg d (s.gpr n - v)) := rfl
+
 theorem adc_exec (s : State) (d n : Reg) (o : Op2) :
     exec (.adc d n o) s = (o.eval s).map
       (fun v => s.setReg d (s.gpr n + v + (if s.c then 1 else 0))) := rfl
@@ -142,7 +146,7 @@ tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `
   apply WP.of_runBlock
   set_option linter.unusedSimpArgs false in
   simp (config := { decide := true }) (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil,
-    mov_exec, movw_exec, mul_exec, add_exec, cmp_exec, adc_exec, logic_exec, str_exec, ldr_exec, ldrb_exec, strb_exec, ldrSp_exec, addSp_exec, Op2.eval,
+    mov_exec, movw_exec, mul_exec, add_exec, cmp_exec, subs_exec, adc_exec, logic_exec, str_exec, ldr_exec, ldrb_exec, strb_exec, ldrSp_exec, addSp_exec, Op2.eval,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     gpr_subFlags, mem_subFlags, c_subFlags, z_subFlags, RegUpd.c_setReg,
     gpr_putMem, mem_putMem, wr_putMem, rd_putMem, sp_putMem, z_putMem,
