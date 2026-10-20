@@ -27,15 +27,6 @@ def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
     verified := v.checkPrivate_verified
     notes := ["ARMv7: scalar bounds, public-value range, subgroup membership and equality with \
       the generator's power run in verified code. RSA's fixed three-bit windows process \
-      every supplied private-scalar byte, including leading zeros."] },
-  Spec.Ffdh.exchangeApi.artifact VG.Arm.target {
-    suffix := v.suffix
-    features := v.features
-    stack := 128
-    code := v.exchange
-    verified := v.exchange_verified
-    notes := ["ARMv7: RSA's fixed three-bit window exponentiator computes the shared value; \
-      range checking, fixed-width export, and rejection masking stay in verified code. \
-      Output is cleared without branching on a degenerate result."] }]
+      every supplied private-scalar byte, including leading zeros."] }]
 
 end VG.Generic.Ffdh.Arm.Domain
