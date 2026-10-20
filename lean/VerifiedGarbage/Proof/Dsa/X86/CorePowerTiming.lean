@@ -57,13 +57,13 @@ def PowerPair (base : Addr) (size n : Nat) (s t : State) : Prop :=
 
 theorem powerTail_relCT (base : Addr) (size n len e output : Nat)
     (hz : contextBytes n ≤ size) (hu : usedBytes ≤ size)
-    (hn : 0 < n) (hn48 : n ≤ 48) (he : 0 < e) (hen : e ≤ 2 * n) :
+    (hn : 0 < n) (hn48 : n ≤ 48) (he : 1 < e) (hen : e ≤ 2 * n) :
     RelCT isa (PowerPair base size n) (.seq (Pow.call n e) (Core.store len output))
       (VG.X86.Taint.Agree (workspaceTaint true)) := by
   refine RelCT.seq ?_ (coreStore_workspace_relCT len output)
   intro s t tr ur sf tf ⟨S, T, SP⟩ E F
   have DI : s.gpr .edi = t.gpr .edi := BitVec.eq_of_toNat_eq (S.scr.edi_toNat.trans T.scr.edi_toNat.symm)
-  have CT := (Pow.call_relCT n e he) _ _ _ _ _ _ ⟨SP, DI, by have := S.room.1; omega⟩ E F
+  have CT := (Pow.call_relCT n e) _ _ _ _ _ _ ⟨SP, DI, by have := S.room.1; omega⟩ E F
   obtain ⟨_, _, K⟩ := wp_result (Pow.call_ok S.scr S.room hz hu hn hn48 he hen rfl S.large S.odd) E
   obtain ⟨_, _, L⟩ := wp_result (Pow.call_ok T.scr T.room hz hu hn hn48 he hen rfl T.large T.odd) F
   refine ⟨CT.1, agree_regs (rs := [.edi]) ?_⟩
@@ -77,7 +77,7 @@ def PowerAgree (base : Addr) (size len bl : Nat) (modulus : Field) (a b : Pointe
 
 theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : Field) (a b : Pointer)
     (hz : Layout.saved ≤ size) (hu : usedBytes ≤ size) (h4 : 4 ≤ len) (hmax : len ≤ 384)
-    (hw4 : len % 4 = 0) (he : 4 ≤ expLen) (hel : expLen ≤ len) (hew : expLen % 4 = 0) :
+    (hw4 : len % 4 = 0) (he : 8 ≤ expLen) (hel : expLen ≤ len) (hew : expLen % 4 = 0) :
     RelCT isa (PowerAgree base size len expLen modulus a b)
       (Core.power len expLen modulus a b output) (VG.X86.Taint.Agree (workspaceTaint true)) := by
   have hn : (len + 7) / 8 ≤ 48 := by omega
@@ -90,8 +90,8 @@ theorem corePower_relCT (base : Addr) (size len expLen output : Nat) (modulus : 
   have H := (powerHead_relCT base size len expLen modulus a b hz h4 hmax hw4).mono
     (fun _ _ (P : PowerAgree base size len expLen modulus a b _ _) => P.1) (fun _ _ A => A)
   refine (H.wpDep (F := fun s t => PowerReady base size ((len + 7) / 8) t ∧ Keeps loadClob s t)
-    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz h4 hmax he hel hw4 hew,
-      powerHead_ok P.1.2.1 P.2.2.1 hz h4 hmax he hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
+    (fun s t P => ⟨powerHead_ok P.1.1 P.2.1 hz h4 hmax (by omega) hel hw4 hew,
+      powerHead_ok P.1.2.1 P.2.2.1 hz h4 hmax (by omega) hel hw4 hew⟩)).mono (fun _ _ P => P) ?_
   rintro s t ⟨_, a, b, P, ⟨S, K⟩, ⟨T, L⟩⟩
   exact ⟨S, T, (K.1 .esp (by decide)).trans (P.2.2.2.trans (L.1 .esp (by decide)).symm)⟩
 

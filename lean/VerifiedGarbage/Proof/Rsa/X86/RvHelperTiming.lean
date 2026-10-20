@@ -1,6 +1,9 @@
 module
 
-import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+public import VerifiedGarbage.Proof.Mont.X86.PowerTiming
+public import VerifiedGarbage.Proof.Rsa.X86.CvHelperTiming
+public import VerifiedGarbage.Proof.Rsa.X86.MulModTiming
+public import VerifiedGarbage.Proof.Mont.X86.WindowTiming
 public import VerifiedGarbage.Impl.Rsa.X86.Recover
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Mont.X86.DynamicTiming
@@ -112,48 +115,10 @@ theorem clrLow_workspace (n j : Nat) : WorkspacePublic (.block (clrLow n j)) := 
   · exact (check_of_erase_eq (.block (clrLow n j)) reference (workspaceTaint false) hint rfl rfl rfl).trans (by rfl)
   · decide +kernel
 
-theorem shiftWord_private_taint (out : Nat) (last : Bool) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftWord out last) = some (if last then zeroTaint false else workspaceTaint false) := by
-  cases last <;>
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .eax (.mem (sc 0)), .alu .and .eax (.imm 0), .shift .ror .eax 0,
-       .mov .edx (.mem (sc 0)), .shift .shr .edx 0, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-  · change taint.checkBlock (workspaceTaint false)
-      [.mov .eax (.imm 0), .alu .and .eax (.imm 0), .shift .ror .eax 0,
-       .mov .edx (.mem (sc 0)), .shift .shr .edx 0, .alu .add .edx (.reg .eax), .store (sc 0) .edx] = _
-    rfl
-
-theorem shiftExponent_private_taint (n out : Nat) :
-    taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftExponent n out) =
-      some (if n = 0 then workspaceTaint false else zeroTaint false) := by
-  induction n generalizing out with
-  | zero => rfl
-  | succ n ih =>
-    rw [VG.Impl.Mont.X86.Dynamic.shiftExponent, exponent_check_append taint (workspaceTaint false), shiftWord_private_taint]
-    cases n with
-    | zero => rfl
-    | succ n =>
-      change taint.checkBlock (workspaceTaint false) (VG.Impl.Mont.X86.Dynamic.shiftExponent (n + 1) (out + 4)) = _
-      exact ih (out + 4)
-
 theorem half_workspace (n j : Nat) : WorkspacePublic (half n j) := by
-  refine ⟨.block [], zeroTaint false, ?_, by rfl⟩
-  unfold half
-  simp only [VG.Taint.check, VG.Taint.checkChunks]
-  rw [exponent_check_append taint (workspaceTaint false)]
-  have store : taint.checkBlock (workspaceTaint false)
-      [.store (VG.Impl.Mont.X86.sc (slot n j + 4 * n)) .ebx] = some (workspaceTaint false) := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
-    change taint.checkBlock (workspaceTaint false) [.store (VG.Impl.Mont.X86.sc 0) .ebx] = _
-    rfl
-  rw [store]
-  change taint.checkBlock (workspaceTaint false)
-    (VG.Impl.Mont.X86.Dynamic.shiftExponent (n + 1) (slot n j)) = _
-  rw [shiftExponent_private_taint, ite_eq_right (by omega)]
-  rfl
-
+  let hint := VG.Taint.hintOf taint (workspaceTaint false) (Code.erase (half 1 0))
+  refine ⟨hint, { regs := .ofList [.edi, .ebp, .eax], flags := false }, ?_, by rfl⟩
+  exact (check_of_erase_eq (half n j) (half 1 0) (workspaceTaint false) hint rfl rfl rfl).trans (by rfl)
 
 theorem fixedBlock_workspace (code : List Instr)
     (checked : (taint.checkBlock (workspaceTaint false) code).isSome = true)
@@ -185,13 +150,6 @@ theorem halfBit_workspace (n : Nat) : WorkspacePublic (.block (halfBit n)) := by
   exact (check_of_erase_eq (.block (halfBit n)) reference (workspaceTaint false)
     (.block []) rfl rfl rfl).trans (by rfl)
 
-theorem expBit_workspace (n : Nat) : WorkspacePublic
-    (.block (bitOf (wide n) sBit wRc ++ ([.mov .ebx (.imm 0)] : List Instr))) := by
-  let reference : Prog isa := Code.erase (.block (bitOf 1 100 0 ++ [.mov .ebx (.imm 0)]))
-  let out := (VG.Taint.check taint (workspaceTaint false) reference (.block [])).getD (workspaceTaint false)
-  refine ⟨.block [], out, ?_, by decide +kernel⟩
-  exact (check_of_erase_eq (.block (bitOf (wide n) sBit wRc ++ ([.mov .ebx (.imm 0)] : List Instr))) reference (workspaceTaint false) (.block []) rfl rfl rfl).trans (by rfl)
-
 theorem halfBody_workspace (n : Nat) : WorkspacePublic (halfBody n) := by
   unfold halfBody
   apply WorkspacePublic.seqs
@@ -201,14 +159,84 @@ theorem halfBody_workspace (n : Nat) : WorkspacePublic (halfBody n) := by
   all_goals first | exact copy_workspace .. | exact zeroCarry_workspace | exact half_workspace .. |
     exact halfBit_workspace .. | exact sel_workspace .. | exact cntNext_workspace
 
-theorem expBody_workspace (n : Nat) : WorkspacePublic (expBody n) := by
-  unfold expBody
+theorem cntNext_taint : taint.checkBlock (workspaceTaint false) cntNext = some (workspaceTaint false) := rfl
+
+theorem shiftUp_workspace (k exp : Nat) :
+    WorkspacePublic (VG.Impl.Mont.X86.Dynamic.shiftUp k exp) :=
+  ⟨shiftHint false, rowTaint false, shiftUp_check false k exp, by rfl⟩
+
+theorem alignBody_workspace (n : Nat) : WorkspacePublic (alignBody n) :=
+  (shiftUp_workspace ..).seq cntNext_workspace
+
+theorem windowTop_taint (n : Nat) :
+    taint.checkBlock (workspaceTaint false) (windowTop n) = some (workspaceTaint false) := by
+  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint false) = true from rfl)]
+  change taint.checkBlock (workspaceTaint false)
+    [.mov .eax (.mem (sc 0)), .shift .shr .eax 28, .store (sc 0) .eax] = _
+  rfl
+
+theorem windowTop_workspace (n : Nat) : WorkspacePublic (.block (windowTop n)) :=
+  ⟨.block [], workspaceTaint false, windowTop_taint n, by rfl⟩
+
+theorem windowIs_workspace (j : Nat) : WorkspacePublic (.block (windowIs j)) := by
+  refine ⟨.block [], workspaceTaint false, ?_, by rfl⟩
+  exact (check_of_erase_eq (.block (windowIs j)) (.block (windowIs 0)) (workspaceTaint false)
+    (.block []) rfl rfl rfl).trans rfl
+
+theorem scan_workspace (n : Nat) : ∀ k, WorkspacePublic (scan n k)
+  | 0 => copy_workspace ..
+  | k + 1 => by
+    rw [scan]
+    exact (scan_workspace n k).seq ((windowIs_workspace _).seq (sel_workspace ..))
+
+def tableStepHint : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (workspaceTaint true) (.seq (workspaceTaint true) (mulHint true) (zerosHint true))
+    (.seq (rowTaint true) copyOutHint (.block []))
+
+theorem tableStep_check (n : Nat) :
+    VG.Taint.check taint (workspaceTaint true) (tableStep n) tableStepHint = some (rowTaint true) := by
+  unfold tableStep tableStepHint mmul clrTop
+  simp only [seqs]
+  refine exponent_check_seq taint
+    (exponent_check_seq taint (mul_check true _ _ _ _ _ _) (by rfl) (zeros_check true _ _)) (by rfl)
+    (exponent_check_seq taint (copyOut_check _ _) (by rfl) ?_)
+  exact (check_of_erase_eq (.block [.alu .add .esi (.imm 8), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm (BitVec.ofNat 32 (slot (width n) 16))), .alu .cmp .esi (.reg .edx)])
+    (.block [.alu .add .esi (.imm 0), .mov .edx (.reg .edi),
+    .alu .add .edx (.imm 0), .alu .cmp .esi (.reg .edx)]) (rowTaint true) (.block []) rfl rfl rfl).trans
+    (by rfl)
+
+theorem tableLoop_workspace (n : Nat) : WorkspacePublic (.seq
+    (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))])
+    (.loop (tableStep n) .ne)) := by
+  have loop : VG.Taint.check taint (workspaceTaint true) (.loop (tableStep n) .ne)
+      (.loop (workspaceTaint true) tableStepHint) = some (rowTaint true) := by
+    change (if taint.le (workspaceTaint true) (workspaceTaint true) then
+      (VG.Taint.check taint (workspaceTaint true) (tableStep n) tableStepHint).bind
+        (fun t => if taint.le (workspaceTaint true) t && taint.condPub t .ne then some t else none)
+      else none) = _
+    rw [tableStep_check n]
+    rfl
+  refine ⟨.seq (workspaceTaint true) (.block []) (.loop (workspaceTaint true) tableStepHint),
+    rowTaint true, ?_, by rfl⟩
+  refine exponent_check_seq taint (u := { regs := .ofList [.edi, .esi], flags := true }) ?_ (by rfl) loop
+  exact (check_of_erase_eq (.block [.mov .esi (.reg .edi),
+    .alu .add .esi (.imm (BitVec.ofNat 32 (slot (width n) 2)))])
+    (.block [.mov .esi (.reg .edi), .alu .add .esi (.imm 0)])
+    (workspaceTaint false) (.block []) rfl rfl rfl).trans (by rfl)
+
+theorem table_workspace (n : Nat) : WorkspacePublic (table n) := by
+  unfold table
+  exact (copy_workspace ..).seq ((copy_workspace ..).seq ((copy_workspace ..).seq (tableLoop_workspace n)))
+
+theorem windowBody_workspace (n : Nat) : WorkspacePublic (windowBody n) := by
+  unfold windowBody square
   apply WorkspacePublic.seqs
   intro c hc
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hc
-  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals first | exact expBit_workspace .. | exact half_workspace .. | exact sel_workspace .. |
-    exact mmul_public .. | exact cntNext_workspace
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  all_goals first | exact mmul_public .. | exact windowTop_workspace .. | exact shiftUp_workspace .. |
+    exact scan_workspace .. | exact cntNext_workspace
 
 theorem sqBody_workspace (n : Nat) : WorkspacePublic (sqBody n) := by
   unfold sqBody eqAt

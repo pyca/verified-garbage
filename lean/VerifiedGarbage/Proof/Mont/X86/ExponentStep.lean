@@ -13,7 +13,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic 
 open VG.Proof.Mont.X86
 
 theorem exponentStep_ok {n size m y b expWords k : Nat} {base : Addr} {s : State}
-    (h : Context n m base size s) (he : 0 < expWords) (hen : expWords ≤ 2 * n)
+    (h : Context n m base size s) (he : 1 < expWords) (hen : expWords ≤ 2 * n)
     (hy : wordsVal s.mem base (slot n 6) n = y * 2 ^ (64 * n) % m)
     (hb : wordsVal s.mem base (slot n 5) n = b * 2 ^ (64 * n) % m)
     (hk : 0 < k) (hk32 : k < 2 ^ 32) (hc : s.gpr .esi = BitVec.ofNat 32 k) :

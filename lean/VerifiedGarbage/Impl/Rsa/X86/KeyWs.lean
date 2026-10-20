@@ -40,7 +40,7 @@ def sel (n o a b sl : Nat) : Prog isa :=
 def copy (n o a : Nat) : Prog isa := Div.copyWords n (slot n a) (slot n o)
 
 def half (n j : Nat) : Prog isa :=
-  .block ([.store (sc (slot n j + 4 * n)) .ebx] ++ Dynamic.shiftExponent (n + 1) (slot n j))
+  .seq (.block [.store (sc (slot n j + 4 * n)) .ebx]) (Dynamic.shiftDown (n + 1) (slot n j))
 
 def bitOf (n sl j : Nat) : List Instr :=
   [.mov .eax (.mem (sc (slot n j))), .alu .and .eax (.imm 1), .store (sc sl) .eax]

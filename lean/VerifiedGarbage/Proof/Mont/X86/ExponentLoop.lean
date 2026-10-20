@@ -26,7 +26,7 @@ structure ExponentInv (n size m expWords target steps i : Nat) (base : Addr) (s 
   keeps : Keeps powerClob s t
 
 theorem exponentLoop_ok {n size m expWords a : Nat} {base : Addr} {s : State}
-    (h : Context n m base size s) (he : 0 < expWords) (hen : expWords ≤ 2 * n)
+    (h : Context n m base size s) (he : 1 < expWords) (hen : expWords ≤ 2 * n)
     (hy : wordsVal s.mem base (slot n 6) n = 2 ^ (64 * n) % m)
     (hb : wordsVal s.mem base (slot n 5) n = a * 2 ^ (64 * n) % m)
     (hk32 : 32 * expWords < 2 ^ 32) (hc : s.gpr .esi = BitVec.ofNat 32 (32 * expWords)) :

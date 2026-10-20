@@ -71,4 +71,8 @@ def addW (M : Mod) (acc o a b : Nat) : Prog isa :=
   .seq (.block [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx), .store (sc (acc + 4 * words M)) .eax])
     (csubW M acc o)
 
+/-- `[o] = [a] - [b] mod m`, as `[a] + (m - [b])`, `m - [b]` in the temporary area. -/
+def subW (M : Mod) (acc o a b : Nat) : Prog isa :=
+  .seq (chainW .sbb (words M) M.tmp M.mo b) (addW M acc o a M.tmp)
+
 end VG.Impl.Mont.X86.Dynamic

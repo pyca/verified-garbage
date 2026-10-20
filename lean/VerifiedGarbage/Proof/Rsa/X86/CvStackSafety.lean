@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.CrtValues
 open VG.Impl.Bignum.X86 VG.Impl.Mont.X86
-open VG.Proof.Bignum.X86.Crt (stackSafe shiftExponent_sp)
+open VG.Proof.Bignum.X86.Crt (stackSafe)
 
 theorem seqs_sp (cs : List (Prog isa)) (h : ∀ c ∈ cs, c.all stackSafe = true) :
     (seqs cs).all stackSafe = true := by
@@ -30,7 +30,7 @@ theorem invStep_sp (n a b : Nat) : (invStep n a b).all stackSafe = true := by
   simp only [subModP, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hc
   rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp only [sub3, sel, half, Dynamic.chainW, Dynamic.selectsW, Dynamic.wordLoop,
-    Code.all, List.all_append, shiftExponent_sp]
+    Code.all, List.all_append, Dynamic.shiftDown]
   all_goals rfl
 
 theorem sized_sp (n : Nat) : (sized n).all stackSafe = true := by

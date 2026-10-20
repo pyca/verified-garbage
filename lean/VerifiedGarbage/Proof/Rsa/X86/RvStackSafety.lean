@@ -11,11 +11,12 @@ import VerifiedGarbage.Proof.Framework.GetElem
 namespace VG.Proof.Rsa.X86.Recover
 open VG VG.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.Recover
 open VG.Impl.Bignum.X86 VG.Impl.Mont.X86
-open VG.Proof.Bignum.X86.Crt (stackSafe shiftExponent_sp sub_sp)
+open VG.Proof.Bignum.X86.Crt (stackSafe)
 
 theorem sized_sp (n : Nat) : (sized n).all stackSafe = true := by
   simp only [sized, numbers, loads, load, prod, rest, halving, halfInit, halfBody,
-    mont, setupR2, mmul, clrTop, candLoop, candBody, candExp, candSet, expBody,
+    mont, setupR2, mmul, clrTop, candLoop, candBody, candExp, candSet, alignStart, alignCount,
+    alignBody, table, tableStep, Dynamic.copyOut, windowCount, windowBody, square, windowTop, scan, windowIs,
     candSquare, sqBody, fin, finY, factors, gcdSet, divSet, order, stores,
     VG.Impl.Rsa.X86.CrtValues.store,
     VG.Impl.Rsa.X86.Div.code, VG.Impl.Rsa.X86.Div.step,
@@ -24,9 +25,9 @@ theorem sized_sp (n : Nat) : (sized n).all stackSafe = true := by
     seqs, copy, eqAt, eqS, sub3, sel, half, inverse,
     loadBE, storeBE, reverseBytes,
     Dynamic.powerTwo, Dynamic.doubleLoop, Dynamic.doubleStep, Dynamic.one,
-    Dynamic.mul, Dynamic.row, Dynamic.mulRowW, Dynamic.zerosW, Dynamic.selectsW,
+    Dynamic.mul, Dynamic.row, Dynamic.rowTail, Dynamic.mulRowW, Dynamic.zerosW, Dynamic.selectsW,
     Dynamic.chainW, Dynamic.csubW, Dynamic.addW, Dynamic.wordLoop,
-    Code.all, List.all_append, shiftExponent_sp]
+    Code.all, List.all_append, Dynamic.shiftDown, Dynamic.shiftUp]
   rw [VG.Proof.Rsa.X86.CrtValues.invStep_sp, VG.Proof.Rsa.X86.CrtValues.invStep_sp]
   rfl
 

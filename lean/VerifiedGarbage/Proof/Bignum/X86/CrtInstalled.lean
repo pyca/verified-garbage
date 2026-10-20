@@ -26,7 +26,8 @@ theorem installed_ok {s : State} (A : CrtABI s) :
   intro t ⟨Sc, Saved, K, O⟩
   refine ⟨?_, Saved, K, O⟩
   refine ⟨Sc, A.lengths.1, A.lengths.2, A.space, ?_, ?_, ?_, ?_, A.pLength, A.qLength,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
+    by rw [K.1 _ (by decide)]; exact A.room, by rw [K.1 _ (by decide)]; exact A.stackBound⟩
   · intro i hi
     exact (CallArgument.mk (A.stackArgument hi) rfl).keep K (by decide) O
   · simp only [← A.outLength, BitVec.ofNat_toNat, BitVec.setWidth_eq]

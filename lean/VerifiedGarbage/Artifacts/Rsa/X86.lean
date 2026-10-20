@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Rsa.X86.KcStackSafety
 public import VerifiedGarbage.Proof.Rsa.X86.RvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.RvStackSafety
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 
 /-! Public and private CRT RSA on baseline i686. -/
 
@@ -40,30 +39,33 @@ def artifacts : List Artifact := [
     spSafe := Proof.Rsa.X86.CrtValues.code_sp
     stack := 20 },
   Spec.Rsa.privateCrtApi.artifact X86.target {
-    code := Impl.Bignum.X86.Crt.code
-    verified := Proof.Bignum.X86.Crt.verified
-    spSafe := Proof.Bignum.X86.Crt.code_sp
-    stack := 20 },
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul_at`. Each factor whose length (`p_len`, `q_len`) fits half \
+      the modulus's width has the input reduced modulo it at the modulus's width, then its windowed \
+      exponentiation at half the width; a longer factor's runs at the modulus's width. The lengths \
+      are public; the factors' values select no branch. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.CrtRt.code
+    verified := Proof.Bignum.X86.CrtRt.verified
+    stack := 40 },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86.target {
-    notes := ["The exponent (at most 33 bits) is scanned from its low bit, branching on each \
-      bit: a multiplication by the base for a set bit, a square of the base for every bit, and \
-      the loop ends once no set bit is left (for `e = 65537`, 17 squares and 2 \
-      multiplications)."]
-    code := Impl.Bignum.X86.PrecomputedFn.code
-    verified := Proof.Bignum.X86.precomputed_verified
-    stack := 20 },
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
+      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.PrecomputedRt.code
+    verified := Proof.Bignum.X86.PrecomputedRt.verified
+    stack := 40 },
   Spec.Rsa.publicPrecomputeApi.artifact X86.target {
     code := Impl.Bignum.X86.PrecomputeFn.code
     verified := Proof.Bignum.X86.precompute_verified
     stack := 20 },
   Spec.Rsa.publicCheckedApi.artifact X86.target {
-    notes := ["Public lengths select the limb width. Runtime-modulus Montgomery arithmetic \
-      uses 32-bit limbs in the shared public scratch layout. The input acceptance mask is \
-      applied after the exponentiation, which is `vg_rsa_public_precomputed_checked`'s: it \
-      branches on each bit of the exponent and ends after its top bit. Callee-saved registers \
-      reside in scratch."]
-    code := Impl.Bignum.X86.PublicFn.code
-    verified := Proof.Bignum.X86.public_verified
-    stack := 20 }]
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul_at`. The exponentiation branches on each bit of the \
+      public exponent, multiplying by the base only for a set bit, and ends after its top bit; \
+      the input acceptance mask is applied after it. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.PublicRt.code
+    verified := Proof.Bignum.X86.PublicRt.verified
+    stack := 40 }]
 
 end VG.Artifacts.Rsa.X86

@@ -20,7 +20,7 @@ theorem Inputs.argsEq {base : Addr} {bytes len : Nat} {args other : Nat → BitV
   have H11 := eq 11 (by decide)
   have H13 := eq 13 (by decide)
   have H15 := eq 15 (by decide)
-  refine ⟨H.scratch, H.lower, H.upper, H.space, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨H.scratch, H.lower, H.upper, H.space, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, H.room, H.top⟩
   · intro i hi; rw [← eq i hi]; exact H.stack i hi
   · rw [← H1]; exact H.outLen
   · rw [← H3]; exact H.nLen

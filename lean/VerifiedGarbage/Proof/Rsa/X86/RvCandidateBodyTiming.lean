@@ -17,24 +17,7 @@ abbrev CandidateData.y {g : Geo} {m eLen dLen : Nat} (C : CandidateData g m eLen
   Spec.Rsa.powMod (C.V sCand + 2) (C.AW wR) m
 
 theorem CandidateData.exp_toSquare {g : Geo} {m eLen dLen : Nat}
-    (C : CandidateData g m eLen dLen) {s : State} (h : C.Exp (8 * (dLen + eLen)) s) :
-    C.SquareStart C.y s := by
-  change KS _ _ _ _ _ _ _ _ _ at h ⊢
-  refine h.mono ?_ ?_ ?_
-  · intro j hj
-    refine ⟨?_, ?_⟩
-    · simp only [liveSq, liveM, liveExp, List.mem_cons, List.not_mem_nil, or_false] at *
-      grind
-    · simp only [liveSq, liveM, List.mem_cons, List.not_mem_nil, or_false] at hj
-      rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp [AE, upd, mY, mG, aNg, aO, mR2, mBase, aOne, aZ, aN,
-          Nat.mod_eq_of_lt C.rb, VG.Proof.Bignum.powMod_eq]
-  · intro j hj
-    simp only [List.mem_singleton] at hj
-    subst j
-    exact ⟨by simp, upd_ne _ _ (by decide)⟩
-  · intro d hd
-    exact ⟨hd, by simp only [Nat.sub_self]⟩
+    (C : CandidateData g m eLen dLen) {s : State} (h : C.Exp s) : C.SquareStart C.y s := h
 
 theorem candBody_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen)
     (sp : C.s0.gpr .esp = D.s0.gpr .esp) :

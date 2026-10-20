@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.GetElem
 namespace VG.Proof.Rsa.X86.KeyCheck
 open VG VG.X86 VG.Impl.Rsa.X86.Keys VG.Impl.Rsa.X86.KeyCheck
 open VG.Impl.Bignum.X86 VG.Impl.Mont.X86
-open VG.Proof.Bignum.X86.Crt (stackSafe shiftExponent_sp)
+open VG.Proof.Bignum.X86.Crt (stackSafe)
 
 theorem loadInputs_sp (n : Nat) (xs : List (Nat × Nat)) :
     (loadInputs n xs).all stackSafe = true := by
@@ -29,11 +29,11 @@ theorem sized_sp (full : Bool) (n : Nat) : (sized full n).all stackSafe = true :
       VG.Impl.Rsa.X86.Div.code, VG.Impl.Rsa.X86.Div.step,
       VG.Impl.Rsa.X86.Div.shiftArrays, VG.Impl.Rsa.X86.Div.shift, VG.Impl.Rsa.X86.Div.copyWords,
       VG.Impl.Rsa.X86.Div.reduce, mulMod, mulModStep, mulHead, mulTail, addMod,
-      List.cons_append, List.nil_append, seqs, copy, eqS, sub3, sel, half,
+      List.cons_append, List.nil_append, seqs, copy, eqS, sub3, sel, half, Dynamic.shiftDown,
       Dynamic.zerosW, Dynamic.chainW, Dynamic.selectsW, Dynamic.wordLoop,
       Code.all, List.all_append] <;>
     rw [loadInputs_sp] <;>
-    simp only [List.all_cons, shiftExponent_sp] <;> rfl
+    simp only [List.all_cons] <;> rfl
 
 theorem dispatch_sp (full : Bool) (widths : List Nat) :
     (dispatch full widths).all stackSafe = true := by

@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86.RvMont
 public import VerifiedGarbage.Proof.Bignum.X86.PublicCall
-public import VerifiedGarbage.Proof.Rsa.X86.RvExpStep
-import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
+public import VerifiedGarbage.Proof.Rsa.X86.RvCountInit
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Rsa.X86.RvOps
 import VerifiedGarbage.Proof.Rsa.X86.RvWrite
 import VerifiedGarbage.Proof.Rsa.X86.KeyWord
 import VerifiedGarbage.Proof.Mont.X86.Instr
+public import VerifiedGarbage.Proof.Rsa.X86.RvWindowOps
 
-/-! # Initializing one candidate and its public exponentiation count -/
+/-! # Initializing one candidate -/
 
 @[expose] public section
 namespace VG.Proof.Rsa.X86.Recover
@@ -19,16 +19,12 @@ open VG.Impl.Rsa.X86.Keys hiding slot
 open VG.Impl.Rsa.X86.Recover
 open VG.Proof.Rsa.X86.Keys
 
-theorem candSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {eLen dLen : Nat}
+theorem candSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat}
     (h : KS g s0 A liveM AW [wR] V slotsExp s) (zero : A aZ = 0)
-    (candidate : V sCand < 100)
-    (ae : CallArgument s0 g.B g.Z 7 (BitVec.ofNat 32 eLen))
-    (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
-    (bound : 8 * (dLen + eLen) < 2 ^ 32) :
+    (candidate : V sCand < 100) :
     WP isa (candSet g.n) s fun t =>
       KS g s0 (upd (upd A mG (V sCand + 2)) mY (A aO)) liveExp
-        (upd AW wRc (AW wR)) [wRc, wR]
-        (upd V sCnt (8 * (dLen + eLen))) slotsExp t := by
+        (upd AW wRc (AW wR)) [wRc, wR] V slotsExp t := by
   unfold candSet
   simp only [seqs]
   refine WP.seq (WP.mono (h.copy_w (o := mG) (a := aZ) (by decide) (by simp [liveM])
@@ -50,10 +46,9 @@ theorem candSet_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {eLen dLen : 
   refine WP.seq (WP.mono (h4.copy_w (o := mY) (a := aO) (by decide) (by simp [liveM])
     (by decide)) fun s5 ⟨h5, _, _⟩ => ?_)
   rw [upd_ne _ _ (by decide : aO ≠ mG)] at h5
-  refine WP.seq (WP.mono (h5.copy_W (o := wRc) (a := wR) (by decide) (by simp)
-    (by decide)) fun s6 ⟨h6, _⟩ => ?_)
-  refine WP.mono (h6.cntBits_ok ae ad bound) fun t ht => ?_
+  refine WP.mono (h5.copy_W (o := wRc) (a := wR) (by decide) (by simp)
+    (by decide)) fun t ⟨ht, _⟩ => ?_
   exact ht.mono (by intro j hj; exact ⟨by simp only [liveExp, liveM, List.mem_cons, List.not_mem_nil, or_false] at *; grind, rfl⟩)
-    (by simp) (by intro d hd; exact ⟨by simp [hd], rfl⟩)
+    (by simp) (by intro d hd; exact ⟨hd, rfl⟩)
 
 end VG.Proof.Rsa.X86.Recover

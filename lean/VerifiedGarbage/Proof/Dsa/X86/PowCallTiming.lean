@@ -36,7 +36,7 @@ theorem body_readArg {n e : Nat} {s t : State} {tr : List Leak}
         simp only [show s.ea (at_ .esp 4) = argAddr s 0 from rfl, h, ↓reduceIte, Option.map_none] at H
         cases H
 
-theorem framed_relCT (n e : Nat) (he : 0 < e) :
+theorem framed_relCT (n e : Nat) :
     RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ 12 ≤ (s.gpr .esp).toNat)
       (.frame (.push [.eax, .edi]) (.call (name n e) (body n e)) (.pop .eax 2))
       (fun _ _ => True) := by
@@ -56,17 +56,17 @@ theorem framed_relCT (n e : Nat) (he : 0 < e) :
         rw [callEntry_arg (rs := [.eax, .edi]) (s := s) fit (by decide) (by decide),
           callEntry_arg (rs := [.eax, .edi]) (s := t) (by rw [← SP]; exact fit) (by decide) (by decide)]
         exact DI
-      have traces := (body_relCT n e he) _ _ _ _ _ _ ⟨sp, args, body_readArg E, body_readArg F⟩ E F
+      have traces := (body_relCT n e) _ _ _ _ _ _ ⟨sp, args, body_readArg E, body_readArg F⟩ E F
       have r := (ret_gpr R .esp).1
       have q := (ret_gpr S .esp).1
       refine ⟨?_, trivial⟩
       simp only [r, q, State.callEntry_esp, pushed_esp, SP, traces.1]
 
-theorem call_relCT (n e : Nat) (he : 0 < e) :
+theorem call_relCT (n e : Nat) :
     RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ s.gpr .edi = t.gpr .edi ∧ 12 ≤ (s.gpr .esp).toNat)
       (Impl.Dsa.X86.Pow.call n e) (fun _ _ => True) := by
   unfold Impl.Dsa.X86.Pow.call
-  refine RelCT.seq ?_ (framed_relCT n e he)
+  refine RelCT.seq ?_ (framed_relCT n e)
   intro s t tr ur sf tf H E F
   have W (s : State) : WP isa (.block [.mov .eax (.imm (BitVec.ofNat 32 (VG.Impl.Mont.X86.Dynamic.contextBytes n / 8)))]) s
       (fun t => VG.Proof.Mont.X86.Keeps [.eax] s t) :=

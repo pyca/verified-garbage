@@ -35,7 +35,7 @@ def exponentProduct (n : Nat) : Prog isa :=
 def exponentBody (n expWords : Nat) : Prog isa :=
   .seq (exponentProduct n)
   (.seq (mul (contextMod n) 0 (slot n 2) (slot n 5) (slot n 5) (slot n 5))
-    (.block (shiftExponent expWords (slot n 8))))
+    (shiftDown expWords (slot n 8)))
 
 def exponentStep (n expWords : Nat) : Prog isa :=
   .seq (exponentBody n expWords)

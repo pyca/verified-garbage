@@ -6,7 +6,6 @@ import VerifiedGarbage.Proof.Rsa.X86.RvCount
 import VerifiedGarbage.Proof.Rsa.X86.RvSlots
 import VerifiedGarbage.Proof.Mont.X86.Instr
 import Mathlib.Tactic.Finiteness.Attr
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Tactic.Push
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules

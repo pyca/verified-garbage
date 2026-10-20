@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
+public import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 
@@ -36,18 +37,18 @@ theorem allStack_noSp {c : Prog isa} (h : c.all (fun i => !isa.writesSp i) = tru
 
 def baseline : CrtImpl where
   name := "vg_rsa_private_crt"
-  code := Impl.Bignum.X86.Crt.code
-  verified := Bignum.X86.Crt.verified
+  code := Impl.Bignum.X86.CrtRt.code
+  verified := Bignum.X86.CrtRt.verified
   stack := by decide +kernel
-  noSp := allStack_noSp Bignum.X86.Crt.code_sp
+  noSp := NoSp.of_all (by decide +kernel)
   pcName := "vg_rsa_public_precompute"
   pc := Impl.Bignum.X86.PrecomputeFn.code
   pcVerified := Bignum.X86.precompute_verified
   pcStack := by decide +kernel
   pcNoSp := NoSp.of_all (by decide +kernel)
   pdName := "vg_rsa_public_precomputed_checked"
-  pd := Impl.Bignum.X86.PrecomputedFn.code
-  pdVerified := Bignum.X86.precomputed_verified
+  pd := Impl.Bignum.X86.PrecomputedRt.code
+  pdVerified := Bignum.X86.PrecomputedRt.verified
   pdStack := by decide +kernel
   pdNoSp := NoSp.of_all (by decide +kernel)
 

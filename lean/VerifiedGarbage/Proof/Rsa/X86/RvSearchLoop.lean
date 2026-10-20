@@ -25,8 +25,9 @@ variable {g : Geo} {s0 : State} {A AW V : Nat → Nat} {m eLen dLen : Nat}
   (ad : CallArgument s0 g.B g.Z 9 (BitVec.ofNat 32 dLen))
   (ht : V sTc ≤ 8 * (dLen + eLen)) (rb : AW wR < 2 ^ (8 * (dLen + eLen)))
   (count : 0 < 8 * (dLen + eLen)) (limit : 8 * (dLen + eLen) ≤ 16384)
+  (hwide : 8 * (dLen + eLen) < 32 * g.W)
 
-include zero value bound inverse odd large one neg r2 ae ad ht rb count limit
+include zero value bound inverse odd large one neg r2 ae ad ht rb count limit hwide
 
 theorem candBody_index {s : State} {j : Nat} (h : CI g s0 A AW V j s) (hj : j < 100) :
     WP isa (candBody g.n) s fun t =>
@@ -37,7 +38,7 @@ theorem candBody_index {s : State} {j : Nat} (h : CI g s0 A AW V j s) (hj : j < 
   refine WP.mono (candBody_ok h zero value bound
     (by simpa [VJ, upd, sInv, sCnt, sCand] using inverse) odd (by omega) one neg r2
     (by simpa only [VJ, upd_self] using hj) (by simp only [VJ, upd_self]; omega)
-    ae ad (by simpa [VJ, upd, sTc, sCnt, sCand] using ht) rb count limit) fun t result => ?_
+    ae ad (by simpa [VJ, upd, sTc, sCnt, sCand] using ht) rb count limit hwide) fun t result => ?_
   simpa only [VJ, upd_self, upd_ne _ _ (by decide : sTc ≠ sCand),
     upd_ne _ _ (by decide : sTc ≠ sCnt), upd_twice] using result
 
@@ -49,7 +50,8 @@ theorem searchLoop_ok {s : State} (h : CI g s0 A AW V 0 s) (ht1 : 1 ≤ V sTc) :
     ?_ 100 s ⟨0, rfl, by decide, h, rfl⟩
   intro left u ⟨j, sum, pos, hu, go⟩
   have hj : j < 100 := by omega
-  refine WP.mono (candBody_index zero value bound inverse odd large one neg r2 ae ad ht rb count limit hu hj)
+  refine WP.mono (candBody_index zero value bound inverse odd large one neg r2 ae ad ht rb count limit hwide
+    hu hj)
     fun t ⟨hs, zt⟩ => ?_
   have step := go.trans (candidate_go hj ht1 ht)
   have small := candidate_lt (m := m) (t := V sTc) (r := AW wR)
@@ -91,7 +93,7 @@ theorem candLoop_ok {s : State}
     simp only [slotsExp, List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl <;>
       simp [VJ, upd, sInv, sTc, sCnt, sCand] <;> exact vc
-  exact searchLoop_ok zero value bound inverse odd large one neg r2 ae ad ht rb count limit initial ht1
+  exact searchLoop_ok zero value bound inverse odd large one neg r2 ae ad ht rb count limit hwide initial ht1
 
 end
 end VG.Proof.Rsa.X86.Recover

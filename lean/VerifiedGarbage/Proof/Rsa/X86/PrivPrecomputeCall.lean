@@ -48,7 +48,7 @@ theorem pc_call (v : CrtImpl) {g : PrivGeometry} {bs : Fin 8 → List Byte} {s :
     WP isa (.call v.pcName v.pc) s fun t => PrivContext g bs t ∧
       Frame (pcWr g ++ [g.calleeRegion]) s.mem t.mem ∧ Keeps callClobbers s t ∧
       PcOut g bs t := by
-  refine WP.mono (private_call_ok h v.pcVerified v.pcStack v.pcNoSp (pcCall_pre h args)
+  refine WP.mono (private_call_ok h v.pcVerified (Nat.le_trans v.pcStack (by decide)) v.pcNoSp (pcCall_pre h args)
     (pcCovers h).1 (pcCovers h).2 (pcWrites_sub h.valid)) ?_
   rintro t ⟨ht, frame, rest, u, M, G, post⟩
   refine ⟨ht, frame, rest, ?_⟩

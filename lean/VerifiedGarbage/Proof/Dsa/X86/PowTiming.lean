@@ -19,7 +19,7 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 namespace VG.Proof.Dsa.X86.Pow
 open VG VG.X86 VG.Proof.Mont.X86.Dynamic VG.Impl.Dsa.X86.Pow
 
-theorem body_relCT (n e : Nat) (he : 0 < e) :
+theorem body_relCT (n e : Nat) :
     RelCT isa (fun s t => s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧
       readSrc s (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg s 0) ∧
       readSrc t (.mem (VG.Impl.Mont.X86.at_ .esp 4)) = some (arg t 0))
@@ -30,7 +30,7 @@ theorem body_relCT (n e : Nat) (he : 0 < e) :
   · exact checkedProgramChange (σ := workspaceTaint false) (hint := .block []) rfl rfl
   · refine RelCT.seq (RelCT.seq
       (checkedProgramChange (contextSetup_check n) (σ := workspaceTaint false) rfl)
-      (checkedProgramChange (exponentiate_check n e he) (σ := workspaceTaint false) rfl)) ?_
+      (checkedProgramChange (exponentiate_check n e) (σ := workspaceTaint false) rfl)) ?_
     exact (checkedProgramChange (σ := { regs := .ofList [], flags := false }) (hint := .block []) (by rfl) rfl).mono
       (fun _ _ h => h) (fun _ _ _ => trivial)
 

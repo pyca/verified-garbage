@@ -45,20 +45,10 @@ theorem sel_public (n o a b sl : Nat) : KeyPublic (sel n o a b sl) := by
   · rfl
 
 theorem half_public (n j : Nat) : KeyPublic (half n j) := by
-  refine ⟨.block [], zeroTaint true, ?_, by rfl⟩
-  unfold half
-  simp only [VG.Taint.check, VG.Taint.checkChunks]
-  rw [exponent_check_append taint (workspaceTaint true)]
-  have store : taint.checkBlock (workspaceTaint true)
-      [.store (VG.Impl.Mont.X86.sc (slot n j + 4 * n)) .ebx] = some (workspaceTaint true) := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint true) = true from rfl)]
-    change taint.checkBlock (workspaceTaint true) [.store (VG.Impl.Mont.X86.sc 0) .ebx] = _
-    rfl
-  rw [store]
-  change taint.checkBlock (workspaceTaint true)
-    (VG.Impl.Mont.X86.Dynamic.shiftExponent (n + 1) (VG.Impl.Rsa.X86.Keys.slot n j)) = _
-  rw [shiftExponent_taint, ite_eq_right (by omega)]
-  rfl
+  let hint := VG.Taint.hintOf taint (workspaceTaint true) (Code.erase (half 1 0))
+  refine ⟨hint, { regs := .ofList [.edi, .ebp, .eax, .esi], flags := false }, ?_, by rfl⟩
+  exact (check_of_erase_eq (half n j) (half 1 0) (workspaceTaint true) hint rfl rfl rfl).trans (by rfl)
+
 theorem bitOf_public (n sl j : Nat) : KeyPublic (.block (bitOf n sl j)) := by
   refine ⟨.block [], workspaceTaint true, ?_, rfl⟩
   change taint.checkBlock (workspaceTaint true) (bitOf n sl j) = _
