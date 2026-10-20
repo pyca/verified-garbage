@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Setup
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
 import VerifiedGarbage.Proof.Hmac.Generic.Common
-import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!

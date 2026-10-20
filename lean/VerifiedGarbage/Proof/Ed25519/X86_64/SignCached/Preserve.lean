@@ -23,6 +23,7 @@ import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Prune`. -/
 

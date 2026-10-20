@@ -6,7 +6,6 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.RegSet
 public meta import VerifiedGarbage.TCB.Code
 public meta import VerifiedGarbage.TCB.AArch64.Isa
 public meta import VerifiedGarbage.Proof.Framework.AArch64.Lit

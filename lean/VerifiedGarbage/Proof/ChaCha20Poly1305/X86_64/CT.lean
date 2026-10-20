@@ -73,6 +73,8 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Masked
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Gpr
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.StoreY
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls

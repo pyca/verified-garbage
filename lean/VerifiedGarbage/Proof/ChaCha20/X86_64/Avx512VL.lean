@@ -12,6 +12,8 @@ meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 on x86-64 with AVX-512, short data in `ymm` registers: verified

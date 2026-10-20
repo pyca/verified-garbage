@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 
 /-!
 # Interleaved counter mode and GHASH in AVX: decryption

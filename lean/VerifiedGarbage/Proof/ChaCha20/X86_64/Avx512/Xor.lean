@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Setup
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Last
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX-512

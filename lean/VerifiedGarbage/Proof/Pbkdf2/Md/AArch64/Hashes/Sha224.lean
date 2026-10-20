@@ -16,8 +16,9 @@ meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
+public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 
 /-!
 # SHA-224 on AArch64, as a Merkle–Damgård hash function
