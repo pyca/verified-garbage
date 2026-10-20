@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedVerified
-public import VerifiedGarbage.Proof.Bignum.X86.PublicVerified
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Verified
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvVerified
 public import VerifiedGarbage.Proof.Rsa.X86.CvStackSafety
@@ -57,11 +57,11 @@ def artifacts : List Artifact := [
     verified := Proof.Bignum.X86.precompute_verified
     stack := 20 },
   Spec.Rsa.publicCheckedApi.artifact X86.target {
-    notes := ["Public lengths select the limb width. Runtime-modulus Montgomery arithmetic \
-      uses 32-bit limbs in the shared public scratch layout. The input acceptance mask is \
-      applied after a fixed 64-step exponentiation. Callee-saved registers reside in scratch."]
-    code := Impl.Bignum.X86.PublicFn.code
-    verified := Proof.Bignum.X86.public_verified
-    stack := 20 }]
+    notes := ["The modulus's length gives the numbers' width at run time; every Montgomery \
+      multiplication calls `vg_rsa_mont_mul`. The input acceptance mask is applied after a fixed \
+      64-step exponentiation. Callee-saved registers reside in scratch."]
+    code := Impl.Bignum.X86.PublicRt.code
+    verified := Proof.Bignum.X86.PublicRt.verified
+    stack := 40 }]
 
 end VG.Artifacts.Rsa.X86
