@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Calls
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

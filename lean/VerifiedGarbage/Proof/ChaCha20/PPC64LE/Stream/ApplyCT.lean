@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Apply
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Apply
 public import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

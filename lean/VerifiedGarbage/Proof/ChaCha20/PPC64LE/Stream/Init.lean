@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
 public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.AddrArith
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!

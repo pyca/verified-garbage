@@ -16,6 +16,8 @@ public import VerifiedGarbage.Spec.Zeroize.Contract
 meta import VerifiedGarbage.Spec.Zeroize.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 
 /-!
