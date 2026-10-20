@@ -1,5 +1,49 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
+## Refresh at e12ee485
+
+Measured on main e12ee485 (after this round's ML-KEM decapsulation, x86
+Keccak ×4, AES-GCM and AArch64 changes), with this branch's provider at
+e3f347caf, the same rustls (91aebe5d) and aws-lc-rs (1.18.1), on the same
+class of host as below: a 2.1 GHz Intel Xeon with AVX-512 IFMA, VAES and
+VPCLMULQDQ, pinned to one core. `bench/run.sh 3`, so each value is the
+median of three rounds; the host was noisier than for the run below.
+
+Geometric means of verified-garbage / aws-lc-rs − 1 (positive: faster):
+
+| Group | Scenarios | Speed |
+|---|---:|---:|
+| Full handshakes, client RSA-2048 | 12 | +38% |
+| Full handshakes, server RSA-2048 | 12 | +19% |
+| Full handshakes, client / server P-256 | 8 / 8 | +47% / +49% |
+| Full handshakes, client / server P-384 | 2 / 2 | +36% / +53% |
+| Full handshakes, client / server Ed25519 | 6 / 6 | +57% / +50% |
+| Resumed handshakes | 112 | +32% |
+| Bulk ChaCha20-Poly1305 | 12 | +49% |
+| Bulk AES-128-GCM | 8 | +8% |
+| Bulk AES-256-GCM | 12 | +7% |
+| All | 200 | +32% |
+
+verified-garbage is faster in 194 of the 200 scenarios. Of the six that are
+not, the three resumed TLS 1.2 RSA ChaCha20-Poly1305 scenarios (0.89–0.95)
+do no RSA and were +4% to +6% in the run below, so they read as noise.
+The other three are TLS 1.2 AES-GCM bulk at `max_fragment_size` 10000
+(0.97–1.00).
+
+Weak spots this run shows, each handed to a session:
+
+* AES-GCM sealing a TLS 1.3 record out of place (16384 + 1 bytes, two
+  pieces into a separate buffer): 0.98× (AES-128) and 0.96× (AES-256)
+  against aws-lc-rs sealing in place, while in place is 1.07–1.08×. Its
+  time moves by up to ~15% with the output buffer's offset from the
+  payload, so it may be aliasing between the input and output streams.
+* Ed25519 sign through the provider: 0.98×.
+* secp256r1 key generation (`client start`): 1.01×, while ECDSA P-256
+  sign, which also multiplies the base point, is 1.50×.
+* ChaCha20-Poly1305 records of 16–256 bytes: 0.99–1.03×.
+* RSA signing: 1.16× at 2048, 1.09× at 3072, 1.04× at 4096 (PSS through
+  the provider).
+
 ## Every rustls-bench test at d713a393
 
 Measured on main d713a393 (which includes the AVX-512 IFMA RSA public-key
