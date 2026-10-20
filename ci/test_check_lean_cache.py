@@ -12,6 +12,42 @@ import unittest
 WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/lean-cache.yml"
 
 
+class CheckedBuildTests(unittest.TestCase):
+    def check_build(self, hit, dependency_key=None):
+        step = WORKFLOW.read_text().split("      - name: Check the checked build was restored\n", 1)[1]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1].split("\n      - ", 1)[0])
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            if dependency_key is not None:
+                path = root / "lean/.lake/ltar/mathlib-cache-key"
+                path.parent.mkdir(parents=True)
+                path.write_text(dependency_key + "\n")
+            output = root / "output"
+            output.touch()
+            result = subprocess.run(["bash", "-e", "-c", script], cwd=root,
+                                    env=dict(os.environ, CACHE_HIT=hit, GITHUB_OUTPUT=str(output)),
+                                    capture_output=True, text=True)
+            return result, output.read_text()
+
+    def test_exact_hit_passes_the_saved_dependency_key(self):
+        result, output = self.check_build("true", "exact-mathlib-key")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "key=exact-mathlib-key\n")
+
+    def test_old_cache_can_use_normal_preparation(self):
+        result, output = self.check_build("true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "")
+
+    def test_miss_or_fallback_stops_before_dependency_setup(self):
+        for hit in ("false", ""):
+            with self.subTest(hit=hit):
+                result, output = self.check_build(hit, "stale-key")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("The checked build cache is missing", result.stdout)
+                self.assertEqual(output, "")
+
+
 class LeanCachePublishingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
