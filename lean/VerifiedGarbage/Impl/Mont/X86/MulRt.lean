@@ -79,16 +79,21 @@ def zeroAcc : Prog isa :=
   .seq (.block (accPtr ++ lenTimes .esi 1 ++ [.alu .add .esi (.imm 4), .mov .eax (.imm 0)]))
     (.loop (.block [.store (at_ .ebp 0) .eax, .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]) .ne)
 
-/-- One step of a row: `[ebp] += [multOff] · [ecx]` with the carry `ebx`,
-both pointers up a word, `esi` down 4; ZF when it reaches zero. -/
-def mulStep : List Instr :=
-  [.mov .eax (.mem (sc multOff)), .mov .edx (.mem (at_ .ecx 0)), .mul .edx,
-   .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0),
+/-- `[ebp + d] += [edi + mo] · [ecx + d]` with the carry `ebx`. -/
+def macAt (mo d : Nat) : List Instr :=
+  [.mov .eax (.mem (sc mo)), .mov .edx (.mem (at_ .ecx d)), .mul .edx,
+   .alu .add .eax (.mem (at_ .ebp d)), .alu .adc .edx (.imm 0),
    .alu .add .eax (.reg .ebx), .alu .adc .edx (.imm 0),
-   .store (at_ .ebp 0) .eax, .mov .ebx (.reg .edx),
-   .alu .add .ecx (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .esi (.imm 4)]
+   .store (at_ .ebp d) .eax, .mov .ebx (.reg .edx)]
 
-/-- `mulStep` with the multiplier at `[edi + mo]`. -/
+/-- One step of a row, two words: `[ebp] += [multOff] · [ecx]` and the same a
+word up, with the carry `ebx`, both pointers up two words, `esi` down 8; ZF
+when it reaches zero. A row has `N = 2 n` words, an even number. -/
+def pairStep : List Instr :=
+  macAt multOff 0 ++ macAt multOff 4 ++ [.alu .add .ecx (.imm 8), .alu .add .ebp (.imm 8), .alu .sub .esi (.imm 8)]
+
+/-- One word of a row, with the multiplier at `[edi + mo]`, both pointers up a
+word, `esi` down 4; ZF when it reaches zero. -/
 def mulStepAt (mo : Nat) : List Instr :=
   [.mov .eax (.mem (sc mo)), .mov .edx (.mem (at_ .ecx 0)), .mul .edx,
    .alu .add .eax (.mem (at_ .ebp 0)), .alu .adc .edx (.imm 0),
@@ -107,7 +112,7 @@ def carryUp : List Instr := carryWords ++ lenTimes .eax 0 ++ [.alu .sub .ebp (.r
 /-- The window at `ebp` `+= [multOff] ·` the number at the offset argument `x`. -/
 def mulRow (x : MemOp) : Prog isa :=
   .seq (.block ([.mov .ebx (.imm 0)] ++ ptr .ecx x .edx ++ lenTimes .esi 0)) <|
-  .seq (.loop (.block mulStep) .ne) (.block carryUp)
+  .seq (.loop (.block pairStep) .ne) (.block carryUp)
 
 /-- `a_i` into `multOff`: at `ws + a + 4 i`, for `ebp` at word `i` of the accumulator. -/
 def loadA : List Instr :=

@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `mulRow x`: the window at `ebp` `+= [edi + multOff] ·` the number at the
 offset argument `x`, of `N` words, `N = 2 n`: `ecx` at the number, `esi`
-counting `4 N` bytes down, a step a word (`mulStep_ok`), then the carry into
+counting `4 N` bytes down, a step two words (`macAt_ok`, `pairCtl_ok`), then the carry into
 the window's top two words and `ebp` back (`carry_ok`).
 -/
 
@@ -86,6 +86,20 @@ theorem len_ok {A : Nat → BitVec 32} {N : Nat} (hn : (A 2).toNat * 8 = 4 * N) 
     (A 2).toNat * 2 ^ (3 + 0) % 2 ^ 32 = 4 * N := by
   rw [show 2 ^ (3 + 0) = 8 from rfl, hn, Nat.mod_eq_of_lt hN32]
 
+/-- A word of a row into the invariant: the window's low `j` words and the carry `e`, then the word `j`
+written and the carry `e'` out. -/
+theorem row_word {m₀ mt mu : Mem} {W : Addr} {w bx j k e e' : Nat}
+    (V : val32 mt W w j + 2 ^ (32 * j) * e = val32 m₀ W w j + k * val32 m₀ W bx j)
+    (hlow : val32 mu W w j = val32 mt W w j)
+    (htop : w32 mu W (w + 4 * j) = (k * w32 m₀ W (bx + 4 * j) + e + w32 m₀ W (w + 4 * j)) % 2 ^ 32)
+    (he : e' = (k * w32 m₀ W (bx + 4 * j) + e + w32 m₀ W (w + 4 * j)) / 2 ^ 32) :
+    val32 mu W w (j + 1) + 2 ^ (32 * (j + 1)) * e' = val32 m₀ W w (j + 1) + k * val32 m₀ W bx (j + 1) := by
+  rw [val32_succ, val32_succ, val32_succ, hlow, htop, he, pow32_succ]
+  generalize hxd : k * w32 m₀ W (bx + 4 * j) + e + w32 m₀ W (w + 4 * j) = x at *
+  have hx := Nat.div_add_mod x (2 ^ 32)
+  generalize 2 ^ (32 * j) = P at *
+  grind
+
 /-- The window of `N + 2` words at `ebp = W + w` `+= [edi + multOff] ·` the
 number of `N` words at the offset argument `xi`, when the sum fits. -/
 theorem mulRow_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw : Ws s W L) (ha : Args s W L A)
@@ -126,38 +140,71 @@ theorem mulRow_ok {s : State} {W : Addr} {L : Nat} {A : Nat → BitVec 32} (hw :
     refine ⟨K₀.mono (by decide), by simpa using ecx₀, ?_, by simpa using esi₀, by rw [m₀]; exact Outside.refl _ _ _ _, ?_⟩
     · rw [PtrAt, K₀.1 _ (by decide)]; simpa using hebp
     · rw [ebx₀]; simp [val32]
-  refine WP.seq (WP.mono (WP.loop (M := isa) (Q := I N) (fun m t => ∃ j, m = N - j ∧ j < N ∧ I j t) ?_ N t₀
-    ⟨0, by omega, hN, I₀⟩) ?_)
-  · rintro m t ⟨j, rfl, hj, K, ecx, ebp, esi, O, V⟩
+  have hNe : N % 2 = 0 := by omega
+  refine WP.seq (WP.mono (WP.loop (M := isa) (Q := I N)
+    (fun m t => ∃ j, m = N - j ∧ j < N ∧ j % 2 = 0 ∧ I j t) ?_ N t₀ ⟨0, by omega, hN, rfl, I₀⟩) ?_)
+  · rintro m t ⟨j, rfl, hj, hje, K, ecx, ebp, esi, O, V⟩
+    have hj2 : j + 2 ≤ N := by omega
     have ht := hw.of_keeps K
     have edi : PtrAt t W .edi S := by rw [PtrAt, K.1 _ (by decide)]; exact hedi
-    refine WP.mono (mulStep_ok ht edi ecx ebp esi hj (by omega) (by omega) (by omega))
-      fun u ⟨mu, bu, cu, pu, su, zu, Ku⟩ => ?_
+    unfold Rt.pairStep
+    rw [List.append_assoc]
+    -- The word `j`.
+    refine WP.block_append (WP.mono (macAt_ok (mo := multOff) (d := 0) ht edi ecx ebp (by omega) (by omega) (by omega))
+      fun u₁ ⟨mu₁, bu₁, Ku₁⟩ => ?_)
     have mk : w32 t.mem W (S + multOff) = w32 s.mem W (S + multOff) := O.w32 (by omega) (by omega)
-    have bk : w32 t.mem W (bx + 4 * j) = w32 s.mem W (bx + 4 * j) := O.w32 (by omega) (by omega)
-    have tk : w32 t.mem W (w + 4 * j) = w32 s.mem W (w + 4 * j) := O.w32 (by omega) (by omega)
-    rw [mk, bk, tk] at mu bu
-    have Wr := writeW32_outside t.mem W (d := w + 4 * j)
+    have bk : w32 t.mem W (bx + 4 * j + 0) = w32 s.mem W (bx + 4 * j) := O.w32 (by omega) (by omega)
+    have tk : w32 t.mem W (w + 4 * j + 0) = w32 s.mem W (w + 4 * j) := O.w32 (by omega) (by omega)
+    rw [mk, bk, tk] at mu₁ bu₁
+    rw [Nat.add_zero] at mu₁
+    have Wr₁ := writeW32_outside t.mem W (d := w + 4 * j)
       (BitVec.ofNat 32 (w32 s.mem W (S + multOff) * w32 s.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
         w32 s.mem W (w + 4 * j))) (by omega)
-    rw [← mu] at Wr
-    have I' : I (j + 1) u := by
-      refine ⟨K.trans (Ku.mono (by decide)), cu, pu, su,
-        (O.mono (Nat.le_refl _) (by omega)).trans (Wr.mono (by omega) (by omega)), ?_⟩
-      have hlow : val32 u.mem W w j = val32 t.mem W w j := Wr.val32 (by omega) (by omega)
-      have htop : w32 u.mem W (w + 4 * j) = (w32 s.mem W (S + multOff) * w32 s.mem W (bx + 4 * j) +
-          (t.gpr .ebx).toNat + w32 s.mem W (w + 4 * j)) % 2 ^ 32 := by
-        rw [mu, w32_write_self, BitVec.toNat_ofNat]
-      rw [val32_succ, val32_succ, val32_succ, hlow, htop, bu, pow32_succ]
-      generalize hxd : w32 s.mem W (S + multOff) * w32 s.mem W (bx + 4 * j) + (t.gpr .ebx).toNat +
-        w32 s.mem W (w + 4 * j) = x at *
-      have hx := Nat.div_add_mod x (2 ^ 32)
-      generalize 2 ^ (32 * j) = P at *
-      grind
-    by_cases hjN : j + 1 = N
+    rw [← mu₁] at Wr₁
+    have O₁ : Outside W w (4 * (j + 1)) s.mem u₁.mem :=
+      (O.mono (Nat.le_refl _) (by omega)).trans (Wr₁.mono (by omega) (by omega))
+    have V₁ : val32 u₁.mem W w (j + 1) + 2 ^ (32 * (j + 1)) * (u₁.gpr .ebx).toNat =
+        val32 s.mem W w (j + 1) + w32 s.mem W (S + multOff) * val32 s.mem W bx (j + 1) :=
+      row_word V (Wr₁.val32 (by omega) (by omega)) (by rw [mu₁, w32_write_self, BitVec.toNat_ofNat]) bu₁
+    -- The word `j + 1`.
+    have hw₁ := hw.of_keeps (K.trans (Ku₁.mono (by decide)))
+    have edi₁ : PtrAt u₁ W .edi S := by rw [PtrAt, Ku₁.1 _ (by decide)]; exact edi
+    have ecx₁ : PtrAt u₁ W .ecx (bx + 4 * j) := by rw [PtrAt, Ku₁.1 _ (by decide)]; exact ecx
+    have ebp₁ : PtrAt u₁ W .ebp (w + 4 * j) := by rw [PtrAt, Ku₁.1 _ (by decide)]; exact ebp
+    refine WP.block_append (WP.mono (macAt_ok (mo := multOff) (d := 4) hw₁ edi₁ ecx₁ ebp₁ (by omega) (by omega) (by omega))
+      fun u₂ ⟨mu₂, bu₂, Ku₂⟩ => ?_)
+    have mk₁ : w32 u₁.mem W (S + multOff) = w32 s.mem W (S + multOff) := O₁.w32 (by omega) (by omega)
+    have bk₁ : w32 u₁.mem W (bx + 4 * j + 4) = w32 s.mem W (bx + 4 * (j + 1)) := by
+      rw [show bx + 4 * j + 4 = bx + 4 * (j + 1) by omega]; exact O₁.w32 (by omega) (by omega)
+    have tk₁ : w32 u₁.mem W (w + 4 * j + 4) = w32 s.mem W (w + 4 * (j + 1)) := by
+      rw [show w + 4 * j + 4 = w + 4 * (j + 1) by omega]; exact O₁.w32 (by omega) (by omega)
+    rw [mk₁, bk₁, tk₁] at mu₂ bu₂
+    rw [show w + 4 * j + 4 = w + 4 * (j + 1) by omega] at mu₂
+    have Wr₂ := writeW32_outside u₁.mem W (d := w + 4 * (j + 1))
+      (BitVec.ofNat 32 (w32 s.mem W (S + multOff) * w32 s.mem W (bx + 4 * (j + 1)) + (u₁.gpr .ebx).toNat +
+        w32 s.mem W (w + 4 * (j + 1)))) (by omega)
+    rw [← mu₂] at Wr₂
+    have O₂ : Outside W w (4 * (j + 2)) s.mem u₂.mem :=
+      (O₁.mono (Nat.le_refl _) (by omega)).trans (Wr₂.mono (by omega) (by omega))
+    have V₂ : val32 u₂.mem W w (j + 1 + 1) + 2 ^ (32 * (j + 1 + 1)) * (u₂.gpr .ebx).toNat =
+        val32 s.mem W w (j + 1 + 1) + w32 s.mem W (S + multOff) * val32 s.mem W bx (j + 1 + 1) :=
+      row_word V₁ (Wr₂.val32 (by omega) (by omega)) (by rw [mu₂, w32_write_self, BitVec.toNat_ofNat]) bu₂
+    -- The pointers and the count.
+    have K₂ : Keeps [.eax, .ebx, .edx] t u₂ := Ku₁.trans Ku₂
+    have ecx₂ : PtrAt u₂ W .ecx (bx + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact ecx
+    have ebp₂ : PtrAt u₂ W .ebp (w + 4 * j) := by rw [PtrAt, K₂.1 _ (by decide)]; exact ebp
+    have esi₂ : (u₂.gpr .esi).toNat = 4 * (N - j) := by rw [K₂.1 _ (by decide)]; exact esi
+    refine WP.mono (pairCtl_ok ecx₂ ebp₂ esi₂ hj2) fun u ⟨mu, cu, pu, su, zu, Ku⟩ => ?_
+    have I' : I (j + 2) u := by
+      refine ⟨(K.trans (K₂.mono (by decide))).trans (Ku.mono (by decide)),
+        by rw [show bx + 4 * (j + 2) = bx + 4 * j + 8 by omega]; exact cu,
+        by rw [show w + 4 * (j + 2) = w + 4 * j + 8 by omega]; exact pu, su, by rw [mu]; exact O₂, ?_⟩
+      rw [mu, Ku.1 _ (by decide)]
+      exact V₂
+    by_cases hjN : j + 2 = N
     · exact .inl ⟨by simp only [eval, zu, hjN, decide_true, Option.map_some, Bool.not_true], hjN ▸ I'⟩
     · exact .inr ⟨by simp only [eval, zu, decide_eq_false hjN, Option.map_some, Bool.not_false],
-        N - (j + 1), by omega, j + 1, rfl, by omega, I'⟩
+        N - (j + 2), by omega, j + 2, rfl, by omega, by omega, I'⟩
   · intro t ⟨K, _, ebp, _, O, V⟩
     have ht := hw.of_keeps K
     -- The carry into the window's top two words.

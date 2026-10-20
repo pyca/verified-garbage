@@ -73,9 +73,18 @@ add eax, ebx
 adc edx, 0
 mov DWORD PTR [ebp], eax
 mov ebx, edx
-add ecx, 4
-add ebp, 4
-sub esi, 4
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx+4]
+mul edx
+add eax, DWORD PTR [ebp+4]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp+4], eax
+mov ebx, edx
+add ecx, 8
+add ebp, 8
+sub esi, 8
 jne 22b
 mov eax, DWORD PTR [ebp]
 add eax, ebx
@@ -113,9 +122,18 @@ add eax, ebx
 adc edx, 0
 mov DWORD PTR [ebp], eax
 mov ebx, edx
-add ecx, 4
-add ebp, 4
-sub esi, 4
+mov eax, DWORD PTR [edi+20]
+mov edx, DWORD PTR [ecx+4]
+mul edx
+add eax, DWORD PTR [ebp+4]
+adc edx, 0
+add eax, ebx
+adc edx, 0
+mov DWORD PTR [ebp+4], eax
+mov ebx, edx
+add ecx, 8
+add ebp, 8
+sub esi, 8
 jne 23b
 mov eax, DWORD PTR [ebp]
 add eax, ebx
