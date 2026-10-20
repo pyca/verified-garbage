@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Cast5.X86.Block
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Cast5.X86.Ecb
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # CAST5's core for the modes on x86 (32-bit)

@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Cast5.KeyMem
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Cast5.X86.Run
 public import VerifiedGarbage.Proof.Cast5.X86.Scan
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-!
 # CAST5 key expansion on 32-bit x86: a line

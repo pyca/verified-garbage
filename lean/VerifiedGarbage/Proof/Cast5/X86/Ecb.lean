@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Cast5.X86.Block
 public import VerifiedGarbage.Proof.Framework.X86.Spill
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # CAST5 on 32-bit x86: ECB

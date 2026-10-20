@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Cast5.Arm.Lit
 meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Cast5.Arm.Round
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+meta import VerifiedGarbage.Proof.Framework.Arm.Exec
 
 /-!
 # CAST5 key expansion on ARMv7: verified

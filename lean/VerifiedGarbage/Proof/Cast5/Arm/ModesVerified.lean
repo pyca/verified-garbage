@@ -10,14 +10,12 @@ meta import VerifiedGarbage.Proof.Modes.Arm.CbcChained
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.SeqCT
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Impl.StackScratch.Arm
 meta import VerifiedGarbage.Proof.Cast5.Table
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Impl.StackScratch.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 public import VerifiedGarbage.Proof.Framework.ConstMem
 import Batteries.Logic

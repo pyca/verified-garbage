@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Cast5.AArch64.Block
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Cast5.AArch64.KeyLine
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # CAST5 key expansion on AArch64: groups of four lines

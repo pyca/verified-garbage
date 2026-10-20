@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.Scan
 public import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
 public import VerifiedGarbage.Proof.Cast5.AArch64.Run
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # CAST5 on AArch64: a round

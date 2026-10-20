@@ -5,6 +5,9 @@ import VerifiedGarbage.Proof.Cast5.Arm.KeyHalf
 import VerifiedGarbage.Proof.Cast5.Arm.Ecb
 public import VerifiedGarbage.Proof.Cast5.Arm.Run
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 /-!
 # CAST5 key expansion on ARMv7

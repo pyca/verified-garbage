@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 
 /-!
 # CAST5-OFB and -CFB64 on AArch64 meet their contracts

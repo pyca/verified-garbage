@@ -8,7 +8,6 @@ meta import VerifiedGarbage.Impl.Cast5.AArch64.Modes
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # CAST5-CBC, -OFB and -CFB64's AArch64 code as literals, for kernel-evaluated checks -/

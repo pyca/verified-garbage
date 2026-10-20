@@ -21,9 +21,7 @@ public import VerifiedGarbage.Proof.Modes.X86.Seq
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchConsts
-import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.AesCtr.Inc
 import VerifiedGarbage.Proof.Cast5.Memory
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Framework.ReadHalves
@@ -33,8 +31,6 @@ import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
 import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 import VerifiedGarbage.Proof.Modes.StepsChained
-import VerifiedGarbage.Proof.Modes.X86.Counter
-import VerifiedGarbage.Proof.Modes.X86.Ops
 meta import VerifiedGarbage.Proof.AesCtr.Inc
 meta import VerifiedGarbage.Proof.Cast5.Memory
 meta import VerifiedGarbage.Proof.Framework.CallLay

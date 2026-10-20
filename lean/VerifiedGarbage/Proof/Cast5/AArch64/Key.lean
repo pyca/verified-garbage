@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Cast5.AArch64.KeyHalf
 import VerifiedGarbage.Proof.Framework.CallLay
 import VerifiedGarbage.Proof.Cast5.AArch64.Run
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # CAST5 key expansion on AArch64
