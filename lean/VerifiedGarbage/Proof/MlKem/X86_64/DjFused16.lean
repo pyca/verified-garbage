@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFused16
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

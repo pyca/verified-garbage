@@ -4,8 +4,6 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Kem16.Decaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.Top
 public import VerifiedGarbage.Proof.MlKem.AArch64.Hybrid.DecapsStart
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Interface
-import VerifiedGarbage.Impl.MlKem.AArch64.Kem16
-import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Entry
 
