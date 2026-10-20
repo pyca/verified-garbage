@@ -99,8 +99,10 @@ def tablePointer : List Instr :=
     .mov .r11 (.imm 34), .mul .r11 .r11 .r7, .dp .add .r11 .r11 (.reg .r0),
     .dp .add .r11 .r11 (.imm 256)]
 
-def tableWrite : List Instr := tablePointer ++ (List.range 53).flatMap fun j =>
+def tableWrites (count : Nat) : List Instr := (List.range count).flatMap fun j =>
   [.mov .r1 (.imm (BitVec.ofNat 32 (VG.Impl.RsaKeyGen.tabEntry j))), .str .r1 .r11 (4 * j)]
+
+def tableWrite : List Instr := tablePointer ++ tableWrites 53
 
 /-- Consume the next least-significant radix-2^16 digit of the big-endian
 buffer ending at r0, with r1 octets left. The final odd octet is zero-padded. -/
@@ -143,22 +145,37 @@ def residueEquals : List Nat → Prog isa
 def residueLow : List Instr := [.ldrSp .r4 4, .ldrSp .r5 12, .dp .add .r4 .r4 (.reg .r5),
   .dp .sub .r4 .r4 (.imm 1), .ldrb .r2 .r4 0, .dp .and .r2 .r2 (.imm 7), .cmp .r2 (.imm 3)]
 
+/-- Test a short list of residues using RSA's shared trial reducer. -/
+def residuePrime (prime : Nat) (values : List Nat) : Prog isa :=
+  seqs [.block [.mov .r7 (.imm (BitVec.ofNat 32 prime))], trialSmall, residueEquals values]
+
 /-- For odd p, p mod 24 = 11 iff p mod 8 = 3 and p mod 3 = 2.
 The shared reducer's radix is 1 modulo both 3 and 5. -/
 def residue2 : Prog isa := .seq (.block residueLow)
-  (.ite .eq (seqs [.block [.mov .r7 (.imm 3)], trialSmall, residueEquals [2, 5]]) (.block []))
+  (.ite .eq (residuePrime 3 [2, 5]) (.block []))
 
 /-- For odd p, p mod 10 is 3 or 7 iff p mod 5 is 3 or 2. -/
-def residue5 : Prog isa := seqs [.block [.mov .r7 (.imm 5)], trialSmall, residueEquals [2, 3, 7, 8]]
+def residue5 : Prog isa := residuePrime 5 [2, 3, 7, 8]
 
 def residue : Prog isa := .seq (.block [.ldrSp .r1 28, .cmp .r1 (.imm 2)]) (.ite .eq residue2 residue5)
 
-def sieve : Prog isa := seqs [
-  .block (tablePointer ++ [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64),
-  .loop (seqs [.block [.ldr .r7 .r10 0, .dp .add .r10 .r10 (.imm 4)], trialSmall,
-    .ite .eq (.block ([.mov .r1 (.imm 1)] ++ save .r1 64)) (.block []),
-    .block [.subs .r11 .r11 (.imm 1)]]) .ne,
-  .block [.ldrSp .r1 64, .cmp .r1 (.imm 0)]]
+def sieveInitTail : List Instr :=
+  [.mov .r10 (.reg .r11), .mov .r11 (.imm 53), .mov .r1 (.imm 0)] ++ save .r1 64
+
+def sieveInit : Prog isa := .seq (.block tablePointer) (.block sieveInitTail)
+
+def sieveEntry : List Instr := [.ldr .r7 .r10 0, .dp .add .r10 .r10 (.imm 4)]
+
+def sieveFlag : Prog isa :=
+  .ite .eq (.block ([.mov .r1 (.imm 1)] ++ save .r1 64)) (.block [])
+
+def sieveCount : List Instr := [.subs .r11 .r11 (.imm 1)]
+
+def sieveStep : Prog isa := seqs [.block sieveEntry, trialSmall, sieveFlag, .block sieveCount]
+
+def sieveFinish : List Instr := [.ldrSp .r1 64, .cmp .r1 (.imm 0)]
+
+def sieve : Prog isa := seqs [sieveInit, .loop sieveStep .ne, .block sieveFinish]
 
 def halfByte : List Instr :=
   [.ldrb .r3 .r0 0, .mov .r1 (.shifted .r3 .lsr 1), .dp .orr .r1 .r1 (.reg .r2),
