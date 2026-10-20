@@ -33,7 +33,7 @@ def keyContract : Contract isa where
   post := keyPost
   pub := keyPub
 
-theorem key_correct (s : State) (h : keyPre s) :
+theorem keyInit_correct (s : State) (h : keyPre s) :
     ∃ tr t, Exec isa KeyGeneration.init s tr t ∧ abiPreserved s t ∧ keyPost s t := by
   have ws : Workspace s (s.gpr .r0) 128 := ⟨h.2.2, by rw [h.2.1]; simp⟩
   have run := withRest [.r0, .r3, .r12] (keyInit_ok s ws rfl) (by
@@ -72,7 +72,7 @@ private def keySat : State where
   wr := [⟨0x1000, 128⟩]
 
 theorem keyInit_verified : Verified target KeyGeneration.init (Spec.Ffdh.keyInitContract abi) := by
-  refine Verified.of_correct (k := keyContract) key_correct ?_ ?_
+  refine Verified.of_correct (k := keyContract) keyInit_correct ?_ ?_
   · intro s t tr1 tr2 u v _ _ pub e1 e2
     exact (keyInit_ct s t tr1 tr2 u v (by
       intro r hr
