@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Select3
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
@@ -146,6 +147,57 @@ theorem maskSel_ok {s : State} (h : RtWs L s B Z len N) {o b sl : Nat} (ho : o <
   rw [V']
   by_cases e : slot s.mem B sl = 0 <;> simp [e]
 
+/-- `[o] = [b]` where the mask `ecx` is all ones, else `[a]`: `w` words, `o` apart from `a` and `b`. -/
+theorem select3_ok {s : State} (h : RtWs L s B Z len N) {o a b : Nat} (ho : o < N) (ha : a < N) (hb : b < N)
+    (hoa : o ≠ a) (hob : o ≠ b) {k : Bool} (hk : s.gpr .ecx = cmask k) :
+    WP isa (VG.Impl.Rsa.X86.KeyRt.select3 L o a b) s fun t =>
+      RtWs L t B Z len N ∧ Keep B (kw len) [o] [] s.mem t.mem ∧
+      num t.mem B (kw len) o = (if k then num s.mem B (kw len) b else num s.mem B (kw len) a) ∧
+      Keeps [.eax, .ebx, .ecx, .edx, .ebp] s t := by
+  have hn := h.ws.workspace.nowrap
+  have fa := h.ws.arr_fit ha
+  have fb := h.ws.arr_fit hb
+  have fo := h.ws.arr_fit ho
+  have sa := arr_disj (w := kw len) hoa
+  have sb := arr_disj (w := kw len) hob
+  have wpos := h.kw_pos
+  simp only [S] at fa fb fo sa sb
+  have hl := lenSrc h
+  have hle := h.lenLe
+  unfold VG.Impl.Rsa.X86.KeyRt.select3
+  rw [show count L .edx false = count L .edx false ++ [] from (List.append_nil _).symm]
+  simp only [List.append_assoc]
+  refine WP.seq (arrPtr_ok hl hle h.edi (by decide) (by decide) (by omega) fun u₁ K₁ m₁ p₁ _ => ?_)
+  have hl₁ := (src_keep K₁ (by decide) m₁).trans hl
+  have edi₁ : (u₁.gpr .edi).toNat = B.toNat := by rw [K₁.1 _ (by decide)]; exact h.edi
+  refine arrPtr_ok hl₁ hle edi₁ (by decide) (by decide) (by omega) fun u₂ K₂ m₂ p₂ _ => ?_
+  have hl₂ := (src_keep K₂ (by decide) m₂).trans hl₁
+  have edi₂ : (u₂.gpr .edi).toNat = B.toNat := by rw [K₂.1 _ (by decide)]; exact edi₁
+  refine arrPtr_ok hl₂ hle edi₂ (by decide) (by decide) (by omega) fun u₃ K₃ m₃ p₃ _ => ?_
+  have hl₃ := (src_keep K₃ (by decide) m₃).trans hl₂
+  refine count_ok hl₃ hle fun u K₄ m₄ c₄ => WP.block_nil ?_
+  have K : Keeps [.ebx, .edx, .ebp, .edi] s u :=
+    (((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans (K₄.mono (by decide))
+  have m : u.mem = s.mem := by rw [m₄, m₃, m₂, m₁]
+  have ecx : u.gpr .ecx = cmask k := by rw [K.1 _ (by decide)]; exact hk
+  refine WP.seq (WP.mono (select3Loop_ok (h.rt.of_keeps K) (x := arr (kw len) a) (y := arr (kw len) b)
+    (d := arr (kw len) o) (N := kw len) k wpos (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide), K₂.1 _ (by decide)]; exact p₁)
+    (by rw [PtrAt, K₄.1 _ (by decide), K₃.1 _ (by decide)]; exact p₂)
+    (by rw [PtrAt, K₄.1 _ (by decide)]; exact p₃) (by rw [c₄]; simp) ecx) fun t ⟨O, V, Kt⟩ => ?_)
+  rw [m] at O V
+  have KK : Keeps [.eax, .ebx, .edx, .ebp, .edi] s t := (K.mono (by decide)).trans Kt
+  have O0 : Outside B 0 Z s.mem t.mem := O.mono (Nat.zero_le _) (by omega)
+  unfold restoreEdi
+  refine wp_movS (h.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
+  have K' : Keeps [.eax, .ebx, .edx, .ebp] s t₁ :=
+    VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .edx, .ebp])
+      (KK.trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h).symm)
+  refine ⟨h.keep K' (by decide) (by decide) (by rw [U.mem]; exact O0),
+    Keep.of_arr (d := 0) (by rw [U.mem]; simpa using O) (by simp only [S]; omega) (by simp), ?_,
+    K'.mono (by decide)⟩
+  rw [num, U.mem, V]
+
 open VG.Proof.Rsa.X86.Keys (slot) in
 /-- `[o] = [b]` if the header word `sl` is one, else `[a]`, for `o` apart from `a` or `b`. -/
 theorem sel_ok {s : State} (h : RtWs L s B Z len N) {o a b sl : Nat} (ho : o < N) (ha : a < N) (hb : b < N)
@@ -178,17 +230,21 @@ theorem sel_ok {s : State} (h : RtWs L s B Z len N) {o a b sl : Nat} (ho : o < N
     by_cases hoa : o = a
     · subst hoa
       rw [ite_eq_left rfl]
-      refine WP.seq (WP.block_nil ?_)
       exact maskSel_ok h ho hb hob hs bit
     · rw [ite_eq_right hoa]
-      refine WP.seq (WP.mono (copy_ok h ho ha hoa) fun u ⟨F, Kp, V, Ku, _⟩ => ?_)
-      have hsl : slot u.mem B sl = slot s.mem B sl :=
-        Kp.slot hs (by simp)
-      refine WP.mono (maskSel_ok F ho hb hob hs (by rw [hsl]; exact bit)) fun t ⟨F', Kp', V', Kt⟩ => ?_
-      refine ⟨F', Kp.trans Kp', ?_, Ku.trans Kt⟩
-      rw [V', hsl, V]
-      have nb : num u.mem B (kw len) b = num s.mem B (kw len) b := Kp.num (by simp; omega) (by simp)
-        (h.ws.fit64 hb)
-      rw [nb]
+      obtain ⟨rd, m0, _⟩ := mask_slot h hs bit
+      refine WP.seq (wp_movS rfl fun u U _ => ?_)
+      have rd' : readSrc u (.mem (sc sl)) = some (BitVec.ofNat 32 (slot s.mem B sl)) := by
+        rw [← rd]; exact src_keep' U.keeps U.mem
+      refine wp_subS rd' fun v V _ => WP.block_nil ?_
+      have K : Keeps [.ecx] s v := U.keeps.trans V.keeps
+      have mv : v.mem = s.mem := V.mem.trans U.mem
+      have hv := h.keep K (by decide) (by decide) (by rw [mv]; exact Outside.refl _ _ _ _)
+      have mask : v.gpr .ecx = cmask (decide (slot s.mem B sl ≠ 0)) := by rw [V.gpr, U.gpr]; exact m0
+      refine WP.mono (select3_ok hv ho ha hb hoa hob mask) fun t ⟨F, Kp, V', Kt⟩ => ?_
+      rw [mv] at Kp V'
+      refine ⟨F, Kp, ?_, (K.mono (by decide)).trans Kt⟩
+      rw [V']
+      by_cases e : slot s.mem B sl = 0 <;> simp [e]
 
 end VG.Proof.Rsa.X86.KeyRt

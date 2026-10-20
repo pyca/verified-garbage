@@ -63,6 +63,12 @@ def shiftDownLoop : Prog isa :=
     .mov .ecx (.mem (at_ .ebp 0)), .shift .shr .ecx 1, .alu .add .ecx (.reg .eax),
     .store (at_ .ebp 0) .ecx, .alu .add .ebp (.imm 4), .alu .sub .edx (.imm 4)]) .ne
 
+/-- `[edi] = [ebx]` where the mask `ecx` is all ones, else `[ebp]`; `edx` bytes. -/
+def select3Loop : Prog isa :=
+  .loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .xor .eax (.mem (at_ .ebx 0)), .alu .and .eax (.reg .ecx),
+    .alu .xor .eax (.mem (at_ .ebp 0)), .store (at_ .edi 0) .eax, .alu .add .ebp (.imm 4),
+    .alu .add .ebx (.imm 4), .alu .add .edi (.imm 4), .alu .sub .edx (.imm 4)]) .ne
+
 /-! ## Operations -/
 
 /-- `[o] = [a] op [b]` (`adc` or `sbb`), `w` words or `w + 1` with `extra`, the carry (or
@@ -85,13 +91,19 @@ def selectIn (o a : Nat) (extra : Bool) : Prog isa :=
 def copy (o a : Nat) : Prog isa :=
   .seq (.block [.mov .ecx (.imm (-1))]) (selectIn L o a false)
 
+/-- `[o] = [b]` where the mask `ecx` is all ones, else `[a]`, `w` words. -/
+def select3 (o a b : Nat) : Prog isa :=
+  .seq (.block (arrPtr L .ebp a .edx ++ arrPtr L .ebx b .edx ++ arrPtr L .edi o .edx ++ count L .edx false))
+    (.seq select3Loop (.block (restoreEdi L)))
+
 /-- `[o] = [b]` if the header word `sl` is one, else `[a]`, for `sl` zero or one. -/
 def sel (o a b sl : Nat) : Prog isa :=
   if o = b then
     .seq (.block [.mov .ecx (.mem (sc sl)), .alu .sub .ecx (.imm 1)]) (selectIn L o a false)
+  else if o = a then
+    .seq (.block [.mov .ecx (.imm 0), .alu .sub .ecx (.mem (sc sl))]) (selectIn L o b false)
   else
-    .seq (if o = a then .block [] else copy L o a)
-      (.seq (.block [.mov .ecx (.imm 0), .alu .sub .ecx (.mem (sc sl))]) (selectIn L o b false))
+    .seq (.block [.mov .ecx (.imm 0), .alu .sub .ecx (.mem (sc sl))]) (select3 L o a b)
 
 /-- `[j]` halved with `ebx` as its word `w`'s, `w + 1` words. -/
 def half (j : Nat) : Prog isa :=
