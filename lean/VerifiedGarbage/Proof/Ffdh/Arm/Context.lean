@@ -140,6 +140,24 @@ theorem Context.after_frame {p : Inputs} {slots : List Nat} {s t : State} {rs : 
     (savedSep : ∀ d ∈ slots, ∀ r ∈ regions, (⟨off (State.addr s.sp) d, 4⟩ : Region).Disjoint r) :
     Context p slots t := ⟨h.toArgumentMemory.after_frame frame rest domainSep savedSep, ptr⟩
 
+theorem Context.after_local {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg} {d : Nat}
+    (h : Context p slots s) (fit : d + 4 ≤ 72)
+    (frame : Frame [⟨off (State.addr s.sp) d, 4⟩] s.mem t.mem) (rest : Rest rs s t)
+    (ptr : t.gpr .r0 = p.base) (bounds : ∀ e ∈ slots, e + 4 ≤ 72)
+    (saved : ∀ e ∈ slots, e + 4 ≤ d ∨ d + 4 ≤ e) :
+    Context p slots t := by
+  refine h.after_frame frame rest ptr ?_ ?_
+  · intro r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    exact h.domainStack.sub_right (Offset.sub_base _ fit)
+  · intro e he r hr
+    rw [List.mem_singleton] at hr
+    subst r
+    have := bounds e he
+    exact Offset.disjoint _ (saved e he) (by have := h.locals.space.nowrap; omega)
+      (by have := h.locals.space.nowrap; omega)
+
 theorem Context.of_mem {p : Inputs} {slots : List Nat} {s t : State} {rs : List Reg}
     (h : Context p slots s) (mem : t.mem = s.mem) (rest : Rest rs s t) (ptr : t.gpr .r0 = p.base) :
     Context p slots t := by
