@@ -349,4 +349,60 @@ theorem windowBody_trace {g : Geo} (pg : PubG g) {s0 t0 s t : State} {T T' AW AW
   have q7 := pub_trace pg cntNextCheck h6 j6 e7 f7
   rw [q1, q2, q3, q4, q5, q6, q7]
 
+/-- A piece checked by `τA` from two stages. -/
+theorem pub_relCT' {g : Geo} (pg : PubG g) {c : Prog isa}
+    (hc : (VG.Taint.check taint τA c (VG.Taint.hintOf taint τA c)).isSome = true)
+    {P Q : State → Prop} (hP : ∀ s, P s → MulPost g s) (hQ : ∀ t, Q t → MulPost g t) :
+    RelCT isa (fun s t => P s ∧ Q t) c (fun _ _ => True) := fun s t _ _ _ _ ⟨hs, ht⟩ es et => by
+  obtain ⟨_, _, _, _, _, _, _, h⟩ := hP s hs
+  obtain ⟨_, _, _, _, _, _, _, j⟩ := hQ t ht
+  exact ⟨pub_trace pg hc h j es et, trivial⟩
+
+theorem candExp_relCT {g : Geo} {m eLen dLen : Nat} (C D : CandidateData g m eLen dLen) (pg : PubG g) :
+    RelCT isa (fun s t => C.Start s ∧ D.Start t) VG.Impl.Rsa.X86.RecoverRt.candExp
+      (fun s t => C.Exp s ∧ D.Exp t) := by
+  have positive : 0 < m := by have := C.large; omega
+  have shifts : ∀ {s : State} {k : Nat}, C.Align k s → alignShifts g eLen dLen < 2 ^ 32 :=
+    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega
+  have shifts' : ∀ {s : State} {k : Nat}, D.Align k s → alignShifts g eLen dLen < 2 ^ 32 :=
+    fun hs => by have := geo_wide g (KS.upper hs); unfold alignShifts; omega
+  unfold VG.Impl.Rsa.X86.RecoverRt.candExp
+  simp only [seqs]
+  refine VG.RelCT.seq (R := fun s t => C.Align 0 s ∧ D.Align 0 t)
+    (pub_relCT (P := C.Start) (Q := D.Start) (P' := C.Align 0) (Q' := D.Align 0) pg alignStartCheck
+      (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht)
+      (fun s hs => alignStart_ok hs C.zero C.candidate C.ae C.ad C.wide C.rb)
+      (fun t ht => alignStart_ok ht D.zero D.candidate D.ae D.ad D.wide D.rb)) ?_
+  refine VG.RelCT.seq (R := fun s t => C.Align (alignShifts g eLen dLen) s ∧
+      D.Align (alignShifts g eLen dLen) t)
+    (fixedLoop_relCT (body := VG.Impl.Rsa.X86.RecoverRt.alignBody) (fun k s => C.Align k s)
+      (fun k t => D.Align k t) (by unfold alignShifts; have := C.wide; omega)
+      (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et =>
+        ⟨by unfold CandidateData.Align AI at hs ht; exact pub_trace pg alignBodyCheck hs ht es et, trivial⟩)
+      (fun k s hk hs => alignBody_ok hs hk (shifts hs))
+      (fun k t hk ht => alignBody_ok ht hk (shifts' ht))) ?_
+  refine VG.RelCT.seq (R := fun s t => C.Mont s ∧ D.Mont t)
+    (mmul_stage (P := C.Align (alignShifts g eLen dLen)) (Q := D.Align (alignShifts g eLen dLen))
+      (P' := C.Mont) (Q' := D.Mont)
+      pg (by decide) (by decide) (by decide) (by decide) mulArgs_mG_mG_mR2Check clrTop_mGCheck
+      (fun s hs => candMont_pre C hs) (fun t ht => candMont_pre D ht)
+      (fun s hs => candMont_ok hs C.value C.bound C.inverse C.odd C.r2 C.baseBound C.wide C.rb)
+      (fun t ht => candMont_ok ht D.value D.bound D.inverse D.odd D.r2 D.baseBound D.wide D.rb)) ?_
+  refine VG.RelCT.seq (R := fun s t => C.Table s ∧ D.Table t) (table_relCT C D pg) ?_
+  refine VG.RelCT.seq (R := fun s t => C.Window 0 s ∧ D.Window 0 t)
+    (pub_relCT (P := C.Table) (Q := D.Table) (P' := C.Window 0) (Q' := D.Window 0) pg windowCountCheck
+      (fun _ hs => KS.stage hs) (fun _ ht => KS.stage ht)
+      (fun s hs => tableStart_ok hs C.one C.ae C.ad C.wide C.rb)
+      (fun t ht => tableStart_ok ht D.one D.ae D.ad D.wide D.rb)) ?_
+  obtain ⟨tC, vC⟩ := C.windowFacts
+  obtain ⟨tD, vD⟩ := D.windowFacts
+  refine (fixedLoop_relCT (body := VG.Impl.Rsa.X86.RecoverRt.windowBody) (fun k s => C.Window k s)
+      (fun k t => D.Window k t) (by have := C.count; omega)
+      (fun _ _ _ _ _ _ _ _ ⟨hs, ht⟩ es et =>
+        ⟨windowBody_trace pg hs tC vC C.inverse ht tD vD D.inverse C.bound C.odd positive es et, trivial⟩)
+      (fun k s hk hs => windowBody_ok hs tC vC C.bound C.inverse C.odd positive hk (by have := C.limit; omega))
+      (fun k t hk ht => windowBody_ok ht tD vD D.bound D.inverse D.odd positive hk
+        (by have := D.limit; omega))).mono
+    (fun s t h => h) (fun s t ⟨hs, ht⟩ => ⟨windows_done hs C.wide, windows_done ht D.wide⟩)
+
 end VG.Proof.Rsa.X86.Recover
