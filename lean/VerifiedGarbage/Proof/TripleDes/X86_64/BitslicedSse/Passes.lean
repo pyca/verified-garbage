@@ -5,11 +5,7 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
-import VerifiedGarbage.Impl.TripleDes.X86_64.BitslicedSse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Spec.TripleDes
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # The three SSE2 passes

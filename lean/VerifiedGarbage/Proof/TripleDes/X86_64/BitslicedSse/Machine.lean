@@ -9,10 +9,6 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.StraightX
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.Sse
-import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # The SSE2 machine state of a batch

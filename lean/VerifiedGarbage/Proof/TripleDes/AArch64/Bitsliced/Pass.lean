@@ -9,9 +9,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 import VerifiedGarbage.Proof.TripleDes.Bitslice.LayoutLit
 import VerifiedGarbage.Proof.TripleDes.SboxTables
-import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
 # An AdvSIMD DES pass on the machine

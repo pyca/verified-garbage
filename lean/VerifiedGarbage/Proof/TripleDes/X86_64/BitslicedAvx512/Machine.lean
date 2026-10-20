@@ -9,9 +9,6 @@ import VerifiedGarbage.Proof.TripleDes.SboxTables
 import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.SboxLit
 import VerifiedGarbage.Proof.TripleDes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 
 /-!
 # The AVX-512 machine state of a batch
