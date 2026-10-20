@@ -12,18 +12,9 @@ public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.StackScratch.X86
 public import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Md5.StateMem
-import VerifiedGarbage.Proof.MdStream.X86.ArgWord
-import VerifiedGarbage.Proof.MdStream.X86.Words
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # MD5 on x86: the shared contracts
