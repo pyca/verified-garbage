@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.Ocb.State
 import VerifiedGarbage.Proof.Ocb.Bytes
 
