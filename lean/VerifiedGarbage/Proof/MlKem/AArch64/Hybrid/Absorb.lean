@@ -160,19 +160,21 @@ theorem padCode_eq (pos sfx : Nat) :
 /-- What the code needs of the message `S`: its register is kept by the
 calls around it, and its words are within reach of `ldr`. -/
 structure SrcOk (S : Impl.MlKem.AArch64.Hybrid.HSrc) : Prop where
-  reg : S.r = .x25 ∨ S.r = .x28
+  reg : S.r = .x25 ∨ S.r = .x26 ∨ S.r = .x28
   h8 : S.len % 8 = 0
   b8 : S.base % 8 = 0
   lim : S.base + S.len ≤ 32768
 
 theorem SrcOk.keep {S : Impl.MlKem.AArch64.Hybrid.HSrc} (h : SrcOk S) {rs : List Reg} {s t : State}
-    (k : Keep rs s t) (h25 : .x25 ∉ rs) (h28 : .x28 ∉ rs) : t.gpr S.r = s.gpr S.r := by
-  rcases h.reg with e | e <;> rw [e]
+    (k : Keep rs s t) (h25 : .x25 ∉ rs) (h28 : .x28 ∉ rs) (h26 : .x26 ∉ rs := by decide) :
+    t.gpr S.r = s.gpr S.r := by
+  rcases h.reg with e | e | e <;> rw [e]
   · exact k.gpr _ h25
+  · exact k.gpr _ h26
   · exact k.gpr _ h28
 
 theorem SrcOk.not9 {S : Impl.MlKem.AArch64.Hybrid.HSrc} (h : SrcOk S) : S.r ∉ [.x9, .x10] := by
-  rcases h.reg with e | e <;> rw [e] <;> decide
+  rcases h.reg with e | e | e <;> rw [e] <;> decide
 
 /-- Block `b` of `pad(E)` XORed into the state: once permuted, the next state. -/
 theorem absorbBlock_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {e st : Addr} {E : List Byte}

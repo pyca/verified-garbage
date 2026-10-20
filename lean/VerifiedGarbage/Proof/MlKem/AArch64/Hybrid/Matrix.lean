@@ -108,10 +108,11 @@ theorem safe_frame {s₀ : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) :
     have := hp.scw; have := hp.scb; omega)).symm⟩
 
 theorem BInvW.paired3 {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem}
-    {ρ E : List Byte} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {ea : Addr} {e i : Nat}
+    {ρ E : List Byte} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {ea : Addr} {e : Nat}
     (he : e+1<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s)
-    (ht : Pair3OutcomeW w16 S (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
-      (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1)) ea (kA s₀ L.sc) E i s t) :
+    {j m : Nat}
+    (ht : PairMOutcomeW w16 S (matSeed ρ (e/P.k) (e%P.k)) (matSeed ρ ((e+1)/P.k) ((e+1)%P.k))
+      (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1)) ea (kA s₀ L.sc) E j m s t) :
     BInvW w16 P L s₀ t.mem ρ (e+2) t := by
   have hw := hp.wf
   have fr : Frame (pairWrites3 (sA L s₀ SS) (aP L s₀ e) (aP L s₀ (e+1))
@@ -198,7 +199,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
     WP isa (Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2*i) i w16) s fun t =>
       HInvW w16 P L M s₀ mA ρ E (2*i+2) (i+1) t ∧ MT3 P L s₀ t := by
   have hw := hp.wf
-  rw [pair3_iff]
+  rw [Impl.MlKem.AArch64.Hybrid.pair3, pairM_iff]
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
   have hoa : AH+1024*(2*i)<65536 := by simp only [KEM.AH]; omega_using [he, hkk]
@@ -207,7 +208,8 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
   have hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
   have pin := pair_input (L := L) hp he h.b.kb tb.t
   have hin := hash_input hp hk hM he h.b.kb tb
-  refine WP.mono_syms (pair3Code_ok P M.S (a := 2*i) (i := i) hM.src hoa hob pin hin hb h.hash h.ek
+  refine WP.mono_syms (pairMCode_ok P M.S (a := 2*i) (j := 3*i) (m := 3) hM.src (by decide) (by decide)
+    (by decide) hoa hob pin hin (fun k hk _ => by omega) h.hash h.ek
     (x24_bit h.b)) fun t ht sy => ?_
   have post := ht.outcome (p := sA L s₀ SS) hk1 hk2
   have seed {j : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) j P.k=matSeed ρ (j/P.k) (j%P.k) := by
@@ -227,7 +229,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
       · exact ⟨R (kA s₀) L.sc 0 200, by simp, by rw [stR_sc]; exact fun _ h => h⟩
       · exact ⟨frame s₀.sp, by simp, fun _ h => h⟩
   refine ⟨⟨BInvW.paired3 hp hk he h.b post, h.fr.trans (fr.sub sub3), ?_, ht.ek⟩, ?_⟩
-  · rw [ht.hash, show 3 * (i + 1) = 3 * i + 3 by omega]
+  · rw [ht.hash, show 3 * (i + 1) = 3 * i + min 3 3 by omega]
   · refine tb.frame post.keep.rd post.keep.wr sy fr fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
     · exact .inl (pair_scratch hp he r hr)

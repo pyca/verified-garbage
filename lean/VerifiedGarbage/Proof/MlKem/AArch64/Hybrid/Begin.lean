@@ -14,9 +14,9 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 /-!
 # A hashing pair
 
-`begin3_ok`: a hashing pair's initialization, its three main squeezes
-(`start3_ok`), and the first parse of each stream (as `Paired.begin_ok`).
-`pair3Code_ok`: then the rest of the pair (`Paired.finishCode`, unchanged),
+`beginM_ok`: a hashing pair's initialization, its three main squeezes
+(`startM_ok`), and the first parse of each stream (as `Paired.begin_ok`).
+`pairMCode_ok`: then the rest of the pair (`Paired.finishCode`, unchanged),
 from `Paired.finish_ok`.
 -/
 
@@ -33,10 +33,10 @@ open VG.Proof.Sha3 (iterF)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Proof.MlKem (polyRegion)
 
-def begin3Code (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b i oa ob : Nat)
+def beginMCode (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m oa ob : Nat)
     (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (Impl.MlKem.AArch64.Hybrid.squeeze3 S i)
+    (.seq (Impl.MlKem.AArch64.Hybrid.squeezeM S j m)
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs3 : List Reg := startRegs3 ++ [.x9, .x16] ++
@@ -57,14 +57,14 @@ structure HashInput (S : Impl.MlKem.AArch64.Hybrid.HSrc) (p outA outB table e st
 /-- The writes of a hashing pair. -/
 def pairWrites3 (p a b st sp : Addr) : List Region := stepWrites p a b ++ [stR st, frame sp]
 
-structure Begin3PostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Spec.Sha3.State) (p a b c e st : Addr) (E : List Byte) (i : Nat)
+structure BeginMPostW (w16 : Bool) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (A B : Spec.Sha3.State) (p a b c e st : Addr) (E : List Byte) (j m : Nat)
     (s t : State) : Prop where
   keep : Keep beginRegs3 s t
   frame : Frame (pairWrites3 p a b st s.sp) s.mem t.mem
   saved : Noise.Saved p s t.mem
   progress : ProgressW w16 A B 3 p a b c t
   flag : (t.gpr .x6).toNat = if (accepted A 3).length = 256 ∧ (accepted B 3).length = 256 then 1 else 0
-  hash : stateAt t.mem st = hstate E (3 * i + 3) (dB S)
+  hash : stateAt t.mem st = hstate E (j + min 3 m) (dB S)
   ek : bytesAt t.mem e S.len = E
 
 theorem Context.frame3 {s t : State} {p a b c st sp : Addr} (h : Context p a b c s)
@@ -82,19 +82,19 @@ theorem Context.frame3 {s t : State} {p a b c st sp : Addr} (h : Context p a b c
     · exact tS
     · exact tF)
 
-theorem begin3_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
-    {p seed outA outB table e st : Addr} {E : List Byte} {sb ss a b i oa ob : Nat} (hS : SrcOk S)
+theorem beginM_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State}
+    {p seed outA outB table e st : Addr} {E : List Byte} {sb ss a b j m oa ob : Nat} (hS : SrcOk S)
     (hss : ss < 65536) (hsb : sb + 32 ≤ 32768) (h8b : sb % 8 = 0) (hoa : oa < 65536) (hob : ob < 65536)
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : HashInput S p outA outB table e st s)
-    (hb : 136 * (3 * i + 2) < S.len)
-    (hash : stateAt s.mem st = hstate E (3 * i) (dB S)) (hE : bytesAt s.mem e S.len = E) :
-    WP isa (begin3Code L S sb ss a b i oa ob w16) s
-      (Begin3PostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s) := by
+    (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
+    (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E) :
+    WP isa (beginMCode L S sb ss a b j m oa ob w16) s
+      (BeginMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E j m s) := by
   have ctx := h.context
-  have combined := WP.mono_syms (start3_ok (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
+  have combined := WP.mono_syms (startM_ok (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
     hh.lay hh.h25 hh.h28 hb hash hE)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
-      (Begin3PostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E i s))
+      (BeginMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table e st E j m s))
     (fun u ⟨ku, fu, svu, u19, pu, buA, buB, hu, eu⟩ sy => by
       have cu : Context p outA outB table u := Context.frame3 ctx ku.rd ku.wr fu hh.tS hh.tF
       refine WP.seq (WP.mono_syms (Rej8.constants_ok u (by

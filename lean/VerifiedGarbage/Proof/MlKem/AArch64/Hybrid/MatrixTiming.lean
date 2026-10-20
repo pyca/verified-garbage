@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 As `Kem.paired_matrix_relCT`, relating two runs from states that agree on
 the pointers and `ρ`, with each run's invariant (`HInv`): a hashing pair by
-`pair3Code_relCT`, the others by `Paired.pair_relCT` and
+`pairMCode_relCT`, the others by `Paired.pair_relCT` and
 `Paired.lastCode_relCT`. The two runs' messages may differ; only their
 pointer is public.
 -/
@@ -72,11 +72,12 @@ theorem hashPair_relCT {w16 : Bool} {M : Msg} {σ τ : State} (hp : Pre P L σ) 
   rw [← sm.base] at hash₂
   have ek₂ := h.2.1.ek
   rw [← sm.ek] at ek₂
-  have ct := pair3Code_relCT (w16 := w16) P M.S hM.src hoa hob ps hs pu hu hb h.1.hash h.1.ek hash₂ ek₂
+  have ct := pairMCode_relCT (w16 := w16) (j := 3*i) (m := 3) P M.S hM.src (by decide) (by decide) (by decide)
+    hoa hob ps hs pu hu (fun k hk _ => by omega) h.1.hash h.1.ek hash₂ ek₂
     (by rw [h.1.b.kb.sp, h.2.1.b.kb.sp, sm.sp]) (seeds (2*i)) (seeds (2*i+1)) habs
   have ht := exec_post (paired_step3 hp hk hM he hb h.1 h.2.2.1) et
   have hv := exec_post (paired_step3 hq hk' hM' he hb h.2.1 h.2.2.2.1) eu
-  exact ⟨(ct _ _ _ _ _ _ ⟨rfl,rfl⟩ (pair3_exec et) (pair3_exec eu)).1,ht.1,hv.1,ht.2,hv.2,
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl,rfl⟩ (pairM_exec et) (pairM_exec eu)).1,ht.1,hv.1,ht.2,hv.2,
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 theorem plainPair_relCT {w16 : Bool} {M : Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)

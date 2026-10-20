@@ -213,52 +213,74 @@ theorem step3_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {σ₁ �
       · rw [k₁.get .x21 (by simp [clobbered]), k₂.get .x21 (by simp [clobbered]), h21₁, h21₂])
     ⟨_, by taint_decide⟩
 
-theorem sinv3_zero (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Addr} {E : List Byte}
-    {A B : Spec.Sha3.State} {i : Nat} (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = p + 400)
-    (h21 : s.gpr .x21 = p + 904) (pair : PairAt s.mem p A B) (hash : stateAt s.mem st = hstate E (3 * i) (dB S))
-    (hE : bytesAt s.mem e S.len = E) : SInv3 S s p e st E A B i 0 s :=
+theorem sinvM_zero (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Addr} {E : List Byte}
+    {A B : Spec.Sha3.State} {j m : Nat} (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = p + 400)
+    (h21 : s.gpr .x21 = p + 904) (pair : PairAt s.mem p A B) (hash : stateAt s.mem st = hstate E j (dB S))
+    (hE : bytesAt s.mem e S.len = E) : SInvM S s p e st E A B j m 0 s :=
   ⟨Keep.refl _ _, pair, h19, by rw [h20]; exact (BitVec.add_zero _).symm,
     by rw [h21]; exact (BitVec.add_zero _).symm, Frame.refl _ _,
-    fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _), hash, hE⟩
+    fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
+    by rw [hash, Nat.zero_min, Nat.add_zero], hE⟩
+
+/-- A main squeeze absorbing no block leaks only its public pointers. -/
+theorem plainStep_relCT {σ₁ σ₂ : State} (sp : σ₁.sp = σ₂.sp)
+    (h19 : σ₁.gpr .x19 = σ₂.gpr .x19) (h20 : σ₁.gpr .x20 = σ₂.gpr .x20) (h21 : σ₁.gpr .x21 = σ₂.gpr .x21) :
+    RelCT isa (Eq2 σ₁ σ₂) Impl.MlKem.AArch64.Hybrid.plainStep TT :=
+  rel_taint [.x19, .x20, .x21] sp (by
+      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact h19
+      · exact h20
+      · exact h21)
+    ⟨_, by taint_decide⟩
 
 theorem sstep_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {init₁ init₂ s₁ s₂ : State}
-    {p e st : Addr} {E₁ E₂ : List Byte} {A₁ B₁ A₂ B₂ : Spec.Sha3.State} {i k : Nat} (hk : k < 3)
-    (hb : 136 * (3 * i + k) < S.len)
+    {p e st : Addr} {E₁ E₂ : List Byte} {A₁ B₁ A₂ B₂ : Spec.Sha3.State} {j m k : Nat} (hk : k < 3)
+    (hb : k < m → 136 * (j + k) < S.len)
     (hl₁ : SqLay S p e st init₁) (hl₂ : SqLay S p e st init₂)
     (e25₁ : init₁.gpr S.r + BitVec.ofNat 64 S.base = e) (e28₁ : init₁.gpr .x28 = st)
     (e25₂ : init₂.gpr S.r + BitVec.ofNat 64 S.base = e) (e28₂ : init₂.gpr .x28 = st) (sp : init₁.sp = init₂.sp)
-    (h₁ : SInv3 S init₁ p e st E₁ A₁ B₁ i k s₁) (h₂ : SInv3 S init₂ p e st E₂ A₂ B₂ i k s₂)
-    (habs : ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
-      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S (3 * i + k))) h).isSome = true) :
-    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.step3 S (3 * i + k)) TT :=
-  step3_relCT S hS h₁.ptr h₁.pa h₁.pb (by rw [hS.keep h₁.keep (by decide) (by decide)]; exact e25₁)
-    (by rw [h₁.keep.get .x28]; exact e28₁)
-    h₂.ptr h₂.pa h₂.pb (by rw [hS.keep h₂.keep (by decide) (by decide)]; exact e25₂)
-    (by rw [h₂.keep.get .x28]; exact e28₂)
-    (by rw [h₁.keep.sp, h₂.keep.sp, sp]) hb h₁.ek h₁.hash h₂.ek h₂.hash h₁.pair h₂.pair
-    ((hl₁.frame h₁.keep.rd h₁.keep.wr h₁.keep.sp).stepLay hk)
-    ((hl₂.frame h₂.keep.rd h₂.keep.wr h₂.keep.sp).stepLay hk) habs
+    (h₁ : SInvM S init₁ p e st E₁ A₁ B₁ j m k s₁) (h₂ : SInvM S init₂ p e st E₂ A₂ B₂ j m k s₂)
+    (habs : k < m → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
+      (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S (j + k))) h).isSome = true) :
+    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.stepM S j m k) TT := by
+  unfold Impl.MlKem.AArch64.Hybrid.stepM
+  split
+  · rename_i hkm
+    have hm : min k m = k := Nat.min_eq_left (Nat.le_of_lt hkm)
+    exact step3_relCT S hS h₁.ptr h₁.pa h₁.pb (by rw [hS.keep h₁.keep (by decide) (by decide)]; exact e25₁)
+      (by rw [h₁.keep.get .x28]; exact e28₁)
+      h₂.ptr h₂.pa h₂.pb (by rw [hS.keep h₂.keep (by decide) (by decide)]; exact e25₂)
+      (by rw [h₂.keep.get .x28]; exact e28₂)
+      (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (hb hkm) h₁.ek (by rw [h₁.hash, hm]) h₂.ek
+      (by rw [h₂.hash, hm]) h₁.pair h₂.pair
+      ((hl₁.frame h₁.keep.rd h₁.keep.wr h₁.keep.sp).stepLay hk)
+      ((hl₂.frame h₂.keep.rd h₂.keep.wr h₂.keep.sp).stepLay hk) (habs hkm)
+  · exact plainStep_relCT (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (by rw [h₁.ptr, h₂.ptr])
+      (by rw [h₁.pa, h₂.pa]) (by rw [h₁.pb, h₂.pb])
 
 /-- **The three main squeezes** leak only public pointers. -/
-theorem squeeze3_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {s₁ s₂ : State} {p e st : Addr}
-    {E₁ E₂ : List Byte} {A₁ B₁ A₂ B₂ : Spec.Sha3.State} {i : Nat}
-    (hb : 136 * (3 * i + 2) < S.len)
+theorem squeezeM_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {s₁ s₂ : State} {p e st : Addr}
+    {E₁ E₂ : List Byte} {A₁ B₁ A₂ B₂ : Spec.Sha3.State} {j m : Nat}
+    (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hl₁ : SqLay S p e st s₁) (hl₂ : SqLay S p e st s₂)
     (e25₁ : s₁.gpr S.r + BitVec.ofNat 64 S.base = e) (e28₁ : s₁.gpr .x28 = st)
     (e25₂ : s₂.gpr S.r + BitVec.ofNat 64 S.base = e) (e28₂ : s₂.gpr .x28 = st) (sp : s₁.sp = s₂.sp)
-    (h₁ : SInv3 S s₁ p e st E₁ A₁ B₁ i 0 s₁) (h₂ : SInv3 S s₂ p e st E₂ A₂ B₂ i 0 s₂)
+    (h₁ : SInvM S s₁ p e st E₁ A₁ B₁ j m 0 s₁) (h₂ : SInvM S s₂ p e st E₂ A₂ B₂ j m 0 s₂)
     (habs : ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
-    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.squeeze3 S i) TT := by
-  unfold Impl.MlKem.AArch64.Hybrid.squeeze3
-  refine rel_seq (sstep_relCT S hS (k := 0) (by decide) (by omega) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp h₁ h₂
-      (habs _ (by omega)))
-    (sstep_ok S (k := 0) (by decide) hS (by omega) hl₁ e28₁ e25₁ h₁)
-    (sstep_ok S (k := 0) (by decide) hS (by omega) hl₂ e28₂ e25₂ h₂) fun t₁ t₂ ht₁ ht₂ => ?_
-  refine rel_seq (sstep_relCT S hS (k := 1) (by decide) (by omega) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp ht₁ ht₂
-      (habs _ (by omega)))
-    (sstep_ok S (k := 1) (by decide) hS (by omega) hl₁ e28₁ e25₁ ht₁)
-    (sstep_ok S (k := 1) (by decide) hS (by omega) hl₂ e28₂ e25₂ ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
-  exact sstep_relCT S hS (k := 2) (by decide) hb hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp hu₁ hu₂ (habs _ hb)
+    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.squeezeM S j m) TT := by
+  unfold Impl.MlKem.AArch64.Hybrid.squeezeM
+  have hb' : ∀ k, k < 3 → k < m → 136 * (j + k) < S.len := fun k hk hm => hb k hm hk
+  refine rel_seq (sstep_relCT S hS (k := 0) (by decide) (hb' 0 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp h₁ h₂
+      (fun h => habs _ (hb' 0 (by decide) h)))
+    (sstep_ok S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₁ e28₁ e25₁ h₁)
+    (sstep_ok S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₂ e28₂ e25₂ h₂) fun t₁ t₂ ht₁ ht₂ => ?_
+  refine rel_seq (sstep_relCT S hS (k := 1) (by decide) (hb' 1 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp ht₁ ht₂
+      (fun h => habs _ (hb' 1 (by decide) h)))
+    (sstep_ok S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₁ e28₁ e25₁ ht₁)
+    (sstep_ok S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₂ e28₂ e25₂ ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
+  exact sstep_relCT S hS (k := 2) (by decide) (hb' 2 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp hu₁ hu₂
+    (fun h => habs _ (hb' 2 (by decide) h))
 
 end VG.Proof.MlKem.AArch64.Hybrid
