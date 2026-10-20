@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
+import VerifiedGarbage.Impl.Poly1305.AArch64.Vector
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: `vec`
