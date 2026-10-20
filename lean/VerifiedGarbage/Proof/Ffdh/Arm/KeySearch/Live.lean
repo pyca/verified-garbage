@@ -35,7 +35,7 @@ theorem KeyLive.keep {p : KeyPublic sampling} {original s t : State} {used keys 
     rest.wr.trans h.wr, rest.sp.trans h.sp,
     (rest.gpr .r4 (kept .r4 (by decide))).trans h.pointer,
     fun r hr => (rest.gpr r (kept r (List.mem_cons_of_mem _ hr))).trans (h.kept r hr),
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [mem]; exact h.saved
   · rw [mem]; exact h.random
   · rw [mem]; exact h.domain
@@ -43,6 +43,8 @@ theorem KeyLive.keep {p : KeyPublic sampling} {original s t : State} {used keys 
   · rw [mem]; exact h.high
   · cases sampling <;> simpa only [KeyConstants.tablePtr, syms] using h.tablePtr
   · rw [mem]; exact h.held
+  · rw [mem]; exact h.cachedHeld
+  · rw [mem]; exact h.cachedSlots
 
 theorem KeyDone.keep {p : KeyPublic sampling} {original s t : State} {result : Spec.Ffdh.KeySearchResult}
     (h : KeyDone p original result s) {rs : List Reg} (rest : Rest rs s t) (mem : t.mem = s.mem)

@@ -51164,6 +51164,2475 @@ bx lr",
     )
 }
 
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
+///
+/// ARMv7: build the canonical immutable five-tooth comb context once per domain. Modulus and Montgomery constants reuse the RSA precomputation layout. The exact vetted-group table selects the reviewed scalar width.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_precompute(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #72
+add r12, sp, #0
+str r0, [r12, #4]
+str r2, [r12, #24]
+str r3, [r12, #28]
+ldr r3, [sp, #128]
+str r3, [r12, #32]
+ldr r0, [sp, #132]
+str r0, [r12, #0]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r3, r4, r6
+str r3, [r12, #56]
+add r3, r3, r6
+str r3, [r12, #60]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r7, r6, #7
+lsr r7, r7, #3
+mov r3, #0
+str r7, [r0, #48]
+str r3, [r0, #52]
+mov r8, r0
+add r5, r7, #2
+lsl r5, r5, #3
+add r4, r0, #256
+add r0, r0, #64
+mov lr, #8
+20:
+str r4, [r0, #0]
+str r3, [r0, #4]
+add r0, r0, #8
+add r4, r4, r5
+subs lr, lr, #1
+bne 20b
+mov r0, r8
+ldr r4, [sp, #8]
+ldr r6, [sp, #12]
+mov r2, #0
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r5
+21:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 21b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+22:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 22b
+ldr r0, [sp, #0]
+mov r12, r0
+ldr r0, [r0, #64]
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+mov r1, r2
+mov r10, r11
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+mov r3, r1
+mov r4, r10
+mov r6, #0
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+str r2, [r12, #56]
+str r11, [r12, #60]
+mov r0, r12
+mov r2, #4
+mov r5, #0
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+23:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 23b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+mov r2, #7
+mov r5, #2
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+24:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 24b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+ldr r1, [r0, #48]
+add r2, r1, r1, lsl #2
+lsl r2, r2, #3
+add r2, r2, #312
+add r2, r0, r2
+mov r3, #1
+str r3, [r2, #0]
+ldr r1, [r0, #48]
+add r1, r1, #64
+str r1, [r0, #208]
+25:
+mov r2, #4
+mov r3, #7
+mov r12, #4
+add r2, r0, r2, lsl #3
+ldr r10, [r2, #64]
+add r3, r0, r3, lsl #3
+ldr r8, [r3, #64]
+add r12, r0, r12, lsl #3
+ldr r9, [r12, #64]
+ldr r5, [r0, #88]
+ldr r6, [r0, #80]
+ldr r7, [r0, #48]
+add r7, r7, r7
+ldr r11, [r0, #64]
+ldr r12, [r0, #56]
+str r7, [r5, #0]
+str r9, [r5, #4]
+str r11, [r5, #8]
+str r12, [r5, #12]
+str r8, [r5, #16]
+str r7, [r5, #20]
+str r10, [r5, #24]
+str r6, [r5, #28]
+mov r0, r6
+mov lr, r7
+add lr, lr, #2
+mov r3, #0
+26:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 26b
+mov r0, r5
+ldr r1, [r0, #16]
+ldr r1, [r1, #0]
+ldr lr, [r0, #0]
+ldr r12, [r0, #4]
+ldr r0, [r0, #28]
+mov r11, #0
+movw r9, #65535
+lsr r10, r1, #16
+and r1, r1, r9
+and r2, lr, #1
+cmp r2, #0
+bne 27f
+b 28f
+27:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+28:
+cmp lr, #0
+bne 29f
+b 210f
+29:
+211:
+ldr r2, [r12, #0]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #0]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #0]
+ldr r2, [r12, #4]
+lsr r6, r2, #16
+and r2, r2, r9
+mul r3, r1, r2
+mul r5, r10, r2
+mul r7, r1, r6
+mul r4, r10, r6
+adds r3, r3, r5, lsl #16
+adc r4, r4, r5, lsr #16
+adds r3, r3, r7, lsl #16
+adc r4, r4, r7, lsr #16
+ldr r5, [r0, #4]
+adds r3, r3, r5
+adc r4, r4, #0
+adds r3, r3, r11
+adc r11, r4, #0
+str r3, [r0, #4]
+add r0, r0, #8
+add r12, r12, #8
+subs lr, lr, #2
+bne 211b
+210:
+orr r1, r1, r10, lsl #16
+ldr r3, [r0, #0]
+ldr r4, [r0, #4]
+adds r3, r3, r11
+adc r4, r4, #0
+str r3, [r0, #0]
+str r4, [r0, #4]
+add r0, r0, #16
+ldr r7, [r0, #0]
+ldr r9, [r0, #24]
+ldr r10, [r0, #28]
+ldr r12, [r0, #8]
+mov lr, r7
+mov r11, #0
+212:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 212b
+ldr r1, [r10, #0]
+mov r2, r11
+subs r3, r1, r2
+mov r11, #0
+adc r11, r11, #0
+eor r11, r11, #1
+mov r12, r10
+mov r10, r0
+sub r12, r12, r7, lsl #2
+sub r10, r10, r7, lsl #2
+mov r0, r9
+mov lr, r7
+mov r4, #0
+sub r4, r4, r11
+213:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 213b
+ldr r0, [sp, #0]
+ldr r1, [r0, #208]
+subs r1, r1, #1
+str r1, [r0, #208]
+bne 25b
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #4
+mov r3, #4
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+mov r8, r0
+ldr r9, [sp, #24]
+ldr r10, [sp, #28]
+ldr r6, [sp, #32]
+movw r4, #:lower16:({VG_FFDH_VETTED_GROUPS} - (2f + 2 * (3f - 2f)))
+movt r4, #:upper16:({VG_FFDH_VETTED_GROUPS} - (2f + 2 * (3f - 2f)))
+2:
+add r4, pc
+3:
+mov r7, #10
+214:
+ldr r5, [r4, #0]
+ldr r11, [r4, #4]
+add r4, r4, #8
+cmp r5, r6
+add r5, r5, r5, lsl #1
+mov r2, #1
+beq 215f
+b 216f
+215:
+mov r0, r9
+mov r1, r4
+mov lr, r10
+mov r2, #0
+217:
+ldrb r3, [r0, #0]
+ldrb r12, [r1, #0]
+eor r3, r3, r12
+orr r2, r2, r3
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 217b
+216:
+cmp r2, #0
+beq 218f
+mov r11, #0
+add r4, r4, r5
+subs r7, r7, #1
+b 219f
+218:
+mov r7, #0
+219:
+cmp r7, #0
+bne 214b
+mov r0, r8
+cmp r11, #0
+bne 220f
+ldr r3, [sp, #28]
+ldr r4, [sp, #32]
+sub r3, r3, r4
+sub r3, r3, r4
+cmp r3, #0
+bne 222f
+ldr r4, [sp, #24]
+b 223f
+222:
+ldr r4, [sp, #60]
+223:
+ldr r6, [sp, #32]
+224:
+ldrb r3, [r4, #0]
+cmp r3, #0
+beq 225f
+mov r11, #0
+cmp r11, #0
+b 226f
+225:
+cmp r6, #1
+bne 227f
+mov r11, #0
+cmp r11, #0
+b 228f
+227:
+add r4, r4, #1
+sub r6, r6, #1
+mov r11, #1
+cmp r11, #0
+228:
+226:
+bne 224b
+lsr r12, r3, #1
+orr r3, r3, r12
+lsr r12, r3, #2
+orr r3, r3, r12
+lsr r12, r3, #4
+orr r3, r3, r12
+add r12, sp, #0
+str r6, [r12, #20]
+str r3, [r12, #68]
+b 221f
+220:
+ldr r6, [sp, #20]
+ldr r3, [sp, #68]
+movw r12, #225
+cmp r11, r12
+beq 229f
+movw r12, #275
+cmp r11, r12
+beq 231f
+movw r12, #325
+cmp r11, r12
+beq 233f
+movw r12, #375
+cmp r11, r12
+beq 235f
+movw r12, #400
+cmp r11, r12
+beq 237f
+b 238f
+237:
+movw r6, #50
+movw r3, #255
+238:
+b 236f
+235:
+movw r6, #47
+movw r3, #127
+236:
+b 234f
+233:
+movw r6, #41
+movw r3, #31
+234:
+b 232f
+231:
+movw r6, #35
+movw r3, #7
+232:
+b 230f
+229:
+movw r6, #29
+movw r3, #1
+230:
+add r12, sp, #0
+str r6, [r12, #20]
+str r3, [r12, #68]
+221:
+ldr r3, [sp, #68]
+mov r1, #0
+239:
+add r1, r1, #1
+lsr r3, r3, #1
+cmp r3, #0
+bne 239b
+ldr r6, [sp, #20]
+sub r6, r6, #1
+lsl r6, r6, #3
+add r1, r1, r6
+add r12, sp, #0
+str r1, [r12, #16]
+add r3, r1, #4
+mov r6, #0
+mov r2, #0
+240:
+sub r3, r3, #5
+add r6, r6, #1
+cmp r3, #5
+adc r7, r2, #0
+cmp r7, #0
+bne 240b
+add r12, sp, #0
+str r6, [r12, #44]
+ldr r4, [sp, #4]
+mov r2, #0
+ldr r1, [sp, #16]
+str r1, [r4, #0]
+str r2, [r4, #4]
+ldr r1, [sp, #20]
+str r1, [r4, #8]
+str r2, [r4, #12]
+ldr r1, [sp, #44]
+str r1, [r4, #16]
+str r2, [r4, #20]
+ldr r4, [sp, #4]
+add r4, r4, #24
+mov r2, #0
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+241:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 241b
+mov r0, r5
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r4, r4, r1
+mov r2, #4
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+242:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 242b
+mov r0, r5
+mov r0, #1
+ldr r0, [sp, #0]
+ldr r4, [sp, #56]
+ldr r6, [sp, #32]
+mov r2, #1
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r5
+243:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 243b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+244:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 244b
+ldr r0, [sp, #0]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+245:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 245b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #6
+mov r3, #4
+mov lr, #7
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #5
+mov r3, #1
+mov lr, #4
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+mov r3, #0
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #6
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+246:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 246b
+mov r0, r5
+mov r3, #1
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #5
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+247:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 247b
+mov r0, r5
+mov r3, #2
+add r12, sp, #0
+str r3, [r12, #36]
+248:
+ldr r3, [sp, #44]
+add r12, sp, #0
+str r3, [r12, #68]
+249:
+sub sp, sp, #8
+mov r2, #5
+mov r3, #5
+mov lr, #5
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r3, [sp, #68]
+subs r3, r3, #1
+add r12, sp, #0
+str r3, [r12, #68]
+bne 249b
+ldr r3, [sp, #36]
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #5
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+250:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 250b
+mov r0, r5
+mov r3, #1
+add r12, sp, #0
+str r3, [r12, #40]
+251:
+ldr r3, [sp, #40]
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #1
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+252:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 252b
+mov r0, r5
+sub sp, sp, #8
+mov r2, #6
+mov r3, #1
+mov lr, #5
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r3, [sp, #36]
+ldr r2, [sp, #40]
+add r3, r3, r2
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #6
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+253:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 253b
+mov r0, r5
+ldr r3, [sp, #40]
+add r3, r3, #1
+add r12, sp, #0
+str r3, [r12, #40]
+ldr r2, [sp, #36]
+cmp r3, r2
+bne 251b
+ldr r3, [sp, #36]
+add r3, r3, r3
+add r12, sp, #0
+str r3, [r12, #36]
+cmp r3, #32
+bne 248b
+mov r0, #1
+add sp, sp, #72
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_mont_mul = sym super::rsa_mont::vg_rsa_mont_mul,
+        VG_FFDH_VETTED_GROUPS = sym super::consts::VG_FFDH_VETTED_GROUPS,
+    )
+}
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// ARMv7: import cached modulus and Montgomery constants, mask the full-size entropy draw to the reviewed width, and use a fixed five-tooth comb schedule. Every secret digit scans all 32 table entries. Product and square operations call the same shared RSA Montgomery helper.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #72
+add r12, sp, #0
+str r0, [r12, #40]
+str r2, [r12, #36]
+str r2, [r12, #4]
+ldr r3, [sp, #128]
+str r3, [r12, #24]
+ldr r3, [sp, #132]
+str r3, [r12, #28]
+ldr r3, [sp, #136]
+str r3, [r12, #32]
+str r3, [r12, #44]
+ldr r3, [sp, #140]
+str r3, [r12, #48]
+ldr r0, [sp, #148]
+str r0, [r12, #0]
+add r12, sp, #0
+ldr r3, [sp, #156]
+str r3, [r12, #52]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r3, r4, r6
+str r3, [r12, #56]
+add r3, r3, r6
+str r3, [r12, #60]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r7, r6, #7
+lsr r7, r7, #3
+mov r3, #0
+str r7, [r0, #48]
+str r3, [r0, #52]
+mov r8, r0
+add r5, r7, #2
+lsl r5, r5, #3
+add r4, r0, #256
+add r0, r0, #64
+mov lr, #8
+20:
+str r4, [r0, #0]
+str r3, [r0, #4]
+add r0, r0, #8
+add r4, r4, r5
+subs lr, lr, #1
+bne 20b
+mov r0, r8
+ldr r4, [sp, #8]
+ldr r6, [sp, #12]
+ldr r4, [sp, #52]
+add r4, r4, #24
+mov r2, #0
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+21:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 21b
+mov r0, r5
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r4, r4, r1
+mov r2, #4
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+22:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 22b
+mov r0, r5
+mov r12, r0
+ldr r0, [r0, #64]
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+mov r1, r2
+mov r10, r11
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+mov r3, r1
+mov r4, r10
+mov r6, #0
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+str r2, [r12, #56]
+str r11, [r12, #60]
+mov r0, r12
+ldr r9, [sp, #52]
+ldr r6, [r9, #8]
+ldr r10, [r9, #0]
+sub r10, r10, #1
+and r10, r10, #7
+mov r9, #7
+sub r9, r9, r10
+mov r3, #255
+and r12, r9, #4
+cmp r12, #0
+bne 23f
+b 24f
+23:
+lsr r3, r3, #4
+24:
+and r12, r9, #2
+cmp r12, #0
+bne 25f
+b 26f
+25:
+lsr r3, r3, #2
+26:
+and r12, r9, #1
+cmp r12, #0
+bne 27f
+b 28f
+27:
+lsr r3, r3, #1
+28:
+add r12, sp, #0
+str r6, [r12, #20]
+str r3, [r12, #68]
+ldr r0, [sp, #40]
+ldr r1, [sp, #48]
+ldr lr, [sp, #32]
+ldr r3, [sp, #20]
+sub lr, lr, r3
+add r3, r0, lr
+add r12, sp, #0
+str r3, [r12, #16]
+mov r2, #0
+cmp lr, #0
+beq 29f
+211:
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 211b
+b 210f
+29:
+210:
+ldrb r2, [r1, #0]
+ldr r3, [sp, #68]
+and r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+ldr lr, [sp, #20]
+sub lr, lr, #1
+cmp lr, #0
+beq 212f
+214:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 214b
+b 213f
+212:
+213:
+ldr r0, [sp, #0]
+ldr r4, [sp, #40]
+ldr r6, [sp, #44]
+mov r2, #1
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r5
+215:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 215b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+216:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 216b
+ldr r0, [sp, #0]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+217:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 217b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+ldr r10, [r0, #72]
+ldr r12, [r0, #120]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+218:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 218b
+ldr r0, [sp, #0]
+eor r11, r11, #1
+str r11, [r0, #136]
+ldr r3, [sp, #28]
+ldr r4, [sp, #32]
+sub r3, r3, r4
+sub r3, r3, r4
+cmp r3, #0
+bne 219f
+mov r11, #0
+ldr r10, [r0, #72]
+ldr r12, [r0, #72]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #120]
+mov r4, #0
+sub r4, r4, r11
+221:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 221b
+ldr r0, [sp, #0]
+ldr r4, [r0, #120]
+ldr r3, [r4, #0]
+orr r3, r3, #1
+str r3, [r4, #0]
+ldr r10, [r0, #120]
+ldr r12, [r0, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+222:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 222b
+ldr r0, [sp, #0]
+b 220f
+219:
+ldr r4, [sp, #60]
+ldr r6, [sp, #32]
+mov r2, #6
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r5
+223:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 223b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+224:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 224b
+ldr r0, [sp, #0]
+ldr r10, [r0, #72]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+225:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 225b
+ldr r0, [sp, #0]
+220:
+ldr r3, [r0, #136]
+and r11, r11, r3
+cmp r11, #0
+bne 226f
+ldr r0, [sp, #40]
+ldr lr, [sp, #32]
+mov r2, #0
+228:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 228b
+ldr r0, [sp, #36]
+ldr lr, [sp, #32]
+mov r2, #0
+229:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 229b
+mov r0, #2
+b 227f
+226:
+ldr r1, [sp, #16]
+ldr r2, [sp, #20]
+ldr r4, [sp, #52]
+str r1, [r0, #128]
+str r2, [r0, #132]
+ldr r1, [r4, #0]
+ldr r2, [r4, #16]
+ldr r3, [r0, #48]
+lsl r3, r3, #4
+add r4, r4, r3
+add r4, r4, #24
+str r1, [r0, #136]
+str r2, [r0, #204]
+str r4, [r0, #232]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+230:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 230b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #6
+mov r3, #4
+mov lr, #7
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r1, [r0, #204]
+str r1, [r0, #192]
+231:
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #6
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r4, [r0, #128]
+ldr r5, [r0, #132]
+ldr r6, [r0, #192]
+sub r6, r6, #1
+ldr r7, [r0, #204]
+ldr r8, [r0, #136]
+mov r9, r6
+mov r10, #0
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 232f
+mov r11, #0
+b 233f
+232:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 234f
+b 235f
+234:
+236:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 236b
+235:
+and r11, r11, #1
+233:
+orr r10, r10, r11
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 237f
+mov r11, #0
+b 238f
+237:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 239f
+b 240f
+239:
+241:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 241b
+240:
+and r11, r11, #1
+238:
+orr r10, r10, r11, lsl #1
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 242f
+mov r11, #0
+b 243f
+242:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 244f
+b 245f
+244:
+246:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 246b
+245:
+and r11, r11, #1
+243:
+orr r10, r10, r11, lsl #2
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 247f
+mov r11, #0
+b 248f
+247:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 249f
+b 250f
+249:
+251:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 251b
+250:
+and r11, r11, #1
+248:
+orr r10, r10, r11, lsl #3
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 252f
+mov r11, #0
+b 253f
+252:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 254f
+b 255f
+254:
+256:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 256b
+255:
+and r11, r11, #1
+253:
+orr r10, r10, r11, lsl #4
+add r9, r9, r7
+mov r11, r10
+str r11, [r0, #196]
+ldr r12, [r0, #232]
+str r12, [r0, #220]
+mov r1, #0
+str r1, [r0, #228]
+257:
+ldr r1, [r0, #196]
+ldr r2, [r0, #228]
+eor r11, r1, r2
+sub r11, r11, #1
+lsr r11, r11, #31
+ldr r10, [r0, #72]
+ldr r12, [r0, #220]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #72]
+mov r4, #0
+sub r4, r4, r11
+258:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 258b
+ldr r0, [sp, #0]
+ldr r1, [r0, #220]
+ldr r2, [r0, #48]
+add r1, r1, r2, lsl #3
+str r1, [r0, #220]
+ldr r1, [r0, #228]
+add r1, r1, #1
+str r1, [r0, #228]
+cmp r1, #32
+bne 257b
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #1
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r1, [r0, #192]
+subs r1, r1, #1
+str r1, [r0, #192]
+bne 231b
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #7
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul}
+add sp, sp, #8
+ldr r0, [sp, #0]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+259:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 259b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+ldr r10, [r0, #120]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+260:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 260b
+ldr r0, [sp, #0]
+str r11, [r0, #136]
+mov r11, #0
+ldr r10, [r0, #112]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #120]
+mov r4, #0
+sub r4, r4, r11
+261:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 261b
+ldr r0, [sp, #0]
+ldr r4, [r0, #120]
+ldr r3, [r4, #0]
+orr r3, r3, #1
+str r3, [r4, #0]
+ldr r10, [r0, #120]
+ldr r12, [r0, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+262:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 262b
+ldr r0, [sp, #0]
+ldr r3, [r0, #136]
+and r11, r11, r3
+add r12, sp, #0
+str r11, [r12, #64]
+mov r2, #6
+ldr r4, [sp, #4]
+ldr r6, [sp, #32]
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+mov lr, r6
+add r1, r1, r6
+sub r1, r1, #1
+mov r0, r4
+263:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 263b
+mov r0, r5
+ldr r0, [sp, #40]
+ldr lr, [sp, #32]
+ldr r3, [sp, #64]
+mov r2, #0
+sub r2, r2, r3
+264:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 264b
+ldr r0, [sp, #36]
+ldr lr, [sp, #32]
+ldr r3, [sp, #64]
+mov r2, #0
+sub r2, r2, r3
+265:
+ldrb r1, [r0, #0]
+and r1, r1, r2
+strb r1, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 265b
+ldr r3, [sp, #64]
+mov r0, #3
+sub r0, r0, r3, lsl #1
+227:
+add sp, sp, #72
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_mont_mul = sym super::rsa_mont::vg_rsa_mont_mul,
+    )
+}
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
+///
+/// ARMv7: the shared native retry controller calls the cached attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. The immutable comb context remains read-only across every attempt.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_cached(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r4, r9, r10, r11, r12, lr}}
+ldr r4, [sp, #56]
+str r0, [r4, #40]
+str r2, [r4, #48]
+ldr r3, [sp, #24]
+str r3, [r4, #120]
+ldr r3, [sp, #28]
+str r3, [r4, #56]
+ldr r3, [sp, #32]
+str r3, [r4, #64]
+ldr r3, [sp, #40]
+str r3, [r4, #72]
+ldr r3, [sp, #44]
+str r3, [r4, #80]
+ldr r3, [sp, #48]
+str r3, [r4, #96]
+ldr r3, [sp, #52]
+str r3, [r4, #104]
+mov r3, #0
+str r3, [r4, #88]
+ldr r3, [sp, #60]
+str r3, [r4, #32]
+ldr r3, [sp, #64]
+str r3, [r4, #36]
+20:
+ldr r9, [r4, #0]
+cmp r9, #0
+beq 21f
+ldr r9, [r4, #8]
+cmp r9, #0
+beq 23f
+ldr r9, [r4, #80]
+ldr r10, [r4, #16]
+subs r11, r9, r10
+mov r11, #0
+adc r11, r11, #0
+cmp r11, #0
+beq 25f
+sub sp, sp, #40
+ldr r0, [r4, #40]
+ldr r1, [r4, #16]
+ldr r2, [r4, #48]
+ldr r3, [r4, #16]
+add r12, sp, #0
+ldr r9, [r4, #56]
+str r9, [r12, #0]
+ldr r9, [r4, #64]
+str r9, [r12, #4]
+str r1, [r12, #8]
+ldr r9, [r4, #72]
+str r9, [r12, #12]
+str r1, [r12, #16]
+ldr r9, [r4, #96]
+str r9, [r12, #20]
+ldr r9, [r4, #104]
+str r9, [r12, #24]
+ldr r9, [r4, #32]
+str r9, [r12, #28]
+ldr r9, [r4, #36]
+str r9, [r12, #32]
+bl {vg_ffdh_generate_key_cached}
+add sp, sp, #40
+mov r9, r0
+ldr r10, [r4, #16]
+ldr r11, [r4, #72]
+ldr r12, [r4, #80]
+ldr r3, [r4, #88]
+add r11, r11, r10
+sub r12, r12, r10
+add r3, r3, r10
+str r11, [r4, #72]
+str r12, [r4, #80]
+str r3, [r4, #88]
+cmp r9, #1
+beq 27f
+cmp r9, #2
+beq 29f
+cmp r9, #3
+beq 211f
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+213:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 213b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+214:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 214b
+b 212f
+211:
+ldr r10, [r4, #0]
+sub r10, r10, #1
+mov r11, #128
+mov r12, #4
+str r10, [r4, #0]
+str r11, [r4, #8]
+str r12, [r4, #112]
+212:
+b 210f
+29:
+ldr r10, [r4, #8]
+sub r10, r10, #1
+mov r11, #4
+str r10, [r4, #8]
+str r11, [r4, #112]
+210:
+b 28f
+27:
+mov r10, #0
+mov r11, #1
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+28:
+b 26f
+25:
+ldr r10, [r4, #16]
+mov r11, #0
+str r10, [r4, #24]
+str r11, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+215:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 215b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+216:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 216b
+26:
+b 24f
+23:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+217:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 217b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+218:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 218b
+24:
+b 22f
+21:
+mov r10, #0
+mov r11, #3
+str r10, [r4, #0]
+str r10, [r4, #8]
+str r10, [r4, #24]
+str r10, [r4, #28]
+str r11, [r4, #112]
+ldr r0, [r4, #40]
+ldr lr, [r4, #16]
+mov r2, #0
+219:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 219b
+ldr r0, [r4, #48]
+ldr lr, [r4, #16]
+mov r2, #0
+220:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 220b
+22:
+ldr r9, [r4, #112]
+cmp r9, #4
+beq 20b
+ldr r1, [r4, #120]
+ldr r2, [r4, #88]
+ldr r0, [r4, #112]
+mov r3, #0
+str r2, [r1, #0]
+str r3, [r1, #4]
+ldr r9, [sp, #4]
+ldr r10, [sp, #8]
+ldr r11, [sp, #12]
+ldr lr, [sp, #20]
+ldr r4, [sp], #24
+bx lr",
+        vg_ffdh_generate_key_cached = sym super::ffdh::vg_ffdh_generate_key_cached,
+    )
+}
+
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.
@@ -52438,46 +54907,41 @@ bx lr",
     )
 }
 
-/// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
+/// The CPU features `vg_ffdh_generate_key_precompute_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// Initialize a reusable public fixed-base context for finite-field Diffie–Hellman key generation. The checked domain is p, g and optional q, each p_len bytes. Writes generationPrecompute: three public metadata words followed by RSA's modulus/R-squared values and 32 five-tooth comb entries. Returns 1. Word 0 is generationScalarBits, word 1 is its byte length and word 2 is the comb row count. The context has no pointers and is independent of the arithmetic backend. Contract: VG.Spec.Ffdh.generationPrecomputeContract. Timing may depend on the public domain, pointers and lengths.
 ///
-/// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// ARMv7: generator two uses a fixed square/double/select schedule; other generators use three-bit windows. Montgomery setup, multiplication and specialized squaring call one shared RSA arithmetic helper per backend. Sampling retains the public bound's significant byte width, including secret leading zeros. A generated power's subgroup membership follows from the checked generator.
+/// ARMv7: build the canonical immutable five-tooth comb context once per domain. Modulus and Montgomery constants reuse the RSA precomputation layout. The exact vetted-group table selects the reviewed scalar width.
 ///
 /// # Safety
 ///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `ctx` must be valid for reads and writes of `8 * ctx_len` bytes.
 /// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `p_len` must be in 64..=1024.
 /// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `x_len`, `y_len` and `rand_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len), namely 3 + 34 * ceil(p_len / 8).
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` and `scratch` must not overlap each other, `domain` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `domain` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_precompute_umaal(ctx: *mut u64, ctx_len: usize, domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
 sub sp, sp, #72
 add r12, sp, #0
-str r0, [r12, #40]
-str r2, [r12, #36]
-str r2, [r12, #4]
-ldr r3, [sp, #128]
-str r3, [r12, #24]
-ldr r3, [sp, #132]
+str r0, [r12, #4]
+str r2, [r12, #24]
 str r3, [r12, #28]
-ldr r3, [sp, #136]
+ldr r3, [sp, #128]
 str r3, [r12, #32]
-str r3, [r12, #44]
-ldr r3, [sp, #140]
-str r3, [r12, #48]
-ldr r0, [sp, #148]
+ldr r0, [sp, #132]
 str r0, [r12, #0]
 ldr r4, [sp, #24]
 ldr r6, [sp, #32]
@@ -52488,26 +54952,6 @@ add r3, r4, r6
 str r3, [r12, #56]
 add r3, r3, r6
 str r3, [r12, #60]
-ldrb r1, [r4, #0]
-add r2, r4, r6
-sub r2, r2, #1
-ldrb r2, [r2, #0]
-sub r7, r1, #1
-lsr r7, r7, #31
-sub r9, r6, #64
-lsl r9, r9, #8
-add r9, r9, r1
-sub r9, r9, #128
-lsr r9, r9, #31
-and r2, r2, #1
-eor r2, r2, #1
-orr r7, r7, r2
-orr r7, r7, r9
-subs r7, r7, #0
-beq 20f
-mov r0, #0
-b 21f
-20:
 ldr r4, [sp, #24]
 ldr r6, [sp, #32]
 add r12, sp, #0
@@ -52524,13 +54968,13 @@ lsl r5, r5, #3
 add r4, r0, #256
 add r0, r0, #64
 mov lr, #8
-22:
+20:
 str r4, [r0, #0]
 str r3, [r0, #4]
 add r0, r0, #8
 add r4, r4, r5
 subs lr, lr, #1
-bne 22b
+bne 20b
 mov r0, r8
 ldr r4, [sp, #8]
 ldr r6, [sp, #12]
@@ -52541,22 +54985,22 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r5
-23:
+21:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 23b
+bne 21b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-24:
+22:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 24b
+bne 22b
 ldr r0, [sp, #0]
 mov r12, r0
 ldr r0, [r0, #64]
@@ -52845,11 +55289,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-25:
+23:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 25b
+bne 23b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 mov r2, #7
@@ -52860,11 +55304,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-26:
+24:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 26b
+bne 24b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 ldr r1, [r0, #48]
@@ -52877,7 +55321,7 @@ str r3, [r2, #0]
 ldr r1, [r0, #48]
 add r1, r1, #64
 str r1, [r0, #208]
-27:
+25:
 mov r2, #4
 mov r3, #7
 mov r12, #4
@@ -52905,11 +55349,11 @@ mov r0, r6
 mov lr, r7
 add lr, lr, #2
 mov r3, #0
-28:
+26:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 28b
+bne 26b
 mov r0, r5
 ldr r1, [r0, #16]
 ldr r1, [r1, #0]
@@ -52922,2115 +55366,9 @@ lsr r10, r1, #16
 and r1, r1, r9
 and r2, lr, #1
 cmp r2, #0
-bne 29f
-b 210f
-29:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-210:
-cmp lr, #0
-bne 211f
-b 212f
-211:
-213:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #4]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 213b
-212:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-214:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 214b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-215:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 215b
-ldr r0, [sp, #0]
-ldr r1, [r0, #208]
-subs r1, r1, #1
-str r1, [r0, #208]
-bne 27b
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 216f
-ldr r4, [sp, #24]
-b 217f
-216:
-ldr r4, [sp, #60]
-217:
-ldr r6, [sp, #32]
-218:
-ldrb r3, [r4, #0]
-cmp r3, #0
-beq 219f
-mov r11, #0
-cmp r11, #0
-b 220f
-219:
-cmp r6, #1
-bne 221f
-mov r11, #0
-cmp r11, #0
-b 222f
-221:
-add r4, r4, #1
-sub r6, r6, #1
-mov r11, #1
-cmp r11, #0
-222:
-220:
-bne 218b
-lsr r12, r3, #1
-orr r3, r3, r12
-lsr r12, r3, #2
-orr r3, r3, r12
-lsr r12, r3, #4
-orr r3, r3, r12
-add r12, sp, #0
-str r6, [r12, #20]
-str r3, [r12, #68]
-ldr r0, [sp, #40]
-ldr r1, [sp, #48]
-ldr lr, [sp, #32]
-ldr r3, [sp, #20]
-sub lr, lr, r3
-add r3, r0, lr
-add r12, sp, #0
-str r3, [r12, #16]
-mov r2, #0
-cmp lr, #0
-beq 223f
-225:
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 225b
-b 224f
-223:
-224:
-ldrb r2, [r1, #0]
-ldr r3, [sp, #68]
-and r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-ldr lr, [sp, #20]
-sub lr, lr, #1
-cmp lr, #0
-beq 226f
-228:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 228b
-b 227f
-226:
-227:
-ldr r0, [sp, #0]
-ldr r4, [sp, #40]
-ldr r6, [sp, #44]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-229:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 229b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-230:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 230b
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-231:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 231b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #120]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-232:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 232b
-ldr r0, [sp, #0]
-eor r11, r11, #1
-str r11, [r0, #136]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 233f
-mov r11, #0
-ldr r10, [r0, #72]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-235:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 235b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-236:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 236b
-ldr r0, [sp, #0]
-b 234f
-233:
-ldr r4, [sp, #60]
-ldr r6, [sp, #32]
-mov r2, #6
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-237:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 237b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-238:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 238b
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-239:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 239b
-ldr r0, [sp, #0]
-234:
-ldr r3, [r0, #136]
-and r11, r11, r3
-cmp r11, #0
-bne 240f
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-mov r2, #0
-242:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 242b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-mov r2, #0
-243:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 243b
-mov r0, #2
-b 241f
-240:
-ldr r4, [sp, #56]
-ldr r6, [sp, #32]
-ldr r1, [sp, #16]
-ldr r2, [sp, #20]
-str r1, [r0, #128]
-str r2, [r0, #132]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-244:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 244b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-245:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 245b
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-246:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 246b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-247:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 247b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-ldr r10, [r0, #104]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-248:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 248b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-orr r11, r11, r3
-eor r11, r11, #1
-cmp r11, #0
-bne 249f
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-251:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 251b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #5
-mov r3, #1
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-mov r11, #1
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-252:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 252b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-253:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 253b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-254:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 254b
-ldr r0, [sp, #0]
-255:
-sub sp, sp, #8
-mov r2, #1
-mov r3, #1
-mov lr, #5
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r11, #1
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-256:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 256b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 255b
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-257:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-258:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-lsr r1, r1, #7
-and r1, r1, #1
-ldr r2, [r0, #196]
-add r2, r1, r2, lsl #1
-str r2, [r0, #196]
-ldr r1, [r0, #204]
-add r1, r1, #1
-str r1, [r0, #204]
-cmp r1, #3
-beq 259f
-b 260f
-259:
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-261:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-262:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 262b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 261b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-260:
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 258b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 257b
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-263:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-264:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 264b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 263b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-b 250f
-249:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-265:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 265b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-266:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 266b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-267:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-268:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #1
-mov r3, #5
-mov r12, #6
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-269:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 269b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 270f
-b 271f
-270:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-271:
-cmp lr, #0
-bne 272f
-b 273f
-272:
-274:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #4]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 274b
-273:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-275:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 275b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-276:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 276b
-ldr r0, [sp, #0]
-ldr r11, [r0, #200]
-lsr r11, r11, #7
-and r11, r11, #1
-ldr r10, [r0, #112]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #112]
-mov r4, #0
-sub r4, r4, r11
-277:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 277b
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 268b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 267b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-250:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-278:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 278b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-279:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 279b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-mov r11, #0
-ldr r10, [r0, #112]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-280:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 280b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-281:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 281b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-and r11, r11, r3
-add r12, sp, #0
-str r11, [r12, #64]
-mov r2, #6
-ldr r4, [sp, #4]
-ldr r6, [sp, #32]
-add r2, r0, r2, lsl #3
-ldr r1, [r2, #64]
-mov r5, r0
-mov lr, r6
-add r1, r1, r6
-sub r1, r1, #1
-mov r0, r4
-282:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 282b
-mov r0, r5
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-283:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 283b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-284:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 284b
-ldr r3, [sp, #64]
-mov r0, #3
-sub r0, r0, r3, lsl #1
-241:
-21:
-add sp, sp, #72
-ldr r4, [sp, #16]
-ldr r5, [sp, #20]
-ldr r6, [sp, #24]
-ldr r7, [sp, #28]
-ldr r8, [sp, #32]
-ldr r9, [sp, #36]
-ldr r10, [sp, #40]
-ldr r11, [sp, #44]
-ldr lr, [sp, #52]
-ldr r12, [sp], #56
-bx lr",
-        vg_rsa_mont_mul = sym super::rsa_mont::vg_rsa_mont_mul,
-    )
-}
-
-/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
-///
-/// ARMv7: native rejection sampling owns both bounded retry counters, consumes the entropy tape, clears incomplete outputs, and requests entropy refills. The callable key-generation attempt inherits every shared Montgomery variant.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
-/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
-/// * `x_len` and `y_len` must be `p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r4, r9, r10, r11, r12, lr}}
-ldr r4, [sp, #56]
-str r0, [r4, #40]
-str r2, [r4, #48]
-ldr r3, [sp, #24]
-str r3, [r4, #120]
-ldr r3, [sp, #28]
-str r3, [r4, #56]
-ldr r3, [sp, #32]
-str r3, [r4, #64]
-ldr r3, [sp, #40]
-str r3, [r4, #72]
-ldr r3, [sp, #44]
-str r3, [r4, #80]
-ldr r3, [sp, #48]
-str r3, [r4, #96]
-ldr r3, [sp, #52]
-str r3, [r4, #104]
-mov r3, #0
-str r3, [r4, #88]
-20:
-ldr r9, [r4, #0]
-cmp r9, #0
-beq 21f
-ldr r9, [r4, #8]
-cmp r9, #0
-beq 23f
-ldr r9, [r4, #80]
-ldr r10, [r4, #16]
-subs r11, r9, r10
-mov r11, #0
-adc r11, r11, #0
-cmp r11, #0
-beq 25f
-sub sp, sp, #32
-ldr r0, [r4, #40]
-ldr r1, [r4, #16]
-ldr r2, [r4, #48]
-ldr r3, [r4, #16]
-add r12, sp, #0
-ldr r9, [r4, #56]
-str r9, [r12, #0]
-ldr r9, [r4, #64]
-str r9, [r12, #4]
-str r1, [r12, #8]
-ldr r9, [r4, #72]
-str r9, [r12, #12]
-str r1, [r12, #16]
-ldr r9, [r4, #96]
-str r9, [r12, #20]
-ldr r9, [r4, #104]
-str r9, [r12, #24]
-bl {vg_ffdh_generate_key}
-add sp, sp, #32
-mov r9, r0
-ldr r10, [r4, #16]
-ldr r11, [r4, #72]
-ldr r12, [r4, #80]
-ldr r3, [r4, #88]
-add r11, r11, r10
-sub r12, r12, r10
-add r3, r3, r10
-str r11, [r4, #72]
-str r12, [r4, #80]
-str r3, [r4, #88]
-cmp r9, #1
-beq 27f
-cmp r9, #2
-beq 29f
-cmp r9, #3
-beq 211f
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-213:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 213b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-214:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 214b
-b 212f
-211:
-ldr r10, [r4, #0]
-sub r10, r10, #1
-mov r11, #128
-mov r12, #4
-str r10, [r4, #0]
-str r11, [r4, #8]
-str r12, [r4, #112]
-212:
-b 210f
-29:
-ldr r10, [r4, #8]
-sub r10, r10, #1
-mov r11, #4
-str r10, [r4, #8]
-str r11, [r4, #112]
-210:
+bne 27f
 b 28f
 27:
-mov r10, #0
-mov r11, #1
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-28:
-b 26f
-25:
-ldr r10, [r4, #16]
-mov r11, #0
-str r10, [r4, #24]
-str r11, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-215:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 215b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-216:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 216b
-26:
-b 24f
-23:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-217:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 217b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-218:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 218b
-24:
-b 22f
-21:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-219:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 219b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-220:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 220b
-22:
-ldr r9, [r4, #112]
-cmp r9, #4
-beq 20b
-ldr r1, [r4, #120]
-ldr r2, [r4, #88]
-ldr r0, [r4, #112]
-mov r3, #0
-str r2, [r1, #0]
-str r3, [r1, #4]
-ldr r9, [sp, #4]
-ldr r10, [sp, #8]
-ldr r11, [sp, #12]
-ldr lr, [sp, #20]
-ldr r4, [sp], #24
-bx lr",
-        vg_ffdh_generate_key = sym super::ffdh::vg_ffdh_generate_key,
-    )
-}
-
-/// One native finite-field Diffie–Hellman key-generation attempt using `generationScalarBits`: RFC 7919 recommended shorter exponents for exact vetted RFC 3526/7919 safe-prime groups, and full-width sampling for all other domains. Takes `p_len` random bytes; rejects out-of-range samples and invalid public values with the same status and output conventions as `vg_ffdh_generate_key`. Contract: `VG.Spec.Ffdh.vettedGenerateKeyContract`. Timing may depend on the public domain, lengths and returned status, not otherwise on the random bytes or scalar. A shorter exponentiation schedule uses the public maximum width, including secret leading zeros.
-///
-/// ARMv7: one shared table recognizes exact vetted MODP/FFDHE domains. The reviewed public cap selects both entropy masking and a fixed exponentiation width, including secret leading zeros. Other domains retain full-width sampling. Product and specialized square operations call the shared RSA Montgomery helper.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `x_len`, `y_len` and `rand_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_vetted(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #72
-add r12, sp, #0
-str r0, [r12, #40]
-str r2, [r12, #36]
-str r2, [r12, #4]
-ldr r3, [sp, #128]
-str r3, [r12, #24]
-ldr r3, [sp, #132]
-str r3, [r12, #28]
-ldr r3, [sp, #136]
-str r3, [r12, #32]
-str r3, [r12, #44]
-ldr r3, [sp, #140]
-str r3, [r12, #48]
-ldr r0, [sp, #148]
-str r0, [r12, #0]
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r3, r4, r6
-str r3, [r12, #56]
-add r3, r3, r6
-str r3, [r12, #60]
-ldrb r1, [r4, #0]
-add r2, r4, r6
-sub r2, r2, #1
-ldrb r2, [r2, #0]
-sub r7, r1, #1
-lsr r7, r7, #31
-sub r9, r6, #64
-lsl r9, r9, #8
-add r9, r9, r1
-sub r9, r9, #128
-lsr r9, r9, #31
-and r2, r2, #1
-eor r2, r2, #1
-orr r7, r7, r2
-orr r7, r7, r9
-subs r7, r7, #0
-beq 20f
-mov r0, #0
-b 21f
-20:
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r7, r6, #7
-lsr r7, r7, #3
-mov r3, #0
-str r7, [r0, #48]
-str r3, [r0, #52]
-mov r8, r0
-add r5, r7, #2
-lsl r5, r5, #3
-add r4, r0, #256
-add r0, r0, #64
-mov lr, #8
-22:
-str r4, [r0, #0]
-str r3, [r0, #4]
-add r0, r0, #8
-add r4, r4, r5
-subs lr, lr, #1
-bne 22b
-mov r0, r8
-ldr r4, [sp, #8]
-ldr r6, [sp, #12]
-mov r2, #0
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-23:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 23b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-24:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 24b
-ldr r0, [sp, #0]
-mov r12, r0
-ldr r0, [r0, #64]
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-mov r1, r2
-mov r10, r11
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-mov r3, r1
-mov r4, r10
-mov r6, #0
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-str r2, [r12, #56]
-str r11, [r12, #60]
-mov r0, r12
-mov r2, #4
-mov r5, #0
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-25:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 25b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-26:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 26b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r1, [r0, #48]
-add r2, r1, r1, lsl #2
-lsl r2, r2, #3
-add r2, r2, #312
-add r2, r0, r2
-mov r3, #1
-str r3, [r2, #0]
-ldr r1, [r0, #48]
-add r1, r1, #64
-str r1, [r0, #208]
-27:
-mov r2, #4
-mov r3, #7
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-28:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 28b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 29f
-b 210f
-29:
 ldr r2, [r12, #0]
 lsr r6, r2, #16
 and r2, r2, r9
@@ -55051,51 +55389,34 @@ str r3, [r0, #0]
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-210:
+28:
 cmp lr, #0
-bne 211f
-b 212f
+bne 29f
+b 210f
+29:
+orr r9, r1, r10, lsl #16
 211:
-213:
 ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
+ldr r3, [r0, #0]
+umaal r3, r11, r2, r9
 str r3, [r0, #0]
 ldr r2, [r12, #4]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #4]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
+ldr r3, [r0, #4]
+mov r5, r3
+umaal r3, r11, r2, r9
 str r3, [r0, #4]
 add r0, r0, #8
 add r12, r12, #8
 subs lr, lr, #2
-bne 213b
-212:
+bne 211b
+mov r6, r5
+mov r4, #0
+umaal r6, r4, r2, r9
+lsr r6, r2, #16
+movw r9, #65535
+and r2, r2, r9
+mul r7, r1, r6
+210:
 orr r1, r1, r10, lsl #16
 ldr r3, [r0, #0]
 ldr r4, [r0, #4]
@@ -55110,7 +55431,7 @@ ldr r10, [r0, #28]
 ldr r12, [r0, #8]
 mov lr, r7
 mov r11, #0
-214:
+212:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -55127,7 +55448,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 214b
+bne 212b
 ldr r1, [r10, #0]
 mov r2, r11
 subs r3, r1, r2
@@ -55142,7 +55463,7 @@ mov r0, r9
 mov lr, r7
 mov r4, #0
 sub r4, r4, r11
-215:
+213:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -55153,12 +55474,12 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 215b
+bne 213b
 ldr r0, [sp, #0]
 ldr r1, [r0, #208]
 subs r1, r1, #1
 str r1, [r0, #208]
-bne 27b
+bne 25b
 sub sp, sp, #8
 mov r2, #4
 mov r3, #4
@@ -55168,7 +55489,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55180,7 +55501,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55192,7 +55513,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55204,7 +55525,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55216,7 +55537,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55228,7 +55549,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 mov r8, r0
@@ -55241,21 +55562,21 @@ movt r4, #:upper16:({VG_FFDH_VETTED_GROUPS} - (2f + 2 * (3f - 2f)))
 add r4, pc
 3:
 mov r7, #10
-216:
+214:
 ldr r5, [r4, #0]
 ldr r11, [r4, #4]
 add r4, r4, #8
 cmp r5, r6
 add r5, r5, r5, lsl #1
 mov r2, #1
-beq 217f
-b 218f
-217:
+beq 215f
+b 216f
+215:
 mov r0, r9
 mov r1, r4
 mov lr, r10
 mov r2, #0
-219:
+217:
 ldrb r3, [r0, #0]
 ldrb r12, [r1, #0]
 eor r3, r3, r12
@@ -55263,55 +55584,55 @@ orr r2, r2, r3
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 219b
-218:
+bne 217b
+216:
 cmp r2, #0
-beq 220f
+beq 218f
 mov r11, #0
 add r4, r4, r5
 subs r7, r7, #1
-b 221f
-220:
+b 219f
+218:
 mov r7, #0
-221:
+219:
 cmp r7, #0
-bne 216b
+bne 214b
 mov r0, r8
 cmp r11, #0
-bne 222f
+bne 220f
 ldr r3, [sp, #28]
 ldr r4, [sp, #32]
 sub r3, r3, r4
 sub r3, r3, r4
 cmp r3, #0
-bne 224f
+bne 222f
 ldr r4, [sp, #24]
-b 225f
-224:
+b 223f
+222:
 ldr r4, [sp, #60]
-225:
+223:
 ldr r6, [sp, #32]
-226:
+224:
 ldrb r3, [r4, #0]
 cmp r3, #0
-beq 227f
+beq 225f
+mov r11, #0
+cmp r11, #0
+b 226f
+225:
+cmp r6, #1
+bne 227f
 mov r11, #0
 cmp r11, #0
 b 228f
 227:
-cmp r6, #1
-bne 229f
-mov r11, #0
-cmp r11, #0
-b 230f
-229:
 add r4, r4, #1
 sub r6, r6, #1
 mov r11, #1
 cmp r11, #0
-230:
 228:
-bne 226b
+226:
+bne 224b
 lsr r12, r3, #1
 orr r3, r3, r12
 lsr r12, r3, #2
@@ -55321,302 +55642,129 @@ orr r3, r3, r12
 add r12, sp, #0
 str r6, [r12, #20]
 str r3, [r12, #68]
-b 223f
-222:
+b 221f
+220:
 ldr r6, [sp, #20]
 ldr r3, [sp, #68]
 movw r12, #225
 cmp r11, r12
-beq 231f
+beq 229f
 movw r12, #275
 cmp r11, r12
-beq 233f
+beq 231f
 movw r12, #325
 cmp r11, r12
-beq 235f
+beq 233f
 movw r12, #375
 cmp r11, r12
-beq 237f
+beq 235f
 movw r12, #400
 cmp r11, r12
-beq 239f
-b 240f
-239:
-movw r6, #50
-movw r3, #255
-240:
+beq 237f
 b 238f
 237:
-movw r6, #47
-movw r3, #127
+movw r6, #50
+movw r3, #255
 238:
 b 236f
 235:
-movw r6, #41
-movw r3, #31
+movw r6, #47
+movw r3, #127
 236:
 b 234f
 233:
-movw r6, #35
-movw r3, #7
+movw r6, #41
+movw r3, #31
 234:
 b 232f
 231:
+movw r6, #35
+movw r3, #7
+232:
+b 230f
+229:
 movw r6, #29
 movw r3, #1
-232:
+230:
 add r12, sp, #0
 str r6, [r12, #20]
 str r3, [r12, #68]
-223:
-ldr r0, [sp, #40]
-ldr r1, [sp, #48]
-ldr lr, [sp, #32]
-ldr r3, [sp, #20]
-sub lr, lr, r3
-add r3, r0, lr
+221:
+ldr r3, [sp, #68]
+mov r1, #0
+239:
+add r1, r1, #1
+lsr r3, r3, #1
+cmp r3, #0
+bne 239b
+ldr r6, [sp, #20]
+sub r6, r6, #1
+lsl r6, r6, #3
+add r1, r1, r6
 add r12, sp, #0
-str r3, [r12, #16]
+str r1, [r12, #16]
+add r3, r1, #4
+mov r6, #0
 mov r2, #0
-cmp lr, #0
-beq 241f
-243:
+240:
+sub r3, r3, #5
+add r6, r6, #1
+cmp r3, #5
+adc r7, r2, #0
+cmp r7, #0
+bne 240b
+add r12, sp, #0
+str r6, [r12, #44]
+ldr r4, [sp, #4]
+mov r2, #0
+ldr r1, [sp, #16]
+str r1, [r4, #0]
+str r2, [r4, #4]
+ldr r1, [sp, #20]
+str r1, [r4, #8]
+str r2, [r4, #12]
+ldr r1, [sp, #44]
+str r1, [r4, #16]
+str r2, [r4, #20]
+ldr r4, [sp, #4]
+add r4, r4, #24
+mov r2, #0
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+241:
+ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 243b
-b 242f
-241:
+bne 241b
+mov r0, r5
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r4, r4, r1
+mov r2, #4
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
 242:
 ldrb r2, [r1, #0]
-ldr r3, [sp, #68]
-and r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-ldr lr, [sp, #20]
-sub lr, lr, #1
-cmp lr, #0
-beq 244f
-246:
-ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 add r1, r1, #1
 subs lr, lr, #1
-bne 246b
-b 245f
-244:
-245:
-ldr r0, [sp, #0]
-ldr r4, [sp, #40]
-ldr r6, [sp, #44]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
+bne 242b
 mov r0, r5
-247:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 247b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-248:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 248b
+mov r0, #1
 ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-249:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 249b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #120]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-250:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 250b
-ldr r0, [sp, #0]
-eor r11, r11, #1
-str r11, [r0, #136]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 251f
-mov r11, #0
-ldr r10, [r0, #72]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-253:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 253b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-254:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 254b
-ldr r0, [sp, #0]
-b 252f
-251:
-ldr r4, [sp, #60]
-ldr r6, [sp, #32]
-mov r2, #6
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-255:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 255b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-256:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 256b
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-257:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 257b
-ldr r0, [sp, #0]
-252:
-ldr r3, [r0, #136]
-and r11, r11, r3
-cmp r11, #0
-bne 258f
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-mov r2, #0
-260:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 260b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-mov r2, #0
-261:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 261b
-mov r0, #2
-b 259f
-258:
 ldr r4, [sp, #56]
 ldr r6, [sp, #32]
-ldr r1, [sp, #16]
-ldr r2, [sp, #20]
-str r1, [r0, #128]
-str r2, [r0, #132]
 mov r2, #1
 add r2, r0, r2, lsl #3
 ldr r5, [r2, #64]
@@ -55624,94 +55772,23 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r5
-262:
+243:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 262b
+bne 243b
 mov r0, r5
 add r1, r4, r6
 sub r1, r1, #1
 mov lr, r6
-263:
+244:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 263b
+bne 244b
 ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-264:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 264b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-265:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 265b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-ldr r10, [r0, #104]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-266:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 266b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-orr r11, r11, r3
-eor r11, r11, #1
-cmp r11, #0
-bne 267f
 mov r2, #7
 mov r5, #1
 add r2, r0, r2, lsl #3
@@ -55720,11 +55797,11 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-269:
+245:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 269b
+bne 245b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55736,7 +55813,7 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
 sub sp, sp, #8
@@ -55748,101 +55825,135 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
-ldr r12, [r0, #120]
+mov r3, #0
+ldr r4, [sp, #4]
 ldr r1, [r0, #48]
-add r1, r1, #2
 lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-mov r11, #1
-ldr r12, [r0, #112]
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #6
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
 ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-270:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 270b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
+lsl lr, lr, #3
+mov r0, r4
+246:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
 add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-271:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
 subs lr, lr, #1
-bne 271b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
+bne 246b
+mov r0, r5
+mov r3, #1
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #5
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+247:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
 add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-272:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
 subs lr, lr, #1
-bne 272b
-ldr r0, [sp, #0]
-273:
+bne 247b
+mov r0, r5
+mov r3, #2
+add r12, sp, #0
+str r3, [r12, #36]
+248:
+ldr r3, [sp, #44]
+add r12, sp, #0
+str r3, [r12, #68]
+249:
 sub sp, sp, #8
+mov r2, #5
+mov r3, #5
+mov lr, #5
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul_umaal}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r3, [sp, #68]
+subs r3, r3, #1
+add r12, sp, #0
+str r3, [r12, #68]
+bne 249b
+ldr r3, [sp, #36]
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
+mov r2, #5
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+250:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 250b
+mov r0, r5
+mov r3, #1
+add r12, sp, #0
+str r3, [r12, #40]
+251:
+ldr r3, [sp, #40]
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
 mov r2, #1
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+252:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 252b
+mov r0, r5
+sub sp, sp, #8
+mov r2, #6
 mov r3, #1
 mov lr, #5
 add r12, sp, #0
@@ -55850,504 +55961,569 @@ str lr, [r12, #0]
 ldr r1, [r0, #48]
 add r1, r1, #6
 lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
+bl {vg_rsa_mont_mul_umaal}
 add sp, sp, #8
 ldr r0, [sp, #0]
-mov r11, #1
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-274:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 274b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 273b
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-275:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-276:
-sub sp, sp, #8
+ldr r3, [sp, #36]
+ldr r2, [sp, #40]
+add r3, r3, r2
+ldr r4, [sp, #4]
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r3, r3, #2
+mul r3, r3, r1
+add r4, r4, r3
+add r4, r4, #24
 mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-lsr r1, r1, #7
-and r1, r1, #1
-ldr r2, [r0, #196]
-add r2, r1, r2, lsl #1
-str r2, [r0, #196]
-ldr r1, [r0, #204]
-add r1, r1, #1
-str r1, [r0, #204]
-cmp r1, #3
-beq 277f
-b 278f
-277:
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-279:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-280:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 280b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 279b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-278:
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 276b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 275b
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-281:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-282:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 282b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 281b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-b 268f
-267:
-mov r2, #7
-mov r5, #1
 add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
+ldr r1, [r2, #64]
+mov r5, r0
 ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
+lsl lr, lr, #3
 mov r0, r4
-283:
-str r3, [r0, #0]
-add r0, r0, #4
+253:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
 subs lr, lr, #1
-bne 283b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-284:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 284b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-285:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-286:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #1
-mov r3, #5
-mov r12, #6
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-287:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 287b
+bne 253b
 mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 288f
-b 289f
-288:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-289:
-cmp lr, #0
-bne 290f
-b 291f
-290:
-292:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #4]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
+ldr r3, [sp, #40]
+add r3, r3, #1
+add r12, sp, #0
+str r3, [r12, #40]
+ldr r2, [sp, #36]
+cmp r3, r2
+bne 251b
+ldr r3, [sp, #36]
+add r3, r3, r3
+add r12, sp, #0
+str r3, [r12, #36]
+cmp r3, #32
+bne 248b
+mov r0, #1
+add sp, sp, #72
+ldr r4, [sp, #16]
+ldr r5, [sp, #20]
+ldr r6, [sp, #24]
+ldr r7, [sp, #28]
+ldr r8, [sp, #32]
+ldr r9, [sp, #36]
+ldr r10, [sp, #40]
+ldr r11, [sp, #44]
+ldr lr, [sp, #52]
+ldr r12, [sp], #56
+bx lr",
+        vg_rsa_mont_mul_umaal = sym super::rsa_mont::vg_rsa_mont_mul_umaal,
+        VG_FFDH_VETTED_GROUPS = sym super::consts::VG_FFDH_VETTED_GROUPS,
+    )
+}
+
+/// The CPU features `vg_ffdh_generate_key_cached_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// One native finite-field Diffie–Hellman key-generation attempt using a reusable public five-tooth comb context. Takes p_len random bytes and implements the same vettedScalarOfOctets, keyStatus and output conventions as vg_ffdh_generate_key_vetted for checked parameters. The context's public maximum width fixes the schedule, including secret leading zeros. Contract: VG.Spec.Ffdh.cachedGenerateKeyContract. Timing may depend on the public domain, pointers, lengths and returned status, not otherwise on the random bytes or private scalar.
+///
+/// ARMv7: import cached modulus and Montgomery constants, mask the full-size entropy draw to the reviewed width, and use a fixed five-tooth comb schedule. Every secret digit scans all 32 table entries. Product and square operations call the same shared RSA Montgomery helper.
+///
+/// # Safety
+///
+/// * `x` must be valid for reads and writes of `x_len` bytes.
+/// * `y` must be valid for reads and writes of `y_len` bytes.
+/// * `domain` must be valid for reads of `domain_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
+/// * `p_len` must be in 64..=1024.
+/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * x_len, y_len and rand_len must be p_len.
+/// * `scratch_len` must be at least `16 * p_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `domain`, `rand`, `scratch` and `ctx` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_cached_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, ctx: *const u64, ctx_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
+sub sp, sp, #72
+add r12, sp, #0
+str r0, [r12, #40]
+str r2, [r12, #36]
+str r2, [r12, #4]
+ldr r3, [sp, #128]
+str r3, [r12, #24]
+ldr r3, [sp, #132]
+str r3, [r12, #28]
+ldr r3, [sp, #136]
+str r3, [r12, #32]
+str r3, [r12, #44]
+ldr r3, [sp, #140]
+str r3, [r12, #48]
+ldr r0, [sp, #148]
+str r0, [r12, #0]
+add r12, sp, #0
+ldr r3, [sp, #156]
+str r3, [r12, #52]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r3, r4, r6
+str r3, [r12, #56]
+add r3, r3, r6
+str r3, [r12, #60]
+ldr r4, [sp, #24]
+ldr r6, [sp, #32]
+add r12, sp, #0
+str r4, [r12, #8]
+str r6, [r12, #12]
+add r7, r6, #7
+lsr r7, r7, #3
+mov r3, #0
+str r7, [r0, #48]
+str r3, [r0, #52]
+mov r8, r0
+add r5, r7, #2
+lsl r5, r5, #3
+add r4, r0, #256
+add r0, r0, #64
+mov lr, #8
+20:
+str r4, [r0, #0]
 str r3, [r0, #4]
 add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 292b
-291:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-293:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
+add r4, r4, r5
+subs lr, lr, #1
+bne 20b
+mov r0, r8
+ldr r4, [sp, #8]
+ldr r6, [sp, #12]
+ldr r4, [sp, #52]
+add r4, r4, #24
+mov r2, #0
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+21:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 21b
+mov r0, r5
+ldr r1, [r0, #48]
+lsl r1, r1, #3
+add r4, r4, r1
+mov r2, #4
+add r2, r0, r2, lsl #3
+ldr r1, [r2, #64]
+mov r5, r0
+ldr lr, [r0, #48]
+lsl lr, lr, #3
+mov r0, r4
+mov r2, r0
+mov r0, r1
+mov r1, r2
+22:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 22b
+mov r0, r5
+mov r12, r0
+ldr r0, [r0, #64]
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+mov r1, r2
+mov r10, r11
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
 mov r5, #0
 adc r5, r5, #0
 eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 293b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
 mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-294:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+ldr r2, [r0, #0]
+ldr r11, [r0, #4]
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r6, #2
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+movw r9, #65535
+and r3, r1, r9
+lsr r4, r1, #16
+and r5, r2, r9
+lsr r6, r2, #16
+mul r7, r3, r5
+mul r8, r4, r5
+add r8, r8, r7, lsr #16
+and r5, r8, r9
+mul r4, r4, r6
+add r4, r4, r8, lsr #16
+mul r3, r3, r6
+add r3, r3, r5
+add r4, r4, r3, lsr #16
+and r7, r7, r9
+add r3, r7, r3, lsl #16
+mul r5, r1, r11
+mul r6, r2, r10
+add r4, r4, r5
+add r4, r4, r6
+mov r1, r3
+mov r10, r4
+mov r3, r1
+mov r4, r10
+mov r6, #0
+subs r2, r6, r3
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+mov r11, #0
+sub r11, r11, r4
+sub r11, r11, r5
+str r2, [r12, #56]
+str r11, [r12, #60]
+mov r0, r12
+ldr r9, [sp, #52]
+ldr r6, [r9, #8]
+ldr r10, [r9, #0]
+sub r10, r10, #1
+and r10, r10, #7
+mov r9, #7
+sub r9, r9, r10
+mov r3, #255
+and r12, r9, #4
+cmp r12, #0
+bne 23f
+b 24f
+23:
+lsr r3, r3, #4
+24:
+and r12, r9, #2
+cmp r12, #0
+bne 25f
+b 26f
+25:
+lsr r3, r3, #2
+26:
+and r12, r9, #1
+cmp r12, #0
+bne 27f
+b 28f
+27:
+lsr r3, r3, #1
+28:
+add r12, sp, #0
+str r6, [r12, #20]
+str r3, [r12, #68]
+ldr r0, [sp, #40]
+ldr r1, [sp, #48]
+ldr lr, [sp, #32]
+ldr r3, [sp, #20]
+sub lr, lr, r3
+add r3, r0, lr
+add r12, sp, #0
+str r3, [r12, #16]
+mov r2, #0
+cmp lr, #0
+beq 29f
+211:
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
 subs lr, lr, #1
-bne 294b
+bne 211b
+b 210f
+29:
+210:
+ldrb r2, [r1, #0]
+ldr r3, [sp, #68]
+and r2, r2, r3
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+ldr lr, [sp, #20]
+sub lr, lr, #1
+cmp lr, #0
+beq 212f
+214:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+add r1, r1, #1
+subs lr, lr, #1
+bne 214b
+b 213f
+212:
+213:
 ldr r0, [sp, #0]
-ldr r11, [r0, #200]
-lsr r11, r11, #7
-and r11, r11, #1
-ldr r10, [r0, #112]
-ldr r12, [r0, #72]
+ldr r4, [sp, #40]
+ldr r6, [sp, #44]
+mov r2, #1
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
 ldr lr, [r0, #48]
 add lr, lr, lr
-ldr r0, [r0, #112]
-mov r4, #0
-sub r4, r4, r11
-295:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
+mov r3, #0
+mov r0, r5
+215:
 str r3, [r0, #0]
-add r10, r10, #4
 add r0, r0, #4
-add r12, r12, #4
 subs lr, lr, #1
-bne 295b
+bne 215b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+216:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 216b
 ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 286b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 285b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul}
-add sp, sp, #8
-ldr r0, [sp, #0]
-268:
 mov r2, #7
 mov r5, #1
 add r2, r0, r2, lsl #3
@@ -56356,20 +56532,20 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 mov r3, #0
 mov r0, r4
-296:
+217:
 str r3, [r0, #0]
 add r0, r0, #4
 subs lr, lr, #1
-bne 296b
+bne 217b
 str r5, [r4, #0]
 ldr r0, [sp, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #112]
+ldr r10, [r0, #72]
+ldr r12, [r0, #120]
 ldr lr, [r0, #48]
 add lr, lr, lr
 ldr r0, [r0, #88]
 mov r11, #0
-297:
+218:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -56386,18 +56562,25 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 297b
+bne 218b
 ldr r0, [sp, #0]
+eor r11, r11, #1
 str r11, [r0, #136]
+ldr r3, [sp, #28]
+ldr r4, [sp, #32]
+sub r3, r3, r4
+sub r3, r3, r4
+cmp r3, #0
+bne 219f
 mov r11, #0
-ldr r10, [r0, #112]
-ldr r12, [r0, #112]
+ldr r10, [r0, #72]
+ldr r12, [r0, #72]
 ldr lr, [r0, #48]
 add lr, lr, lr
 ldr r0, [r0, #120]
 mov r4, #0
 sub r4, r4, r11
-298:
+221:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 eor r3, r1, r2
@@ -56408,7 +56591,7 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 298b
+bne 221b
 ldr r0, [sp, #0]
 ldr r4, [r0, #120]
 ldr r3, [r4, #0]
@@ -56420,7 +56603,7 @@ ldr lr, [r0, #48]
 add lr, lr, lr
 ldr r0, [r0, #88]
 mov r11, #0
-299:
+222:
 ldr r1, [r10, #0]
 ldr r2, [r12, #0]
 subs r3, r1, r2
@@ -56437,7 +56620,438 @@ add r10, r10, #4
 add r0, r0, #4
 add r12, r12, #4
 subs lr, lr, #1
-bne 299b
+bne 222b
+ldr r0, [sp, #0]
+b 220f
+219:
+ldr r4, [sp, #60]
+ldr r6, [sp, #32]
+mov r2, #6
+add r2, r0, r2, lsl #3
+ldr r5, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r5
+223:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 223b
+mov r0, r5
+add r1, r4, r6
+sub r1, r1, #1
+mov lr, r6
+224:
+ldrb r2, [r1, #0]
+strb r2, [r0, #0]
+add r0, r0, #1
+sub r1, r1, #1
+subs lr, lr, #1
+bne 224b
+ldr r0, [sp, #0]
+ldr r10, [r0, #72]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+225:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 225b
+ldr r0, [sp, #0]
+220:
+ldr r3, [r0, #136]
+and r11, r11, r3
+cmp r11, #0
+bne 226f
+ldr r0, [sp, #40]
+ldr lr, [sp, #32]
+mov r2, #0
+228:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 228b
+ldr r0, [sp, #36]
+ldr lr, [sp, #32]
+mov r2, #0
+229:
+strb r2, [r0, #0]
+add r0, r0, #1
+subs lr, lr, #1
+bne 229b
+mov r0, #2
+b 227f
+226:
+ldr r1, [sp, #16]
+ldr r2, [sp, #20]
+ldr r4, [sp, #52]
+str r1, [r0, #128]
+str r2, [r0, #132]
+ldr r1, [r4, #0]
+ldr r2, [r4, #16]
+ldr r3, [r0, #48]
+lsl r3, r3, #4
+add r4, r4, r3
+add r4, r4, #24
+str r1, [r0, #136]
+str r2, [r0, #204]
+str r4, [r0, #232]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+230:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 230b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+sub sp, sp, #8
+mov r2, #6
+mov r3, #4
+mov lr, #7
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul_umaal}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r1, [r0, #204]
+str r1, [r0, #192]
+231:
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #6
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul_umaal}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r4, [r0, #128]
+ldr r5, [r0, #132]
+ldr r6, [r0, #192]
+sub r6, r6, #1
+ldr r7, [r0, #204]
+ldr r8, [r0, #136]
+mov r9, r6
+mov r10, #0
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 232f
+mov r11, #0
+b 233f
+232:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 234f
+b 235f
+234:
+236:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 236b
+235:
+and r11, r11, #1
+233:
+orr r10, r10, r11
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 237f
+mov r11, #0
+b 238f
+237:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 239f
+b 240f
+239:
+241:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 241b
+240:
+and r11, r11, #1
+238:
+orr r10, r10, r11, lsl #1
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 242f
+mov r11, #0
+b 243f
+242:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 244f
+b 245f
+244:
+246:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 246b
+245:
+and r11, r11, #1
+243:
+orr r10, r10, r11, lsl #2
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 247f
+mov r11, #0
+b 248f
+247:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 249f
+b 250f
+249:
+251:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 251b
+250:
+and r11, r11, #1
+248:
+orr r10, r10, r11, lsl #3
+add r9, r9, r7
+sub r12, r9, r8
+lsr r12, r12, #31
+cmp r12, #0
+bne 252f
+mov r11, #0
+b 253f
+252:
+lsr r12, r9, #3
+sub r12, r5, r12
+sub r12, r12, #1
+add r12, r4, r12
+ldrb r11, [r12, #0]
+and r2, r9, #7
+cmp r2, #0
+bne 254f
+b 255f
+254:
+256:
+lsr r11, r11, #1
+subs r2, r2, #1
+bne 256b
+255:
+and r11, r11, #1
+253:
+orr r10, r10, r11, lsl #4
+add r9, r9, r7
+mov r11, r10
+str r11, [r0, #196]
+ldr r12, [r0, #232]
+str r12, [r0, #220]
+mov r1, #0
+str r1, [r0, #228]
+257:
+ldr r1, [r0, #196]
+ldr r2, [r0, #228]
+eor r11, r1, r2
+sub r11, r11, #1
+lsr r11, r11, #31
+ldr r10, [r0, #72]
+ldr r12, [r0, #220]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #72]
+mov r4, #0
+sub r4, r4, r11
+258:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 258b
+ldr r0, [sp, #0]
+ldr r1, [r0, #220]
+ldr r2, [r0, #48]
+add r1, r1, r2, lsl #3
+str r1, [r0, #220]
+ldr r1, [r0, #228]
+add r1, r1, #1
+str r1, [r0, #228]
+cmp r1, #32
+bne 257b
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #1
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul_umaal}
+add sp, sp, #8
+ldr r0, [sp, #0]
+ldr r1, [r0, #192]
+subs r1, r1, #1
+str r1, [r0, #192]
+bne 231b
+sub sp, sp, #8
+mov r2, #6
+mov r3, #6
+mov lr, #7
+add r12, sp, #0
+str lr, [r12, #0]
+ldr r1, [r0, #48]
+add r1, r1, #6
+lsl r1, r1, #3
+bl {vg_rsa_mont_mul_umaal}
+add sp, sp, #8
+ldr r0, [sp, #0]
+mov r2, #7
+mov r5, #1
+add r2, r0, r2, lsl #3
+ldr r4, [r2, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+mov r3, #0
+mov r0, r4
+259:
+str r3, [r0, #0]
+add r0, r0, #4
+subs lr, lr, #1
+bne 259b
+str r5, [r4, #0]
+ldr r0, [sp, #0]
+ldr r10, [r0, #120]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+260:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 260b
+ldr r0, [sp, #0]
+str r11, [r0, #136]
+mov r11, #0
+ldr r10, [r0, #112]
+ldr r12, [r0, #112]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #120]
+mov r4, #0
+sub r4, r4, r11
+261:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+eor r3, r1, r2
+and r3, r3, r4
+eor r3, r3, r1
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 261b
+ldr r0, [sp, #0]
+ldr r4, [r0, #120]
+ldr r3, [r4, #0]
+orr r3, r3, #1
+str r3, [r4, #0]
+ldr r10, [r0, #120]
+ldr r12, [r0, #64]
+ldr lr, [r0, #48]
+add lr, lr, lr
+ldr r0, [r0, #88]
+mov r11, #0
+262:
+ldr r1, [r10, #0]
+ldr r2, [r12, #0]
+subs r3, r1, r2
+mov r4, #0
+adc r4, r4, #0
+eor r4, r4, #1
+subs r3, r3, r11
+mov r5, #0
+adc r5, r5, #0
+eor r5, r5, #1
+add r11, r4, r5
+str r3, [r0, #0]
+add r10, r10, #4
+add r0, r0, #4
+add r12, r12, #4
+subs lr, lr, #1
+bne 262b
 ldr r0, [sp, #0]
 ldr r3, [r0, #136]
 and r11, r11, r3
@@ -56453,43 +57067,42 @@ mov lr, r6
 add r1, r1, r6
 sub r1, r1, #1
 mov r0, r4
-2100:
+263:
 ldrb r2, [r1, #0]
 strb r2, [r0, #0]
 add r0, r0, #1
 sub r1, r1, #1
 subs lr, lr, #1
-bne 2100b
+bne 263b
 mov r0, r5
 ldr r0, [sp, #40]
 ldr lr, [sp, #32]
 ldr r3, [sp, #64]
 mov r2, #0
 sub r2, r2, r3
-2101:
+264:
 ldrb r1, [r0, #0]
 and r1, r1, r2
 strb r1, [r0, #0]
 add r0, r0, #1
 subs lr, lr, #1
-bne 2101b
+bne 264b
 ldr r0, [sp, #36]
 ldr lr, [sp, #32]
 ldr r3, [sp, #64]
 mov r2, #0
 sub r2, r2, r3
-2102:
+265:
 ldrb r1, [r0, #0]
 and r1, r1, r2
 strb r1, [r0, #0]
 add r0, r0, #1
 subs lr, lr, #1
-bne 2102b
+bne 265b
 ldr r3, [sp, #64]
 mov r0, #3
 sub r0, r0, r3, lsl #1
-259:
-21:
+227:
 add sp, sp, #72
 ldr r4, [sp, #16]
 ldr r5, [sp, #20]
@@ -56502,14 +57115,17 @@ ldr r11, [sp, #44]
 ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
-        vg_rsa_mont_mul = sym super::rsa_mont::vg_rsa_mont_mul,
-        VG_FFDH_VETTED_GROUPS = sym super::consts::VG_FFDH_VETTED_GROUPS,
+        vg_rsa_mont_mul_umaal = sym super::rsa_mont::vg_rsa_mont_mul_umaal,
     )
 }
 
-/// Generate a finite-field Diffie–Hellman key pair using vetted-group short exponents and native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.vettedKeySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
+/// The CPU features `vg_ffdh_generate_key_search_cached_umaal` requires (`Artifact.features`).
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
+
+/// Generate a finite-field Diffie–Hellman key pair using a reusable public five-tooth comb context and the existing vettedKeySearch rejection policy. Returns 1 with a key pair, 3 when a budget is exhausted, or 0 to request entropy. On 0, discard used bytes, preserve the suffix and extend it to state[3] bytes before calling again. On 0 and 3 both outputs are zero. Entropy consumption, retry budgets and statuses are unchanged. Contract: VG.Spec.Ffdh.cachedKeySearchContract. Timing may depend on the public domain, pointers, lengths, controller policy and sequence of attempt statuses, not otherwise on private scalar bytes.
 ///
-/// ARMv7: the shared native retry controller calls the vetted attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. Both entry points and every Montgomery backend share the same vetted-group table.
+/// ARMv7: the shared native retry controller calls the cached attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. The immutable comb context remains read-only across every attempt.
 ///
 /// # Safety
 ///
@@ -56520,17 +57136,21 @@ bx lr",
 /// * `rand` must be valid for reads of `rand_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `state` must be valid for reads and writes of 128 bytes.
+/// * `ctx` must be valid for reads of `8 * ctx_len` bytes.
 /// * `p_len` must be in 64..=1024.
 /// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
-/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
-/// * `x_len` and `y_len` must be `p_len`.
+/// * domain must be one that vg_ffdh_check_domain accepted.
+/// * ctx_len must be generationPrecomputedWords(p_len). ctx must contain the unchanged words written by vg_ffdh_generate_key_precompute for these parameters.
+/// * state must be initialized by vg_ffdh_key_generation_init for p_len, or be the state returned by this routine.
+/// * x_len and y_len must be p_len.
 /// * `scratch_len` must be at least `16 * p_len + 32`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand`, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch`, `state` and `ctx` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `umaal` target feature.
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_vetted(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_cached_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16], ctx: *const u64, ctx_len: usize) -> u32 {
     core::arch::naked_asm!(
         r"push {{r4, r9, r10, r11, r12, lr}}
 ldr r4, [sp, #56]
@@ -56552,6 +57172,10 @@ ldr r3, [sp, #52]
 str r3, [r4, #104]
 mov r3, #0
 str r3, [r4, #88]
+ldr r3, [sp, #60]
+str r3, [r4, #32]
+ldr r3, [sp, #64]
+str r3, [r4, #36]
 20:
 ldr r9, [r4, #0]
 cmp r9, #0
@@ -56566,7 +57190,7 @@ mov r11, #0
 adc r11, r11, #0
 cmp r11, #0
 beq 25f
-sub sp, sp, #32
+sub sp, sp, #40
 ldr r0, [r4, #40]
 ldr r1, [r4, #16]
 ldr r2, [r4, #48]
@@ -56584,8 +57208,12 @@ ldr r9, [r4, #96]
 str r9, [r12, #20]
 ldr r9, [r4, #104]
 str r9, [r12, #24]
-bl {vg_ffdh_generate_key_vetted}
-add sp, sp, #32
+ldr r9, [r4, #32]
+str r9, [r12, #28]
+ldr r9, [r4, #36]
+str r9, [r12, #32]
+bl {vg_ffdh_generate_key_cached_umaal}
+add sp, sp, #40
 mov r9, r0
 ldr r10, [r4, #16]
 ldr r11, [r4, #72]
@@ -56745,7 +57373,7 @@ ldr r11, [sp, #12]
 ldr lr, [sp, #20]
 ldr r4, [sp], #24
 bx lr",
-        vg_ffdh_generate_key_vetted = sym super::ffdh::vg_ffdh_generate_key_vetted,
+        vg_ffdh_generate_key_cached_umaal = sym super::ffdh::vg_ffdh_generate_key_cached_umaal,
     )
 }
 
@@ -58009,4272 +58637,5 @@ ldr lr, [sp, #52]
 ldr r12, [sp], #56
 bx lr",
         vg_rsa_mont_mul_umaal = sym super::rsa_mont::vg_rsa_mont_mul_umaal,
-    )
-}
-
-/// The CPU features `vg_ffdh_generate_key_umaal` requires (`Artifact.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_FFDH_GENERATE_KEY_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
-
-/// One attempt at a finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.1.1.4, rejection sampling). With `domain` as `vg_ffdh_check_domain` takes it, takes `rand` (`p_len` random bytes, most significant first) modulo `2^b`, where b is the bit length of q (of `p − 1` without q), as x. Returns 2 if x is not in `1..q` (`1..p − 1`); 3 if `y = g^x mod p` is not a valid public value (as `vg_ffdh_check_public` checks it); otherwise 1, and writes x and y (`p_len` bytes each, most significant first) to `x` and `y`. `x` and `y` are zeros but for 1. For 2 and 3 the caller tries again with fresh random bytes.
-///
-/// Contract: `VG.Spec.Ffdh.generateKeyContract`. Timing may depend on the pointers, the lengths, the domain and the value returned, not otherwise on `rand` or x; the exponentiation may run over the bytes of q (`p − 1`).
-///
-/// ARMv7: generator two uses a fixed square/double/select schedule; other generators use three-bit windows. Montgomery setup, multiplication and specialized squaring call one shared RSA arithmetic helper per backend. Sampling retains the public bound's significant byte width, including secret leading zeros. A generated power's subgroup membership follows from the checked generator.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `x_len`, `y_len` and `rand_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `umaal` target feature.
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #72
-add r12, sp, #0
-str r0, [r12, #40]
-str r2, [r12, #36]
-str r2, [r12, #4]
-ldr r3, [sp, #128]
-str r3, [r12, #24]
-ldr r3, [sp, #132]
-str r3, [r12, #28]
-ldr r3, [sp, #136]
-str r3, [r12, #32]
-str r3, [r12, #44]
-ldr r3, [sp, #140]
-str r3, [r12, #48]
-ldr r0, [sp, #148]
-str r0, [r12, #0]
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r3, r4, r6
-str r3, [r12, #56]
-add r3, r3, r6
-str r3, [r12, #60]
-ldrb r1, [r4, #0]
-add r2, r4, r6
-sub r2, r2, #1
-ldrb r2, [r2, #0]
-sub r7, r1, #1
-lsr r7, r7, #31
-sub r9, r6, #64
-lsl r9, r9, #8
-add r9, r9, r1
-sub r9, r9, #128
-lsr r9, r9, #31
-and r2, r2, #1
-eor r2, r2, #1
-orr r7, r7, r2
-orr r7, r7, r9
-subs r7, r7, #0
-beq 20f
-mov r0, #0
-b 21f
-20:
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r7, r6, #7
-lsr r7, r7, #3
-mov r3, #0
-str r7, [r0, #48]
-str r3, [r0, #52]
-mov r8, r0
-add r5, r7, #2
-lsl r5, r5, #3
-add r4, r0, #256
-add r0, r0, #64
-mov lr, #8
-22:
-str r4, [r0, #0]
-str r3, [r0, #4]
-add r0, r0, #8
-add r4, r4, r5
-subs lr, lr, #1
-bne 22b
-mov r0, r8
-ldr r4, [sp, #8]
-ldr r6, [sp, #12]
-mov r2, #0
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-23:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 23b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-24:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 24b
-ldr r0, [sp, #0]
-mov r12, r0
-ldr r0, [r0, #64]
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-mov r1, r2
-mov r10, r11
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-mov r3, r1
-mov r4, r10
-mov r6, #0
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-str r2, [r12, #56]
-str r11, [r12, #60]
-mov r0, r12
-mov r2, #4
-mov r5, #0
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-25:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 25b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-26:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 26b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r1, [r0, #48]
-add r2, r1, r1, lsl #2
-lsl r2, r2, #3
-add r2, r2, #312
-add r2, r0, r2
-mov r3, #1
-str r3, [r2, #0]
-ldr r1, [r0, #48]
-add r1, r1, #64
-str r1, [r0, #208]
-27:
-mov r2, #4
-mov r3, #7
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-28:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 28b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 29f
-b 210f
-29:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-210:
-cmp lr, #0
-bne 211f
-b 212f
-211:
-orr r9, r1, r10, lsl #16
-213:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 213b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-212:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-214:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 214b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-215:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 215b
-ldr r0, [sp, #0]
-ldr r1, [r0, #208]
-subs r1, r1, #1
-str r1, [r0, #208]
-bne 27b
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 216f
-ldr r4, [sp, #24]
-b 217f
-216:
-ldr r4, [sp, #60]
-217:
-ldr r6, [sp, #32]
-218:
-ldrb r3, [r4, #0]
-cmp r3, #0
-beq 219f
-mov r11, #0
-cmp r11, #0
-b 220f
-219:
-cmp r6, #1
-bne 221f
-mov r11, #0
-cmp r11, #0
-b 222f
-221:
-add r4, r4, #1
-sub r6, r6, #1
-mov r11, #1
-cmp r11, #0
-222:
-220:
-bne 218b
-lsr r12, r3, #1
-orr r3, r3, r12
-lsr r12, r3, #2
-orr r3, r3, r12
-lsr r12, r3, #4
-orr r3, r3, r12
-add r12, sp, #0
-str r6, [r12, #20]
-str r3, [r12, #68]
-ldr r0, [sp, #40]
-ldr r1, [sp, #48]
-ldr lr, [sp, #32]
-ldr r3, [sp, #20]
-sub lr, lr, r3
-add r3, r0, lr
-add r12, sp, #0
-str r3, [r12, #16]
-mov r2, #0
-cmp lr, #0
-beq 223f
-225:
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 225b
-b 224f
-223:
-224:
-ldrb r2, [r1, #0]
-ldr r3, [sp, #68]
-and r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-ldr lr, [sp, #20]
-sub lr, lr, #1
-cmp lr, #0
-beq 226f
-228:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 228b
-b 227f
-226:
-227:
-ldr r0, [sp, #0]
-ldr r4, [sp, #40]
-ldr r6, [sp, #44]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-229:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 229b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-230:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 230b
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-231:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 231b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #120]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-232:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 232b
-ldr r0, [sp, #0]
-eor r11, r11, #1
-str r11, [r0, #136]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 233f
-mov r11, #0
-ldr r10, [r0, #72]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-235:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 235b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-236:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 236b
-ldr r0, [sp, #0]
-b 234f
-233:
-ldr r4, [sp, #60]
-ldr r6, [sp, #32]
-mov r2, #6
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-237:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 237b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-238:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 238b
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-239:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 239b
-ldr r0, [sp, #0]
-234:
-ldr r3, [r0, #136]
-and r11, r11, r3
-cmp r11, #0
-bne 240f
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-mov r2, #0
-242:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 242b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-mov r2, #0
-243:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 243b
-mov r0, #2
-b 241f
-240:
-ldr r4, [sp, #56]
-ldr r6, [sp, #32]
-ldr r1, [sp, #16]
-ldr r2, [sp, #20]
-str r1, [r0, #128]
-str r2, [r0, #132]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-244:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 244b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-245:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 245b
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-246:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 246b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-247:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 247b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-ldr r10, [r0, #104]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-248:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 248b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-orr r11, r11, r3
-eor r11, r11, #1
-cmp r11, #0
-bne 249f
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-251:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 251b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #5
-mov r3, #1
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-mov r11, #1
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-252:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 252b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-253:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 253b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-254:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 254b
-ldr r0, [sp, #0]
-255:
-sub sp, sp, #8
-mov r2, #1
-mov r3, #1
-mov lr, #5
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r11, #1
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-256:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 256b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 255b
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-257:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-258:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-lsr r1, r1, #7
-and r1, r1, #1
-ldr r2, [r0, #196]
-add r2, r1, r2, lsl #1
-str r2, [r0, #196]
-ldr r1, [r0, #204]
-add r1, r1, #1
-str r1, [r0, #204]
-cmp r1, #3
-beq 259f
-b 260f
-259:
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-261:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-262:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 262b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 261b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-260:
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 258b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 257b
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-263:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-264:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 264b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 263b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-b 250f
-249:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-265:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 265b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-266:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 266b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-267:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-268:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #1
-mov r3, #5
-mov r12, #6
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-269:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 269b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 270f
-b 271f
-270:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-271:
-cmp lr, #0
-bne 272f
-b 273f
-272:
-orr r9, r1, r10, lsl #16
-274:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 274b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-273:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-275:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 275b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-276:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 276b
-ldr r0, [sp, #0]
-ldr r11, [r0, #200]
-lsr r11, r11, #7
-and r11, r11, #1
-ldr r10, [r0, #112]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #112]
-mov r4, #0
-sub r4, r4, r11
-277:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 277b
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 268b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 267b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-250:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-278:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 278b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-279:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 279b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-mov r11, #0
-ldr r10, [r0, #112]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-280:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 280b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-281:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 281b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-and r11, r11, r3
-add r12, sp, #0
-str r11, [r12, #64]
-mov r2, #6
-ldr r4, [sp, #4]
-ldr r6, [sp, #32]
-add r2, r0, r2, lsl #3
-ldr r1, [r2, #64]
-mov r5, r0
-mov lr, r6
-add r1, r1, r6
-sub r1, r1, #1
-mov r0, r4
-282:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 282b
-mov r0, r5
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-283:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 283b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-284:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 284b
-ldr r3, [sp, #64]
-mov r0, #3
-sub r0, r0, r3, lsl #1
-241:
-21:
-add sp, sp, #72
-ldr r4, [sp, #16]
-ldr r5, [sp, #20]
-ldr r6, [sp, #24]
-ldr r7, [sp, #28]
-ldr r8, [sp, #32]
-ldr r9, [sp, #36]
-ldr r10, [sp, #40]
-ldr r11, [sp, #44]
-ldr lr, [sp, #52]
-ldr r12, [sp], #56
-bx lr",
-        vg_rsa_mont_mul_umaal = sym super::rsa_mont::vg_rsa_mont_mul_umaal,
-    )
-}
-
-/// The CPU features `vg_ffdh_generate_key_search_umaal` requires (`Artifact.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
-
-/// Generate a finite-field Diffie–Hellman key pair with native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.keySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
-///
-/// ARMv7: native rejection sampling owns both bounded retry counters, consumes the entropy tape, clears incomplete outputs, and requests entropy refills. The callable key-generation attempt inherits every shared Montgomery variant.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
-/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
-/// * `x_len` and `y_len` must be `p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `umaal` target feature.
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r4, r9, r10, r11, r12, lr}}
-ldr r4, [sp, #56]
-str r0, [r4, #40]
-str r2, [r4, #48]
-ldr r3, [sp, #24]
-str r3, [r4, #120]
-ldr r3, [sp, #28]
-str r3, [r4, #56]
-ldr r3, [sp, #32]
-str r3, [r4, #64]
-ldr r3, [sp, #40]
-str r3, [r4, #72]
-ldr r3, [sp, #44]
-str r3, [r4, #80]
-ldr r3, [sp, #48]
-str r3, [r4, #96]
-ldr r3, [sp, #52]
-str r3, [r4, #104]
-mov r3, #0
-str r3, [r4, #88]
-20:
-ldr r9, [r4, #0]
-cmp r9, #0
-beq 21f
-ldr r9, [r4, #8]
-cmp r9, #0
-beq 23f
-ldr r9, [r4, #80]
-ldr r10, [r4, #16]
-subs r11, r9, r10
-mov r11, #0
-adc r11, r11, #0
-cmp r11, #0
-beq 25f
-sub sp, sp, #32
-ldr r0, [r4, #40]
-ldr r1, [r4, #16]
-ldr r2, [r4, #48]
-ldr r3, [r4, #16]
-add r12, sp, #0
-ldr r9, [r4, #56]
-str r9, [r12, #0]
-ldr r9, [r4, #64]
-str r9, [r12, #4]
-str r1, [r12, #8]
-ldr r9, [r4, #72]
-str r9, [r12, #12]
-str r1, [r12, #16]
-ldr r9, [r4, #96]
-str r9, [r12, #20]
-ldr r9, [r4, #104]
-str r9, [r12, #24]
-bl {vg_ffdh_generate_key_umaal}
-add sp, sp, #32
-mov r9, r0
-ldr r10, [r4, #16]
-ldr r11, [r4, #72]
-ldr r12, [r4, #80]
-ldr r3, [r4, #88]
-add r11, r11, r10
-sub r12, r12, r10
-add r3, r3, r10
-str r11, [r4, #72]
-str r12, [r4, #80]
-str r3, [r4, #88]
-cmp r9, #1
-beq 27f
-cmp r9, #2
-beq 29f
-cmp r9, #3
-beq 211f
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-213:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 213b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-214:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 214b
-b 212f
-211:
-ldr r10, [r4, #0]
-sub r10, r10, #1
-mov r11, #128
-mov r12, #4
-str r10, [r4, #0]
-str r11, [r4, #8]
-str r12, [r4, #112]
-212:
-b 210f
-29:
-ldr r10, [r4, #8]
-sub r10, r10, #1
-mov r11, #4
-str r10, [r4, #8]
-str r11, [r4, #112]
-210:
-b 28f
-27:
-mov r10, #0
-mov r11, #1
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-28:
-b 26f
-25:
-ldr r10, [r4, #16]
-mov r11, #0
-str r10, [r4, #24]
-str r11, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-215:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 215b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-216:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 216b
-26:
-b 24f
-23:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-217:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 217b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-218:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 218b
-24:
-b 22f
-21:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-219:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 219b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-220:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 220b
-22:
-ldr r9, [r4, #112]
-cmp r9, #4
-beq 20b
-ldr r1, [r4, #120]
-ldr r2, [r4, #88]
-ldr r0, [r4, #112]
-mov r3, #0
-str r2, [r1, #0]
-str r3, [r1, #4]
-ldr r9, [sp, #4]
-ldr r10, [sp, #8]
-ldr r11, [sp, #12]
-ldr lr, [sp, #20]
-ldr r4, [sp], #24
-bx lr",
-        vg_ffdh_generate_key_umaal = sym super::ffdh::vg_ffdh_generate_key_umaal,
-    )
-}
-
-/// The CPU features `vg_ffdh_generate_key_vetted_umaal` requires (`Artifact.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_FFDH_GENERATE_KEY_VETTED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
-
-/// One native finite-field Diffie–Hellman key-generation attempt using `generationScalarBits`: RFC 7919 recommended shorter exponents for exact vetted RFC 3526/7919 safe-prime groups, and full-width sampling for all other domains. Takes `p_len` random bytes; rejects out-of-range samples and invalid public values with the same status and output conventions as `vg_ffdh_generate_key`. Contract: `VG.Spec.Ffdh.vettedGenerateKeyContract`. Timing may depend on the public domain, lengths and returned status, not otherwise on the random bytes or scalar. A shorter exponentiation schedule uses the public maximum width, including secret leading zeros.
-///
-/// ARMv7: one shared table recognizes exact vetted MODP/FFDHE domains. The reviewed public cap selects both entropy masking and a fixed exponentiation width, including secret leading zeros. Other domains retain full-width sampling. Product and specialized square operations call the shared RSA Montgomery helper.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `x_len`, `y_len` and `rand_len` must be `p_len`.
-/// * For the result to be specified, `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for); otherwise it is unspecified.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y` and `scratch` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `domain`, `rand` and `scratch` may overlap the 176 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `umaal` target feature.
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_vetted_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}}
-sub sp, sp, #72
-add r12, sp, #0
-str r0, [r12, #40]
-str r2, [r12, #36]
-str r2, [r12, #4]
-ldr r3, [sp, #128]
-str r3, [r12, #24]
-ldr r3, [sp, #132]
-str r3, [r12, #28]
-ldr r3, [sp, #136]
-str r3, [r12, #32]
-str r3, [r12, #44]
-ldr r3, [sp, #140]
-str r3, [r12, #48]
-ldr r0, [sp, #148]
-str r0, [r12, #0]
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r3, r4, r6
-str r3, [r12, #56]
-add r3, r3, r6
-str r3, [r12, #60]
-ldrb r1, [r4, #0]
-add r2, r4, r6
-sub r2, r2, #1
-ldrb r2, [r2, #0]
-sub r7, r1, #1
-lsr r7, r7, #31
-sub r9, r6, #64
-lsl r9, r9, #8
-add r9, r9, r1
-sub r9, r9, #128
-lsr r9, r9, #31
-and r2, r2, #1
-eor r2, r2, #1
-orr r7, r7, r2
-orr r7, r7, r9
-subs r7, r7, #0
-beq 20f
-mov r0, #0
-b 21f
-20:
-ldr r4, [sp, #24]
-ldr r6, [sp, #32]
-add r12, sp, #0
-str r4, [r12, #8]
-str r6, [r12, #12]
-add r7, r6, #7
-lsr r7, r7, #3
-mov r3, #0
-str r7, [r0, #48]
-str r3, [r0, #52]
-mov r8, r0
-add r5, r7, #2
-lsl r5, r5, #3
-add r4, r0, #256
-add r0, r0, #64
-mov lr, #8
-22:
-str r4, [r0, #0]
-str r3, [r0, #4]
-add r0, r0, #8
-add r4, r4, r5
-subs lr, lr, #1
-bne 22b
-mov r0, r8
-ldr r4, [sp, #8]
-ldr r6, [sp, #12]
-mov r2, #0
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-23:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 23b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-24:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 24b
-ldr r0, [sp, #0]
-mov r12, r0
-ldr r0, [r0, #64]
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-mov r1, r2
-mov r10, r11
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-ldr r2, [r0, #0]
-ldr r11, [r0, #4]
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r6, #2
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-movw r9, #65535
-and r3, r1, r9
-lsr r4, r1, #16
-and r5, r2, r9
-lsr r6, r2, #16
-mul r7, r3, r5
-mul r8, r4, r5
-add r8, r8, r7, lsr #16
-and r5, r8, r9
-mul r4, r4, r6
-add r4, r4, r8, lsr #16
-mul r3, r3, r6
-add r3, r3, r5
-add r4, r4, r3, lsr #16
-and r7, r7, r9
-add r3, r7, r3, lsl #16
-mul r5, r1, r11
-mul r6, r2, r10
-add r4, r4, r5
-add r4, r4, r6
-mov r1, r3
-mov r10, r4
-mov r3, r1
-mov r4, r10
-mov r6, #0
-subs r2, r6, r3
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-mov r11, #0
-sub r11, r11, r4
-sub r11, r11, r5
-str r2, [r12, #56]
-str r11, [r12, #60]
-mov r0, r12
-mov r2, #4
-mov r5, #0
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-25:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 25b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-26:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 26b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r1, [r0, #48]
-add r2, r1, r1, lsl #2
-lsl r2, r2, #3
-add r2, r2, #312
-add r2, r0, r2
-mov r3, #1
-str r3, [r2, #0]
-ldr r1, [r0, #48]
-add r1, r1, #64
-str r1, [r0, #208]
-27:
-mov r2, #4
-mov r3, #7
-mov r12, #4
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-28:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 28b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 29f
-b 210f
-29:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-210:
-cmp lr, #0
-bne 211f
-b 212f
-211:
-orr r9, r1, r10, lsl #16
-213:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 213b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-212:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-214:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 214b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-215:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 215b
-ldr r0, [sp, #0]
-ldr r1, [r0, #208]
-subs r1, r1, #1
-str r1, [r0, #208]
-bne 27b
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #4
-mov r3, #4
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r8, r0
-ldr r9, [sp, #24]
-ldr r10, [sp, #28]
-ldr r6, [sp, #32]
-movw r4, #:lower16:({VG_FFDH_VETTED_GROUPS} - (2f + 2 * (3f - 2f)))
-movt r4, #:upper16:({VG_FFDH_VETTED_GROUPS} - (2f + 2 * (3f - 2f)))
-2:
-add r4, pc
-3:
-mov r7, #10
-216:
-ldr r5, [r4, #0]
-ldr r11, [r4, #4]
-add r4, r4, #8
-cmp r5, r6
-add r5, r5, r5, lsl #1
-mov r2, #1
-beq 217f
-b 218f
-217:
-mov r0, r9
-mov r1, r4
-mov lr, r10
-mov r2, #0
-219:
-ldrb r3, [r0, #0]
-ldrb r12, [r1, #0]
-eor r3, r3, r12
-orr r2, r2, r3
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 219b
-218:
-cmp r2, #0
-beq 220f
-mov r11, #0
-add r4, r4, r5
-subs r7, r7, #1
-b 221f
-220:
-mov r7, #0
-221:
-cmp r7, #0
-bne 216b
-mov r0, r8
-cmp r11, #0
-bne 222f
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 224f
-ldr r4, [sp, #24]
-b 225f
-224:
-ldr r4, [sp, #60]
-225:
-ldr r6, [sp, #32]
-226:
-ldrb r3, [r4, #0]
-cmp r3, #0
-beq 227f
-mov r11, #0
-cmp r11, #0
-b 228f
-227:
-cmp r6, #1
-bne 229f
-mov r11, #0
-cmp r11, #0
-b 230f
-229:
-add r4, r4, #1
-sub r6, r6, #1
-mov r11, #1
-cmp r11, #0
-230:
-228:
-bne 226b
-lsr r12, r3, #1
-orr r3, r3, r12
-lsr r12, r3, #2
-orr r3, r3, r12
-lsr r12, r3, #4
-orr r3, r3, r12
-add r12, sp, #0
-str r6, [r12, #20]
-str r3, [r12, #68]
-b 223f
-222:
-ldr r6, [sp, #20]
-ldr r3, [sp, #68]
-movw r12, #225
-cmp r11, r12
-beq 231f
-movw r12, #275
-cmp r11, r12
-beq 233f
-movw r12, #325
-cmp r11, r12
-beq 235f
-movw r12, #375
-cmp r11, r12
-beq 237f
-movw r12, #400
-cmp r11, r12
-beq 239f
-b 240f
-239:
-movw r6, #50
-movw r3, #255
-240:
-b 238f
-237:
-movw r6, #47
-movw r3, #127
-238:
-b 236f
-235:
-movw r6, #41
-movw r3, #31
-236:
-b 234f
-233:
-movw r6, #35
-movw r3, #7
-234:
-b 232f
-231:
-movw r6, #29
-movw r3, #1
-232:
-add r12, sp, #0
-str r6, [r12, #20]
-str r3, [r12, #68]
-223:
-ldr r0, [sp, #40]
-ldr r1, [sp, #48]
-ldr lr, [sp, #32]
-ldr r3, [sp, #20]
-sub lr, lr, r3
-add r3, r0, lr
-add r12, sp, #0
-str r3, [r12, #16]
-mov r2, #0
-cmp lr, #0
-beq 241f
-243:
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 243b
-b 242f
-241:
-242:
-ldrb r2, [r1, #0]
-ldr r3, [sp, #68]
-and r2, r2, r3
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-ldr lr, [sp, #20]
-sub lr, lr, #1
-cmp lr, #0
-beq 244f
-246:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-add r1, r1, #1
-subs lr, lr, #1
-bne 246b
-b 245f
-244:
-245:
-ldr r0, [sp, #0]
-ldr r4, [sp, #40]
-ldr r6, [sp, #44]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-247:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 247b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-248:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 248b
-ldr r0, [sp, #0]
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-249:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 249b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #120]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-250:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 250b
-ldr r0, [sp, #0]
-eor r11, r11, #1
-str r11, [r0, #136]
-ldr r3, [sp, #28]
-ldr r4, [sp, #32]
-sub r3, r3, r4
-sub r3, r3, r4
-cmp r3, #0
-bne 251f
-mov r11, #0
-ldr r10, [r0, #72]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-253:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 253b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-254:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 254b
-ldr r0, [sp, #0]
-b 252f
-251:
-ldr r4, [sp, #60]
-ldr r6, [sp, #32]
-mov r2, #6
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-255:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 255b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-256:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 256b
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-257:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 257b
-ldr r0, [sp, #0]
-252:
-ldr r3, [r0, #136]
-and r11, r11, r3
-cmp r11, #0
-bne 258f
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-mov r2, #0
-260:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 260b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-mov r2, #0
-261:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 261b
-mov r0, #2
-b 259f
-258:
-ldr r4, [sp, #56]
-ldr r6, [sp, #32]
-ldr r1, [sp, #16]
-ldr r2, [sp, #20]
-str r1, [r0, #128]
-str r2, [r0, #132]
-mov r2, #1
-add r2, r0, r2, lsl #3
-ldr r5, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r5
-262:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 262b
-mov r0, r5
-add r1, r4, r6
-sub r1, r1, #1
-mov lr, r6
-263:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 263b
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-264:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 264b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-265:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 265b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-ldr r10, [r0, #104]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-266:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 266b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-orr r11, r11, r3
-eor r11, r11, #1
-cmp r11, #0
-bne 267f
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-269:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 269b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #5
-mov r3, #1
-mov lr, #4
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-mov r11, #1
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-270:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 270b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-271:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 271b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-mov r11, #1
-ldr r10, [r0, #72]
-ldr r12, [r0, #104]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-272:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 272b
-ldr r0, [sp, #0]
-273:
-sub sp, sp, #8
-mov r2, #1
-mov r3, #1
-mov lr, #5
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r11, #1
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #220]
-mov r10, r0
-mov r4, #0
-sub r4, r4, r11
-274:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 274b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 273b
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-275:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-276:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-lsr r1, r1, #7
-and r1, r1, #1
-ldr r2, [r0, #196]
-add r2, r1, r2, lsl #1
-str r2, [r0, #196]
-ldr r1, [r0, #204]
-add r1, r1, #1
-str r1, [r0, #204]
-cmp r1, #3
-beq 277f
-b 278f
-277:
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-279:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-280:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 280b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 279b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-278:
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 276b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 275b
-ldr r12, [r0, #120]
-ldr r1, [r0, #48]
-add r1, r1, #2
-lsl r1, r1, #3
-add r12, r12, r1
-str r12, [r0, #220]
-mov r1, #0
-str r1, [r0, #228]
-281:
-ldr r1, [r0, #196]
-ldr r2, [r0, #228]
-eor r11, r1, r2
-sub r11, r11, #1
-lsr r11, r11, #31
-ldr r10, [r0, #72]
-ldr r12, [r0, #220]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #72]
-mov r4, #0
-sub r4, r4, r11
-282:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 282b
-ldr r0, [sp, #0]
-ldr r1, [r0, #220]
-ldr r2, [r0, #48]
-add r2, r2, #2
-add r1, r1, r2, lsl #3
-str r1, [r0, #220]
-ldr r1, [r0, #228]
-add r1, r1, #1
-str r1, [r0, #228]
-cmp r1, #8
-bne 281b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #1
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r1, #0
-str r1, [r0, #196]
-str r1, [r0, #204]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-b 268f
-267:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-283:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 283b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-sub sp, sp, #8
-mov r2, #6
-mov r3, #4
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #5
-mov r5, #2
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-284:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 284b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-285:
-ldr r2, [r0, #128]
-ldrb r1, [r2, #0]
-str r1, [r0, #200]
-mov r1, #8
-str r1, [r0, #192]
-286:
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #6
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-mov r2, #1
-mov r3, #5
-mov r12, #6
-add r2, r0, r2, lsl #3
-ldr r10, [r2, #64]
-add r3, r0, r3, lsl #3
-ldr r8, [r3, #64]
-add r12, r0, r12, lsl #3
-ldr r9, [r12, #64]
-ldr r5, [r0, #88]
-ldr r6, [r0, #80]
-ldr r7, [r0, #48]
-add r7, r7, r7
-ldr r11, [r0, #64]
-ldr r12, [r0, #56]
-str r7, [r5, #0]
-str r9, [r5, #4]
-str r11, [r5, #8]
-str r12, [r5, #12]
-str r8, [r5, #16]
-str r7, [r5, #20]
-str r10, [r5, #24]
-str r6, [r5, #28]
-mov r0, r6
-mov lr, r7
-add lr, lr, #2
-mov r3, #0
-287:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 287b
-mov r0, r5
-ldr r1, [r0, #16]
-ldr r1, [r1, #0]
-ldr lr, [r0, #0]
-ldr r12, [r0, #4]
-ldr r0, [r0, #28]
-mov r11, #0
-movw r9, #65535
-lsr r10, r1, #16
-and r1, r1, r9
-and r2, lr, #1
-cmp r2, #0
-bne 288f
-b 289f
-288:
-ldr r2, [r12, #0]
-lsr r6, r2, #16
-and r2, r2, r9
-mul r3, r1, r2
-mul r5, r10, r2
-mul r7, r1, r6
-mul r4, r10, r6
-adds r3, r3, r5, lsl #16
-adc r4, r4, r5, lsr #16
-adds r3, r3, r7, lsl #16
-adc r4, r4, r7, lsr #16
-ldr r5, [r0, #0]
-adds r3, r3, r5
-adc r4, r4, #0
-adds r3, r3, r11
-adc r11, r4, #0
-str r3, [r0, #0]
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-289:
-cmp lr, #0
-bne 290f
-b 291f
-290:
-orr r9, r1, r10, lsl #16
-292:
-ldr r2, [r12, #0]
-ldr r3, [r0, #0]
-umaal r3, r11, r2, r9
-str r3, [r0, #0]
-ldr r2, [r12, #4]
-ldr r3, [r0, #4]
-mov r5, r3
-umaal r3, r11, r2, r9
-str r3, [r0, #4]
-add r0, r0, #8
-add r12, r12, #8
-subs lr, lr, #2
-bne 292b
-mov r6, r5
-mov r4, #0
-umaal r6, r4, r2, r9
-lsr r6, r2, #16
-movw r9, #65535
-and r2, r2, r9
-mul r7, r1, r6
-291:
-orr r1, r1, r10, lsl #16
-ldr r3, [r0, #0]
-ldr r4, [r0, #4]
-adds r3, r3, r11
-adc r4, r4, #0
-str r3, [r0, #0]
-str r4, [r0, #4]
-add r0, r0, #16
-ldr r7, [r0, #0]
-ldr r9, [r0, #24]
-ldr r10, [r0, #28]
-ldr r12, [r0, #8]
-mov lr, r7
-mov r11, #0
-293:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 293b
-ldr r1, [r10, #0]
-mov r2, r11
-subs r3, r1, r2
-mov r11, #0
-adc r11, r11, #0
-eor r11, r11, #1
-mov r12, r10
-mov r10, r0
-sub r12, r12, r7, lsl #2
-sub r10, r10, r7, lsl #2
-mov r0, r9
-mov lr, r7
-mov r4, #0
-sub r4, r4, r11
-294:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 294b
-ldr r0, [sp, #0]
-ldr r11, [r0, #200]
-lsr r11, r11, #7
-and r11, r11, #1
-ldr r10, [r0, #112]
-ldr r12, [r0, #72]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #112]
-mov r4, #0
-sub r4, r4, r11
-295:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 295b
-ldr r0, [sp, #0]
-ldr r1, [r0, #200]
-add r1, r1, r1
-str r1, [r0, #200]
-ldr r1, [r0, #192]
-subs r1, r1, #1
-str r1, [r0, #192]
-bne 286b
-ldr r1, [r0, #128]
-add r1, r1, #1
-str r1, [r0, #128]
-ldr r1, [r0, #132]
-subs r1, r1, #1
-str r1, [r0, #132]
-bne 285b
-sub sp, sp, #8
-mov r2, #6
-mov r3, #6
-mov lr, #7
-add r12, sp, #0
-str lr, [r12, #0]
-ldr r1, [r0, #48]
-add r1, r1, #6
-lsl r1, r1, #3
-bl {vg_rsa_mont_mul_umaal}
-add sp, sp, #8
-ldr r0, [sp, #0]
-268:
-mov r2, #7
-mov r5, #1
-add r2, r0, r2, lsl #3
-ldr r4, [r2, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-mov r3, #0
-mov r0, r4
-296:
-str r3, [r0, #0]
-add r0, r0, #4
-subs lr, lr, #1
-bne 296b
-str r5, [r4, #0]
-ldr r0, [sp, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-297:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 297b
-ldr r0, [sp, #0]
-str r11, [r0, #136]
-mov r11, #0
-ldr r10, [r0, #112]
-ldr r12, [r0, #112]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #120]
-mov r4, #0
-sub r4, r4, r11
-298:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-eor r3, r1, r2
-and r3, r3, r4
-eor r3, r3, r1
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 298b
-ldr r0, [sp, #0]
-ldr r4, [r0, #120]
-ldr r3, [r4, #0]
-orr r3, r3, #1
-str r3, [r4, #0]
-ldr r10, [r0, #120]
-ldr r12, [r0, #64]
-ldr lr, [r0, #48]
-add lr, lr, lr
-ldr r0, [r0, #88]
-mov r11, #0
-299:
-ldr r1, [r10, #0]
-ldr r2, [r12, #0]
-subs r3, r1, r2
-mov r4, #0
-adc r4, r4, #0
-eor r4, r4, #1
-subs r3, r3, r11
-mov r5, #0
-adc r5, r5, #0
-eor r5, r5, #1
-add r11, r4, r5
-str r3, [r0, #0]
-add r10, r10, #4
-add r0, r0, #4
-add r12, r12, #4
-subs lr, lr, #1
-bne 299b
-ldr r0, [sp, #0]
-ldr r3, [r0, #136]
-and r11, r11, r3
-add r12, sp, #0
-str r11, [r12, #64]
-mov r2, #6
-ldr r4, [sp, #4]
-ldr r6, [sp, #32]
-add r2, r0, r2, lsl #3
-ldr r1, [r2, #64]
-mov r5, r0
-mov lr, r6
-add r1, r1, r6
-sub r1, r1, #1
-mov r0, r4
-2100:
-ldrb r2, [r1, #0]
-strb r2, [r0, #0]
-add r0, r0, #1
-sub r1, r1, #1
-subs lr, lr, #1
-bne 2100b
-mov r0, r5
-ldr r0, [sp, #40]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-2101:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 2101b
-ldr r0, [sp, #36]
-ldr lr, [sp, #32]
-ldr r3, [sp, #64]
-mov r2, #0
-sub r2, r2, r3
-2102:
-ldrb r1, [r0, #0]
-and r1, r1, r2
-strb r1, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 2102b
-ldr r3, [sp, #64]
-mov r0, #3
-sub r0, r0, r3, lsl #1
-259:
-21:
-add sp, sp, #72
-ldr r4, [sp, #16]
-ldr r5, [sp, #20]
-ldr r6, [sp, #24]
-ldr r7, [sp, #28]
-ldr r8, [sp, #32]
-ldr r9, [sp, #36]
-ldr r10, [sp, #40]
-ldr r11, [sp, #44]
-ldr lr, [sp, #52]
-ldr r12, [sp], #56
-bx lr",
-        vg_rsa_mont_mul_umaal = sym super::rsa_mont::vg_rsa_mont_mul_umaal,
-        VG_FFDH_VETTED_GROUPS = sym super::consts::VG_FFDH_VETTED_GROUPS,
-    )
-}
-
-/// The CPU features `vg_ffdh_generate_key_search_vetted_umaal` requires (`Artifact.features`).
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-pub(crate) const VG_FFDH_GENERATE_KEY_SEARCH_VETTED_UMAAL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["umaal"]);
-
-/// Generate a finite-field Diffie–Hellman key pair using vetted-group short exponents and native rejection sampling. Owns both range-rejection and degenerate-public-value retry budgets. Returns 1 with the key pair, 3 when a budget is exhausted, or 0 to request more entropy. On 0, discard `used` bytes from `rand`, preserve the suffix and extend it to `state[3]` bytes before calling again. On 0 and 3, both outputs are zero. Contract: `VG.Spec.Ffdh.vettedKeySearchContract`. Timing may depend on the public domain, controller policy and sequence of attempt statuses, not otherwise on secret scalar bytes.
-///
-/// ARMv7: the shared native retry controller calls the vetted attempt, retaining both rejection budgets, full-size entropy requests, and refill behavior. Both entry points and every Montgomery backend share the same vetted-group table.
-///
-/// # Safety
-///
-/// * `x` must be valid for reads and writes of `x_len` bytes.
-/// * `y` must be valid for reads and writes of `y_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes.
-/// * `domain` must be valid for reads of `domain_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `state` must be valid for reads and writes of 128 bytes.
-/// * `p_len` must be in 64..=1024.
-/// * `domain_len` must be `2 * p_len` or `3 * p_len`.
-/// * `domain` must be one that `vg_ffdh_check_domain` accepted (returned 1 for): the attempts' statuses, which the controller branches on, are specified only for such a domain.
-/// * `state` must be initialized by `vg_ffdh_key_generation_init` for `p_len`, or be the state returned by this routine.
-/// * `x_len` and `y_len` must be `p_len`.
-/// * `scratch_len` must be at least `16 * p_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `x`, `y`, `used`, `scratch` and `state` must not overlap each other, `domain`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `x`, `y`, `used`, `domain`, `rand`, `scratch` and `state` may overlap the 232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `umaal` target feature.
-#[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_generate_key_search_vetted_umaal(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, used: *mut [u64; 1], domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r"push {{r4, r9, r10, r11, r12, lr}}
-ldr r4, [sp, #56]
-str r0, [r4, #40]
-str r2, [r4, #48]
-ldr r3, [sp, #24]
-str r3, [r4, #120]
-ldr r3, [sp, #28]
-str r3, [r4, #56]
-ldr r3, [sp, #32]
-str r3, [r4, #64]
-ldr r3, [sp, #40]
-str r3, [r4, #72]
-ldr r3, [sp, #44]
-str r3, [r4, #80]
-ldr r3, [sp, #48]
-str r3, [r4, #96]
-ldr r3, [sp, #52]
-str r3, [r4, #104]
-mov r3, #0
-str r3, [r4, #88]
-20:
-ldr r9, [r4, #0]
-cmp r9, #0
-beq 21f
-ldr r9, [r4, #8]
-cmp r9, #0
-beq 23f
-ldr r9, [r4, #80]
-ldr r10, [r4, #16]
-subs r11, r9, r10
-mov r11, #0
-adc r11, r11, #0
-cmp r11, #0
-beq 25f
-sub sp, sp, #32
-ldr r0, [r4, #40]
-ldr r1, [r4, #16]
-ldr r2, [r4, #48]
-ldr r3, [r4, #16]
-add r12, sp, #0
-ldr r9, [r4, #56]
-str r9, [r12, #0]
-ldr r9, [r4, #64]
-str r9, [r12, #4]
-str r1, [r12, #8]
-ldr r9, [r4, #72]
-str r9, [r12, #12]
-str r1, [r12, #16]
-ldr r9, [r4, #96]
-str r9, [r12, #20]
-ldr r9, [r4, #104]
-str r9, [r12, #24]
-bl {vg_ffdh_generate_key_vetted_umaal}
-add sp, sp, #32
-mov r9, r0
-ldr r10, [r4, #16]
-ldr r11, [r4, #72]
-ldr r12, [r4, #80]
-ldr r3, [r4, #88]
-add r11, r11, r10
-sub r12, r12, r10
-add r3, r3, r10
-str r11, [r4, #72]
-str r12, [r4, #80]
-str r3, [r4, #88]
-cmp r9, #1
-beq 27f
-cmp r9, #2
-beq 29f
-cmp r9, #3
-beq 211f
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-213:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 213b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-214:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 214b
-b 212f
-211:
-ldr r10, [r4, #0]
-sub r10, r10, #1
-mov r11, #128
-mov r12, #4
-str r10, [r4, #0]
-str r11, [r4, #8]
-str r12, [r4, #112]
-212:
-b 210f
-29:
-ldr r10, [r4, #8]
-sub r10, r10, #1
-mov r11, #4
-str r10, [r4, #8]
-str r11, [r4, #112]
-210:
-b 28f
-27:
-mov r10, #0
-mov r11, #1
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-28:
-b 26f
-25:
-ldr r10, [r4, #16]
-mov r11, #0
-str r10, [r4, #24]
-str r11, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-215:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 215b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-216:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 216b
-26:
-b 24f
-23:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-217:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 217b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-218:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 218b
-24:
-b 22f
-21:
-mov r10, #0
-mov r11, #3
-str r10, [r4, #0]
-str r10, [r4, #8]
-str r10, [r4, #24]
-str r10, [r4, #28]
-str r11, [r4, #112]
-ldr r0, [r4, #40]
-ldr lr, [r4, #16]
-mov r2, #0
-219:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 219b
-ldr r0, [r4, #48]
-ldr lr, [r4, #16]
-mov r2, #0
-220:
-strb r2, [r0, #0]
-add r0, r0, #1
-subs lr, lr, #1
-bne 220b
-22:
-ldr r9, [r4, #112]
-cmp r9, #4
-beq 20b
-ldr r1, [r4, #120]
-ldr r2, [r4, #88]
-ldr r0, [r4, #112]
-mov r3, #0
-str r2, [r1, #0]
-str r3, [r1, #4]
-ldr r9, [sp, #4]
-ldr r10, [sp, #8]
-ldr r11, [sp, #12]
-ldr lr, [sp, #20]
-ldr r4, [sp], #24
-bx lr",
-        vg_ffdh_generate_key_vetted_umaal = sym super::ffdh::vg_ffdh_generate_key_vetted_umaal,
     )
 }

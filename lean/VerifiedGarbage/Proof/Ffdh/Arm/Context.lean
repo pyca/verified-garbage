@@ -38,6 +38,8 @@ structure Inputs where
   maxLength : k ≤ 1024
   space : Spec.Rsa.scratchWords k ≤ len
   domainLength : dom.length = if hasQ then 3 * k else 2 * k
+  cachedContext : BitVec 32 := 0
+  cachedWords : Nat := 0
 
 namespace Inputs
 
@@ -68,6 +70,7 @@ def slotValue (p : Inputs) : Nat → BitVec 32
   | 40 => p.privateValue
   | 44 => BitVec.ofNat 32 p.privateLength
   | 48 => p.entropy
+  | 52 => p.cachedContext
   | 56 => p.g
   | 60 => p.q
   | 68 => p.scalarMask

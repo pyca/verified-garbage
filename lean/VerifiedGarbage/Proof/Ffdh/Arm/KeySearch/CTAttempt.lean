@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTArguments
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTFrames
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPublic
@@ -10,6 +11,7 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallConsts
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Allocated
 
 /-! A native key attempt leaks only its public domain and the disclosed
 status at the current search point, for every arithmetic backend. -/
@@ -51,13 +53,19 @@ theorem attempt_call_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
 
 theorem attempt_run_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
     RelCT isa (Two (KeyReady (sampling := sampling)))
-      (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
-  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRun
+      ((VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
+  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor
   apply alloc_ct
   refine (RelCT.seq (two_post arguments_ct arguments_ready) (attempt_call_ct backend)).mono ?_ (fun _ _ h => h)
   rintro _ _ ⟨s, t, ⟨q, h₁, h₂, sp⟩, rfl, rfl⟩
   refine ⟨q, ⟨s, h₁, rfl⟩, ⟨t, h₂, rfl⟩, ?_⟩
-  change s.sp - 32#32 = t.sp - 32#32
+  change s.sp - BitVec.ofNat 32 (GenerationPolicy.argumentBytes sampling) = t.sp - BitVec.ofNat 32 (GenerationPolicy.argumentBytes sampling)
   rw [sp]
+
+theorem attempt_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeyReady q s) :
+    WP isa ((VG.Impl.Ffdh.Arm.KeySearch.attemptRunFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) s (KeyAttempted q) := by
+  obtain ⟨⟨original, live, statuses⟩, keys, scalars, room⟩ := h
+  exact WP.mono (attemptRun_ok backend q.inputs original s q.used q.keys q.scalars live room)
+    fun _ ⟨ready, post⟩ => ⟨original, ready, statuses, keys, scalars, room, post⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

@@ -28,7 +28,7 @@ def KeyInvariant (p : KeyPublic sampling) (original : State) (expected : KeySear
 theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt : AttemptRunOk backend)
     {p : KeyPublic sampling} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
-    WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s fun t =>
+    WP isa (VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext (.call backend.keyName backend.generateKey)) s fun t =>
       (isa.eval .eq t = some false ∧ KeyDone p original expected t) ∨
       (isa.eval .eq t = some true ∧ ∃ m < n, KeyInvariant p original expected m t) := by
   obtain ⟨used, keys, scalars, measure, h, outcome, count⟩ := inv
@@ -41,7 +41,7 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
         (isa.eval .eq t = some true ∧ ∃ m < n, KeyInvariant p original expected m t) :=
     fun _ _ finished resultOutcome resultUsed => WP.mono finished.loop_guard fun _ ⟨flag, state⟩ =>
       Or.inl ⟨flag, state.congr (resultOutcome.trans outcome.symm) (resultUsed.trans count.symm)⟩
-  unfold VG.Impl.Ffdh.Arm.KeySearch.iteration VG.Impl.Ffdh.Arm.KeySearch.branch
+  unfold VG.Impl.Ffdh.Arm.KeySearch.iterationFor VG.Impl.Ffdh.Arm.KeySearch.branchFor
   refine WP.seq (WP.mono h.keys_guard fun u ⟨live1, flag1⟩ => ?_)
   apply WP.seq
   refine WP.ite (decide (keys = 0)) (by change some u.z = _; rw [flag1]) ?_ ?_
@@ -59,7 +59,7 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
       simp only [KeyPublic.tail, keyTail_exhausted (Or.inr zero'), exhaustedResult]
   intro nonzero2
   have scalarsNonzero : scalars ≠ 0 := of_decide_eq_false nonzero2
-  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequest
+  unfold VG.Impl.Ffdh.Arm.KeySearch.attemptOrRequestFor
   refine WP.seq (WP.mono live2.room_guard fun u ⟨live3, roomFlag⟩ => ?_)
   refine WP.ite _ (by change some u.z = _; rw [roomFlag]) ?_ ?_
   · intro short
@@ -79,7 +79,7 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
   rcases currentStatus_cases p original used with h1 | h2 | h3
   · simp only [KeyClassified, h1, ite_true] at classified
     refine done _ q classified ?_ ?_ <;>
-      simp only [KeyPublic.tail, keyTail_accepted keysNonzero scalarsNonzero room' h1, acceptedResult] <;> rfl
+      simp only [KeyPublic.tail, keyTail_accepted keysNonzero scalarsNonzero room' h1, acceptedResult]
   · simp only [KeyClassified, h2, Nat.reduceEqDiff, ite_true, ite_false] at classified
     refine WP.mono (classified.1.loop_guard classified.2) fun z ⟨flag, state⟩ =>
       Or.inr ⟨flag, _, ?_, used + p.len, keys, scalars - 1, rfl, state, ?_, ?_⟩
@@ -96,10 +96,10 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt 
 theorem loop (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt : AttemptRunOk backend)
     {p : KeyPublic sampling} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
-    WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
+    WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext (.call backend.keyName backend.generateKey)) .eq)
       s (KeyDone p original expected) :=
   WP.loop (M := isa)
-    (body := VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) (c := .eq)
+    (body := VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext (.call backend.keyName backend.generateKey)) (c := .eq)
     (Q := KeyDone p original expected) (KeyInvariant p original expected)
     (fun _ _ h => iteration backend runAttempt h) n s inv
 

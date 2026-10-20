@@ -53,8 +53,8 @@ theorem call_read (h : KeyInput p s) {r : Region} (read : r ∈ s.rd) :
 
 theorem call_saved (h : KeyInput p s) : ∀ r ∈ callChanges p, (rSaved p).Disjoint r := by
   intro r hr
-  have below : (rSaved p).Sub (FrameStack.belowA p.sp stackUse) :=
-    FrameStack.belowA_sub (by decide : 24 ≤ stackUse) h.bounds.stackFits
+  have below : (rSaved p).Sub (FrameStack.belowA p.sp (stackUse sampling)) :=
+    FrameStack.belowA_sub (by cases sampling <;> decide : 24 ≤ (stackUse sampling)) h.bounds.stackFits
   have sep (q : Region) (hq : q ∈ s.wr) : (rSaved p).Disjoint q :=
     (h.stack_separate (List.mem_append_left _ hq)).sub_left below
   simp only [callChanges, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -87,7 +87,7 @@ theorem KeyLive.restore {p : KeyPublic sampling} {original s t : State} {used ke
     (kept .r4 (by decide)).trans h.pointer,
     fun r hr => (kept r (List.mem_cons_of_mem _ hr)).trans (h.kept r hr),
     ?_, (h.input.call_random_frame frame).trans h.random,
-    (h.input.call_domain_frame frame).trans h.domain, ?_, ?_, ?_, ?_⟩
+    (h.input.call_domain_frame frame).trans h.domain, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · apply h.saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.input.call_saved
   · intro e he
@@ -103,5 +103,19 @@ theorem KeyLive.restore {p : KeyPublic sampling} {original s t : State} {used ke
   · exact (KeyConstants.tablePtr_of_syms syms).trans h.tablePtr
   · exact KeyConstants.held_after_frame h.held frame (fun table member r hr =>
       h.input.call_read (h.input.constants_read member) r hr)
+
+  · apply h.cachedHeld.after_frame frame
+    · intro active
+      have := h.input.context_fit active
+      omega
+    · intro active
+      exact h.input.call_read (by rw [h.input.read_regions]; simp [contextRegions, active])
+  · intro active
+    obtain ⟨ptr, len⟩ := h.cachedSlots active
+    constructor
+    · exact (frame.readW (r := rControl p) (Offset.contains_base _ (by decide : 32 + 4 ≤ 128) (by decide))
+        h.input.call_control (by decide)).trans ptr
+    · exact (frame.readW (r := rControl p) (Offset.contains_base _ (by decide : 36 + 4 ≤ 128) (by decide))
+        h.input.call_control (by decide)).trans len
 
 end VG.Proof.Ffdh.Arm.KeySearch

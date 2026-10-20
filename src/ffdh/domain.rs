@@ -1,14 +1,16 @@
 //! The FFDH operations, entirely in verified code: the domain, public-key
 //! and key-pair checks, key generation and the exchange (`VG.Spec.Ffdh`'s
 //! contracts). Key generation's whole rejection search is verified
-//! (`vg_ffdh_generate_key_search`, or its vetted-group entry point on ARM).
+//! (`vg_ffdh_generate_key_search`, or its cached entry point on ARM).
 //! Rust lays out the domain, pads the values to the modulus' width,
 //! allocates the working space and selects the implementation for the CPU.
 
 use super::arithmetic::{Backend, scalar};
+#[cfg(not(target_arch = "arm"))]
+use crate::arch::ffdh::vg_ffdh_generate_key_search;
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
-    vg_ffdh_generate_key_search, vg_ffdh_key_generation_init,
+    vg_ffdh_key_generation_init,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ffdh::{
@@ -28,6 +30,8 @@ fn scratch(p_len: usize) -> Scratch {
 pub(super) struct Domain {
     bytes: alloc::vec::Vec<u8>,
     p_len: usize,
+    #[cfg(target_arch = "arm")]
+    precomputed: super::precomputed::Precomputed,
 }
 
 impl Domain {
@@ -66,7 +70,22 @@ impl Domain {
                 ws.len(),
             )
         };
-        (ok == 1).then_some(Self { bytes, p_len })
+        if ok != 1 {
+            return None;
+        }
+        #[cfg(target_arch = "arm")]
+        let precomputed = super::precomputed::Precomputed::new(&bytes, p_len, &mut ws);
+        Some(Self {
+            bytes,
+            p_len,
+            #[cfg(target_arch = "arm")]
+            precomputed,
+        })
+    }
+
+    #[cfg(target_arch = "arm")]
+    pub(super) fn exponent_len(&self) -> usize {
+        self.precomputed.exponent_len()
     }
 
     /// Whether `y` (without leading zeros) is a valid public value
@@ -147,8 +166,8 @@ impl Domain {
     /// Run the key search on `tape` into `x` and `y` (`p_len` bytes each):
     /// the status (1 for a key pair, 3 for a budget exhausted, 0 for more
     /// entropy), the bytes of the tape consumed and the next request
-    /// ARM uses `vg_ffdh_generate_key_search_vetted` for generator 2;
-    /// other generators and architectures use the full-width search.
+    /// ARM reuses the canonical public comb context initialized by `new`;
+    /// other architectures use their existing full-width search.
     pub(super) fn key_search(
         &self,
         state: &mut [u64; 16],
@@ -159,20 +178,9 @@ impl Domain {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
         #[cfg(target_arch = "arm")]
-        let f = {
-            // The public generator occupies one padded domain component.
-            // Exact prime and subgroup recognition remains in verified code.
-            let generator = &self.bytes[self.p_len..2 * self.p_len];
-            let vetted = generator[..self.p_len - 1].iter().all(|&byte| byte == 0)
-                && generator[self.p_len - 1] == 2;
-            match (Backend::ffdh(detected()), vetted) {
-                (Backend::Baseline, false) => vg_ffdh_generate_key_search,
-                (Backend::Baseline, true) => crate::arch::ffdh::vg_ffdh_generate_key_search_vetted,
-                (Backend::Umaal, false) => crate::arch::ffdh::vg_ffdh_generate_key_search_umaal,
-                (Backend::Umaal, true) => {
-                    crate::arch::ffdh::vg_ffdh_generate_key_search_vetted_umaal
-                }
-            }
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_search_cached,
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_search_cached_umaal,
         };
         #[cfg(not(target_arch = "arm"))]
         let f = match Backend::ffdh(detected()) {
@@ -187,7 +195,8 @@ impl Domain {
         // `vg_ffdh_check_domain`; `x` and `y` are `p_len` bytes and `ws`
         // `16 p_len + 32` words. All are distinct Rust objects. The CPU
         // variant is selected only when the CPU has its generated feature
-        // set.
+        // set. The ARM context is the immutable canonical allocation written
+        // once for this checked domain and its exact ctx_len.
         let status = unsafe {
             f(
                 x.as_mut_ptr(),
@@ -203,6 +212,10 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
                 state,
+                #[cfg(target_arch = "arm")]
+                self.precomputed.words().as_ptr(),
+                #[cfg(target_arch = "arm")]
+                self.precomputed.words().len(),
             )
         };
         (status, used[0] as usize, state[3] as usize)
@@ -211,17 +224,26 @@ impl Domain {
     /// One attempt at a key pair from `p_len` random bytes `rand`: 1 and the
     /// scalar and public value in `x` and `y` (`p_len` bytes each), 2 for a
     /// scalar out of range, 3 for a degenerate public value
-    /// (`vg_ffdh_generate_key`).
+    /// (`vg_ffdh_generate_key`, or its cached entry point on ARM).
     #[cfg(test)]
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
         let f = match Backend::ffdh(detected()) {
-            Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key,
+            Backend::Baseline => {
+                #[cfg(target_arch = "arm")]
+                {
+                    crate::arch::ffdh::vg_ffdh_generate_key_cached
+                }
+                #[cfg(not(target_arch = "arm"))]
+                {
+                    crate::arch::ffdh::vg_ffdh_generate_key
+                }
+            }
             #[cfg(target_arch = "x86_64")]
             Backend::Adx => crate::arch::ffdh::vg_ffdh_generate_key_adx,
             #[cfg(target_arch = "arm")]
-            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_umaal,
+            Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
         };
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
         // `ws` and the variant as in `check_public`; all are distinct
@@ -239,6 +261,10 @@ impl Domain {
                 rand.len(),
                 ws.as_mut_ptr(),
                 ws.len(),
+                #[cfg(target_arch = "arm")]
+                self.precomputed.words().as_ptr(),
+                #[cfg(target_arch = "arm")]
+                self.precomputed.words().len(),
             )
         }
     }
@@ -280,6 +306,106 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
             ) == 1
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "arm"))]
+mod cache_tests {
+    use super::*;
+
+    #[test]
+    fn clones_share_immutable_context_and_keep_it_alive() {
+        // Structurally valid legacy-size domain; imported domains do not
+        // claim a primality certificate. x=3 yields y=8 here.
+        let mut p = alloc::vec![0; 64];
+        p[0] = 0x80;
+        p[63] = 1;
+        let domain = Domain::new(&p, &[2], None).unwrap();
+        let cloned = domain.clone();
+        assert!(domain.precomputed.shares_allocation(&cloned.precomputed));
+        assert_eq!(domain.precomputed.words().len(), 3 + 34 * 8);
+        assert_eq!(domain.exponent_len(), 64);
+        let expected = domain.precomputed.words().to_vec();
+        drop(domain);
+        let mut draw = alloc::vec![0; 64];
+        draw[63] = 3;
+        for _ in 0..2 {
+            let (mut x, mut y) = (alloc::vec![0; 64], alloc::vec![0; 64]);
+            assert_eq!(cloned.generate_key(&draw, &mut x, &mut y), 1);
+            assert_eq!(x, draw);
+            assert_eq!(super::super::arithmetic::canonical(&y), &[8]);
+            assert_eq!(cloned.precomputed.words(), expected);
+        }
+    }
+
+    #[test]
+    fn canonical_context_crosses_arithmetic_backends() {
+        // Feature-forced baseline CI runs take the first path; UMAAL runs
+        // also exercise both directions with the actual generated functions.
+        if Backend::ffdh(detected()) != Backend::Umaal {
+            return;
+        }
+        let mut p = alloc::vec![0; 64];
+        p[0] = 0x80;
+        p[63] = 1;
+        // Exercise an uncapped domain and a published vetted group without
+        // deriving or repeating their sampling policy in Rust.
+        let vetted = super::super::vetted_tests::modp_groups().remove(0);
+        for p in [p, vetted] {
+            let domain = Domain::new(&p, &[2], None).unwrap();
+            let mut ws = scratch(domain.p_len);
+            let baseline = super::super::precomputed::Precomputed::new_with_backend(
+                &domain.bytes,
+                domain.p_len,
+                &mut ws,
+                Backend::Baseline,
+            );
+            let umaal = super::super::precomputed::Precomputed::new_with_backend(
+                &domain.bytes,
+                domain.p_len,
+                &mut ws,
+                Backend::Umaal,
+            );
+            // Canonical representation includes every metadata and comb-table word.
+            assert_eq!(baseline.words(), umaal.words());
+            let mut draw = alloc::vec![0; domain.p_len];
+            draw[domain.p_len - 1] = 3;
+            let (mut expected_x, mut expected_y) =
+                (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
+            let expected = domain.generate_key(&draw, &mut expected_x, &mut expected_y);
+            for (context, backend) in [(&baseline, Backend::Umaal), (&umaal, Backend::Baseline)] {
+                let f = match backend {
+                    Backend::Baseline => crate::arch::ffdh::vg_ffdh_generate_key_cached,
+                    Backend::Umaal => crate::arch::ffdh::vg_ffdh_generate_key_cached_umaal,
+                };
+                let (mut x, mut y) = (alloc::vec![0; domain.p_len], alloc::vec![0; domain.p_len]);
+                // SAFETY: domain was checked, context was initialized for these
+                // exact parameters by the opposite arithmetic backend, all byte
+                // outputs/draw have p_len entries, ws has the required capacity,
+                // allocations are disjoint, and the CPU supports both backends.
+                let status = unsafe {
+                    f(
+                        x.as_mut_ptr(),
+                        x.len(),
+                        y.as_mut_ptr(),
+                        y.len(),
+                        domain.bytes.as_ptr(),
+                        domain.bytes.len(),
+                        domain.p_len,
+                        draw.as_ptr(),
+                        draw.len(),
+                        ws.as_mut_ptr(),
+                        ws.len(),
+                        context.words().as_ptr(),
+                        context.words().len(),
+                    )
+                };
+                assert_eq!(status, expected);
+                assert_eq!(x, expected_x);
+                assert_eq!(y, expected_y);
+                assert_eq!(context.words(), domain.precomputed.words());
+            }
         }
     }
 }

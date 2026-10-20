@@ -20,9 +20,9 @@ variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 open VG VG.Arm
 
 theorem iteration_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
-    RelCT isa (Two (KeyCTL (sampling := sampling))) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey))
+    RelCT isa (Two (KeyCTL (sampling := sampling))) ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey))
       (fun _ _ => True) := by
-  unfold VG.Impl.Ffdh.Arm.KeySearch.iteration
+  unfold VG.Impl.Ffdh.Arm.KeySearch.iterationFor
   refine RelCT.seq (two_piece [.r4] key_ctl_pins (by taint_decide) keys_ready) ?_
   exact RelCT.seq (two_post (branch_ct backend) (branch_ready backend))
     (two_taint [.r4] (fun _ _ _ h₁ h₂ r hr => by
@@ -35,8 +35,8 @@ def KeyCTStep (q : KeyPoint sampling) (s : State) : Prop :=
   else isa.eval .eq s = some false
 
 theorem ct_step (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeyCTL q s) :
-    WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s (KeyCTStep q) := by
-  unfold VG.Impl.Ffdh.Arm.KeySearch.iteration
+    WP isa ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) s (KeyCTStep q) := by
+  unfold VG.Impl.Ffdh.Arm.KeySearch.iterationFor
   refine WP.seq (WP.mono (keys_ready q s h) fun u ready => ?_)
   refine WP.seq (WP.mono (branch_ready backend q u ready) fun t result => ?_)
   by_cases continues : keyContinues q
@@ -58,11 +58,11 @@ private def LoopPair (n : Nat) (s t : State) : Prop :=
   ∃ q : KeyPoint sampling, n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s ∧ KeyCTL q t ∧ s.sp = t.sp
 
 private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (n : Nat) :
-    RelCT isa (LoopPair (sampling := sampling) n) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) fun s t =>
+    RelCT isa (LoopPair (sampling := sampling) n) ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) fun s t =>
       isa.eval .eq s = isa.eval .eq t ∧ (isa.eval .eq s = some false → True) ∧
         (isa.eval .eq s = some true → ∃ m < n, LoopPair (sampling := sampling) m s t) := by
   have wp (q : KeyPoint sampling) (s : State) (h : n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s) :
-      WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s fun t =>
+      WP isa ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) s fun t =>
         n = 128 * q.keys + q.scalars + 1 ∧ KeyCTStep q t :=
     WP.mono (ct_step backend q s h.2) (fun _ result => ⟨h.1, result⟩)
   have ct := two_post ((iteration_ct backend).mono
@@ -81,10 +81,10 @@ private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling)
 
 theorem loop_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
     RelCT isa (Two (KeyCTL (sampling := sampling)))
-      (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq) (fun _ _ => True) := by
+      (.loop ((VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) .eq) (fun _ _ => True) := by
   intro s t tr₁ tr₂ u v ⟨q, h₁, h₂, sp⟩ e₁ e₂
   exact RelCT.loop (M := isa)
-    (body := VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) (c := .eq)
+    (body := (VG.Impl.Ffdh.Arm.KeySearch.iterationFor sampling.cachedContext) (.call backend.keyName backend.generateKey)) (c := .eq)
     (Q := fun _ _ => True) LoopPair (iteration_pair backend) (128 * q.keys + q.scalars + 1)
     _ _ _ _ _ _ ⟨q, rfl, h₁, h₂, sp⟩ e₁ e₂
 

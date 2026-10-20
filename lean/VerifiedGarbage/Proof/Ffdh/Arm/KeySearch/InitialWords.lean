@@ -27,17 +27,20 @@ theorem KeyInput.initial_words {p : KeyPublic sampling} {s : State} (h : KeyInpu
   refine ⟨?_, ?_, ?_⟩
   · simp only [keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq, off, BitVec.add_zero]
   · simp only [keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · sig_pre [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
-    simp only [KeyConstants.stackArg_stripConsts, KeyConstants.stackArgAddr_stripConsts] at pre
-    sig_split pre
-    have address : (16 : BitVec 64) = 16#64 := rfl
-    simpa only [keyOfState, off, State.addr, BitVec.ofNat_toNat, address] using pre
+  · cases sampling <;>
+      sig_pre [GenerationPolicy.searchContract,GenerationPolicy.legacySearchContract,
+        cachedKeySearchContract,cachedKeySearchSig,keySearchSig,abi,argRegs,reduceClassify,Loc.val,State.addr] at pre
+    all_goals simp only [KeyConstants.stackArg_stripConsts,KeyConstants.stackArgAddr_stripConsts] at pre
+    all_goals sig_split pre
+    all_goals
+      have value : s.mem.readW (BitVec.setWidth 64 (stackArg s 8)+(16 : BitVec 64)) 64 = BitVec.ofNat 64 (stackArg s 3).toNat := by assumption
+      simpa only [keyOfState,off,State.addr,BitVec.ofNat_toNat,show (16 : BitVec 64)=16#64 from rfl] using value
 
 theorem KeyInput.pushed_word {p : KeyPublic sampling} {s : State} {j : Nat} (h : KeyInput p s) (bound : j < 3) :
     (searchPushed s).mem.readW (off (State.addr p.control) (8 * j)) 64 =
       s.mem.readW (off (State.addr p.control) (8 * j)) 64 := by
-  have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
-  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2.1] at fit; change 232 ≤ s.sp.toNat at fit; omega
+  have fit : stackUse sampling ≤ p.sp.toNat := h.bounds.stackFits
+  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2.1] at fit; change stackUse sampling ≤ s.sp.toNat at fit; have := stackUse_min sampling; omega
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) rootFit
   have sep : (rControl p).Disjoint (FrameStack.belowA s.sp 24) := by

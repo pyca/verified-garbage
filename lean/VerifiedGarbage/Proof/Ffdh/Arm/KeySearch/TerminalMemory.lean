@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Terminal
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Packed
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
@@ -9,6 +10,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
 open VG VG.Arm VG.Proof.Mont
 
@@ -44,7 +46,7 @@ theorem terminalMem_low (m : Mem) (base : BitVec 32) (status : BitVec 32) (j : N
       · simp [h1]
       · by_cases h3 : j = 3 <;> simp [h14, h0, h1, h3]
 
-theorem terminalMem_high (m : Mem) (base : BitVec 32) (status : BitVec 32) (j : Nat) (hj : j < 4) :
+theorem terminalMem_high (m : Mem) (base : BitVec 32) (status : BitVec 32) (j : Nat) (hj : j < 16) :
     (terminalMem m base status).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold terminalMem
@@ -69,7 +71,7 @@ theorem requestMem_low (m : Mem) (base : BitVec 32) (j : Nat) (hj : j < 16) :
     lowWord_writeLow _ _ _ (by simp) j hj]
   rfl
 
-theorem requestMem_high (m : Mem) (base : BitVec 32) (j : Nat) (hj : j < 4) :
+theorem requestMem_high (m : Mem) (base : BitVec 32) (j : Nat) (hj : j < 16) :
     (requestMem m base).readW (off (State.addr base) (8 * j + 4)) 32 =
       if j = 3 then 0 else m.readW (off (State.addr base) (8 * j + 4)) 32 := by
   unfold requestMem
@@ -84,5 +86,29 @@ theorem requestMem_frame (m : Mem) (base : BitVec 32) :
   exact ((writeLow_frame _ _ _ (by simp)).writeW (by simp) _
     (Offset.contains_base _ (by decide : 28 + 4 ≤ 128) (by decide))).writeW (by simp) _
       (Offset.contains_base _ (by decide : 112 + 4 ≤ 128) (by decide))
+
+theorem CachedSlots.terminal {sampling : GenerationPolicy} {p : KeyPublic sampling} {m : Mem}
+    (h : CachedSlots p m) (status : BitVec 32) : CachedSlots p (terminalMem m p.control status) := by
+  intro cached
+  obtain ⟨ptr, words⟩ := h cached
+  constructor
+  · change lowWord (terminalMem m p.control status) p.control 4 = p.context
+    rw [terminalMem_low _ _ _ 4 (by decide)]
+    exact ptr
+  · change (terminalMem m p.control status).readW (off (State.addr p.control) (8 * 4 + 4)) 32 = _
+    rw [terminalMem_high _ _ _ 4 (by decide)]
+    exact words
+
+theorem CachedSlots.request {sampling : GenerationPolicy} {p : KeyPublic sampling} {m : Mem}
+    (h : CachedSlots p m) : CachedSlots p (requestMem m p.control) := by
+  intro cached
+  obtain ⟨ptr, words⟩ := h cached
+  constructor
+  · change lowWord (requestMem m p.control) p.control 4 = p.context
+    rw [requestMem_low _ _ 4 (by decide)]
+    exact ptr
+  · change (requestMem m p.control).readW (off (State.addr p.control) (8 * 4 + 4)) 32 = _
+    rw [requestMem_high _ _ 4 (by decide)]
+    exact words
 
 end VG.Proof.Ffdh.Arm.KeySearch

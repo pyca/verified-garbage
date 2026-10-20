@@ -33,7 +33,7 @@ def EntryPointer (a : KeyPublic sampling × List Nat) (s : State) : Prop := s.gp
 private theorem entry_pointer (a : KeyPublic sampling × List Nat) (s : State) (h : PushedStart a s) :
     WP isa (.block [.ldrSp .r4 56]) s (EntryPointer a) := by
   obtain ⟨original, ⟨input, _⟩, rfl⟩ := h
-  refine wp_load_incoming .r4 (input.pushed_arguments.incoming 8 (by decide)) (by decide)
+  refine wp_load_incoming .r4 (input.pushed_arguments.incoming 8 (by cases sampling <;> decide)) (by decide)
     (fun t value _ _ => WP.block_nil ?_)
   simpa only [EntryPointer, incomingValue] using value
 
@@ -55,19 +55,33 @@ private theorem entry_tail_ct : RelCT isa ControlAddress
       [.mov .r3 (.imm 0), VG.Impl.Ffdh.Arm.KeySearch.stf .r3 11])) _
   exact RelCT.block_append ((RelCT.block_append (stores.seq (copies_ct entryCopies))).seq entryZero_ct)
 
-theorem entry_ct : RelCT isa (Two (PushedStart (sampling := sampling))) (.block VG.Impl.Ffdh.Arm.KeySearch.entry) (fun _ _ => True) := by
+private theorem entry_plain_ct : RelCT isa (Two (PushedStart (sampling := sampling))) (.block VG.Impl.Ffdh.Arm.KeySearch.entry) ControlAddress := by
   have load : RelCT isa (Two (PushedStart (sampling := sampling))) (.block [.ldrSp .r4 56]) (fun _ _ => True) :=
     (loadStack_ct .r4 56).mono (fun _ _ ⟨_, _, _, sp⟩ => sp) (fun _ _ _ => trivial)
   change RelCT isa _ (.block ([.ldrSp .r4 56] ++ VG.Impl.Ffdh.Arm.KeySearch.entry.drop 1)) _
   refine RelCT.block_append (RelCT.seq (two_post load entry_pointer) ?_)
   exact entry_tail_ct.mono (fun _ _ ⟨_, pointer₁, pointer₂, sp⟩ => ⟨pointer₁.trans pointer₂.symm, sp⟩)
-    (fun _ _ _ => trivial)
+    (fun _ _ h => h)
+
+theorem entry_ct : RelCT isa (Two (PushedStart (sampling := sampling)))
+    (.block (VG.Impl.Ffdh.Arm.KeySearch.entryFor sampling.cachedContext)) (fun _ _ => True) := by
+  have cached : RelCT isa ControlAddress
+      (.block [.ldrSp .r3 60,.str .r3 .r4 32,.ldrSp .r3 64,.str .r3 .r4 36]) ControlAddress :=
+    RelCT.block_append ((RelCT.block_append ((controlLoad_ct .r3 60 (by decide)).seq
+      (controlStore_ct .r3 32))).seq (RelCT.block_append ((controlLoad_ct .r3 64 (by decide)).seq
+      (controlStore_ct .r3 36))))
+  unfold VG.Impl.Ffdh.Arm.KeySearch.entryFor
+  cases flag : sampling.cachedContext
+  · simpa only [Bool.false_eq_true,ite_false,List.append_nil] using
+      (entry_plain_ct (sampling:=sampling)).mono (fun _ _ h => h) (fun _ _ _ => trivial)
+  · exact (RelCT.block_append ((entry_plain_ct (sampling:=sampling)).seq cached)).mono
+      (fun _ _ h => h) (fun _ _ _ => trivial)
 
 def initialPoint (a : KeyPublic sampling × List Nat) : KeyPoint sampling := ⟨a.1, 0, a.1.keys, a.1.scalars, a.2⟩
 def Entered (a : KeyPublic sampling × List Nat) (s : State) : Prop := KeyCTL (initialPoint a) s
 
 theorem entry_ready (a : KeyPublic sampling × List Nat) (s : State) (h : PushedStart a s) :
-    WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.entry) s (Entered a) := by
+    WP isa (.block (VG.Impl.Ffdh.Arm.KeySearch.entryFor sampling.cachedContext)) s (Entered a) := by
   obtain ⟨original, ⟨input, statuses⟩, rfl⟩ := h
   refine WP.mono (start_ok input) ?_
   intro t live

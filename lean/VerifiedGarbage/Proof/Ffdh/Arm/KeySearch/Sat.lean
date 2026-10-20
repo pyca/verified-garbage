@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.CachedSatWitness
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
 import VerifiedGarbage.Proof.Ffdh.Arm.VettedGroupsConsts
 import VerifiedGarbage.Proof.Framework.ConstMem
@@ -45,10 +46,11 @@ private def keySat : State where
   rd := [⟨0x3000, 128⟩, ⟨0x7000, 0⟩, ⟨0x8000, 36⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x2000, 64⟩, ⟨0x5000, 8⟩, ⟨0x9000, 8448⟩, ⟨0x4000, 128⟩]
 
-theorem plain_sat : ∃ s, (GenerationPolicy.searchContract sampling abi stackUse).pre s := by
+theorem plain_sat : ∃ s, (GenerationPolicy.searchContract .full abi (stackUse .full)).pre s := by
   refine ⟨keySat, ?_⟩
+  rw [GenerationPolicy.searchContract_full]
   sig_iff
-  sig_reduce [GenerationPolicy.searchContract, keySearchSig, pLenValid, domainLenValid,
+  sig_reduce [Spec.Ffdh.keySearchContract, keySearchSig, pLenValid, domainLenValid,
     abi, argRegs, reduceClassify, Loc.val, State.addr]
   sig_and_intros
   all_goals first
@@ -106,10 +108,12 @@ private theorem searchSat_control (W : List (BitVec 64)) {a : Addr}
   exact small a ha j hj
 
 private theorem vetted_satAux (W : List (BitVec 64)) (length : W.length = 2218) :
-    ∃ s, (GenerationPolicy.vetted.searchContract (abi.withConsts [(VG.Impl.Ffdh.Arm.VettedGroups.tableSym, W)]) stackUse).pre s := by
+    ∃ s, (GenerationPolicy.vetted.searchContract (abi.withConsts [(VG.Impl.Ffdh.Arm.VettedGroups.tableSym, W)]) (stackUse .vetted)).pre s := by
+  rw [GenerationPolicy.searchContract_vetted]
+  unfold Spec.Ffdh.vettedKeySearchContract
   refine ⟨searchSat W, pre_consts.mpr ⟨?_, ?_⟩⟩
   · have args (i : Nat) (hi : i < 9) := searchSat_arg W hi
-    sig_pre [GenerationPolicy.searchContract, keySearchSig, pLenValid, domainLenValid,
+    sig_pre [Spec.Ffdh.vettedKeySearchContract, keySearchSig, pLenValid, domainLenValid,
       abi, argRegs, reduceClassify, Loc.val, State.addr]
     simp only [show ∀ (K : List (String × List (BitVec 64))) (s : State) (i : Nat),
       stackArg (stripConsts K s) i = stackArg s i by intros; rfl]
@@ -162,13 +166,75 @@ private theorem vetted_satAux (W : List (BitVec 64)) (length : W.length = 2218) 
         rcases hq with rfl | rfl | rfl | rfl | rfl
         all_goals apply Region.disjoint_of_sep; decide
       · intro q hq
-        simp only [abi, stackBelow, List.mem_singleton] at hq
+        simp only [abi, stackBelow, stackUse, GenerationPolicy.searchStack, List.mem_singleton] at hq
         subst q
         exact Region.disjoint_of_sep (by decide)
 
-theorem sat : ∃ s, (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre s := by
+private def cachedSearchBase : State :=
+  { keySat with
+    mem := fun a => if a=0x8026 then 0x10 else if a=0x8028 then 0x13
+      else if a=0x8029 then 1 else keySat.mem a
+    rd := [⟨0x3000,128⟩,⟨0x7000,0⟩,⟨0x100000,2200⟩,⟨0x8000,44⟩] }
+
+private def cachedSearchSat : State :=
+  {cachedSearchBase with mem := CachedSat.withContext cachedSearchBase.mem}
+
+private theorem cachedSearch_arg (i : Nat) (hi : i<11) :
+    stackArg cachedSearchSat i=stackArg cachedSearchBase i := by
+  apply CachedSat.readW_outside
+  have small : ∀ i<11, (stackArgAddr cachedSearchBase i).toNat+4≤0x100000 := by decide
+  exact small i hi
+
+private theorem cachedSearch_domain :
+    Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128=CachedSat.domain := by
+  rw [show cachedSearchSat.mem=CachedSat.withContext cachedSearchBase.mem from rfl,CachedSat.domain_unchanged]
+  unfold CachedSat.domain
+  decide +kernel
+
+private theorem cachedSearch_control {a : Addr} (ha : a ∈ [0x4000,0x4008,0x4010]) :
+    cachedSearchSat.mem.readW a 64=cachedSearchBase.mem.readW a 64 := by
+  apply CachedSat.readW_outside
+  have small : ∀ a : Addr, a ∈ [0x4000,0x4008,0x4010] → a.toNat+8≤0x100000 := by decide
+  exact small a ha
+
+theorem cached_sat : ∃ s, (GenerationPolicy.cached.searchContract abi (stackUse .cached)).pre s := by
+  refine ⟨cachedSearchSat,?_⟩
+  sig_pre [GenerationPolicy.searchContract,cachedKeySearchContract,cachedKeySearchSig,keySearchSig,
+    pLenValid,domainLenValid,abi,argRegs,reduceClassify,Loc.val,State.addr]
+  simp only [cachedSearch_arg 0 (by decide),cachedSearch_arg 1 (by decide),cachedSearch_arg 2 (by decide),cachedSearch_arg 3 (by decide),cachedSearch_arg 4 (by decide),cachedSearch_arg 5 (by decide),cachedSearch_arg 6 (by decide),cachedSearch_arg 7 (by decide),cachedSearch_arg 8 (by decide),cachedSearch_arg 9 (by decide),cachedSearch_arg 10 (by decide)]
+  have a0 : stackArg cachedSearchBase 0=0x5000 := by decide
+  have a1 : stackArg cachedSearchBase 1=0x3000 := by decide
+  have a2 : stackArg cachedSearchBase 2=128 := by decide
+  have a3 : stackArg cachedSearchBase 3=64 := by decide
+  have a4 : stackArg cachedSearchBase 4=0x7000 := by decide
+  have a5 : stackArg cachedSearchBase 5=0 := by decide
+  have a6 : stackArg cachedSearchBase 6=0x9000 := by decide
+  have a7 : stackArg cachedSearchBase 7=1056 := by decide
+  have a8 : stackArg cachedSearchBase 8=0x4000 := by decide
+  have a9 : stackArg cachedSearchBase 9=0x100000 := by decide
+  have a10 : stackArg cachedSearchBase 10=275 := by decide
+  rw [a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10]
+  dsimp only [cachedSearchSat,cachedSearchBase,keySat]
+  repeat' apply And.intro
+  all_goals first
+    | (change domainValid 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128)=true
+       rw [cachedSearch_domain]; exact CachedSat.domain_valid)
+    | (change Spec.Ffdh.generationPrecompute 64 (Spec.Rsa.bytesAt cachedSearchSat.mem 0x3000 128) =
+         some (Spec.Rsa.wordsAt cachedSearchSat.mem 0x100000 275)
+       rw [cachedSearch_domain]; exact (CachedSat.canonical _).2)
+    | (change (cachedSearchSat.mem.readW 0x4000 64).toNat≤128
+       rw [cachedSearch_control (by simp)]; decide +kernel)
+    | (change (cachedSearchSat.mem.readW 0x4008 64).toNat≤128
+       rw [cachedSearch_control (by simp)]; decide +kernel)
+    | (change cachedSearchSat.mem.readW 0x4010 64=64
+       rw [cachedSearch_control (by simp)]; decide +kernel)
+    | decide +kernel
+    | (apply Region.disjoint_of_sep; decide +kernel)
+
+theorem sat : ∃ s, (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) (stackUse sampling)).pre s := by
   cases sampling with
   | full => exact plain_sat
   | vetted => exact vetted_satAux _ VettedGroups.tableWords_length
+  | cached => exact cached_sat
 
 end VG.Proof.Ffdh.Arm.KeySearch
