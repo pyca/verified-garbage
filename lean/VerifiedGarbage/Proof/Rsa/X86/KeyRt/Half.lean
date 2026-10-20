@@ -1,9 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.ShiftDown
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Chain
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.ShiftDown
 import VerifiedGarbage.Proof.Mont.X86.ShiftDown
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
 
 /-! # An array of the key workspace halved at a run-time width
 

@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Store
+import VerifiedGarbage.Proof.Rsa.X86.CvRt.Store
 import VerifiedGarbage.Proof.Bignum.MemoryFrame
+public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
 
 /-! # CRT parameter calculation at a run-time width, once the modulus is accepted
 

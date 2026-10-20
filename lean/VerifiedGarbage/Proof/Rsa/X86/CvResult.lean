@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Sized
 import VerifiedGarbage.Proof.Rsa.CrtValuesMath
 import VerifiedGarbage.Proof.Bignum.Octets
+import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 
 /-! # The calculated and masked CRT outputs satisfy the shared RSA result definition -/
 

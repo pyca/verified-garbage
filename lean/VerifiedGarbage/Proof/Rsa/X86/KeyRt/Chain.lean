@@ -1,9 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
 
 /-! # Sums and differences of the key workspace's arrays at a run-time width
 

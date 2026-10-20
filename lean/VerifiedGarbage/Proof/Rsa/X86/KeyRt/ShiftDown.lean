@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Base
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 import VerifiedGarbage.Proof.Mont.X86.ExponentWord
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Impl.Rsa.X86.KeyRt
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 
 /-! # A number's words halved through a pointer
 

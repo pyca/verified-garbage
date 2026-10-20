@@ -1,16 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
-import VerifiedGarbage.Proof.Bignum.MemoryFrame
 import VerifiedGarbage.Proof.Bignum.ByteWords
 import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Load
-import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
 import VerifiedGarbage.Proof.Rsa.BytesFrame
-import VerifiedGarbage.Proof.Mont.X86.Instr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rsa.X86.InvParts
+import VerifiedGarbage.Proof.Rsa.X86.KeyRt.Ops
 
 /-! # CRT parameter calculation at a run-time width: the outputs
 
