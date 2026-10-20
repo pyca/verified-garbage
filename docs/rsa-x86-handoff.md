@@ -16,13 +16,18 @@ Do not interpret this branch as a completed or fully verified decryption API.
 | PSS | Pending | Separate row PR required |
 | Key generation | Pending | Separate row PR required |
 
-The encryption branch is stacked on signatures commit
-`3b0eb2030e1d54ad08cb7ff554a363cb0e9dd5ea`, which includes core commit
-`612b60b2a04d9ebbe2ac28f7f213367445afc2da`. PR #2833 targets `codex/rsa-x86`.
-The eventual encryption PR should target `codex/rsa-pkcs1-sig-x86` while that
-stack remains open. Check current upstream status before changing the stack.
-PRs are squash merged: use the repository's `rebase --onto` instructions when a
-base merges. **Do not work on the cancelled check-key detour / PR #2807.**
+The encryption branch has been rebased directly onto main at
+`c7f26266d` (October 20). Core and signature PRs have merged. The eventual
+encryption PR should target main. The original stacked base was signature
+commit `3b0eb2030e1d54ad08cb7ff554a363cb0e9dd5ea`; its ancestor hashes above
+are historical validation references. The generated x86 module index was
+regenerated using Lean's `VG.Rust.modDecls` after resolving its conflict in
+favor of main. The rebased encryption/decryption proofs have **not** been
+revalidated against main's newer run-time-width RSA kernels. Their original
+validation and the known alternative-length WIP below describe the pre-rebase
+checkpoint. PRs are squash merged; use the repository's `rebase --onto`
+instructions for future restacking. **Do not work on the cancelled check-key
+detour / PR #2807.**
 
 Completed PR validation:
 
