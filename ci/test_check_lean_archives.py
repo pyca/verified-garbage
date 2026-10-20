@@ -5,7 +5,6 @@ import json
 import os
 import shutil
 from pathlib import Path
-import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -102,16 +101,18 @@ class LeanArchiveTests(unittest.TestCase):
                           "packages/mathlib/.lake/build/Mathlib/Order.ltar"])
         self.check_unpack(data)
 
-    def test_unpack_reads_the_tar_before_files_tar(self):
-        # `pack`'s tar before `files.tar` (`latest` in the registry): the
-        # archives, then every other file as a member of its own.
-        roots = [Path(".lake/build"), Path(".lake/packages")]
-        packed = lean_cache.update(self.lean, roots, 2, 5, str(self.stub))
-        paths = lean_cache.other_files(self.lean, roots, packed)
-        data = subprocess.run(["tar", "-C", str(self.lean), "-cf", "-", ".lake/ltar",
-                               "--no-recursion", "--null", "-T", "-"],
-                              input="\0".join(paths).encode(), capture_output=True, check=True).stdout
-        self.check_unpack(data)
+    def test_unpack_rejects_entries_outside_archive_directory(self):
+        data = io.BytesIO()
+        with tarfile.open(fileobj=data, mode="w") as tar:
+            tar.addfile(tarfile.TarInfo(".lake/build"))
+        data.seek(0)
+        target = self.root / "restored"
+        target.mkdir()
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "Unexpected cache entry: .lake/build"):
+                lean_cache.unpack(target, 2, tmp, 1, str(self.stub), data)
+            self.assertEqual(os.listdir(tmp), [])
+        self.assertEqual(os.listdir(target), [])
 
     def check_unpack(self, data):
         target = self.root / "restored"
@@ -260,7 +261,7 @@ class LeanArchiveTests(unittest.TestCase):
         self.log.write_text("")
         lean_cache.update(self.lean, [Path(".lake/packages")], 2, 5, str(self.stub), reuse=packages)
         self.assertEqual(len(self.log.read_text().splitlines()), 1)
-        # No Mathlib cache at all (e.g. a transition miss) also packs normally.
+        # No Mathlib cache at all also packs normally.
         shutil.rmtree(self.lean / lean_cache.LTAR)
         shutil.rmtree(self.lean / packages)
         self.log.write_text("")
