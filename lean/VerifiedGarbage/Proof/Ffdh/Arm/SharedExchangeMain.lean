@@ -3,10 +3,9 @@ module
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMain
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 import VerifiedGarbage.Proof.Ffdh.Arm.PowerAt
-public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Arm.KeepsLayout
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -14,7 +13,15 @@ import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
-public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Impl.Ffdh.Arm.Checks
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Native shared-secret exponentiation, range checking, export, and rejection masking. -/
 

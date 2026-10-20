@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMain
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMain
 import VerifiedGarbage.Proof.Ffdh.Arm.Head
 import VerifiedGarbage.Proof.Ffdh.Arm.Branch
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 
 /-! The shared-value body is safe for all domain encodings, and specified for valid moduli. -/
 

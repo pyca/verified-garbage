@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.Arm.MontCall
 public import VerifiedGarbage.Proof.Framework.RelCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
+import VerifiedGarbage.Proof.Ffdh.Arm.DomainSharedPrepareAt
 public import VerifiedGarbage.Impl.Ffdh.Arm.NormalizedPrepare
 public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ffdh.Arm.NormalizedPrepareCT
 import VerifiedGarbage.Proof.Ffdh.Arm.StackCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Bignum.Arm.WindowBlocksCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.DomainCallMemory
+public import VerifiedGarbage.Proof.Ffdh.Arm.PrepareStack
 
 /-! # The shared native key-preparation boundary hides modulus values -/
 

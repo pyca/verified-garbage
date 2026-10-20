@@ -10,13 +10,15 @@ public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAt
 import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPower
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeMainCT
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicPowerCT
 import VerifiedGarbage.Proof.Ffdh.Arm.DomainNormalizedPrepareAtCT
 import VerifiedGarbage.Proof.Bignum.Arm.TwoExpSharedCT
 import VerifiedGarbage.Proof.Ffdh.Arm.RangeCT
 import VerifiedGarbage.Proof.Ffdh.Arm.Range
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedCheckPublic
+public import VerifiedGarbage.Proof.Ffdh.Arm.PowerAtCT
 
 /-! Callable exchange preserves the private scalar's fixed public-length trace. -/
 

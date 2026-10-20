@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeEntry
-public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeBody
+import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeBody
 public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeFn
 public import VerifiedGarbage.Proof.Ffdh.Arm.Frame
 import VerifiedGarbage.Proof.Ffdh.Arm.Block
 public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
+public import VerifiedGarbage.Impl.Ffdh.Arm.SharedExchange
+public import VerifiedGarbage.Proof.Bignum.Arm.MontBackend
+public import VerifiedGarbage.Proof.Ffdh.Arm.ExchangeBody
+public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeMemory
 
 /-! AAPCS shared-secret computation with native validation and output handling. -/
 

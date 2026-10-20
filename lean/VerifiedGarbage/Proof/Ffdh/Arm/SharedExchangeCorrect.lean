@@ -9,8 +9,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeFn
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangePrograms
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
-public import VerifiedGarbage.Impl.Ffdh.Arm.Domain
 import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
+public import VerifiedGarbage.TCB.Arm.Isa
 
 /-! The callable shared-secret computation satisfies the architecture-independent contract. -/
 
