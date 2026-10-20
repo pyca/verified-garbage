@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
+public import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkFrag16
 public import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Dc16Dec
@@ -8,6 +9,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 public import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
 meta import VerifiedGarbage.Impl.MlKem.X86_64.DecapsJ16
+import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DjFusedCT16
-public import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
+import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EkSel16
-public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
+public import VerifiedGarbage.Proof.MlKem.X86_64.Top16Ctl
 
 /-!
 # ML-KEM on x86-64: decapsulation hashing `z ‖ c` in the matrix's fragments, for each implementation
