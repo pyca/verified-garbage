@@ -22,7 +22,7 @@ open VG.Proof.Bignum.X86.PublicRt (countLoop ptr4 wp_carry)
 
 theorem addLoop_ok {t₀ : State} {W : Addr} {L : Nat} (hw : Ws t₀ W L) {a m d N : Nat} (hN : 0 < N)
     (ha : a + 4 * N ≤ L) (hm : m + 4 * N ≤ L) (hd : d + 4 * N ≤ L)
-    (hda : d + 4 * N ≤ a ∨ a + 4 * N ≤ d) (hdm : d + 4 * N ≤ m ∨ m + 4 * N ≤ d)
+    (hda : d ≤ a ∨ a + 4 * N ≤ d) (hdm : d ≤ m ∨ m + 4 * N ≤ d)
     (hebp : PtrAt t₀ W .ebp a) (hebx : PtrAt t₀ W .ebx m) (hedi : PtrAt t₀ W .edi d)
     (hedx : (t₀.gpr .edx).toNat = 4 * N) (hecx : t₀.gpr .ecx = cmask false) :
     WP isa (.loop (.block [.mov .eax (.mem (at_ .ebp 0)), .alu .add .ecx (.reg .ecx),
