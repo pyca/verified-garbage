@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicMath
 
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+
 /-! # What the exponentiation in the compact workspace writes -/
 
 @[expose] public section

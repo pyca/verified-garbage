@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Bignum.X86.PublicSetup
+public import VerifiedGarbage.Proof.Bignum.X86.ExponentRanges
 
 import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 

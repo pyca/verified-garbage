@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.InputCompare
 public import VerifiedGarbage.Impl.Bignum.X86.PublicFn
 public import VerifiedGarbage.Proof.Mont.X86.PowerStep
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Impl.Bignum.X86.PublicContext
+public import VerifiedGarbage.Proof.Mont.X86.Words
+
+import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # Compare the input with the modulus and save the acceptance mask -/
 
