@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.P384.EcdhDouble.Raw
+public import VerifiedGarbage.Proof.P384.EcdhDouble.Raw
 public import VerifiedGarbage.Proof.P384.Ops
 public import VerifiedGarbage.Proof.P384.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
@@ -47,18 +47,15 @@ def DblPost (C : Curve) (base : Addr) (size : Nat) (p o : Pt) (V : List Nat) (E 
   KeepRegs clobX s s' ∧ Unch base (loopW K) s.mem s'.mem ∧ ∃ E' : Nat → Fe C,
     Inv K.M base size C.p (· ∈ winSlots K) ([o.x, o.y, o.z] ++ V) E' s' ∧
     (∀ x, x ∉ rcbW K.S o → E' x = E x) ∧
-    (E' o.x, E' o.y, E' o.z) = (runOps (dblJChoiceN false) (fun y => E (rcbσ K.S p p o y)) 6,
-      runOps (dblJChoiceN false) (fun y => E (rcbσ K.S p p o y)) 7,
-      runOps (dblJChoiceN false) (fun y => E (rcbσ K.S p p o y)) 8)
+    (E' o.x, E' o.y, E' o.z) = dblJF (E p.x) (E p.y) (E p.z)
 
 /-- An allocated block refining the raw doubling, which writes only within
 the window's loop slots and agrees with it on the slots the result is read
 from, concludes what the raw one does. -/
 theorem alloc_ok {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLay K 8192)
-    (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt}
-    (hAp : RcbApart K.S p p o) (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winSlots K)
-    (hW : ∀ x ∈ rcbW K.S o, x ∈ winOther K) {V : List Nat} {E : Nat → Fe C} {s : State}
-    (hI : Inv K.M base 8192 C.p (· ∈ winSlots K) V E s) (hV : ∀ x ∈ rcbR K.S p p, x ∈ V)
+    (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt} (hS : RawSlots p o)
+    {V : List Nat} {E : Nat → Fe C} {s : State}
+    (hI : Inv K.M base 8192 C.p (· ∈ winSlots K) V E s) (hV : ∀ x ∈ [p.x, p.y, p.z], x ∈ V)
     {c : List Instr} {Wk : List (Nat × Nat)}
     (hR : ∀ {Q : State → Prop}, WP isa (.block (raw p o)) s Q → WP isa (.block c) s fun t => ∃ u, Q u ∧
       (∀ off, Certificate.observe off → off % 8 = 0 → off + 8 ≤ 8192 → word t.mem base off = word u.mem base off) ∧
@@ -66,7 +63,7 @@ theorem alloc_ok {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLay K 8192
     (hWk : ∀ w ∈ Wk, ∃ w' ∈ loopW K, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2)
     (hobs : ∀ x ∈ K.M.mo :: ([o.x, o.y, o.z] ++ V), ∀ i < 6, Certificate.observe (x + 8 * i)) :
     WP isa (.block c) s fun t => DblPost C base 8192 p o V E s t := by
-  refine WP.mono (hR (raw_ok hC hL hA hp hAp hSl hW hI hV)) fun t ⟨u, ⟨_, _, E', Iu, hE, hv⟩, hw, F⟩ => ?_
+  refine WP.mono (hR (raw_ok hC hL hA hp hS hI hV)) fun t ⟨u, ⟨_, _, E', Iu, hE, hv⟩, hw, F⟩ => ?_
   have hs : Scr t base 8192 := F.scr (by decide) hI.scr
   have hwv : ∀ x ∈ K.M.mo :: ([o.x, o.y, o.z] ++ V), x + 48 ≤ 8192 →
       wordsVal t.mem base x 6 = wordsVal u.mem base x 6 := fun x hx hx8 =>
@@ -89,9 +86,7 @@ theorem alloc_ok {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLay K 8192
 /-- The window's spec of a doubling, from `alloc_ok`. -/
 theorem dblSpec_of_alloc {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLay K 8192)
     (hA : WinA K) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {p o : Pt}
-    (hAp : RcbApart K.S p p o) (hw : (∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winSlots K) ∧
-      (∀ x ∈ rcbW K.S o, x ∈ winOther K) ∧ ∀ x ∈ rcbW K.S o ++ rcbR K.S p p, x ∈ winRo K ++ winOther K)
-    {V : List Nat} (hV : ∀ x ∈ rcbR K.S p p, x ∈ V) {c : List Instr} {Wk : List (Nat × Nat)}
+    (hS : RawSlots p o) {V : List Nat} (hV : ∀ x ∈ [p.x, p.y, p.z], x ∈ V) {c : List Instr} {Wk : List (Nat × Nat)}
     (hR : ∀ {s : State}, Scr s base 8192 → ∀ {Q : State → Prop}, WP isa (.block (raw p o)) s Q →
       WP isa (.block c) s fun t => ∃ u, Q u ∧
       (∀ off, Certificate.observe off → off % 8 = 0 → off + 8 ≤ 8192 → word t.mem base off = word u.mem base off) ∧
@@ -100,10 +95,16 @@ theorem dblSpec_of_alloc {C : Curve} (hC : C.p = p384) {base : Addr} (hL : WinLa
     (hobs : ∀ x ∈ K.M.mo :: ([o.x, o.y, o.z] ++ V), ∀ i < 6, Certificate.observe (x + 8 * i)) :
     DblSpec K C base 8192 (.block c) p o V := by
   intro E s hI
-  exact WP.mono (alloc_ok hC hL hA hp hAp hw.1 hw.2.1 hI hV (hR hI.scr) hWk hobs)
+  have hv : dblJF (E p.x) (E p.y) (E p.z) =
+      (runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 6,
+        runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 7,
+        runOps (dblJChoiceN (K.M.n == 4)) (fun y => E (rcbσ K.S p p o y)) 8) := by
+    rw [dblJChoiceN_run]
+    rfl
+  exact WP.mono (alloc_ok hC hL hA hp hS hI hV (hR hI.scr) hWk hobs)
     fun t ⟨k, U, E', I, _, v⟩ => ⟨k.mono fun r h => by
       have : ∀ r ∈ clobX, r ∈ clob K.M.n ++ winSaved K.M.n := by decide
-      exact this r h, U, E', I, v⟩
+      exact this r h, U, E', I, v.trans hv⟩
 
 theorem p384_C_p : Impl.Ecdsa.AArch64.p384.C.p = p384 := by decide
 
@@ -114,14 +115,9 @@ theorem dblsOk {C : Curve} (hC : C.p = p384) (hL : WinLay K 8192) (hA : WinA K)
       (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR)) := by
   intro d hd
   cases hd
-  obtain ⟨aRD, aDR, -⟩ := hL.rcbApart_winJ
-  have oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
-  have oD := pt_other (K := K) (p := K.D) (Or.inr (Or.inr rfl))
-  have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
-    List.mem_append_right (winRo K) (h x hx)
-  refine ⟨dblSpec_of_alloc hC hL hA hp aRD (winJ_sl oD (sl _ oR) (sl _ oR)) (by decide)
+  refine ⟨dblSpec_of_alloc hC hL hA hp rawSlots_RD (by decide)
     (fun hs _ hq => Certificate.refineRD hs hq) (by decide) (by decide), ?_⟩
-  exact dblSpec_of_alloc hC hL hA hp aDR (winJ_sl oR (sl _ oD) (sl _ oD)) (by decide)
+  exact dblSpec_of_alloc hC hL hA hp rawSlots_DR (by decide)
     (fun hs _ hq => Certificate.refineDR hs hq) (by decide) (by decide)
 
 end VG.Proof.P384.EcdhDouble
