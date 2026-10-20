@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.VerifyStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Spec.Rsa.Contract
+import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 
 /-! # Bind the verified baseline precomputed RSA operation -/
 

@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 
 /-! # The precondition of a call of `vg_rsa_mont_mul_at` from public RSA
 

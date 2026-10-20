@@ -6,9 +6,9 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
 
 /-! # `R² mod M` in a context of private CRT at a run-time width
 

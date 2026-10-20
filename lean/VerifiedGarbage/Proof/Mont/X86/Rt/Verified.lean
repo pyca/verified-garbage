@@ -1,14 +1,34 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Body
+import VerifiedGarbage.Proof.Mont.X86.Rt.Body
 meta import VerifiedGarbage.Proof.Mont.X86.Rt.Body
-public import VerifiedGarbage.Proof.Dsa.X86.PowABI
+import VerifiedGarbage.Proof.Dsa.X86.PowABI
 meta import VerifiedGarbage.Proof.Dsa.X86.PowABI
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
+public import Init.Data.BitVec.Basic
+meta import Init.Data.BitVec.Basic
+public import Init.Data.List.BasicAux
+meta import Init.Data.List.BasicAux
+public import VerifiedGarbage.Proof.Mont.Words32
+meta import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.TCB.X86.Target
+meta import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
+meta import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+meta import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Mont.Read
+meta import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.X86.ArgWs
+meta import VerifiedGarbage.Proof.Mont.X86.ArgWs
+import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
+meta import VerifiedGarbage.Proof.Mont.X86.Rt.ABI
 
 /-! # `vg_rsa_mont_mul_at` on x86 against its contract
 

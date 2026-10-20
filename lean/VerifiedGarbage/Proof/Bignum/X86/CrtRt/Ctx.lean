@@ -7,15 +7,9 @@ import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
 public import VerifiedGarbage.Proof.Bignum.ByteWords
 public import VerifiedGarbage.Proof.Bignum.Math
-public import VerifiedGarbage.Proof.Bignum.X86.CrtLayout
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Loops
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Mul
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Num2
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Prepare
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Reduce
-public import VerifiedGarbage.Proof.Bignum.X86.ReverseRegion
 public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
 public import VerifiedGarbage.Proof.Mont.X86.Inverse
 

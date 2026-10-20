@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Stages
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Args
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.Rt.Args
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Stages
 
 /-! # Saving and restoring the callee-saved registers
 

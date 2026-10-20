@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
 public import VerifiedGarbage.Proof.Mont.X86.OutsZ
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86.Row
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The rows of the run-time width multiplication
 

@@ -14,6 +14,7 @@ public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedABI
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInputs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
+import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
 import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs

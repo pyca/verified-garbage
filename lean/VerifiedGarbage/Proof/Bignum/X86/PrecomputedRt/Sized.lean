@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Apply
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Apply
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPostFrame
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
 import VerifiedGarbage.Proof.Bignum.ExportEncoding
@@ -10,8 +10,12 @@ import VerifiedGarbage.Proof.Bignum.Math
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedPost
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Checks
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.PublicWritten
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Checks
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 import VerifiedGarbage.Proof.Dsa.X86.PowABI
 

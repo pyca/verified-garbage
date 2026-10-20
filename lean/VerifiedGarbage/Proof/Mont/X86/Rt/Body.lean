@@ -1,8 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Front
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Mont.X86.Rt.Front
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.OutsZ
+import VerifiedGarbage.Proof.Mont.X86.Rt.Args
+import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
+import VerifiedGarbage.Proof.Mont.X86.Rt.RowFull
+import VerifiedGarbage.Proof.Mont.X86.Rt.Stages
+import VerifiedGarbage.Proof.Mont.X86.Rt.Sub
 
 /-! # The run-time width multiplication
 

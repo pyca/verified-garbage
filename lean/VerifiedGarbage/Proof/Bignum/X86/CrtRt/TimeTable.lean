@@ -5,8 +5,12 @@ public import VerifiedGarbage.Proof.Framework.RelCTChain
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeBase
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.MulOk
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.StageR
-import VerifiedGarbage.Proof.Bignum.X86.CrtRt.WindowPower
+public import VerifiedGarbage.Proof.Bignum.CrtNatural
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Export
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Import
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Load
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Recombine
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
 
 /-! # The trace of the table of a windowed power
 

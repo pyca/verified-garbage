@@ -1,10 +1,9 @@
 module
 
-import VerifiedGarbage.Impl.Bignum.X86.CrtFn
+public import VerifiedGarbage.Impl.Bignum.X86.CrtFn
 import VerifiedGarbage.Proof.Framework.GetElem
 import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.X86.Isa
-public import VerifiedGarbage.TCB.Code
 public import Init.Prelude
 public import VerifiedGarbage.TCB.Code
 

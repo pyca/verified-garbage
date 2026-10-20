@@ -1,9 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
+import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Args
-public import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Row
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Step
 
 /-! # A row of the run-time width multiplication
 

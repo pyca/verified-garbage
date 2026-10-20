@@ -15,6 +15,12 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # Public RSA at a run-time width, from the inputs to the result
 

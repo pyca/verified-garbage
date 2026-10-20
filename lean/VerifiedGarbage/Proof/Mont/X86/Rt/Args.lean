@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 public import VerifiedGarbage.Proof.Mont.X86.ArgFar
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Impl.Mont.X86.MulRt
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.Instr
 
 /-! # The arguments of the run-time width multiplication
 

@@ -5,6 +5,12 @@ public import VerifiedGarbage.Proof.Bignum.ReadPrefix
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Bignum.ByteWords
+public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The comparison and the result of public RSA at a run-time width
 

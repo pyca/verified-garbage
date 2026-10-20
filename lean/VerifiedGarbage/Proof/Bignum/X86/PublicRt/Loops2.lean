@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
-public import VerifiedGarbage.Proof.Mont.X86.Csub
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+import VerifiedGarbage.Proof.Mont.X86.Csub
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.X86.WordOps
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The doubling, subtraction and selection loops of public RSA at a run-time width -/
 

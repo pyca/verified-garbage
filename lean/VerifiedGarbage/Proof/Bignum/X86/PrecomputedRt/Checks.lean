@@ -1,11 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Output
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86.ExponentShift
+public import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The checks of the precomputed values
 

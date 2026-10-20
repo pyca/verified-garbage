@@ -2,6 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Save
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.OutsZ
+import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
+import VerifiedGarbage.Proof.Mont.X86.Rt.Row
+import VerifiedGarbage.Proof.Mont.X86.Rt.Rows
+import VerifiedGarbage.Proof.Mont.X86.Rt.Stages
 
 /-! # The run-time width multiplication up to its rows
 

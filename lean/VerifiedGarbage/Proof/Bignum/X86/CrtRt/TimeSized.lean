@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimePower
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Sized
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Sized
+import VerifiedGarbage.Proof.Bignum.X86.CrtValue
+meta import VerifiedGarbage.Proof.Bignum.X86.CrtValue
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 

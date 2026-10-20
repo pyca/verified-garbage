@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.Impl.Bignum.X86.PublicRt
 public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
-public import VerifiedGarbage.Proof.Mont.X86.Instr
+import VerifiedGarbage.Proof.Mont.X86.Instr
 public import VerifiedGarbage.Spec.Rsa
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.Wp
+public import VerifiedGarbage.Proof.Mont.X86.Words
 
 /-! # The width and the pointers of public RSA at a run-time width
 

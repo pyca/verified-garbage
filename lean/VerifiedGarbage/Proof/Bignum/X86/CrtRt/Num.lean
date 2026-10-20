@@ -12,6 +12,11 @@ public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Bignum.X86.CrtInputs
 import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # Numbers in private CRT at a run-time width
 

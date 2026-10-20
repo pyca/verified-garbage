@@ -25,12 +25,14 @@ public import VerifiedGarbage.Proof.Mont.X86.Words
 meta import VerifiedGarbage.Proof.Mont.X86.Words
 public import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Bignum.Octets
 meta import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
 meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedExponentArgs
 import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
 meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedInstalled
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Correct
+import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
+meta import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Key
 import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
@@ -39,6 +41,8 @@ import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 meta import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Apply
+public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Correct
 
 /-! # The trace of precomputed public RSA at a run-time width, from the entry to the return
 

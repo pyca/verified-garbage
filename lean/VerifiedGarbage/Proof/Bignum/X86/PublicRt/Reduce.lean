@@ -3,10 +3,14 @@ module
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Double
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
+public import VerifiedGarbage.Proof.Bignum.X86.LoadBE
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops
+public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Loops2
+public import VerifiedGarbage.Proof.Bignum.X86.ReverseBuffer
+public import VerifiedGarbage.Proof.Mont.X86.Csub
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 
 /-! # The subtraction and the selection of public RSA at a run-time width -/
 

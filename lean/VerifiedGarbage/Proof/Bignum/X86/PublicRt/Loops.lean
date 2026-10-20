@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Step
+import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
+import VerifiedGarbage.Proof.Mont.X86.Rt.Step
 public import VerifiedGarbage.Proof.Mont.X86.WordOps
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Base
 
 /-! # The loops of public RSA at a run-time width
 

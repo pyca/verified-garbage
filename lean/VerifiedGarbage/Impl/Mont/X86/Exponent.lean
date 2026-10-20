@@ -2,8 +2,9 @@ module
 public import VerifiedGarbage.Impl.Mont.X86.Words
 import VerifiedGarbage.Impl.Mont.X86.Power
 
-public import VerifiedGarbage.Impl.Mont.X86.Power
+import VerifiedGarbage.Impl.Mont.X86.Power
 public import VerifiedGarbage.Impl.Mont.X86.Words
+public import VerifiedGarbage.Impl.Mont.X86
 
 /-! # Secret-exponent operations on 32-bit x86 -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeSized
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeSized
 import VerifiedGarbage.Proof.Bignum.X86.CrtEntryTiming
 import VerifiedGarbage.Proof.Bignum.X86.CrtModulusTiming
 import VerifiedGarbage.Proof.Bignum.X86.CrtFailureTiming
@@ -20,7 +20,13 @@ public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 public import VerifiedGarbage.Proof.Bignum.Words
 public import VerifiedGarbage.Proof.Bignum.X86.CrtPair
 public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
+public import VerifiedGarbage.Proof.Bignum.Words
+public import VerifiedGarbage.Proof.Bignum.X86.CrtABI
+public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Bignum.X86.CrtInstalled
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.In
+import VerifiedGarbage.Proof.Bignum.X86.CrtRt.Top
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # Private CRT RSA at a run-time width on i686 against its contract

@@ -1,8 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
-public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Rt.Blocks
+import VerifiedGarbage.Proof.Mont.X86.Loop
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Mont.Words32
+public import VerifiedGarbage.Proof.Mont.X86.Words
+public import VerifiedGarbage.Proof.Mont.X86.Rt.Row
+import VerifiedGarbage.Impl.Mont.X86.MulRt
+import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.Rt.Row
 
 /-! # A row of the run-time width multiplication, as CIOS
 

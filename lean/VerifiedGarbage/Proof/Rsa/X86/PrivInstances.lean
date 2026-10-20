@@ -1,15 +1,15 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
+public import VerifiedGarbage.Proof.Bignum.X86.CrtStackSafety
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputeVerified
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Proof.Rsa.X86.PrivImpl
 import VerifiedGarbage.Proof.Rsa.X86.PrivVerified
 public import VerifiedGarbage.Proof.Bignum.X86.CrtRt.TimeTop
 public import VerifiedGarbage.Proof.Bignum.X86.PrecomputedRt.Verified
-public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.TCB.X86.Isa
 public import VerifiedGarbage.Proof.Framework.X86.Call
+import VerifiedGarbage.Impl.Bignum.X86.CrtRt
+import VerifiedGarbage.Impl.Bignum.X86.PrecomputedRt
 
 /-! # Instantiate checked private RSA with the verified baseline i686 callees -/
 

@@ -2,59 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.TimeBase
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Call
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Env
-import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Stages
 import VerifiedGarbage.Proof.Framework.X86.AllocFrame
-import VerifiedGarbage.Proof.Mont.X86.Rt.Verified
-public import VerifiedGarbage.Proof.Bignum.ExponentCheckMath
-public import VerifiedGarbage.Proof.Bignum.ExponentWords
 public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.Bignum.PublicWritten
-public import VerifiedGarbage.Proof.Bignum.Words
-public import VerifiedGarbage.Proof.Bignum.X86.ExponentBits
 public import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
-public import VerifiedGarbage.Proof.Bignum.X86.PublicABI
-public import VerifiedGarbage.Proof.Bignum.X86.PublicArgs
 public import VerifiedGarbage.Proof.Bignum.X86.PublicControls
 public import VerifiedGarbage.Proof.Bignum.X86.PublicExponentArgs
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailure
-public import VerifiedGarbage.Proof.Bignum.X86.PublicFailurePost
 public import VerifiedGarbage.Proof.Bignum.X86.PublicInstalled
 public import VerifiedGarbage.Proof.Bignum.X86.PublicLayout
 public import VerifiedGarbage.Proof.Bignum.X86.PublicReturn
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Correct
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exp
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Exponentiate
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.MulEnv
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Reduce
 public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Sized
-public import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Top
-public import VerifiedGarbage.Proof.Dsa.Arithmetic
-public import VerifiedGarbage.Proof.Dsa.X86.VerifyingABI
-public import VerifiedGarbage.Proof.Mont.X86.ContextFrame
-public import VerifiedGarbage.Proof.Mont.X86.ContextMath
-public import VerifiedGarbage.Proof.Mont.X86.DynamicOps
-public import VerifiedGarbage.Proof.Mont.X86.ExponentShift
-public import VerifiedGarbage.Proof.Mont.X86.Inverse
-public import VerifiedGarbage.Proof.Mont.X86.Ops
-public import VerifiedGarbage.Spec.BrainpoolP256r1
-public import VerifiedGarbage.Spec.BrainpoolP384r1
-public import VerifiedGarbage.Spec.BrainpoolP512r1
-public import VerifiedGarbage.Spec.Dsa
-public import VerifiedGarbage.Spec.Dsa.SignVerify
-public import VerifiedGarbage.Spec.P192
-public import VerifiedGarbage.Spec.P224
-public import VerifiedGarbage.Spec.P256
-public import VerifiedGarbage.Spec.P384
-public import VerifiedGarbage.Spec.P521
-public import VerifiedGarbage.Spec.RsaKeyGen
-public import VerifiedGarbage.Spec.Secp256k1
-public import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.Spec.Sha256
-public import VerifiedGarbage.Spec.Weierstrass.Mont
-public import VerifiedGarbage.Spec.Weierstrass.Point
 
 /-! # The trace of a multiplication by a call, in public RSA at a run-time width
 
