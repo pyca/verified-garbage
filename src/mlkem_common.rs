@@ -104,8 +104,17 @@ impl Backend {
 /// loop's bound (for the comments). On x86-64, encapsulation with a key that
 /// keeps the hash `H(ek)` (one from key generation) is `encaps_h` (and its
 /// instances), which takes it; with one that does not (one from
-/// `from_bytes`), `encaps` (and its instances), which computes it.
+/// `from_bytes`), `encaps` (and its instances), which computes it. On
+/// x86-64, `scratch_written` gives how many bytes of `scratch` the AVX2 and
+/// AVX-512 instances of each may write (their `_SCRATCH_WRITTEN`), if fewer
+/// than all of it; the callers wipe only those.
 macro_rules! ml_kem {
+    (@written) => {
+        (core::mem::size_of::<Scratch>(), core::mem::size_of::<Scratch>())
+    };
+    (@written $w:expr) => {
+        $w
+    };
     (
         name: $name:literal,
         encapsulation_key: $EncapsulationKey:ident,
@@ -132,7 +141,13 @@ macro_rules! ml_kem {
         ek: $ek:literal,
         dk: $dk:literal,
         ct: $ct:literal,
-        scratch: $scratch:literal $(,)?
+        scratch: $scratch:literal
+        $(, scratch_written: {
+            keygen: $keygen_written:expr,
+            encaps_h: $encaps_h_written:expr,
+            encaps: $encaps_written:expr,
+            decaps: $decaps_written:expr $(,)?
+        })? $(,)?
     ) => {
         pub use $crate::mlkem_common::Error;
         use $crate::mlkem_common::Backend;
@@ -175,6 +190,28 @@ macro_rules! ml_kem {
 
         /// The working space of the assembly functions.
         type Scratch = [u64; $scratch];
+
+        /// How many bytes of `scratch` the AVX2 and AVX-512 instances of
+        /// each operation may write (`Artifact.written`).
+        #[cfg(target_arch = "x86_64")]
+        const KEYGEN_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($keygen_written)?);
+        #[cfg(target_arch = "x86_64")]
+        const ENCAPS_H_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($encaps_h_written)?);
+        #[cfg(target_arch = "x86_64")]
+        const ENCAPS_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($encaps_written)?);
+        #[cfg(target_arch = "x86_64")]
+        const DECAPS_WRITTEN: (usize, usize) = $crate::mlkem_common::ml_kem!(@written $($decaps_written)?);
+
+        /// The bytes of `scratch` that `backend`'s instance of an operation,
+        /// whose AVX2 and AVX-512 instances write `written`, may write.
+        #[cfg(target_arch = "x86_64")]
+        fn scratch_written(backend: Backend, written: (usize, usize)) -> usize {
+            match backend {
+                Backend::Scalar => core::mem::size_of::<Scratch>(),
+                Backend::Avx2 => written.0,
+                Backend::Avx512 => written.1,
+            }
+        }
 
         #[doc = concat!("An ", $name, " encapsulation key, which passed the check of FIPS 203 §7.2.")]
         #[derive(Clone)]
@@ -302,13 +339,19 @@ macro_rules! ml_kem {
                         (Backend::Avx512, None) => $encaps_avx512(ek, m, &mut key, &mut ct, s),
                     }
                 };
+                // The bytes of `scratch` the operation may have written: on
+                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
+                // (`Artifact.written`), elsewhere all of it.
+                #[cfg(target_arch = "x86_64")]
+                let written = scratch_written(backend, if self.h.is_some() { ENCAPS_H_WRITTEN } else { ENCAPS_WRITTEN });
+                #[cfg(not(target_arch = "x86_64"))]
+                let written = core::mem::size_of::<Scratch>();
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized. Wipe on both
-                // success and failure before inspecting the return status.
+                // bytes the operation may not have initialized, and `written`
+                // does not exceed it. Wipe on both success and failure before
+                // inspecting the return status.
                 unsafe {
-                    $crate::zeroize::zeroize_raw(
-                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
-                    );
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
@@ -400,13 +443,19 @@ macro_rules! ml_kem {
                         Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                     }
                 };
+                // The bytes of `scratch` the operation may have written: on
+                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
+                // (`Artifact.written`), elsewhere all of it.
+                #[cfg(target_arch = "x86_64")]
+                let written = scratch_written(backend, KEYGEN_WRITTEN);
+                #[cfg(not(target_arch = "x86_64"))]
+                let written = core::mem::size_of::<Scratch>();
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized. Wipe on both
-                // success and failure before inspecting the return status.
+                // bytes the operation may not have initialized, and `written`
+                // does not exceed it. Wipe on both success and failure before
+                // inspecting the return status.
                 unsafe {
-                    $crate::zeroize::zeroize_raw(
-                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
-                    );
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
@@ -477,13 +526,19 @@ macro_rules! ml_kem {
                         Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                     }
                 };
+                // The bytes of `scratch` the operation may have written: on
+                // x86-64 those its instance's `_SCRATCH_WRITTEN` gives
+                // (`Artifact.written`), elsewhere all of it.
+                #[cfg(target_arch = "x86_64")]
+                let written = scratch_written(backend, DECAPS_WRITTEN);
+                #[cfg(not(target_arch = "x86_64"))]
+                let written = core::mem::size_of::<Scratch>();
                 // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized. Wipe on both
-                // success and failure before inspecting the return status.
+                // bytes the operation may not have initialized, and `written`
+                // does not exceed it. Wipe on both success and failure before
+                // inspecting the return status.
                 unsafe {
-                    $crate::zeroize::zeroize_raw(
-                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
-                    );
+                    $crate::zeroize::zeroize_raw(scratch.as_mut_ptr().cast(), written);
                 }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability

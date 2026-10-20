@@ -128,7 +128,7 @@ theorem keyGenImp768 : (keyGenK kem768).Implies (Spec.MlKem.keyGenContract X86_6
 
 theorem keyGen_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.keyGen v.callee) (Spec.MlKem.keyGenContract X86_64.abi 32) :=
-  keyGenSel_verified kpke768 v kg16Wf768 kgWf768 keyGenImp768
+  keyGenSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v kg16Wf768 kgWf768 keyGenImp768
     (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 /-- The shared contract of `encapsH`, from the contract its proofs are written against. -/
@@ -152,7 +152,7 @@ theorem encapsHImp768 : (encapsK kem768).Implies (Spec.MlKem.encapsHContract X86
 
 theorem encapsH_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.encapsH v.callee) (Spec.MlKem.encapsHContract X86_64.abi 32) :=
-  encapsHSel_verified kpke768 v ec16Wf768 ecWf768 calls768 encapsHImp768
+  encapsHSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v ec16Wf768 ecWf768 calls768 encapsHImp768
     (fun _ c S => by s16_ctl v c S kpke768) (by s4_ctl v)
 
 theorem encaps_ctl (v : Sample4Impl) : ctlOk (kemEncaps kem768 v.callee) = true := by
@@ -172,7 +172,7 @@ theorem encapsImp768 : (encK kem768).Implies (Spec.MlKem.encapsContract X86_64.a
 
 theorem encaps_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.encaps v.callee) (Spec.MlKem.encapsContract X86_64.abi 32) :=
-  encapsSel_verified kpke768 v ek16HWf768 ekt16Wf768 ekWf768 calls768 encapsImp768
+  encapsSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v ek16HWf768 ekt16Wf768 ekWf768 calls768 encapsImp768
     (fun _ c b S B => by ek16_ctl v c b S B kpke768) (encaps_ctl v)
 
 /-- The shared contract of `decaps`, from the contract its proofs are written against. -/
@@ -189,7 +189,7 @@ theorem decapsImp768 : (decapsK kem768).Implies (Spec.MlKem.decapsContract X86_6
 
 theorem decaps_verified (v : Sample4Impl) :
     Verified X86_64.target (Impl.MlKem.X86_64.decaps v.callee) (Spec.MlKem.decapsContract X86_64.abi 32) :=
-  decapsSel_verified kpke768 v djHWf768 djtWf768 dcWf768 calls768 decapsImp768
+  decapsSel_verified (n := kem768.scr) (Nat.le_refl _) kpke768 v djHWf768 djtWf768 dcWf768 calls768 decapsImp768
     (fun _ c b S B => by ek16_ctl v c b S B kpke768) (by s4_ctl v)
 
 end VG.Proof.MlKem.X86_64

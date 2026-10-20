@@ -17006,6 +17006,9 @@ ret
 /// The CPU features `vg_mlkem1024_keygen_avx2` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_keygen_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
@@ -17013,6 +17016,8 @@ pub(crate) const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_keygen`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_KEYGEN_AVX2_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -18392,6 +18397,9 @@ ret
 /// The CPU features `vg_mlkem1024_encaps_h_avx2` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
@@ -18399,6 +18407,8 @@ pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = cra
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_encrypt`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_ENCAPS_H_AVX2_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -19800,6 +19810,9 @@ ret
 /// The CPU features `vg_mlkem1024_encaps_avx2` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_encaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
@@ -19809,6 +19822,8 @@ pub(crate) const VG_MLKEM1024_ENCAPS_AVX2_FEATURES: crate::cpu::Features = crate
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_encrypt`.
 ///
 /// It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the code of `vg_mlkem16_sample_ntt4_avx2` inlined, whose fourth Keccak state absorbs the padded key, three blocks of 136 bytes at a time.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_ENCAPS_AVX2_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -30332,6 +30347,9 @@ ret
 /// The CPU features `vg_mlkem1024_decaps_avx2` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_decaps_avx2` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
@@ -30339,6 +30357,8 @@ pub(crate) const VG_MLKEM1024_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx2`, and computes the outputs of `PRF` four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_decrypt`, `vg_mlkem1024_kpke_encrypt`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_DECAPS_AVX2_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -40887,6 +40907,9 @@ ret
 /// The CPU features `vg_mlkem1024_keygen_avx512` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_keygen_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
@@ -40894,6 +40917,8 @@ pub(crate) const VG_MLKEM1024_KEYGEN_AVX512_FEATURES: crate::cpu::Features = cra
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_keygen`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_KEYGEN_AVX512_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -41921,6 +41946,9 @@ ret
 /// The CPU features `vg_mlkem1024_encaps_h_avx512` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_encaps_h_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem1024_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
@@ -41928,6 +41956,8 @@ pub(crate) const VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = c
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_encrypt`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_ENCAPS_H_AVX512_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -42977,6 +43007,9 @@ ret
 /// The CPU features `vg_mlkem1024_encaps_avx512` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_encaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 encapsulation with given randomness, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
@@ -42986,6 +43019,8 @@ pub(crate) const VG_MLKEM1024_ENCAPS_AVX512_FEATURES: crate::cpu::Features = cra
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_encrypt`.
 ///
 /// It computes `H(ek)` while it samples the matrix: it samples its first entries three at a time with the code of `vg_mlkem16_sample_ntt4_avx512` inlined, whose fourth Keccak state absorbs the padded key, three blocks of 136 bytes at a time.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_ENCAPS_AVX512_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///
@@ -50341,6 +50376,9 @@ ret
 /// The CPU features `vg_mlkem1024_decaps_avx512` requires (`Artifact.features`).
 pub(crate) const VG_MLKEM1024_DECAPS_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "avx512f", "avx512vl"]);
 
+/// The bytes of `scratch` that `vg_mlkem1024_decaps_avx512` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub(crate) const VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN: usize = 37376;
+
 /// ML-KEM-1024 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 3072–3103 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
@@ -50348,6 +50386,8 @@ pub(crate) const VG_MLKEM1024_DECAPS_AVX512_FEATURES: crate::cpu::Features = cra
 /// The function saves its caller's callee-saved registers in `scratch`; its calls use the 32 bytes of stack below its return address. It samples the matrix four entries at a time with `vg_mlkem16_sample_ntt4_avx512`, and computes the outputs of `PRF` four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own).
 ///
 /// Its polynomials are 16-bit words: it samples the noise with `vg_mlkem16_cbd2_avx2`, and computes the rest of K-PKE with `vg_mlkem1024_kpke_decrypt`, `vg_mlkem1024_kpke_encrypt`.
+///
+/// It writes at most the first 37376 bytes of `scratch` (`VG_MLKEM1024_DECAPS_AVX512_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
 ///

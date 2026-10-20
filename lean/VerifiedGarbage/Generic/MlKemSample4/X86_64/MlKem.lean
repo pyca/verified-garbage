@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.Written
 public import VerifiedGarbage.Proof.MlKem.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -94,6 +95,8 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     stack := 32
     verified := Proof.MlKem1024.X86_64.keyGen1024_verified v
     spSafe := Proof.MlKem.X86_64.keyGen1024_spSafe v
+    written := Proof.MlKem1024.X86_64.written v
+    writtenOk := Proof.MlKem1024.X86_64.keyGen1024_written v
     features := v.features },
   Spec.MlKem1024.encapsHApi.artifact X86_64.target {
     suffix := v.suffix
@@ -102,6 +105,8 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     stack := 32
     verified := Proof.MlKem1024.X86_64.encapsH1024_verified v
     spSafe := Proof.MlKem.X86_64.encapsH1024_spSafe v
+    written := Proof.MlKem1024.X86_64.written v
+    writtenOk := Proof.MlKem1024.X86_64.encapsH1024_written v
     features := v.features },
   Spec.MlKem1024.encapsApi.artifact X86_64.target {
     suffix := v.suffix
@@ -110,6 +115,8 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     stack := 32
     verified := Proof.MlKem1024.X86_64.encaps1024_verified v
     spSafe := Proof.MlKem.X86_64.encaps1024_spSafe v
+    written := Proof.MlKem1024.X86_64.writtenEnc v
+    writtenOk := Proof.MlKem1024.X86_64.encaps1024_written v
     features := v.features },
   Spec.MlKem1024.decapsApi.artifact X86_64.target {
     suffix := v.suffix
@@ -118,6 +125,8 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     stack := 32
     verified := Proof.MlKem1024.X86_64.decaps1024_verified v
     spSafe := Proof.MlKem.X86_64.decaps1024_spSafe v
+    written := Proof.MlKem1024.X86_64.writtenEnc v
+    writtenOk := Proof.MlKem1024.X86_64.decaps1024_written v
     features := v.features }]
 
 end VG.Generic.MlKemSample4.X86_64.MlKem
