@@ -10,7 +10,6 @@ meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Tail.Lit
