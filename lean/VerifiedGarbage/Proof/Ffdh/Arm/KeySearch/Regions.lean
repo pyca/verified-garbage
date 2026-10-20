@@ -23,7 +23,7 @@ abbrev rControl (p : KeyPublic) : Region := ⟨State.addr p.control, 128⟩
 abbrev rSaved (p : KeyPublic) : Region := ⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩
 abbrev callSp (p : KeyPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 56
 abbrev rArguments (p : KeyPublic) : Region := ⟨State.addr (callSp p), 32⟩
-abbrev rCallStack (p : KeyPublic) : Region := FrameStack.belowA (callSp p) 128
+abbrev rCallStack (p : KeyPublic) : Region := FrameStack.belowA (callSp p) 176
 
 def callChanges (p : KeyPublic) : List Region := [rX p, rY p, rScratch p, rArguments p, rCallStack p]
 
@@ -72,11 +72,11 @@ theorem arguments_sub {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
 
 theorem callStack_sub {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
     (rCallStack p).Sub (FrameStack.belowA p.sp stackUse) :=
-  FrameStack.belowA_inner (by decide : 128 + 56 ≤ stackUse) fit
+  FrameStack.belowA_inner (by decide : 176 + 56 ≤ stackUse) fit
 
 theorem saved_arguments_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rArguments p) := by
-  change 184 ≤ p.sp.toNat at fit
+  change 232 ≤ p.sp.toNat at fit
   rw [rSaved, rArguments, callSp, FrameStack.addr_sub' (by omega : 24 ≤ p.sp.toNat),
     FrameStack.addr_sub' (by omega : 56 ≤ p.sp.toNat)]
   have address : State.addr p.sp - 56#64 = (State.addr p.sp - 24#64) - 32#64 := by
@@ -86,8 +86,8 @@ theorem saved_arguments_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat)
 
 theorem saved_callStack_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rCallStack p) := by
-  change 184 ≤ p.sp.toNat at fit
-  have room : 128 ≤ (callSp p).toNat := by
+  change 232 ≤ p.sp.toNat at fit
+  have room : 176 ≤ (callSp p).toNat := by
     rw [callSp, FrameStack.sub_toNat' (by omega : 56 ≤ p.sp.toNat)]; omega
   rw [rSaved, rCallStack, FrameStack.belowA, FrameStack.addr_sub' room,
     FrameStack.addr_sub' (by omega : 24 ≤ p.sp.toNat)]

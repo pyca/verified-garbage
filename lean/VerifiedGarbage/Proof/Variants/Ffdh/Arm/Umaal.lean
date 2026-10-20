@@ -20,9 +20,6 @@ def variant : VG.Proof.Ffdh.Arm.Backend where
   checkPrivate_verified := umaalRows_verified Base.variant.checkPrivate_verified
   exchange := umaalRows Base.variant.exchange
   exchange_verified := umaalRows_verified Base.variant.exchange_verified
-  generateKey := umaalRows Base.variant.generateKey
-  generateKey_verified := umaalRows_verified Base.variant.generateKey_verified
-  keyStack := Nat.le_trans (armStack_umaalRows _) Base.variant.keyStack
   suffix := "_umaal"
   features := ["umaal"]
 

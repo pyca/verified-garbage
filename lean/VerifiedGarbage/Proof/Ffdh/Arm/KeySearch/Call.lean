@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
@@ -17,10 +17,10 @@ import VerifiedGarbage.Proof.Framework.Block
 namespace VG.Proof.Ffdh.Arm.KeySearch
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 
-theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.Backend) : AttemptRunOk backend := by
+theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) : AttemptRunOk backend := by
   intro p original s used keys scalars h room
   have facts := h.input.callFacts room
-  have rootFit : 184 ≤ p.sp.toNat := h.input.bounds.stackFits
+  have rootFit : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
   have outerFit : 32 ≤ s.sp.toNat := by
     rw [h.sp, FrameStack.sub_toNat' (by omega : 24 ≤ p.sp.toNat)]
     omega

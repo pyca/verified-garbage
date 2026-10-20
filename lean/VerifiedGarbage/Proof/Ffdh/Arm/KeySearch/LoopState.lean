@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Framework.Offset
@@ -57,7 +57,7 @@ theorem KeyDone.loop_guard {p : KeyPublic} {original s : State} {result : KeySea
   rw [flag, show decide (result.status = 4) = false from decide_eq_false different]
 
 /-- A verified implementation of the chosen backend's nested attempt call. -/
-def AttemptRunOk (backend : VG.Proof.Ffdh.Arm.Backend) : Prop :=
+def AttemptRunOk (backend : VG.Proof.Ffdh.Arm.KeyBackend) : Prop :=
   ∀ (p : KeyPublic) (original s : State) (used keys scalars : Nat),
     KeyLive p original used keys scalars s → used + p.len ≤ p.randLen →
       WP isa (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) s fun t =>

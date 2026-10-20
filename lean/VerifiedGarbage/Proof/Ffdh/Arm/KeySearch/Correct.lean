@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
 
@@ -24,14 +24,14 @@ open VG.Proof.Ffdh.KeyGeneration
 def searchResult (p : KeyPublic) (s : State) : KeySearchResult :=
   keySearch p.a p.len ⟨p.keys, p.scalars⟩ (keyRand p s)
 
-theorem function_ok (backend : VG.Proof.Ffdh.Arm.Backend) {p : KeyPublic} {s : State}
+theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) {p : KeyPublic} {s : State}
     (h : KeyInput p s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s fun t =>
       abiPreserved s t ∧ ResultPost p (searchResult p s) t := by
   have fit : 24 ≤ s.sp.toNat := by
     have fits := h.bounds.stackFits
     rw [← h.2] at fits
-    change 184 ≤ s.sp.toNat at fits
+    change 232 ≤ s.sp.toNat at fits
     omega
   unfold VG.Impl.Ffdh.Arm.KeySearch.code
   refine WP.frame (by decide) fit (by decide) ?_
@@ -46,7 +46,7 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.Backend) {p : KeyPublic} {s : S
   intro t finished
   exact finish_ok finished
 
-theorem correct (backend : VG.Proof.Ffdh.Arm.Backend) (s : State)
+theorem correct (backend : VG.Proof.Ffdh.Arm.KeyBackend) (s : State)
     (pre : (keySearchContract abi stackUse).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s tr t ∧
       abiPreserved s t ∧ (keySearchContract abi stackUse).post s t := by

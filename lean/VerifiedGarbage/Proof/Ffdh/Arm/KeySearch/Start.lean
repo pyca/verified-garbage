@@ -23,7 +23,7 @@ theorem KeyInput.pushed_read {p : KeyPublic} {s : State} {r : Region}
     (h : KeyInput p s) (read : r ∈ s.rd) :
     Spec.Rsa.bytesAt (searchPushed s).mem r.base r.len = Spec.Rsa.bytesAt s.mem r.base r.len := by
   have rootSp : p.sp = s.sp := by rw [← h.2]; rfl
-  have fit : 184 ≤ s.sp.toNat := by rw [← rootSp]; exact h.bounds.stackFits
+  have fit : 232 ≤ s.sp.toNat := by rw [← rootSp]; exact h.bounds.stackFits
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) (by change 24 ≤ s.sp.toNat; omega)
   have sep : r.Disjoint (FrameStack.belowA s.sp 24) := by
@@ -39,7 +39,7 @@ theorem start_ok {p : KeyPublic} {s : State} (h : KeyInput p s) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.entry) (searchPushed s) fun t =>
       KeyLive p s 0 p.keys p.scalars t := by
   have rootSp : p.sp = s.sp := by rw [← h.2]; rfl
-  have fit : 24 ≤ s.sp.toNat := by rw [← rootSp]; have := h.bounds.stackFits; change 184 ≤ p.sp.toNat at this; omega
+  have fit : 24 ≤ s.sp.toNat := by rw [← rootSp]; have := h.bounds.stackFits; change 232 ≤ p.sp.toNat at this; omega
   have space : Workspace (searchPushed s) p.control 128 :=
     h.control_space (fun _ hr => List.mem_cons_of_mem _ hr)
   have x : (searchPushed s).gpr .r0 = p.xp := by rw [← h.2]; rfl

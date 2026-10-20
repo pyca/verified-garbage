@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.KeyGenerationContract
-import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -13,14 +13,14 @@ public import VerifiedGarbage.TCB.Arm.Target
 
 /-! Public inputs and loop-state representation for the native ARMv7 key
 search. The retry counters and width fit in native words; their packed-u64
-high halves remain zero. Each attempt may use 128 bytes below its 32-byte
+high halves remain zero. Each attempt may use 176 bytes below its 32-byte
 argument frame, within the search's 24-byte AAPCS frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
 open VG VG.Arm VG.Spec.Ffdh VG.Proof.Mont
 
-abbrev stackUse : Nat := 184
+abbrev stackUse : Nat := 232
 
 def inX (s : State) : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
 def inY (s : State) : Region := ⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩

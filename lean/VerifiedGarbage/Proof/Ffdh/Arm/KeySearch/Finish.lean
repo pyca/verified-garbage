@@ -38,7 +38,7 @@ theorem finish_ok {p : KeyPublic} {original s : State} {result : Spec.Ffdh.KeySe
     rw [rest.wr, rest.sp, h.sp, h.wr]
     exact List.mem_cons_self
   have fit : u.sp.toNat + 24 ≤ 2 ^ 32 := by
-    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; change 184 ≤ p.sp.toNat at this; omega)]
+    rw [rest.sp, h.sp, FrameStack.sub_toNat' (by have := h.input.bounds.stackFits; change 232 ≤ p.sp.toNat at this; omega)]
     have := p.sp.isLt
     omega
   refine WP.mono (restoreSlots_ok finishRestoreSlots u original.gpr (by decide) fit read

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Arguments
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Call
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 
@@ -55,7 +55,7 @@ theorem arguments_ready (q : KeyPoint) (u : State) (h : KeyAllocated q u) :
   rw [mem, live.call_sp]
   rfl
 
-theorem attempt_ready (backend : VG.Proof.Ffdh.Arm.Backend) (q : KeyPoint) (s : State) (h : KeyReady q s) :
+theorem attempt_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s : State) (h : KeyReady q s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.attemptRun (.call backend.keyName backend.generateKey)) s (KeyAttempted q) := by
   obtain ⟨⟨original, live, statuses⟩, keys, scalars, room⟩ := h
   exact WP.mono (attemptRun_ok backend q.inputs original s q.used q.keys q.scalars live room)

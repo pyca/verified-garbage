@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Exit
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
-public import VerifiedGarbage.Proof.Ffdh.Arm.Backend
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 
 /-! Total correctness of the bounded native FFDH key-search loop, composing
@@ -23,7 +23,7 @@ def KeyInvariant (p : KeyPublic) (original : State) (expected : KeySearchResult)
     expected.outcome = (p.tail (keyRand p original) used keys scalars).outcome ∧
     expected.used = (p.tail (keyRand p original) used keys scalars).used
 
-theorem iteration (backend : VG.Proof.Ffdh.Arm.Backend) (runAttempt : AttemptRunOk backend)
+theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend) (runAttempt : AttemptRunOk backend)
     {p : KeyPublic} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s fun t =>
@@ -91,7 +91,7 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.Backend) (runAttempt : AttemptRun
     · rw [outcome]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
     · rw [count]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
 
-theorem loop (backend : VG.Proof.Ffdh.Arm.Backend) (runAttempt : AttemptRunOk backend)
+theorem loop (backend : VG.Proof.Ffdh.Arm.KeyBackend) (runAttempt : AttemptRunOk backend)
     {p : KeyPublic} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
     WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
