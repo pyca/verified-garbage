@@ -10,7 +10,6 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 meta import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesGcm.AArch64.Body
 import VerifiedGarbage.Proof.AesGcm.AArch64.FinTag
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn

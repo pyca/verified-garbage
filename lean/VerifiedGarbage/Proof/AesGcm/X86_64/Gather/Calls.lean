@@ -12,15 +12,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Impl.Aes.Circuit
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.Frame
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the calls without stack arguments

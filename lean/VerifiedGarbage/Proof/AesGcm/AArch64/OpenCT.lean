@@ -19,7 +19,6 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.PieceCT
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
 import VerifiedGarbage.Proof.AesGcm.AArch64.StreamFinish

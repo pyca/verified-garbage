@@ -8,15 +8,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.Gcm.Be64
 meta import VerifiedGarbage.Proof.Cmac.Block32
 meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
-import VerifiedGarbage.Impl.AesGcm.X86
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.RelCT
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
 public import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Impl.AesGcm.X86
 meta import VerifiedGarbage.Proof.Framework.Offset

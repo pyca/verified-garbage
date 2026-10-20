@@ -4,12 +4,6 @@ public import VerifiedGarbage.Proof.AesGcm.X86.Top
 meta import VerifiedGarbage.Proof.AesGcm.X86.Top
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Impl.AesGcm.X86
-import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.Gcm.Stream
-import VerifiedGarbage.TCB.X86.Isa
-import VerifiedGarbage.TCB.X86.State
-import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.Impl.AesGcm.X86
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -17,7 +11,6 @@ meta import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.TCB.X86.Isa
 meta import VerifiedGarbage.TCB.X86.State
 meta import VerifiedGarbage.TCB.X86.Target
-import VerifiedGarbage.Proof.Gcm.Ctr
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.Gcm.Ctr
 import VerifiedGarbage.Proof.Framework.Offset

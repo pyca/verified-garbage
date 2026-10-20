@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.AesGcm.Arm.Tag
 meta import VerifiedGarbage.Proof.AesGcm.Arm.Tag
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry
 import VerifiedGarbage.Proof.AesGcm.Arm.Ghash1
 import VerifiedGarbage.Proof.AesGcm.Arm.Loops

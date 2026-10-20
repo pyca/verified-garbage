@@ -12,11 +12,7 @@ meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.LoopCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.SealGather
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

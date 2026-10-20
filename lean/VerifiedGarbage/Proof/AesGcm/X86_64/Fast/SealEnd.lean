@@ -3,9 +3,6 @@ module
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.TailCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Fin
-import VerifiedGarbage.Impl.AesGcm.X86_64.Short
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase

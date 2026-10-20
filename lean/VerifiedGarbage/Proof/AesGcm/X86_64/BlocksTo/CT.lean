@@ -16,12 +16,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Tail
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Full
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Stitch
-import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Impl.AesGcm.X86_64.BlocksTo
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.CT

@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.TCB.Arm.Isa
 import VerifiedGarbage.Proof.Gcm.Stream
 
 /-!

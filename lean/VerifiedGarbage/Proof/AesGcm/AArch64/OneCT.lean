@@ -11,7 +11,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Impl.Aes.AArch64.Alloc
 import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.FinCT
 import VerifiedGarbage.Proof.AesGcm.AArch64.Fn

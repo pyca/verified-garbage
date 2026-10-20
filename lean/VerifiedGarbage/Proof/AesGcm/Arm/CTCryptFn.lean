@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
 meta import VerifiedGarbage.Proof.AesGcm.Arm.CryptOk
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 import VerifiedGarbage.Proof.AesGcm.Arm.CTAbsorb
 import VerifiedGarbage.Proof.AesGcm.Arm.CTJ0
 import VerifiedGarbage.Proof.AesGcm.Arm.Entry

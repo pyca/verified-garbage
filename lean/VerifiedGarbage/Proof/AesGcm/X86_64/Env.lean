@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
 # AES-GCM on x86-64: where everything is

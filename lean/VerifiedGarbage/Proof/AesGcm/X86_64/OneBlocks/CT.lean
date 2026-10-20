@@ -8,13 +8,8 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FinTagCT
-import VerifiedGarbage.Impl.AesGcm.X86_64
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-import VerifiedGarbage.TCB.X86_64.Isa
-import VerifiedGarbage.TCB.X86_64.State
-import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.Impl.AesGcm.X86_64
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
