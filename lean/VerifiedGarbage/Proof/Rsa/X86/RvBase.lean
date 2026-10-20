@@ -68,6 +68,7 @@ structure KS (g : Geo) (s0 : State) (A : Nat → Nat) (live : List Nat)
   frame : Frame (stageR g) s0.mem s.mem
   sp : s.gpr .esp = g.sp
   room : VG.Proof.Mont.X86.CallRoom g.sp g.B g.Z
+  top : g.sp.toNat + 52 ≤ 2 ^ 32
   wsLen : VG.Proof.Bignum.X86.CallArgument s g.B g.Z 11 (BitVec.ofNat 32 (g.Z / 8))
   z8 : g.Z % 8 = 0
   rest : Keeps opRegs s0 s
@@ -113,7 +114,7 @@ theorem KS.of_rest (h : KS g s0 A live AW liveW V ls s) {rs : List Reg}
   have edi : Reg.edi ∉ rs := fun e => by have := hr _ e; simp [opRegs] at this
   have esp : Reg.esp ∉ rs := fun e => by have := hr _ e; simp [opRegs] at this
   ⟨h.rt.keep r edi esp (by rw [mem]; exact fun _ _ => rfl),
-    h.lower, h.upper, mem ▸ h.frame, by rw [r.1 _ esp]; exact h.sp, h.room,
+    h.lower, h.upper, mem ▸ h.frame, by rw [r.1 _ esp]; exact h.sp, h.room, h.top,
     h.wsLen.keep r esp (by rw [mem]; exact fun _ _ => rfl), h.z8, h.rest.trans (r.mono hr),
     mem ▸ h.arrs, mem ▸ h.arrsW, mem ▸ h.sl, h.live_lt, h.liveW_lt, h.ls_ok⟩
 
@@ -123,7 +124,7 @@ theorem KS.mono (h : KS g s0 A live AW liveW V ls s)
     (hl : ∀ j ∈ live', j ∈ live ∧ A j = A' j)
     (hlW : ∀ j ∈ liveW', j ∈ liveW ∧ AW j = AW' j)
     (hls : ∀ d ∈ ls', d ∈ ls ∧ V d = V' d) : KS g s0 A' live' AW' liveW' V' ls' s :=
-  ⟨h.rt, h.lower, h.upper, h.frame, h.sp, h.room, h.wsLen, h.z8, h.rest,
+  ⟨h.rt, h.lower, h.upper, h.frame, h.sp, h.room, h.top, h.wsLen, h.z8, h.rest,
     fun j hj => (h.arrs j (hl j hj).1).trans (hl j hj).2,
     fun j hj => (h.arrsW j (hlW j hj).1).trans (hlW j hj).2,
     fun d hd => (h.sl d (hls d hd).1).trans (hls d hd).2,
@@ -170,7 +171,7 @@ theorem KS.core (h : KS g s0 A live AW liveW V ls s) {v : Nat} {js ds : List Nat
   have nw := h.ws.workspace.nowrap
   ⟨h.rt.keep r (by decide) (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega)),
     h.lower, h.upper, h.frame.trans (outside_stage O (by omega) (by unfold hdr at header; omega)),
-    by rw [r.1 _ (by decide)]; exact h.sp, h.room,
+    by rw [r.1 _ (by decide)]; exact h.sp, h.room, h.top,
     h.wsLen.keep r (by decide) (O.mono (Nat.zero_le _) (by unfold hdr at header; omega)), h.z8,
     h.rest.trans r, ha, haW, hsl, hl, hlW, hls⟩
 

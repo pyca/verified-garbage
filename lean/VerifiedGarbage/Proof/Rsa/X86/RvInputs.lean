@@ -44,6 +44,7 @@ structure Inputs (g : CallGeometry) (s : State) : Prop where
   upper : g.n ≤ 128
   esp : s.gpr .esp = g.sp
   room : VG.Proof.Mont.X86.CallRoom g.sp g.B g.Z
+  top : g.sp.toNat + 52 ≤ 2 ^ 32
   arguments : ∀ i, i < 12 → CallArgument s g.B g.Z i (g.args i)
   stackApart : ∀ i, i < 12 → ∀ r ∈ g.writes, Region.Disjoint ⟨stackAddress s i, 4⟩ r
   inputPositive : ∀ j : Fin 3, 0 < (g.buffer (4 + 2 * j.val)).len
@@ -61,7 +62,7 @@ structure Inputs (g : CallGeometry) (s : State) : Prop where
 theorem Inputs.after {g : CallGeometry} {s t : State} {regs : List Reg} (h : Inputs g s)
     (rest : Keeps regs s t) (di : .edi ∉ regs) (sp : .esp ∉ regs) (frame : Frame g.writes s.mem t.mem) :
     Inputs g t := by
-  refine ⟨h.ws.rest rest di sp, h.lower, h.upper, by rw [rest.1 _ sp]; exact h.esp, h.room, ?_, ?_, h.inputPositive, h.inputBound,
+  refine ⟨h.ws.rest rest di sp, h.lower, h.upper, by rw [rest.1 _ sp]; exact h.esp, h.room, h.top, ?_, ?_, h.inputPositive, h.inputBound,
     h.inputFit, ?_, h.inputApart, h.outputPositive, h.outputBound, h.outputFit, ?_, h.outputScratch,
     h.outputSeparate⟩
   · exact fun i hi => (h.arguments i hi).frame rest sp frame (h.stackApart i hi)
