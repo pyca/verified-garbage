@@ -1,5 +1,5 @@
 module
-public import VerifiedGarbage.Proof.Rsa.X86.CvBody
+public import VerifiedGarbage.Proof.Rsa.X86.CvRt.Load
 public import VerifiedGarbage.Proof.Rsa.X86.CvPair
 
 import VerifiedGarbage.Proof.Bignum.X86.ModulusCheck
@@ -12,7 +12,7 @@ namespace VG.Proof.Rsa.X86.CrtValues
 open VG.Proof.Bignum.X86
 open VG VG.X86 VG.Impl.Bignum.X86 VG.Proof.Mont.X86 VG.Proof.Dsa.X86
 
-theorem modulus_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : Lengths g) :
+theorem modulus_ok {g : CallGeometry} {s : State} (h : Inputs g s) (len : VG.Proof.Rsa.X86.CrtValuesRt.Lengths g) :
     WP isa (.seq (.block (VG.Impl.Rsa.X86.CrtValues.inputArgs 6)) (.block modulusCheck)) s fun t =>
       t.zf = some (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (inputBytes g s.mem 0)) (g.args 7).toNat) ∧
       t.mem = s.mem ∧ Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by

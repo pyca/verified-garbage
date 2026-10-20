@@ -1,6 +1,7 @@
 module
 public import VerifiedGarbage.Proof.Rsa.X86.CvABI
 public import VerifiedGarbage.Proof.Rsa.X86.CvFrames
+public import VerifiedGarbage.Impl.Rsa.X86.CrtValuesRt
 
 import VerifiedGarbage.Proof.Rsa.X86.CvBodyTiming
 import VerifiedGarbage.Proof.Rsa.X86.CvEntryTiming
@@ -20,7 +21,7 @@ import VerifiedGarbage.Proof.Dsa.X86.OutputFrame
 namespace VG.Proof.Rsa.X86.CrtValues
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86
-open VG.Impl.Rsa.X86.CrtValues
+open VG.Impl.Rsa.X86.CrtValuesRt (code)
 
 theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
     (args : ∀ i < 16, arg s i = arg t i) (sp : s.gpr .esp = t.gpr .esp)
@@ -61,7 +62,14 @@ theorem operation_trace {s t : State} (a : ABI s) (b : ABI t)
       | @seq _ _ _ x _ _ _ e2 e3 =>
         cases fr with
         | @seq _ _ _ y _ _ _ f2 f3 =>
-          have eq2 := (body_relCT (caller s) a.lengths_ok _ _ _ _ _ _ ⟨pair, same⟩ e2 f2).1
+          have espu : u.gpr .esp = s.gpr .esp := ks.1 _ (by decide)
+          have fit : (u.gpr .esp).toNat + 68 ≤ 2 ^ 32 := by rw [espu]; exact a.stackBound
+          have apart : ∀ r ∈ (caller s).writes, Region.Disjoint ⟨(u.gpr .esp).setWidth 64, 68⟩ r := by
+            intro r hr
+            rw [espu]
+            exact VG.X86.Taint.frame_disjoint (n := 64) (by have := a.stackBound; omega) (a.retApart r hr)
+              (a.argsApart r hr)
+          have eq2 := (body_relCT (caller s) a.lengths_ok _ fit apart _ _ _ _ _ _ ⟨⟨pair, rfl⟩, same⟩ e2 f2).1
           obtain ⟨hx, _, _, kx⟩ := wp_result (body_ok hs a.lengths_ok) e2
           obtain ⟨hy, _, _, ky⟩ := wp_result (body_ok hv a.lengths_ok) f2
           have next := pair.after hx hy kx ky (by decide)

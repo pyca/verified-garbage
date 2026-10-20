@@ -16,12 +16,6 @@ open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86
 open VG.Proof.Bignum.X86 VG.Proof.Dsa.X86 VG.Impl.Bignum.X86
 open VG.Impl.Rsa.X86.CrtValues
 
-theorem Pair.keepMem {g : CallGeometry} {s t u v : State} {regs : List Reg} (h : Pair g s t)
-    (ks : Keeps regs s u) (kt : Keeps regs t v) (di : .edi ∉ regs) (sp : .esp ∉ regs)
-    (ms : u.mem = s.mem) (mt : v.mem = t.mem) : Pair g u v :=
-  h.after (h.left.after ks di sp (by rw [ms]; exact Frame.refl _ _))
-    (h.right.after kt di sp (by rw [mt]; exact Frame.refl _ _)) ks kt sp
-
 theorem valid_relCT (g : CallGeometry) (len : Lengths g) :
     RelCT isa (Pair g) valid (fun _ _ => True) := by
   let p := fun s t => Pair g s t ∧ s.gpr .eax = BitVec.ofNat 32 g.n ∧ t.gpr .eax = BitVec.ofNat 32 g.n
