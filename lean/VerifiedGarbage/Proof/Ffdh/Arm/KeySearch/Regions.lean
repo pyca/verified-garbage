@@ -11,33 +11,35 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
-abbrev rX (p : KeyPublic) : Region := ⟨State.addr p.xp, p.len⟩
-abbrev rY (p : KeyPublic) : Region := ⟨State.addr p.yp, p.len⟩
-abbrev rUsed (p : KeyPublic) : Region := ⟨State.addr p.up, 8⟩
-abbrev rDomain (p : KeyPublic) : Region := ⟨State.addr p.dp, p.dlen⟩
-abbrev rRandom (p : KeyPublic) : Region := ⟨State.addr p.rp, p.randLen⟩
-abbrev rScratch (p : KeyPublic) : Region := ⟨State.addr p.scratch, p.capacity * 8⟩
-abbrev rControl (p : KeyPublic) : Region := ⟨State.addr p.control, 128⟩
-abbrev rSaved (p : KeyPublic) : Region := ⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩
-abbrev callSp (p : KeyPublic) : BitVec 32 := p.sp - BitVec.ofNat 32 56
-abbrev rArguments (p : KeyPublic) : Region := ⟨State.addr (callSp p), 32⟩
-abbrev rCallStack (p : KeyPublic) : Region := FrameStack.belowA (callSp p) 176
+abbrev rX (p : KeyPublic sampling) : Region := ⟨State.addr p.xp, p.len⟩
+abbrev rY (p : KeyPublic sampling) : Region := ⟨State.addr p.yp, p.len⟩
+abbrev rUsed (p : KeyPublic sampling) : Region := ⟨State.addr p.up, 8⟩
+abbrev rDomain (p : KeyPublic sampling) : Region := ⟨State.addr p.dp, p.dlen⟩
+abbrev rRandom (p : KeyPublic sampling) : Region := ⟨State.addr p.rp, p.randLen⟩
+abbrev rScratch (p : KeyPublic sampling) : Region := ⟨State.addr p.scratch, p.capacity * 8⟩
+abbrev rControl (p : KeyPublic sampling) : Region := ⟨State.addr p.control, 128⟩
+abbrev rSaved (p : KeyPublic sampling) : Region := ⟨State.addr (p.sp - BitVec.ofNat 32 24), 24⟩
+abbrev callSp (p : KeyPublic sampling) : BitVec 32 := p.sp - BitVec.ofNat 32 56
+abbrev rArguments (p : KeyPublic sampling) : Region := ⟨State.addr (callSp p), 32⟩
+abbrev rCallStack (p : KeyPublic sampling) : Region := FrameStack.belowA (callSp p) 176
 
-def callChanges (p : KeyPublic) : List Region := [rX p, rY p, rScratch p, rArguments p, rCallStack p]
+def callChanges (p : KeyPublic sampling) : List Region := [rX p, rY p, rScratch p, rArguments p, rCallStack p]
 
-theorem KeyInput.write_regions {p : KeyPublic} {s : State} (h : KeyInput p s) :
+theorem KeyInput.write_regions {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     s.wr = [rX p, rY p, rUsed p, rScratch p, rControl p] := by
-  rw [h.layout.wr, writes, h.x_eq, h.y_eq, ← h.2]
+  rw [h.layout.wr, writes, h.x_eq, h.y_eq, ← h.2.1]
   rfl
 
-theorem KeyInput.read_regions {p : KeyPublic} {s : State} (h : KeyInput p s) :
-    s.rd = [rDomain p, rRandom p, inArgs s] := by
-  rw [h.layout.rd, reads, ← h.2]
+theorem KeyInput.read_regions {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    s.rd = [rDomain p, rRandom p, inArgs s] ++ KeyConstants.regions sampling p.tablePtr := by
+  rw [h.layout.rd, reads, h.constant_regions, ← h.2.1]
   rfl
 
-theorem KeyInput.output_regions_disjoint {p : KeyPublic} {s : State} (h : KeyInput p s) :
+theorem KeyInput.output_regions_disjoint {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     (rX p).Disjoint (rY p) ∧ (rX p).Disjoint (rScratch p) ∧
       (rY p).Disjoint (rScratch p) ∧ (rControl p).Disjoint (rX p) ∧
       (rControl p).Disjoint (rY p) ∧ (rControl p).Disjoint (rScratch p) := by
@@ -51,17 +53,40 @@ theorem KeyInput.output_regions_disjoint {p : KeyPublic} {s : State} (h : KeyInp
     (indexed 1 4 (by simp) (by simp) (by decide)).symm,
     (indexed 3 4 (by simp) (by simp) (by decide)).symm⟩
 
-theorem KeyInput.stack_separate {p : KeyPublic} {s : State} (h : KeyInput p s)
+theorem KeyInput.stack_separate {p : KeyPublic sampling} {s : State} (h : KeyInput p s)
     {r : Region} (member : r ∈ s.wr ++ s.rd) :
     (FrameStack.belowA p.sp stackUse).Disjoint r := by
   have sep := h.layout.stack r (by rw [← h.layout.wr, ← h.layout.rd]; exact member)
   have fit := h.bounds.stackFits
-  rw [← h.2] at fit ⊢
+  rw [← h.2.1] at fit ⊢
   change stackUse ≤ s.sp.toNat at fit
   change (FrameStack.belowA s.sp stackUse).Disjoint r
   rwa [FrameStack.belowA, FrameStack.addr_sub' fit]
 
-theorem arguments_sub {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
+theorem KeyInput.constants_read {p : KeyPublic sampling} {s : State} (h : KeyInput p s)
+    {table : Region} (member : table ∈ KeyConstants.regions sampling p.tablePtr) : table ∈ s.rd := by
+  rw [h.read_regions]
+  exact List.mem_append_right _ member
+
+theorem KeyInput.constants_write {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    ∀ table ∈ KeyConstants.regions sampling p.tablePtr, ∀ r ∈ s.wr, table.Disjoint r := by
+  intro table member r hr
+  apply Region.Disjoint.symm
+  exact h.layout.separate r (by rw [← h.layout.wr]; exact hr) table
+    (by rw [← h.layout.rd]; exact h.constants_read member)
+
+theorem KeyInput.constants_control {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    ∀ table ∈ KeyConstants.regions sampling p.tablePtr, table.Disjoint (rControl p) := by
+  intro table member
+  exact h.constants_write table member _ (by rw [h.write_regions]; simp)
+
+theorem KeyInput.constants_stack {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
+    ∀ table ∈ KeyConstants.regions sampling p.tablePtr, table.Disjoint (FrameStack.belowA p.sp stackUse) := by
+  intro table member
+  exact (h.stack_separate (List.mem_append_right s.wr (h.constants_read member))).symm
+
+
+theorem arguments_sub {p : KeyPublic sampling} (fit : stackUse ≤ p.sp.toNat) :
     (rArguments p).Sub (FrameStack.belowA p.sp stackUse) := by
   have address : p.sp - 24#32 - 32#32 = callSp p := by rw [BitVec.sub_sub]; rfl
   have sub := FrameStack.belowA_inner (sp := p.sp) (a := 32) (k := 24)
@@ -70,11 +95,11 @@ theorem arguments_sub {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
   rw [address] at sub
   exact sub
 
-theorem callStack_sub {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
+theorem callStack_sub {p : KeyPublic sampling} (fit : stackUse ≤ p.sp.toNat) :
     (rCallStack p).Sub (FrameStack.belowA p.sp stackUse) :=
   FrameStack.belowA_inner (by decide : 176 + 56 ≤ stackUse) fit
 
-theorem saved_arguments_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
+theorem saved_arguments_separate {p : KeyPublic sampling} (fit : stackUse ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rArguments p) := by
   change 232 ≤ p.sp.toNat at fit
   rw [rSaved, rArguments, callSp, FrameStack.addr_sub' (by omega : 24 ≤ p.sp.toNat),
@@ -84,7 +109,7 @@ theorem saved_arguments_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat)
   rw [address]
   exact Offset.base_disjoint_below _ (by decide)
 
-theorem saved_callStack_separate {p : KeyPublic} (fit : stackUse ≤ p.sp.toNat) :
+theorem saved_callStack_separate {p : KeyPublic sampling} (fit : stackUse ≤ p.sp.toNat) :
     (rSaved p).Disjoint (rCallStack p) := by
   change 232 ≤ p.sp.toNat at fit
   have room : 176 ≤ (callSp p).toNat := by

@@ -13,10 +13,12 @@ entropy-tape pointer, or register arguments. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-structure ArgumentContext (p : KeyPublic) (used keys scalars : Nat) (s : State) : Prop where
+structure ArgumentContext (p : KeyPublic sampling) (used keys scalars : Nat) (s : State) : Prop where
   controller : Controller p.control s
   stack : Workspace s s.sp 32
   separate : (⟨State.addr p.control, 128⟩ : Region).Disjoint ⟨State.addr s.sp, 32⟩
@@ -27,7 +29,7 @@ structure ArgumentContext (p : KeyPublic) (used keys scalars : Nat) (s : State) 
   y : s.gpr .r2 = p.yp
   ylen : s.gpr .r3 = BitVec.ofNat 32 p.len
 
-theorem ArgumentContext.after {p : KeyPublic} {used keys scalars : Nat} {s t : State}
+theorem ArgumentContext.after {p : KeyPublic sampling} {used keys scalars : Nat} {s t : State}
     (h : ArgumentContext p used keys scalars s) {rs : List Reg} (rest : Rest rs s t)
     (frame : Frame [⟨State.addr s.sp, 32⟩] s.mem t.mem)
     (kept : ∀ r ∈ [.r0, .r1, .r2, .r3, .r4, .r12], r ∉ rs := by decide) :
@@ -48,7 +50,7 @@ theorem ArgumentContext.after {p : KeyPublic} {used keys scalars : Nat} {s t : S
   · rw [rest.sp]
     exact (rest.gpr .r12 (kept .r12 (by decide))).trans h.stackBase
 
-theorem wp_argumentCopy {p : KeyPublic} {used keys scalars : Nat} {s : State} {is : List Instr}
+theorem wp_argumentCopy {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
     {Q : State → Prop} {value : BitVec 32} {j d : Nat}
     (h : ArgumentContext p used keys scalars s) (slot : j < 16) (fit : d + 4 ≤ 32)
     (source : lowWord s.mem p.control j = value)
@@ -64,7 +66,7 @@ theorem wp_argumentCopy {p : KeyPublic} {used keys scalars : Nat} {s : State} {i
     exact (Frame.refl _ _).writeW (by simp) _ (Offset.contains_base _ fit (by have := h.stack.nowrap; omega))
   exact next t (h.after rest frame) mem rest
 
-theorem wp_argumentStore {p : KeyPublic} {used keys scalars : Nat} {s : State} {is : List Instr}
+theorem wp_argumentStore {p : KeyPublic sampling} {used keys scalars : Nat} {s : State} {is : List Instr}
     {Q : State → Prop} {d : Nat} (h : ArgumentContext p used keys scalars s) (fit : d + 4 ≤ 32)
     (next : ∀ t, ArgumentContext p used keys scalars t →
       t.mem = s.mem.writeW (off (State.addr s.sp) d) (BitVec.ofNat 32 p.len) →

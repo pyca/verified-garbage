@@ -11,19 +11,21 @@ import VerifiedGarbage.Proof.Ffdh.Arm.Block
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 open VG.Proof.X25519.Arm (Rest)
 
-def entryValues (p : KeyPublic) : List (Nat × BitVec 32) :=
+def entryValues (p : KeyPublic sampling) : List (Nat × BitVec 32) :=
   [(5, p.xp), (6, p.yp), (15, p.up), (7, p.dp), (8, BitVec.ofNat 32 p.dlen),
     (9, p.rp), (10, BitVec.ofNat 32 p.randLen), (12, p.scratch),
     (13, BitVec.ofNat 32 p.capacity), (11, 0)]
 
-theorem entryValues_bound (p : KeyPublic) : ∀ e ∈ entryValues p, e.1 < 16 := by
+theorem entryValues_bound (p : KeyPublic sampling) : ∀ e ∈ entryValues p, e.1 < 16 := by
   simp only [entryValues, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> dsimp only <;> decide
 
-theorem entry_ok (s : State) {p : KeyPublic} (h : EntryArguments p s)
+theorem entry_ok (s : State) {p : KeyPublic sampling} (h : EntryArguments p s)
     (space : Workspace s p.control 128) (x : s.gpr .r0 = p.xp) (y : s.gpr .r2 = p.yp) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.entry) s fun t =>
       (EntryContext p t ∧ t.mem = writeLow s.mem p.control (entryValues p)) ∧ Rest [.r3, .r4] s t := by
@@ -61,7 +63,7 @@ theorem entry_ok (s : State) {p : KeyPublic} (h : EntryArguments p s)
   rw [m8, m7, m6, m5, m4, m3, m2, m1, mem]
   rfl
 
-theorem entry_fields (p : KeyPublic) (m : Mem)
+theorem entry_fields (p : KeyPublic sampling) (m : Mem)
     (keys : lowWord m p.control 0 = BitVec.ofNat 32 p.keys)
     (scalars : lowWord m p.control 1 = BitVec.ofNat 32 p.scalars)
     (width : lowWord m p.control 2 = BitVec.ofNat 32 p.len) :

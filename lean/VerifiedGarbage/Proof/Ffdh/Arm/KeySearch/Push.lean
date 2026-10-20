@@ -11,6 +11,8 @@ needs to restore, with one padding word maintaining AAPCS alignment. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
 abbrev searchPushed (s : State) : State := pushed [.r4, .r9, .r10, .r11, .r12, .lr] s
@@ -33,9 +35,9 @@ theorem push_saved (s : State) (fits : 24 ≤ s.sp.toNat) :
   rw [memEq]
   exact Spill.saveMem_saved (lo := 0) (hi := 24) (State.addr sp) s.gpr s.mem savedSlots (by decide)
 
-theorem KeyInput.incoming_value {p : KeyPublic} {s : State} {i : Nat} (h : KeyInput p s) (bound : i < 9) :
+theorem KeyInput.incoming_value {p : KeyPublic sampling} {s : State} {i : Nat} (h : KeyInput p s) (bound : i < 9) :
     stackArg s i = incomingValue p i := by
-  rw [← h.2]
+  rw [← h.2.1]
   have casesI : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 := by omega
   rcases casesI with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp only [incomingValue, keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq]

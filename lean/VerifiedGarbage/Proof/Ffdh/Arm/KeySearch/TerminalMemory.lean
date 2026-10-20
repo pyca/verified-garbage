@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Controller
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm VG.Proof.Mont
 
 theorem highStore_low (m : Mem) (base : BitVec 32) (v : BitVec 32) {i j : Nat}

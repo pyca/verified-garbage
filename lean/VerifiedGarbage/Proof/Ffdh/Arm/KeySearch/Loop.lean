@@ -14,17 +14,19 @@ the chosen backend's key-generation attempt. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
-open VG VG.Arm VG.Spec.Ffdh
-open VG.Proof.Ffdh.KeyGeneration
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
-def KeyInvariant (p : KeyPublic) (original : State) (expected : KeySearchResult)
+open VG VG.Arm VG.Spec.Ffdh
+open VG.Proof.Ffdh.GenerationSearch
+
+def KeyInvariant (p : KeyPublic sampling) (original : State) (expected : KeySearchResult)
     (n : Nat) (s : State) : Prop :=
   ∃ used keys scalars, n = 128 * keys + scalars + 1 ∧ KeyLive p original used keys scalars s ∧
     expected.outcome = (p.tail (keyRand p original) used keys scalars).outcome ∧
     expected.used = (p.tail (keyRand p original) used keys scalars).used
 
-theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend) (runAttempt : AttemptRunOk backend)
-    {p : KeyPublic} {original s : State} {expected : KeySearchResult} {n : Nat}
+theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt : AttemptRunOk backend)
+    {p : KeyPublic sampling} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s fun t =>
       (isa.eval .eq t = some false ∧ KeyDone p original expected t) ∨
@@ -91,8 +93,8 @@ theorem iteration (backend : VG.Proof.Ffdh.Arm.KeyBackend) (runAttempt : Attempt
     · rw [outcome]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
     · rw [count]; simp only [KeyPublic.tail, keyTail_public keysNonzero scalarsNonzero room' h3]
 
-theorem loop (backend : VG.Proof.Ffdh.Arm.KeyBackend) (runAttempt : AttemptRunOk backend)
-    {p : KeyPublic} {original s : State} {expected : KeySearchResult} {n : Nat}
+theorem loop (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (runAttempt : AttemptRunOk backend)
+    {p : KeyPublic sampling} {original s : State} {expected : KeySearchResult} {n : Nat}
     (inv : KeyInvariant p original expected n s) :
     WP isa (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq)
       s (KeyDone p original expected) :=

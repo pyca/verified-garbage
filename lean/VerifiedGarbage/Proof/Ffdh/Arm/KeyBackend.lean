@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ffdh.Contract
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
@@ -12,13 +12,16 @@ The arithmetic implementation is supplied generically by its Montgomery backend.
 namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm
 
-structure KeyBackend where
+structure KeyBackend (policy : VG.Proof.Ffdh.GenerationPolicy := .full) where
   generateKey : Prog isa
-  generateKey_verified : Verified target generateKey (Spec.Ffdh.generateKeyContract abi 176)
+  generateKey_verified : Verified target generateKey (policy.attemptContract (KeyConstants.abi policy) 176)
   keyStack : FrameStack.armStack generateKey ≤ 176
   suffix : String
   features : List String
 
-def KeyBackend.keyName (b : KeyBackend) : String := Spec.Ffdh.generateKeyApi.name ++ b.suffix
+def KeyBackend.keyName {policy : VG.Proof.Ffdh.GenerationPolicy} (b : KeyBackend policy) : String :=
+  (match policy with
+  | .full => Spec.Ffdh.generateKeyApi.name
+  | .vetted => Spec.Ffdh.vettedGenerateKeyApi.name) ++ b.suffix
 
 end VG.Proof.Ffdh.Arm

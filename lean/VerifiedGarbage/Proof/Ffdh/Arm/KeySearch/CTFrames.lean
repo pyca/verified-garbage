@@ -11,6 +11,7 @@ memory accesses to its body's trace. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm
 
 theorem alloc_ct {bytes : Nat} {body : Prog isa} {P R : State → State → Prop}

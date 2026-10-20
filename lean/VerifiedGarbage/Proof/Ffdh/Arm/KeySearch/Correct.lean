@@ -9,28 +9,32 @@ import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.AttemptPost
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.FinishMemory
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Contract
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
 public import VerifiedGarbage.Impl.Ffdh.Arm.KeySearch
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyConstants
 
 /-! The full native ARMv7 key search satisfies the shared result contract. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Spec.Ffdh
-open VG.Proof.Ffdh.KeyGeneration
+open VG.Proof.Ffdh.GenerationSearch
 
-def searchResult (p : KeyPublic) (s : State) : KeySearchResult :=
-  keySearch p.a p.len ⟨p.keys, p.scalars⟩ (keyRand p s)
+def searchResult (p : KeyPublic sampling) (s : State) : KeySearchResult :=
+  sampling.search p.a p.len ⟨p.keys, p.scalars⟩ (keyRand p s)
 
-theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) {p : KeyPublic} {s : State}
+theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) {p : KeyPublic sampling} {s : State}
     (h : KeyInput p s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s fun t =>
       abiPreserved s t ∧ ResultPost p (searchResult p s) t := by
   have fit : 24 ≤ s.sp.toNat := by
     have fits := h.bounds.stackFits
-    rw [← h.2] at fits
+    rw [← h.2.1] at fits
     change 232 ≤ s.sp.toNat at fits
     omega
   unfold VG.Impl.Ffdh.Arm.KeySearch.code
@@ -46,17 +50,19 @@ theorem function_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) {p : KeyPublic} {s 
   intro t finished
   exact finish_ok finished
 
-theorem correct (backend : VG.Proof.Ffdh.Arm.KeyBackend) (s : State)
-    (pre : (keySearchContract abi stackUse).pre s) :
+theorem correct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (s : State)
+    (pre : (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre s) :
     ∃ tr t, Exec isa (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) s tr t ∧
-      abiPreserved s t ∧ (keySearchContract abi stackUse).post s t := by
-  let p := keyOfState s
-  have input : KeyInput p s := ⟨pre, rfl⟩
+      abiPreserved s t ∧ (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).post s t := by
+  let p := keyOfState sampling s
+  have parts := selected_pre.mp pre
+  have input : KeyInput p s := ⟨parts.1, rfl, parts.2⟩
   obtain ⟨tr, t, run, abiOk, result⟩ := function_ok backend input
   refine ⟨tr, t, run, abiOk, ?_⟩
+  apply selected_post.mpr
   have statusFits : (searchResult p s).status < 2 ^ 32 := by
     cases outcome : (searchResult p s).outcome <;> simp [KeySearchResult.status, outcome]
-  sig_post [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+  sig_post [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   rw [BitVec.setWidth_append_eq_right]
   change (t.gpr .r0).toNat = (searchResult p s).status ∧
     KeyOutput p (searchResult p s) t.mem ∧

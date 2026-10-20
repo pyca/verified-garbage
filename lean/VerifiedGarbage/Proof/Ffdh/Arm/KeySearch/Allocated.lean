@@ -9,9 +9,11 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Bignum.Arm
 
-theorem KeyLive.allocated_data {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+theorem KeyLive.allocated_data {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s) :
     Controller p.control (allocated 32 s) ∧ Workspace (allocated 32 s) (allocated 32 s).sp 32 ∧
       (rControl p).Disjoint (rArguments p) := by

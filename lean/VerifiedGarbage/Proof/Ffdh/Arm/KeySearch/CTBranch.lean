@@ -25,32 +25,34 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
-open VG VG.Arm
-open VG.Proof.Ffdh.KeyGeneration
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
 
-def keyContinues (q : KeyPoint) : Prop :=
+open VG VG.Arm
+open VG.Proof.Ffdh.GenerationSearch
+
+def keyContinues (q : KeyPoint sampling) : Prop :=
   q.keys ≠ 0 ∧ q.scalars ≠ 0 ∧ q.inputs.len ≤ q.inputs.randLen - q.used ∧ q.status ≠ 1
 
-instance (q : KeyPoint) : Decidable (keyContinues q) := inferInstanceAs
+instance (q : KeyPoint sampling) : Decidable (keyContinues q) := inferInstanceAs
   (Decidable (q.keys ≠ 0 ∧ q.scalars ≠ 0 ∧ q.inputs.len ≤ q.inputs.randLen - q.used ∧ q.status ≠ 1))
 
-def nextKeyPoint (q : KeyPoint) : KeyPoint :=
+def nextKeyPoint (q : KeyPoint sampling) : KeyPoint sampling :=
   if q.status = 2 then ⟨q.inputs, q.used + q.inputs.len, q.keys, q.scalars - 1, q.statuses.tail⟩
   else ⟨q.inputs, q.used + q.inputs.len, q.keys - 1, 128, q.statuses.tail⟩
 
-theorem nextKeyPoint_inputs (q : KeyPoint) : (nextKeyPoint q).inputs = q.inputs := by
+theorem nextKeyPoint_inputs (q : KeyPoint sampling) : (nextKeyPoint q).inputs = q.inputs := by
   unfold nextKeyPoint; split <;> rfl
 
-theorem nextKeyPoint_measure {q : KeyPoint} (h : keyContinues q) :
+theorem nextKeyPoint_measure {q : KeyPoint sampling} (h : keyContinues q) :
     128 * (nextKeyPoint q).keys + (nextKeyPoint q).scalars < 128 * q.keys + q.scalars := by
   obtain ⟨keys, scalars, _, _⟩ := h
   unfold nextKeyPoint; split <;> dsimp only <;> omega
 
-def KeyBranchResult (q : KeyPoint) (s : State) : Prop :=
+def KeyBranchResult (q : KeyPoint sampling) (s : State) : Prop :=
   if keyContinues q then KeyCTL (nextKeyPoint q) s ∧ lowWord s.mem q.inputs.control 14 = 4
   else ∃ original result, KeyDone q.inputs original result s
 
-theorem branch_pointer {q : KeyPoint} {s : State} (h : KeyBranchResult q s) : s.gpr .r4 = q.inputs.control := by
+theorem branch_pointer {q : KeyPoint sampling} {s : State} (h : KeyBranchResult q s) : s.gpr .r4 = q.inputs.control := by
   by_cases continues : keyContinues q
   · simp only [KeyBranchResult, continues, ite_true] at h
     obtain ⟨⟨_, live, _⟩, _⟩ := h
@@ -59,17 +61,17 @@ theorem branch_pointer {q : KeyPoint} {s : State} (h : KeyBranchResult q s) : s.
     obtain ⟨_, _, finished⟩ := h
     exact finished.pointer
 
-def KeysGuard (q : KeyPoint) (s : State) : Prop :=
+def KeysGuard (q : KeyPoint sampling) (s : State) : Prop :=
   KeyCTL q s ∧ isa.eval .eq s = some (decide (q.keys = 0))
 
-def ScalarsGuard (q : KeyPoint) (s : State) : Prop :=
+def ScalarsGuard (q : KeyPoint sampling) (s : State) : Prop :=
   KeyCTL q s ∧ q.keys ≠ 0 ∧ isa.eval .eq s = some (decide (q.scalars = 0))
 
-def RoomGuard (q : KeyPoint) (s : State) : Prop :=
+def RoomGuard (q : KeyPoint sampling) (s : State) : Prop :=
   KeyCTL q s ∧ q.keys ≠ 0 ∧ q.scalars ≠ 0 ∧
     isa.eval .eq s = some (decide (q.inputs.randLen - q.used < q.inputs.len))
 
-theorem keys_ready (q : KeyPoint) (s : State) (h : KeyCTL q s) :
+theorem keys_ready (q : KeyPoint sampling) (s : State) (h : KeyCTL q s) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 0, .cmp .r9 (.imm 0)]) s (KeysGuard q) := by
   obtain ⟨original, live, statuses⟩ := h
   refine WP.mono live.keys_guard ?_
@@ -78,7 +80,7 @@ theorem keys_ready (q : KeyPoint) (s : State) (h : KeyCTL q s) :
   change some t.z = _
   rw [flag]
 
-theorem scalars_ready (q : KeyPoint) (s : State) (h : KeysGuard q s ∧ isa.eval .eq s = some false) :
+theorem scalars_ready (q : KeyPoint sampling) (s : State) (h : KeysGuard q s ∧ isa.eval .eq s = some false) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r9 1, .cmp .r9 (.imm 0)]) s (ScalarsGuard q) := by
   obtain ⟨⟨⟨original, live, statuses⟩, flag⟩, nonzero⟩ := h
   have keys : q.keys ≠ 0 := of_decide_eq_false (Option.some.inj (flag.symm.trans nonzero))
@@ -88,7 +90,7 @@ theorem scalars_ready (q : KeyPoint) (s : State) (h : KeysGuard q s ∧ isa.eval
   change some t.z = _
   rw [flagT]
 
-theorem room_ready (q : KeyPoint) (s : State) (h : ScalarsGuard q s ∧ isa.eval .eq s = some false) :
+theorem room_ready (q : KeyPoint sampling) (s : State) (h : ScalarsGuard q s ∧ isa.eval .eq s = some false) :
     WP isa (.block VG.Impl.Ffdh.Arm.KeySearch.room) s (RoomGuard q) := by
   obtain ⟨⟨⟨original, live, statuses⟩, keys, flag⟩, nonzero⟩ := h
   have scalars : q.scalars ≠ 0 := of_decide_eq_false (Option.some.inj (flag.symm.trans nonzero))
@@ -98,13 +100,13 @@ theorem room_ready (q : KeyPoint) (s : State) (h : ScalarsGuard q s ∧ isa.eval
   change some t.z = _
   rw [flagT]
 
-theorem attempt_of_room {q : KeyPoint} {s : State}
+theorem attempt_of_room {q : KeyPoint sampling} {s : State}
     (h : RoomGuard q s ∧ isa.eval .eq s = some false) : KeyReady q s := by
   obtain ⟨⟨⟨original, live, statuses⟩, keys, scalars, flag⟩, enough⟩ := h
   have room := of_decide_eq_false (Option.some.inj (flag.symm.trans enough))
   exact ⟨⟨original, live, statuses⟩, keys, scalars, by have := live.used_le; omega⟩
 
-theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s : State) (h : KeysGuard q s) :
+theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeysGuard q s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) s (KeyBranchResult q) := by
   obtain ⟨⟨original, live, statuses⟩, flag⟩ := h
   have done : ∀ (t : State) (result : Spec.Ffdh.KeySearchResult), ¬keyContinues q →
@@ -157,13 +159,13 @@ theorem branch_ready (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s 
     rw [← statuses]
     simp only [KeyPublic.tail, keyTail_public keys scalars remaining h3, List.tail_cons]
 
-private theorem leaf {Φ : KeyPoint → State → Prop} {code : Prog isa}
-    (get : ∀ q s, Φ q s → KeyAny q.inputs s) (ct : RelCT isa (Two KeyAny) code (fun _ _ => True)) :
+private theorem leaf {Φ : KeyPoint sampling → State → Prop} {code : Prog isa}
+    (get : ∀ q s, Φ q s → KeyAny q.inputs s) (ct : RelCT isa (Two (KeyAny (sampling := sampling))) code (fun _ _ => True)) :
     RelCT isa (Two Φ) code (fun _ _ => True) :=
   ct.mono (fun _ _ ⟨q, h₁, h₂, sp⟩ => ⟨q.inputs, get q _ h₁, get q _ h₂, sp⟩) (fun _ _ h => h)
 
-theorem branch_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
-    RelCT isa (Two KeysGuard) (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
+theorem branch_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
+    RelCT isa (Two (KeysGuard (sampling := sampling))) (VG.Impl.Ffdh.Arm.KeySearch.branch (.call backend.keyName backend.generateKey)) (fun _ _ => True) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.branch
   refine two_ite (fun _ _ _ h₁ h₂ => h₁.2.trans h₂.2.symm)
     (leaf (fun _ _ h => h.1.1.any) exhausted_ct) ?_

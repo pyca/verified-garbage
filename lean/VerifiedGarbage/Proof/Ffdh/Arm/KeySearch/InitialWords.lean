@@ -14,37 +14,40 @@ import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Spec.Ffdh
 
-theorem KeyInput.initial_words {p : KeyPublic} {s : State} (h : KeyInput p s) :
+theorem KeyInput.initial_words {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     s.mem.readW (off (State.addr p.control) 0) 64 = BitVec.ofNat 64 p.keys ∧
     s.mem.readW (off (State.addr p.control) 8) 64 = BitVec.ofNat 64 p.scalars ∧
     s.mem.readW (off (State.addr p.control) 16) 64 = BitVec.ofNat 64 p.len := by
   have pre := h.1
-  cases h.2
+  cases h.2.1
   refine ⟨?_, ?_, ?_⟩
   · simp only [keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq, off, BitVec.add_zero]
   · simp only [keyOfState, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  · sig_pre [keySearchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+  · sig_pre [GenerationPolicy.searchContract, keySearchSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at pre
+    simp only [KeyConstants.stackArg_stripConsts, KeyConstants.stackArgAddr_stripConsts] at pre
     sig_split pre
     have address : (16 : BitVec 64) = 16#64 := rfl
     simpa only [keyOfState, off, State.addr, BitVec.ofNat_toNat, address] using pre
 
-theorem KeyInput.pushed_word {p : KeyPublic} {s : State} {j : Nat} (h : KeyInput p s) (bound : j < 3) :
+theorem KeyInput.pushed_word {p : KeyPublic sampling} {s : State} {j : Nat} (h : KeyInput p s) (bound : j < 3) :
     (searchPushed s).mem.readW (off (State.addr p.control) (8 * j)) 64 =
       s.mem.readW (off (State.addr p.control) (8 * j)) 64 := by
   have fit : 232 ≤ p.sp.toNat := h.bounds.stackFits
-  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2] at fit; change 232 ≤ s.sp.toNat at fit; omega
+  have rootFit : 24 ≤ s.sp.toNat := by rw [← h.2.1] at fit; change 232 ≤ s.sp.toNat at fit; omega
   have frame : Frame [FrameStack.belowA s.sp 24] s.mem (searchPushed s).mem :=
     FrameStack.pushed_frameA (rs := [.r4, .r9, .r10, .r11, .r12, .lr]) rootFit
   have sep : (rControl p).Disjoint (FrameStack.belowA s.sp 24) := by
-    have base : p.sp = s.sp := by rw [← h.2]; rfl
+    have base : p.sp = s.sp := by rw [← h.2.1]; rfl
     rw [← base]
     exact h.saved_control.symm
   exact frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
     (by simpa using sep) (by decide)
 
-theorem KeyInput.pushed_policy {p : KeyPublic} {s : State} (h : KeyInput p s) :
+theorem KeyInput.pushed_policy {p : KeyPublic sampling} {s : State} (h : KeyInput p s) :
     lowWord (searchPushed s).mem p.control 0 = BitVec.ofNat 32 p.keys ∧
     lowWord (searchPushed s).mem p.control 1 = BitVec.ofNat 32 p.scalars ∧
     lowWord (searchPushed s).mem p.control 2 = BitVec.ofNat 32 p.len ∧

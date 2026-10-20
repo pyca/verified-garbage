@@ -19,6 +19,7 @@ Pointers and bounded counters are represented exactly by their ARMv7 words. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 
 def lowWord (m : Mem) (base : BitVec 32) (j : Nat) : BitVec 32 := m.readW (off (State.addr base) (8 * j)) 32

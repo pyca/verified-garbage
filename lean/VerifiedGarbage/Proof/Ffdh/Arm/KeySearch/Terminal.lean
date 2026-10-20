@@ -11,6 +11,7 @@ including an arbitrary high half present in the incoming controller state. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+
 open VG VG.Arm VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 

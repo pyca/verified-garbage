@@ -11,10 +11,12 @@ its stack writes remain below the controller's saved registers. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
 namespace KeyLive
-variable {p : KeyPublic} {original s : State} {used keys scalars : Nat}
+variable {p : KeyPublic sampling} {original s : State} {used keys scalars : Nat}
 
 theorem call_sp (h : KeyLive p original used keys scalars s) : (allocated 32 s).sp = callSp p := by
   change s.sp - 32#32 = callSp p
@@ -37,8 +39,8 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
   refine Covers.append_left ?_ (h.covers_writes wr).right
   apply Covers.of_sub
   intro r hr
-  simp only [callRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  simp only [callRd, callRdPlain, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with (rfl | rfl | rfl) | constant
   · refine ⟨rDomain p, ?_, 0, by rw [BitVec.add_zero], by omega⟩
     rw [rd]
     apply List.mem_append_left
@@ -57,6 +59,12 @@ theorem covers_reads (h : KeyLive p original used keys scalars s) (room : used +
     change rArguments p ∈ ⟨State.addr (allocated 32 s).sp, 32⟩ :: s.wr
     rw [h.call_sp]
     exact List.mem_cons_self
+  · refine ⟨r, ?_, 0, by rw [BitVec.add_zero], by omega⟩
+    rw [rd]
+    apply List.mem_append_left
+    change r ∈ s.rd
+    rw [h.rd]
+    exact h.input.constants_read constant
 
 theorem argument_frame (_h : KeyLive p original used keys scalars s) {u : State}
     (mem : u.mem = callMem p used s.mem (callSp p)) : Frame (callChanges p) s.mem u.mem := by

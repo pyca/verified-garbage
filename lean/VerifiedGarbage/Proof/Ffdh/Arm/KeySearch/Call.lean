@@ -6,7 +6,9 @@ public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.LoopState
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
-import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPre
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallConsts
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPreserves
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallRegions
 import VerifiedGarbage.Proof.Framework.Block
@@ -15,9 +17,11 @@ import VerifiedGarbage.Proof.Framework.Block
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont VG.Proof.Bignum.Arm
 
-theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) : AttemptRunOk backend := by
+theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) : AttemptRunOk backend := by
   intro p original s used keys scalars h room
   have facts := h.input.callFacts room
   have rootFit : 232 ≤ p.sp.toNat := h.input.bounds.stackFits
@@ -41,17 +45,18 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) : AttemptRunOk ba
   unfold VG.Impl.Ffdh.Arm.KeySearch.attemptRun
   refine WP.alloc (by decide) outerFit ?_
   rw [WP.seq_iff]
-  refine WP.mono (arguments_ok (allocated 32 s) control stack separate h.headers) ?_
-  rintro u ⟨⟨args, mem⟩, rest⟩
+  refine WP.mono_syms (arguments_ok (allocated 32 s) control stack separate h.headers) ?_
+  rintro u ⟨⟨args, mem⟩, rest⟩ symsU
   have spU : u.sp = callSp p := rest.sp.trans h.call_sp
   have memU : u.mem = callMem p used s.mem (callSp p) := by
     rw [mem, h.call_sp]
     rfl
-  refine FrameStack.WP.callF backend.generateKey_verified.1 (call_pre facts args spU memU)
+  apply WP.of_syms
+  refine FrameStack.WP.callF backend.generateKey_verified.1 (call_pre h room args spU memU symsU)
     (h.covers_reads room rest.rd rest.wr) (h.covers_writes rest.wr)
     (by rw [spU]; exact Nat.le_trans backend.keyStack facts.stackFits) ?_
-  intro t rd wr sp frame kept post
-  refine ⟨h.restore ?_ ?_ ?_ ?_ (h.attempt_frame memU spU frame backend.keyStack), ?_⟩
+  intro t rd wr sp frame kept post symsT
+  refine ⟨h.restore ?_ ?_ ?_ ?_ (symsT.trans symsU) (h.attempt_frame memU spU frame backend.keyStack), ?_⟩
   · exact rd.trans rest.rd
   · change t.wr.tail = s.wr
     rw [wr, rest.wr]
@@ -63,7 +68,7 @@ theorem attemptRun_ok (backend : VG.Proof.Ffdh.Arm.KeyBackend) : AttemptRunOk ba
     change t.gpr r = s.gpr r
     rw [kept r (by revert r hr; decide) (by revert r hr; decide)]
     exact rest.gpr r (by revert r hr; decide)
-  · have result := call_post h room args spU memU post
+  · have result := call_post h room args spU memU (selected_attempt_post.mp post)
     exact ⟨result.status, result.output⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

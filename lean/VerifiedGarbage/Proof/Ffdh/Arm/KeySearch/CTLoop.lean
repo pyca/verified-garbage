@@ -11,14 +11,16 @@ meta import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 meta import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CTPoint
 
 /-! The native bounded loop's trace is determined by public descriptor,
-retry policy and disclosed attempt-status sequence. -/
+retry sampling and disclosed attempt-status sequence. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm
 
-theorem iteration_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
-    RelCT isa (Two KeyCTL) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey))
+theorem iteration_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
+    RelCT isa (Two (KeyCTL (sampling := sampling))) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey))
       (fun _ _ => True) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.iteration
   refine RelCT.seq (two_piece [.r4] key_ctl_pins (by taint_decide) keys_ready) ?_
@@ -28,11 +30,11 @@ theorem iteration_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
       subst r
       exact (branch_pointer h₁).trans (branch_pointer h₂).symm) (by taint_decide))
 
-def KeyCTStep (q : KeyPoint) (s : State) : Prop :=
+def KeyCTStep (q : KeyPoint sampling) (s : State) : Prop :=
   if keyContinues q then isa.eval .eq s = some true ∧ KeyCTL (nextKeyPoint q) s
   else isa.eval .eq s = some false
 
-theorem ct_step (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s : State) (h : KeyCTL q s) :
+theorem ct_step (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (q : KeyPoint sampling) (s : State) (h : KeyCTL q s) :
     WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s (KeyCTStep q) := by
   unfold VG.Impl.Ffdh.Arm.KeySearch.iteration
   refine WP.seq (WP.mono (keys_ready q s h) fun u ready => ?_)
@@ -53,13 +55,13 @@ theorem ct_step (backend : VG.Proof.Ffdh.Arm.KeyBackend) (q : KeyPoint) (s : Sta
     exact flag
 
 private def LoopPair (n : Nat) (s t : State) : Prop :=
-  ∃ q, n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s ∧ KeyCTL q t ∧ s.sp = t.sp
+  ∃ q : KeyPoint sampling, n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s ∧ KeyCTL q t ∧ s.sp = t.sp
 
-private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend) (n : Nat) :
-    RelCT isa (LoopPair n) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) fun s t =>
+private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) (n : Nat) :
+    RelCT isa (LoopPair (sampling := sampling) n) (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) fun s t =>
       isa.eval .eq s = isa.eval .eq t ∧ (isa.eval .eq s = some false → True) ∧
-        (isa.eval .eq s = some true → ∃ m < n, LoopPair m s t) := by
-  have wp (q : KeyPoint) (s : State) (h : n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s) :
+        (isa.eval .eq s = some true → ∃ m < n, LoopPair (sampling := sampling) m s t) := by
+  have wp (q : KeyPoint sampling) (s : State) (h : n = 128 * q.keys + q.scalars + 1 ∧ KeyCTL q s) :
       WP isa (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) s fun t =>
         n = 128 * q.keys + q.scalars + 1 ∧ KeyCTStep q t :=
     WP.mono (ct_step backend q s h.2) (fun _ result => ⟨h.1, result⟩)
@@ -77,8 +79,8 @@ private theorem iteration_pair (backend : VG.Proof.Ffdh.Arm.KeyBackend) (n : Nat
   · simp only [KeyCTStep, continues, ite_false] at h₁ h₂
     exact ⟨h₁.trans h₂.symm, fun _ => trivial, fun again => absurd (again.symm.trans h₁) (by decide)⟩
 
-theorem loop_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
-    RelCT isa (Two KeyCTL)
+theorem loop_ct (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
+    RelCT isa (Two (KeyCTL (sampling := sampling)))
       (.loop (VG.Impl.Ffdh.Arm.KeySearch.iteration (.call backend.keyName backend.generateKey)) .eq) (fun _ _ => True) := by
   intro s t tr₁ tr₂ u v ⟨q, h₁, h₂, sp⟩ e₁ e₂
   exact RelCT.loop (M := isa)

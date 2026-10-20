@@ -23,12 +23,14 @@ addresses, even when loading secret scalar/output registers afterward. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Bignum.Arm
 
-def ArgumentPins (q : KeyPoint) (s : State) : Prop :=
+def ArgumentPins (q : KeyPoint sampling) (s : State) : Prop :=
   s.gpr .r4 = q.inputs.control ∧ s.gpr .r12 = callSp q.inputs
 
-private theorem head_ready (q : KeyPoint) (u : State) (h : KeyAllocated q u) :
+private theorem head_ready (q : KeyPoint sampling) (u : State) (h : KeyAllocated q u) :
     WP isa (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5, VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 2,
       VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 6, VG.Impl.Ffdh.Arm.KeySearch.ldf .r3 2, .addSp .r12 0]) u (ArgumentPins q) := by
   obtain ⟨s, ⟨⟨_, live, _⟩, _⟩, rfl⟩ := h
@@ -39,7 +41,7 @@ private theorem head_ready (q : KeyPoint) (u : State) (h : KeyAllocated q u) :
   exact ⟨(rest.gpr .r4 (by simp)).trans live.pointer, pointer.trans live.call_sp⟩
 
 private theorem head_ct :
-    RelCT isa (Two KeyAllocated) (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5,
+    RelCT isa (Two (KeyAllocated (sampling := sampling))) (.block [VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5,
       VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 2, VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 6,
       VG.Impl.Ffdh.Arm.KeySearch.ldf .r3 2, .addSp .r12 0]) (fun _ _ => True) := by
   change RelCT isa _ (.block ([VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5,
@@ -49,7 +51,7 @@ private theorem head_ct :
     (relCT_keep_sp (two_taint [.r4] key_allocated_pins (by taint_decide)) (fun _ _ ⟨_, _, _, sp⟩ => sp)) ?_)
   exact VG.Proof.Ffdh.Arm.stackAddr_ct.mono (fun _ _ h => h) (fun _ _ _ => trivial)
 
-theorem arguments_ct : RelCT isa (Two KeyAllocated)
+theorem arguments_ct : RelCT isa (Two (KeyAllocated (sampling := sampling)))
     (.block VG.Impl.Ffdh.Arm.KeySearch.arguments) (fun _ _ => True) := by
   change RelCT isa _ (.block ([VG.Impl.Ffdh.Arm.KeySearch.ldf .r0 5,
     VG.Impl.Ffdh.Arm.KeySearch.ldf .r1 2, VG.Impl.Ffdh.Arm.KeySearch.ldf .r2 6,

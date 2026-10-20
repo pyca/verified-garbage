@@ -5,7 +5,6 @@ import VerifiedGarbage.Proof.Ffdh.Arm.CheckPublicSpec
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Bignum.Math
-import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Ffdh.Arm.Context
 
 /-! Native parameter checks agree with the shared algebraic domain predicate. -/
@@ -18,9 +17,11 @@ theorem modOne_iff {p q : Nat} (positive : 0 < p) (large : 1 < q) :
     p % q = 1 ↔ (p - 1) % q = 0 := by
   constructor
   · intro h
-    have reduced := Nat.mod_sub_of_le (a := p) (b := 1) (n := q) (by omega)
-    rw [h] at reduced
-    exact reduced.symm
+    have product : p - 1 = q * (p / q) := by
+      have split := Nat.mod_add_div p q
+      rw [h] at split
+      omega
+    rw [product, Nat.mul_mod, Nat.mod_self, Nat.zero_mul, Nat.zero_mod]
   · intro h
     have step : p = (p - 1) + 1 := by omega
     calc

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpShared
+public import VerifiedGarbage.Proof.Bignum.Arm.TwoExpMontgomeryCT
+public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPowerPhase
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyPrograms
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyTailLaw
 import VerifiedGarbage.Proof.Ffdh.Arm.KeyCallTailCT
@@ -17,17 +20,17 @@ namespace VG.Proof.Ffdh.Arm.KeyGenerate
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm
 open VG.Spec.Rsa.Mont (arrAt)
 
-private def arithmetic (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :=
+def arithmetic (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :=
   TwoExp.sharedMontgomery base sp len w b.name b.mul
     (fun _ _ _ ho ha hb s h => b.correct s h ho ha hb) b.stackOk
 
-private theorem timing (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :
+theorem timing (b : MontBackend) (base sp : BitVec 32) (len w : Nat) :
     TwoExp.MontgomeryTiming (arithmetic b base sp len w) :=
   TwoExp.sharedMontgomeryTiming base sp len w b.name b.mul
     (fun _ _ _ ho ha hb s h => b.correct s h ho ha hb) b.stackOk
     (fun _ _ _ ho ha hb => b.rawCT ho ha hb)
 
-private def fallback {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
+def fallback {base : BitVec 32} {len w : Nat} {P : State → Prop} {regions : List Region}
     (A : TwoExp.Montgomery base len w P regions) (ct : TwoExp.MontgomeryTiming A)
     (fits : arrAt w 16 ≤ 8 * len) : KeyPower.Fallback base len w P regions where
   code := VG.Impl.Bignum.Arm.SharedWindow.phase A.op

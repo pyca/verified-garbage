@@ -14,19 +14,21 @@ entropy refills, satisfies the shared correctness and timing contract. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Spec.Ffdh
 
-theorem constantTime (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
-    ConstantTime isa (keySearchContract abi stackUse).pre (keySearchContract abi stackUse).pub
+theorem constantTime (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
+    ConstantTime isa (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pre (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse).pub
       (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey)) := by
   intro s t tr₁ tr₂ u v hs ht pub e₁ e₂
   obtain ⟨p, inputS, inputT, statuses, sp⟩ := public_inputs hs ht pub
   exact (function_ct backend _ _ _ _ _ _
     ⟨(p, (searchResult p s).statuses), ⟨inputS, rfl⟩, ⟨inputT, statuses.symm⟩, sp⟩ e₁ e₂).1
 
-theorem verified (backend : VG.Proof.Ffdh.Arm.KeyBackend) :
+theorem verified (backend : VG.Proof.Ffdh.Arm.KeyBackend sampling) :
     Verified target (VG.Impl.Ffdh.Arm.KeySearch.code (.call backend.keyName backend.generateKey))
-      (keySearchContract abi stackUse) :=
+      (GenerationPolicy.searchContract sampling (KeyConstants.abi sampling) stackUse) :=
   ⟨correct backend, constantTime backend, sat⟩
 
 end VG.Proof.Ffdh.Arm.KeySearch

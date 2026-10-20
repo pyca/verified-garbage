@@ -3,19 +3,22 @@ module
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Geometry
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Regions
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Memory
+import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantMemory
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Live
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.Bounds
 
 /-! A nested key-generation attempt changes its outputs, workspace and its
-own stack, preserving the retry policy and saved controller frame. -/
+own stack, preserving the retry sampling and saved controller frame. -/
 
 @[expose] public section
 namespace VG.Proof.Ffdh.Arm.KeySearch
+variable {sampling : VG.Proof.Ffdh.GenerationPolicy}
+
 open VG VG.Arm VG.Proof.Mont
 
 namespace KeyInput
-variable {p : KeyPublic} {s : State}
+variable {p : KeyPublic sampling} {s : State}
 
 theorem call_control (h : KeyInput p s) : ∀ r ∈ callChanges p, (rControl p).Disjoint r := by
   intro r hr
@@ -74,16 +77,17 @@ theorem call_random_frame (h : KeyInput p s) {m m' : Mem} (frame : Frame (callCh
 
 end KeyInput
 
-theorem KeyLive.restore {p : KeyPublic} {original s t : State} {used keys scalars : Nat}
+theorem KeyLive.restore {p : KeyPublic sampling} {original s t : State} {used keys scalars : Nat}
     (h : KeyLive p original used keys scalars s)
     (rd : t.rd = s.rd) (wr : t.wr = s.wr) (sp : t.sp = s.sp)
     (kept : ∀ r ∈ keptRegisters, t.gpr r = s.gpr r)
+    (syms : t.syms = s.syms)
     (frame : Frame (callChanges p) s.mem t.mem) : KeyLive p original used keys scalars t := by
   refine ⟨h.input, h.used_le, h.keys_le, h.scalars_le, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
     (kept .r4 (by decide)).trans h.pointer,
     fun r hr => (kept r (List.mem_cons_of_mem _ hr)).trans (h.kept r hr),
     ?_, (h.input.call_random_frame frame).trans h.random,
-    (h.input.call_domain_frame frame).trans h.domain, ?_, ?_⟩
+    (h.input.call_domain_frame frame).trans h.domain, ?_, ?_, ?_, ?_⟩
   · apply h.saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.input.call_saved
   · intro e he
@@ -96,5 +100,8 @@ theorem KeyLive.restore {p : KeyPublic} {original s t : State} {used keys scalar
   · intro j hj
     exact (frame.readW (r := rControl p) (Offset.contains_base _ (by omega) (by omega))
       h.input.call_control (by decide)).trans (h.high j hj)
+  · exact (KeyConstants.tablePtr_of_syms syms).trans h.tablePtr
+  · exact KeyConstants.held_after_frame h.held frame (fun table member r hr =>
+      h.input.call_read (h.input.constants_read member) r hr)
 
 end VG.Proof.Ffdh.Arm.KeySearch
