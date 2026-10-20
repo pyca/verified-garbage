@@ -8,6 +8,7 @@ public import VerifiedGarbage.Impl.Bignum.Arm.CopyBytes
 public import VerifiedGarbage.Impl.Bignum.Arm.MontOp
 public import VerifiedGarbage.Impl.Bignum.Arm.R2
 public import VerifiedGarbage.Impl.Bignum.Arm.TrialDivision16
+public import VerifiedGarbage.Impl.Bignum.Arm.TwoPower
 public import VerifiedGarbage.Impl.Rsa.Arm.KeyWs
 public import VerifiedGarbage.Impl.Rsa.Arm.Recover
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
@@ -200,10 +201,6 @@ def exponentHalf : Prog isa := seqs [
   .block [.mov .r11 (.imm 0)], Rsa.Arm.Keys.half 27,
   .block ([.ldrSp .r1 64, .subs .r1 .r1 (.imm 1)] ++ save .r1 64)]
 
-def powerBitStep : List Instr :=
-  [.mov .r2 (.shifted .r4 .lsr 31), .mov .r5 (.shifted .r5 .lsl 1),
-    .dp .orr .r5 .r5 (.reg .r2), .mov .r4 (.shifted .r4 .lsl 1), .subs .r6 .r6 (.imm 1)]
-
 /-- The compact round's exponent and its complete u64 decomposition word. -/
 def expSetup : Prog isa := seqs [
   .block keyContext, Rsa.Arm.Keys.copy 29 0,
@@ -212,11 +209,9 @@ def expSetup : Prog isa := seqs [
   .block [.ldrSp .r1 60, .dp .and .r1 .r1 (.imm 3), .cmp .r1 (.imm 0)],
   .ite .eq (.block [.mov .r1 (.imm 4)]) (.block []),
   .block (save .r1 64), Rsa.Arm.Keys.copy 27 0, .loop exponentHalf .ne,
-  .block [.ldrSp .r6 60, .dp .and .r6 .r6 (.imm 63),
-    .mov .r4 (.imm 1), .mov .r5 (.imm 0), .cmp .r6 (.imm 0)],
-  .ite .eq (.block []) (.loop (.block powerBitStep) .ne),
+  .block ([.ldrSp .r1 60] ++ TwoPower.code),
   .block (Rsa.Arm.Keys.ptr .r0 27 ++ [.dp .add .r0 .r0 (.shifted .r9 .lsl 2),
-    .dp .sub .r0 .r0 (.imm 8), .str .r4 .r0 0, .str .r5 .r0 4])]
+    .dp .sub .r0 .r0 (.imm 8), .str .r2 .r0 0, .str .r3 .r0 4])]
 
 /-- Mask the highest native word occupied by a witness, including at a
 32- or 64-bit width boundary. Import has already cleared the higher words. -/

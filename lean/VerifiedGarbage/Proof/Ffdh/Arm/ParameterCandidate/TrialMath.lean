@@ -2,6 +2,7 @@ module
 
 import Mathlib.Data.Nat.GCD.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.PowLit
 
 /-! Compose the shared RSA reducer over a variable number of byte pairs.
 FFDH also permits byte lengths that are not multiples of eight. -/
